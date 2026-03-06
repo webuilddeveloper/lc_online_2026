@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/consult/consult.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:LawyerOnline/post-form.dart';
@@ -191,9 +192,7 @@ class _HomePageState extends State<HomePage> {
               //   width: 10,
               // ),
               GestureDetector(
-                onTap: () => {
-                 
-                },
+                onTap: () => {},
                 child: Container(
                   // width: 50,
                   // height: 50,
@@ -313,50 +312,31 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PostForm(),
+                              builder: (context) => ConsultPage(),
                             ),
                           ),
                         },
-                        child: Stack(
-                          children: [
-                            Container(
-                              // height: 200,
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 17, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                        child: Container(
+                          // height: 200,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 17, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF0262EC),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 15,
+                                offset: const Offset(0, 4),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    margin: const EdgeInsets.only(bottom: 40),
-                                    child: const Text(
-                                      'เปิดเคส\nให้ทนาย',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 3,
-                              right: 5,
-                              child: Container(
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
                                 // width: 50,
                                 // height: 50,
                                 // padding: const EdgeInsets.all(10),
@@ -370,14 +350,29 @@ class _HomePageState extends State<HomePage> {
                                 //   ),
                                 // ),
                                 child: Image.asset(
-                                  "assets/icons/search-lawyer-btn.png",
-                                  width: 100,
-                                  height: 100,
+                                  "assets/icons/open-case.png",
+                                  width: 44,
+                                  height: 44,
                                 ),
                                 // select-lawyer-btn
                               ),
-                            ),
-                          ],
+                              const SizedBox(
+                                height: 15,
+                              ),
+                              Container(
+                                // margin: const EdgeInsets.only(bottom: 40),
+                                child: const Text(
+                                  'เปิดเคสให้ทนาย',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -395,46 +390,27 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         },
-                        child: Stack(
-                          children: [
-                            Container(
-                              // height: 200,
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 17, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                        child: Container(
+                          // height: 200,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 17, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF0262EC),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 15,
+                                offset: const Offset(0, 4),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    margin: const EdgeInsets.only(bottom: 40),
-                                    child: const Text(
-                                      'นัดหมายทนาย\nด้วยตัวเอง',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 3,
-                              right: 0,
-                              child: Container(
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
                                 // width: 50,
                                 // height: 50,
                                 // padding: const EdgeInsets.all(10),
@@ -448,13 +424,27 @@ class _HomePageState extends State<HomePage> {
                                 //   ),
                                 // ),
                                 child: Image.asset(
-                                  "assets/icons/select-lawyer-btn.png",
-                                  width: 100,
-                                  height: 100,
+                                  "assets/icons/appointment-lawyer.png",
+                                  width: 44,
+                                  height: 44,
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(
+                                height: 15,
+                              ),
+                              Container(
+                                // margin: const EdgeInsets.only(bottom: 40),
+                                child: const Text(
+                                  'นัดหมายทนาย',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600, color: Colors.white),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
