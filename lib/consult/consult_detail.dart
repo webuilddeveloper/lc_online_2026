@@ -443,7 +443,8 @@ class ConsultDetailPage extends StatelessWidget {
               const SizedBox(height: 28),
               GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(
+                  Navigator.pushReplacement(
+                    context,
                     MaterialPageRoute(
                       builder: (_) => const ConsultStatusPage(),
                     ),
