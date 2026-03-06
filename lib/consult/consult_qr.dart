@@ -9,8 +9,9 @@ class ConsultQrPage extends StatelessWidget {
   const ConsultQrPage({super.key, required this.amount});
 
   String _generatePromptPayPayload(int amount) {
-    final amountStr = amount.toStringAsFixed(2);
-    const phoneNumber = '0812345678'; // เปลี่ยนเป็นเบอร์จริง
+    final amountStr = amount.toDouble().toStringAsFixed(2);
+    const phoneNumber = '0812345678';
+
     return '00020101021129370016A000000677010111011300668${phoneNumber.replaceFirst('0', '')}5303764540${amountStr}5802TH5920LawyerOnline Payment6304';
   }
 

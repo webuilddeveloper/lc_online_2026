@@ -1,0 +1,104 @@
+import 'package:LawyerOnline/component/appbar.dart';
+import 'package:flutter/material.dart';
+import 'law_type_detail_page.dart';
+
+class LawTypeAllPage extends StatelessWidget {
+  LawTypeAllPage({super.key});
+
+  final List lawTypes = [
+    {
+      "title": "กฎหมายอาญา",
+      "icon": "assets/icons/law-type-1.png",
+      "desc": "เกี่ยวกับคดีอาญา เช่น ลักทรัพย์ ทำร้ายร่างกาย"
+    },
+    {
+      "title": "ครอบครัว",
+      "icon": "assets/icons/law-type-2.png",
+      "desc": "คดีแพ่ง เช่น หนี้สิน สัญญา"
+    },
+    {
+      "title": "บริษัท",
+      "icon": "assets/icons/law-type-3.png",
+      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
+    },
+    {
+      "title": "ธุรกิจ",
+      "icon": "assets/icons/law-type-4.png",
+      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
+    },
+    {
+      "title": "กฎหมายธุรกิจ",
+      "icon": "assets/icons/law-type-5.png",
+      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
+    },
+    {
+      "title": "กฎหมายทรัพย์สิน",
+      "icon": "assets/icons/law-type-6.png",
+      "desc": "ที่ดิน บ้าน คอนโด"
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarCustom(
+        title: "ประเภทกฎหมายทั้งหมด",
+        backBtn: true,
+        isRightWidget: false,
+        backAction: () => Navigator.pop(context),
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: lawTypes.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
+        ),
+        itemBuilder: (context, index) {
+          final item = lawTypes[index];
+
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LawTypeDetailPage(data: item),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.08),
+                    blurRadius: 10,
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    item["icon"],
+                    width: 50,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    item["title"],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

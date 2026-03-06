@@ -1,8 +1,12 @@
 import 'package:LawyerOnline/appointment-details.dart';
+import 'package:LawyerOnline/calendar.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult.dart';
+import 'package:LawyerOnline/law_type_all_page.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
+import 'package:LawyerOnline/menu.dart';
+import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/post-form.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -192,7 +196,14 @@ class _HomePageState extends State<HomePage> {
               //   width: 10,
               // ),
               GestureDetector(
-                onTap: () => {},
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationPage(),
+                    ),
+                  ),
+                },
                 child: Container(
                   // width: 50,
                   // height: 50,
@@ -294,179 +305,73 @@ class _HomePageState extends State<HomePage> {
             // const SizedBox(
             //   height: 20,
             // ),
-            // Container(
-            //   padding: const EdgeInsets.symmetric(horizontal: 15),
-            //   height: heightCalculate(150),
-            //   child: _buildBanner(),
-            // ),
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: SizedBox(
-                height: 120,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => {
-                          // PostForm
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ConsultPage(),
-                            ),
+              padding: EdgeInsets.symmetric(horizontal: 15),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: actionCard(
+                      title: "เปิดเคสให้ทนาย",
+                      icon: "assets/icons/open-case.png",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConsultPage(),
                           ),
-                        },
-                        child: Container(
-                          // height: 200,
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 17, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF0262EC),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 15,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                // width: 50,
-                                // height: 50,
-                                // padding: const EdgeInsets.all(10),
-                                // decoration: BoxDecoration(
-                                //   color: const Color(0xFFFAFAFA),
-                                //   // borderRadius: BorderRadius.circular(18),
-                                //   shape: BoxShape.circle,
-                                //   border: Border.all(
-                                //     width: 1,
-                                //     color: const Color(0xFFDBDBDB),
-                                //   ),
-                                // ),
-                                child: Image.asset(
-                                  "assets/icons/open-case.png",
-                                  width: 44,
-                                  height: 44,
-                                ),
-                                // select-lawyer-btn
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                // margin: const EdgeInsets.only(bottom: 40),
-                                child: const Text(
-                                  'เปิดเคสให้ทนาย',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                    const SizedBox(
-                      width: 15,
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: actionCard(
+                      title: "นัดหมายทนาย",
+                      icon: "assets/icons/appointment-lawyer.png",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LawyerOnlineList(),
+                          ),
+                        );
+                      },
                     ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => {
-                          // PostForm
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LawyerOnlineList(),
-                            ),
-                          ),
-                        },
-                        child: Container(
-                          // height: 200,
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 17, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF0262EC),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 15,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                // width: 50,
-                                // height: 50,
-                                // padding: const EdgeInsets.all(10),
-                                // decoration: BoxDecoration(
-                                //   color: const Color(0xFFFAFAFA),
-                                //   // borderRadius: BorderRadius.circular(18),
-                                //   shape: BoxShape.circle,
-                                //   border: Border.all(
-                                //     width: 1,
-                                //     color: const Color(0xFFDBDBDB),
-                                //   ),
-                                // ),
-                                child: Image.asset(
-                                  "assets/icons/appointment-lawyer.png",
-                                  width: 44,
-                                  height: 44,
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              Container(
-                                // margin: const EdgeInsets.only(bottom: 40),
-                                child: const Text(
-                                  'นัดหมายทนาย',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600, color: Colors.white),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(
-              height: 15,
+              height: 25,
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              height: heightCalculate(150),
+              child: _buildBanner(),
+            ),
+            // const SizedBox(
+            //   height: 25,
+            // ),
             title(
                 title: "ประเภทกฏหมาย",
                 isRightBtn: true,
                 titleRightBtn: "ดูทั้งหมด",
-                viewAll: () => {}),
+                viewAll: () => {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LawTypeAllPage(),
+                        ),
+                      ),
+                    }),
             const SizedBox(
-              height: 15,
+              height: 5,
             ),
             _buildMenuLowCategory(),
             const SizedBox(
-              height: 15,
+              height: 25,
             ),
             userType == 'lawyer'
                 ? Column(
@@ -475,13 +380,22 @@ class _HomePageState extends State<HomePage> {
                           title: "นัดหมายที่กำลังจะมาถึง",
                           isRightBtn: true,
                           titleRightBtn: "ดูทั้งหมด",
-                          viewAll: () => {}),
+                          viewAll: () => {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MenuPage(
+                                      pageIndex: 2,
+                                    ),
+                                  ),
+                                ),
+                              }),
                       const SizedBox(
-                        height: 15,
+                        height: 10,
                       ),
                       _buildAppointmentList(),
                       const SizedBox(
-                        height: 15,
+                        height: 10,
                       ),
                     ],
                   )
@@ -501,7 +415,7 @@ class _HomePageState extends State<HomePage> {
             ),
             _buildLawyerOnline(),
             const SizedBox(
-              height: 15,
+              height: 80,
             ),
           ],
         ),
@@ -952,7 +866,8 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => onTap,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         // mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -979,6 +894,7 @@ class _HomePageState extends State<HomePage> {
           Text(
             title,
             style: const TextStyle(fontSize: 12),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -1225,6 +1141,48 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget actionCard({
+    required String title,
+    required String icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0262EC),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              icon,
+              width: 40,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            )
           ],
         ),
       ),

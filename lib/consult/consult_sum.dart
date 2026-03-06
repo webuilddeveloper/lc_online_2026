@@ -35,7 +35,7 @@ class ConsultSummaryPage extends StatefulWidget {
 class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
   String _paymentMethod = 'QR Code';
 
-  // int _hours = 1;
+  int _hours = 1;
   // final int _pricePerHour = 500;
   // int get _total => _pricePerHour * _hours;
   // String _formatAmount(int amount) => amount
@@ -262,51 +262,58 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('ค่าจ้างทนาย',
+                            Text('ค่าบริการ',
                                 style: TextStyle(
                                     color: Colors.grey[500], fontSize: 13)),
                             Text(
                                 // '฿${_formatAmount(_pricePerHour)}',
-                                '฿ ${_formatAmount(widget.wage)}',
+                                // '฿ ${_formatAmount(widget.wage)}',
+                                '500',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w600, fontSize: 14)),
                           ],
                         ),
                         const SizedBox(height: 14),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //   children: [
-                        //     Text('จำนวนชั่วโมง',
-                        //         style: TextStyle(
-                        //             color: Colors.grey[500], fontSize: 13)),
-                        //     Row(
-                        //       children: [
-                        //         _HourButton(
-                        //           icon: Icons.remove,
-                        //           onTap: _hours > 1
-                        //               ? () => setState(() => _hours--)
-                        //               : null,
-                        //         ),
-                        //         SizedBox(
-                        //           width: 40,
-                        //           child: Center(
-                        //             child: Text('$_hours',
-                        //                 style: const TextStyle(
-                        //                     fontWeight: FontWeight.bold,
-                        //                     fontSize: 16)),
-                        //           ),
-                        //         ),
-                        //         _HourButton(
-                        //           icon: Icons.add,
-                        //           onTap: _hours < 8
-                        //               ? () => setState(() => _hours++)
-                        //               : null,
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ],
-                        // ),
-                        // const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('เวลา',
+                                style: TextStyle(
+                                    color: Colors.grey[500], fontSize: 13)),
+                            Text(
+                                // '฿${_formatAmount(_pricePerHour)}',
+                                // '฿ ${_formatAmount(widget.wage)}',
+                                '60 นาที',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 14)),
+                            // Row(
+                            //   children: [
+                            //     _HourButton(
+                            //       icon: Icons.remove,
+                            //       onTap: _hours > 1
+                            //           ? () => setState(() => _hours--)
+                            //           : null,
+                            //     ),
+                            //     SizedBox(
+                            //       width: 40,
+                            //       child: Center(
+                            //         child: Text('$_hours',
+                            //             style: const TextStyle(
+                            //                 fontWeight: FontWeight.bold,
+                            //                 fontSize: 16)),
+                            //       ),
+                            //     ),
+                            //     _HourButton(
+                            //       icon: Icons.add,
+                            //       onTap: _hours < 8
+                            //           ? () => setState(() => _hours++)
+                            //           : null,
+                            //     ),
+                            //   ],
+                            // ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         const Divider(height: 1, color: Color(0xFFEEF2F5)),
                         const SizedBox(height: 16),
                         Row(
@@ -319,7 +326,8 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                                     color: Color(0xFF1A2340))),
                             Text(
                                 // '฿${_formatAmount(_total)}',
-                                '฿ ${_formatAmount(widget.wage)}',
+                                // '฿ ${_formatAmount(widget.wage)}',
+                                '500',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 22,
@@ -388,7 +396,8 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                   MaterialPageRoute(
                     // builder: (_) => ConsultQrPage(amount: _total),
                     builder: (_) =>
-                        ConsultQrPage(amount: int.parse(widget.wage)),
+                        // ConsultQrPage(amount: int.parse(widget.wage)),
+                        ConsultQrPage(amount: int.parse('500')),
                   ),
                 );
               },
@@ -422,28 +431,28 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
   }
 }
 
-// class _HourButton extends StatelessWidget {
-//   final IconData icon;
-//   final VoidCallback? onTap;
+class _HourButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
 
-//   const _HourButton({required this.icon, this.onTap});
+  const _HourButton({required this.icon, this.onTap});
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: Container(
-//         width: 32,
-//         height: 32,
-//         decoration: BoxDecoration(
-//           color:
-//               onTap != null ? const Color(0xFFEEF4FF) : const Color(0xFFF5F7FA),
-//           borderRadius: BorderRadius.circular(8),
-//         ),
-//         child: Icon(icon,
-//             size: 16,
-//             color: onTap != null ? const Color(0xFF0262EC) : Colors.grey[300]),
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color:
+              onTap != null ? const Color(0xFFEEF4FF) : const Color(0xFFF5F7FA),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon,
+            size: 16,
+            color: onTap != null ? const Color(0xFF0262EC) : Colors.grey[300]),
+      ),
+    );
+  }
+}

@@ -3,21 +3,24 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 
 class AppointmentDetails extends StatefulWidget {
-  AppointmentDetails({Key? key, this.model});
+  AppointmentDetails({Key? key, this.model, this.userType});
 
   dynamic model;
+  String? userType;
 
   @override
   State<AppointmentDetails> createState() => _AppointmentDetailsState();
 }
 
 class _AppointmentDetailsState extends State<AppointmentDetails> {
+  String? userType;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "นัดหมาย",
+        title: "นัดหมายของฉัน",
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -33,89 +36,93 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
           const SizedBox(
             height: 30,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => {
-                    // successDialog()
-                    // AwesomeDialog(
-                    //   context: context,
-                    //   dialogType: DialogType.success,
-                    //   animType: AnimType.scale,
-                    //   customHeader: const Icon(
-                    //     Icons.check_circle,
-                    //     color: Colors.green,
-                    //     size: 110,
-                    //   ),
-                    //   title: 'สำเร็จ',
-                    //   desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
-                    //   btnOkOnPress: () {
-                    //     goBack();
-                    //   },
-                    // ).show()
+          widget.userType == 'lawyer'
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => {
+                          // successDialog()
+                          // AwesomeDialog(
+                          //   context: context,
+                          //   dialogType: DialogType.success,
+                          //   animType: AnimType.scale,
+                          //   customHeader: const Icon(
+                          //     Icons.check_circle,
+                          //     color: Colors.green,
+                          //     size: 110,
+                          //   ),
+                          //   title: 'สำเร็จ',
+                          //   desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
+                          //   btnOkOnPress: () {
+                          //     goBack();
+                          //   },
+                          // ).show()
 
-                    dialogSuccess()
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFFED6B2D),
-                        borderRadius: BorderRadius.circular(18)),
-                    child: const Text(
-                      "ไม่อนุมัติ",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                          dialogSuccess()
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 10),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFED6B2D),
+                              borderRadius: BorderRadius.circular(18)),
+                          child: const Text(
+                            "ไม่อนุมัติ",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(
-                width: 20,
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => {
-                    dialogSuccess()
-                    // AwesomeDialog(
-                    //   context: context,
-                    //   dialogType: DialogType.success,
-                    //   animType: AnimType.scale,
-                    //   customHeader: const Icon(
-                    //     Icons.check_circle,
-                    //     color: Colors.green,
-                    //     size: 110,
-                    //   ),
-                    //   title: 'สำเร็จ',
-                    //   desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
-                    //   btnOkOnPress: () {
-                    //     goBack();
-                    //   },
-                    // ).show()
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF0262EC),
-                        borderRadius: BorderRadius.circular(18)),
-                    child: const Text(
-                      "ยืนยันการนัดหมาย",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                    const SizedBox(
+                      width: 20,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => {
+                          dialogSuccess()
+                          // AwesomeDialog(
+                          //   context: context,
+                          //   dialogType: DialogType.success,
+                          //   animType: AnimType.scale,
+                          //   customHeader: const Icon(
+                          //     Icons.check_circle,
+                          //     color: Colors.green,
+                          //     size: 110,
+                          //   ),
+                          //   title: 'สำเร็จ',
+                          //   desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
+                          //   btnOkOnPress: () {
+                          //     goBack();
+                          //   },
+                          // ).show()
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 10),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF0262EC),
+                              borderRadius: BorderRadius.circular(18)),
+                          child: const Text(
+                            "ยืนยันการนัดหมาย",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  ],
+                )
+              : Container()
         ],
       ),
     );
@@ -158,7 +165,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
             appointmentItem(
                 title: 'สถานะการชำระเงิน',
                 value: widget.model['paymentStatus'],
-                isStatus: true),
+                isStatus: true,
+                statusType: '1'),
+            SizedBox(height: 10),
+            appointmentItem(
+                title: 'สถานะการนัดหมาย',
+                value: widget.model['appointmentStatus'],
+                isStatus: true,
+                statusType: '2'),
             SizedBox(height: 10),
           ],
         ),
@@ -166,11 +180,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
     );
   }
 
-  appointmentItem(
-      {String? title,
-      String value = '',
-      String icon = '',
-      bool isStatus = false}) {
+  appointmentItem({
+    String? title,
+    String value = '',
+    String icon = '',
+    bool isStatus = false,
+    String statusType = '',
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +210,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
                       height: 15,
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: value == '0'
+                          color: value == '1'
                               ? Colors.red.shade700
                               : Color(0xFF34C759)),
                     )
@@ -209,15 +225,27 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
               SizedBox(
                 width: (isStatus || icon != '') ? 8 : 0,
               ),
-              Expanded(
-                child: Text(
-                  isStatus
-                      ? (value == '0' ? 'รอชำระเงิน' : 'ชำระเงินสำเร็จ')
-                      : value,
-                  style: const TextStyle(color: Colors.black, fontSize: 13),
-                  maxLines: null,
-                ),
-              ),
+              statusType == '1'
+                  ? Expanded(
+                      child: Text(
+                        isStatus
+                            ? (value == '1' ? 'รอชำระเงิน' : 'ชำระเงินสำเร็จ')
+                            : value,
+                        style:
+                            const TextStyle(color: Colors.black, fontSize: 13),
+                        maxLines: null,
+                      ),
+                    )
+                  : Expanded(
+                      child: Text(
+                        isStatus
+                            ? (value == '1' ? 'กำลังดำเนินการ' : 'นัดหมายสำเร็จ')
+                            : value,
+                        style:
+                            const TextStyle(color: Colors.black, fontSize: 13),
+                        maxLines: null,
+                      ),
+                    ),
             ],
           ),
         )

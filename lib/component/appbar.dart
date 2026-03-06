@@ -84,11 +84,11 @@ appBarHome(
                           ),
                         ],
                       ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Color(0xFF000000).withOpacity(0.6),
-                      ),
+                      // const SizedBox(width: 6),
+                      // Icon(
+                      //   Icons.keyboard_arrow_down,
+                      //   color: Color(0xFF000000).withOpacity(0.6),
+                      // ),
                     ],
                   ),
                 ),

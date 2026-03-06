@@ -1,8 +1,10 @@
+import 'package:LawyerOnline/appointment-details.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/menu.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class MyAppointment extends StatefulWidget {
   const MyAppointment({super.key});
@@ -29,7 +31,17 @@ class _MyAppointmentState extends State<MyAppointment> {
       "skills": [
         "Criminal lawyer",
         "Corporate lawyer",
-      ]
+      ],
+      "clientName": "อนงค์ ดำเนิน",
+      "caseType": "คดีมรดกทุกประเภท",
+      "subCaseType": "ฟ้องร้องมรดก",
+      "appointmentDate": "28/03/2026",
+      "appointmentTime": "11.00 - 14.00",
+      "title": "ขอฟ้องร้องมรดกพี่น้อง ครั้งที่ 2",
+      "details":
+          "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดกอย่าตั้งใจเป็นเวลานานไม่แบ่งใครเป็นมรดกของคุณพ่อแต่คุณแม่ยังมีชีวิตอยู่",
+      "paymentStatus": "2",
+      "appointmentStatus": "2"
     },
     {
       "code": "1",
@@ -47,16 +59,43 @@ class _MyAppointmentState extends State<MyAppointment> {
       "skills": [
         "Family lawyer",
         "Estate planning lawyer",
-      ]
+      ],
+      "clientName": "อนงค์ ดำเนิน",
+      "caseType": "คดีมรดกทุกประเภท",
+      "subCaseType": "ฟ้องร้องมรดก",
+      "appointmentDate": "28/03/2026",
+      "appointmentTime": "11.00 - 14.00",
+      "title": "ขอฟ้องร้องมรดกพี่น้อง ครั้งที่ 2",
+      "details":
+          "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดกอย่าตั้งใจเป็นเวลานานไม่แบ่งใครเป็นมรดกของคุณพ่อแต่คุณแม่ยังมีชีวิตอยู่",
+      "paymentStatus": "2",
+      "appointmentStatus": "1"
     }
   ];
 
+  String? userType;
+
   String selectTab = "0";
+  final storage = FlutterSecureStorage();
 
   List<dynamic> tab = [
     {"code": "0", "title": "กำลังจะมาถึง"},
     {"code": "1", "title": "ผ่านไปแล้ว"},
   ];
+
+  callRead() async {
+    var user = await storage.read(key: 'userType');
+    setState(() {
+      userType = userType ?? user.toString();
+    });
+  }
+
+  @override
+  void initState() {
+    // canPop = false;
+    callRead();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,8 +308,9 @@ class _MyAppointmentState extends State<MyAppointment> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LawyerOnlineDetails(
-                          code: model['code'],
+                        builder: (context) => AppointmentDetails(
+                          model: model,
+                          userType: userType,
                         ),
                       ),
                     )

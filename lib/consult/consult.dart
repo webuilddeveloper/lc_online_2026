@@ -67,9 +67,9 @@ class _ConsultPageState extends State<ConsultPage> {
       _selectedSubCategory != null &&
       _selectedDate != null &&
       _selectedProvince != null &&
-      _detailController.text.trim().isNotEmpty &&
+      _detailController.text.trim().isNotEmpty ;
       // _demandController.text.trim().isNotEmpty &&
-      _wageController.text.trim().isNotEmpty;
+      // _wageController.text.trim().isNotEmpty;
 
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
@@ -574,8 +574,8 @@ class _ConsultPageState extends State<ConsultPage> {
                           onChanged: (val) =>
                               setState(() => _selectedProvince = val),
                         ),
-                        const SizedBox(height: 20),
-                        _buildWagwField(),
+                        // const SizedBox(height: 20),
+                        // _buildWagwField(),
                         const SizedBox(height: 20),
                         _buildDetailField(),
                         const SizedBox(height: 20),

@@ -1,3 +1,8 @@
+import 'package:LawyerOnline/about-us.dart';
+import 'package:LawyerOnline/change-language.dart';
+import 'package:LawyerOnline/change-password.dart';
+import 'package:LawyerOnline/notification-settings.dart';
+import 'package:LawyerOnline/profile-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -108,9 +113,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
-              menuItem(title: 'บัญชีผู้ใช้งาน', onTap: () => {}),
-              menuItem(title: 'เปลี่ยนรหัสผ่าน', onTap: () => {}),
-
+              menuItem(
+                title: 'บัญชีผู้ใช้งาน',
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfileFormPage(),
+                    ),
+                  ),
+                },
+              ),
+              menuItem(
+                title: 'เปลี่ยนรหัสผ่าน',
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChangePasswordPage(),
+                    ),
+                  ),
+                },
+              ),
               const SizedBox(height: 20),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
@@ -122,14 +146,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
-              menuItem(title: 'ตารางวันปรึกษา', onTap: () => {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ConsultationSchedule(),
-                    ),
-                  ),
-              }),
+              menuItem(
+                  title: 'ตารางวันปรึกษา',
+                  onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ConsultationSchedule(),
+                          ),
+                        ),
+                      }),
               menuItem(title: 'การถูกใจ', onTap: () => {}),
               menuItem(title: 'ประวัตินัดหมาย', onTap: () => {}),
               menuItem(
@@ -155,14 +181,41 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
-              menuItem(title: 'ตั้งค่าการแจ้งเตือน', onTap: () => {}),
-              menuItem(title: 'เปลี่ยนภาษา /  Language', onTap: () => {}),
-              menuItem(title: 'เกี่ยวกับเรา', onTap: () => {}),
+              menuItem(
+                  title: 'ตั้งค่าการแจ้งเตือน',
+                  onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const NotificationSettingPage(),
+                          ),
+                        ),
+                      }),
+              menuItem(
+                  title: 'เปลี่ยนภาษา /  Language',
+                  onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChangeLanguagePage(),
+                          ),
+                        ),
+                      }),
+              menuItem(
+                title: 'เกี่ยวกับเรา',
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AboutUsPage(),
+                    ),
+                  ),
+                },
+              ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: () => {
-                  logout()
-                },
+                onTap: () => {logout()},
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
