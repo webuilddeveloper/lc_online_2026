@@ -26,21 +26,12 @@ class LawTypeAllPage extends StatelessWidget {
       "icon": "assets/icons/law-type-4.png",
       "desc": "บริษัท หุ้นส่วน ธุรกิจ"
     },
-    {
-      "title": "กฎหมายธุรกิจ",
-      "icon": "assets/icons/law-type-5.png",
-      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
-    },
-    {
-      "title": "กฎหมายทรัพย์สิน",
-      "icon": "assets/icons/law-type-6.png",
-      "desc": "ที่ดิน บ้าน คอนโด"
-    },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
         title: "ประเภทกฎหมายทั้งหมด",
         backBtn: true,
@@ -85,6 +76,7 @@ class LawTypeAllPage extends StatelessWidget {
                   Image.asset(
                     item["icon"],
                     width: 50,
+                    color: Color(0xFF0262EC),
                   ),
                   const SizedBox(height: 10),
                   Text(
