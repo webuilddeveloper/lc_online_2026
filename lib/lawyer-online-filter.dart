@@ -247,7 +247,10 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
               height: 20,
             ),
             GestureDetector(
-              onTap: () => {goBack()},
+              onTap: () => {
+                // goBack()
+                Navigator.pop(context, "คดีแพ่ง"),
+              },
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
                 decoration: BoxDecoration(

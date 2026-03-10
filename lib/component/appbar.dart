@@ -33,7 +33,6 @@ appBarHome(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               GestureDetector(
                 onTap: () => profileAction,
                 child: Container(
@@ -93,11 +92,8 @@ appBarHome(
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-              
               rightWidget!
-              
             ],
           ),
         ),
@@ -111,7 +107,8 @@ appBar(
     bool backBtn = true,
     bool rightBtn = true,
     Function? rightAction,
-    Function? backAction}) {
+    Function? backAction,
+    bool isFavorite = false}) {
   return PreferredSize(
     preferredSize: const Size.fromHeight(80), // 🔻 ลดความสูง
     child: Padding(
@@ -182,33 +179,43 @@ appBar(
               // ignore: unrelated_type_equality_checks
               rightBtn
                   ? GestureDetector(
-                      onTap: () => rightAction!(),
-                      child: Container(
+                      onTap: () => rightAction?.call(),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
                         width: 40,
                         height: 40,
                         alignment: Alignment.center,
-                        // padding: const EdgeInsets.symmetric(
-                        //   horizontal: 12,
-                        //   vertical: 10,
-                        // ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAFAFA),
-                          // borderRadius: BorderRadius.circular(22),
+                          color: isFavorite
+                              ? const Color(0xFFFFF0F0)
+                              : const Color(0xFFFAFAFA),
                           shape: BoxShape.circle,
                           border: Border.all(
                             width: 1,
-                            color: const Color(0xFFDBDBDB),
+                            color: isFavorite
+                                ? Colors.red
+                                : const Color(0xFFDBDBDB),
                           ),
                         ),
-                        child: const Icon(
-                          Icons.favorite_border,
-                          size: 15,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                              scale: animation,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            key: ValueKey(isFavorite),
+                            size: 18,
+                            color: isFavorite ? Colors.red : Colors.black54,
+                          ),
                         ),
                       ),
                     )
-                  : Container(
-                      width: 40,
-                    ),
+                  : Container(width: 40),
             ],
           ),
         ),
@@ -292,7 +299,8 @@ appBarCustom(
               /// 🔔 RIGHT
               // ignore: unrelated_type_equality_checks
               isRightWidget
-                  ? rightWidget! : Container(
+                  ? rightWidget!
+                  : Container(
                       width: 40,
                     ),
             ],

@@ -1,4 +1,6 @@
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/menu.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,11 +8,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AppAppointment extends StatefulWidget {
-  AppAppointment({Key? key, this.model, this.title});
+  AppAppointment({Key? key, this.model, this.title, this.lawyer});
 
   dynamic model;
 
   String? title;
+  String? lawyer;
 
   @override
   State<AppAppointment> createState() => _AppAppointmentState();
@@ -33,33 +36,61 @@ class _AppAppointmentState extends State<AppAppointment> {
     {"code": "2", "title": "วันธรรมดา"},
   ];
 
-  List<Map<String, String>> caseTypeList = [
-    {"code": "0", "title": "กฏหมายแพ่งและอาญา"},
-    {"code": "1", "title": "กฏหมายครอบครัว"},
-    {"code": "2", "title": "กฏหมายแรงงาน"},
-    {"code": "3", "title": "ที่ดินและอสังหาริมทรัพย์"},
-    {"code": "4", "title": "ธุรกิจและการค้า"},
-    {"code": "5", "title": "แรงงานต่างด้าว"},
-    {"code": "6", "title": "เทคโนโลยี/ออนไลน์"},
-    {"code": "7", "title": "นักสืบ/สืบสวน"},
+  List<dynamic> caseTypeList = [
+    {"code": "", "title": "กรุณาเลือก"},
+    {
+      "code": "0",
+      "title": "คดีแพ่ง",
+      "subCase": [
+        {"code": "0", "title": "คดีครอบครัว"},
+        {"code": "1", "title": "คดีมรดก"},
+        {"code": "2", "title": "คดีสัญญา"},
+        {"code": "3", "title": "คดีละเมิด"},
+        {"code": "4", "title": "คดีทรัพย์สิน"},
+      ]
+    },
+    {
+      "code": "1",
+      "title": "คดีอาญา",
+      "subCase": [
+        {"code": "0", "title": "คดีทุจริต"},
+        {"code": "1", "title": "คดียาเสพติด"},
+        {"code": "2", "title": "คดีทำร้ายร่างกาย"},
+        {"code": "3", "title": "คดีลักทรัพย์"},
+        {"code": "4", "title": "คดีฉ้อโกง"},
+      ]
+    },
+    {
+      "code": "2",
+      "title": "คดีแรงงาน",
+      "subCase": [
+        {"code": "0", "title": "เลิกจ้างไม่เป็นธรรม"},
+        {"code": "1", "title": "ค่าจ้างค้างชำระ"},
+        {"code": "2", "title": "ชดเชยอุบัติเหตุ"},
+      ]
+    },
+    {
+      "code": "3",
+      "title": "คดีธุรกิจ",
+      "subCase": [
+        {"code": "0", "title": "จดทะเบียนบริษัท"},
+        {"code": "1", "title": "สัญญาธุรกิจ"},
+        {"code": "2", "title": "คดีล้มละลาย"},
+        {"code": "3", "title": "ทรัพย์สินทางปัญญา"},
+      ]
+    },
   ];
 
   List<Map<String, String>> lawyerList = [
     {"code": "0", "title": "ศักดิ์สิทธิ์ พิพากษ์"},
     {"code": "1", "title": "ธนากร นิติศักดิ์"},
     {"code": "2", "title": "พงษ์ภพ ยุติธรรม"},
-    {"code": "3", "title": "Sachin K"},
+    {"code": "3", "title": "อารีย์ ศิษย์กฎหมาย"},
+    {"code": "4", "title": "Sachin K"},
   ];
 
-  List<Map<String, String>> subCaseTypeList = [
-    {"code": "0", "title": "กฏหมายแพ่งและอาญา"},
-    {"code": "1", "title": "กฏหมายครอบครัว"},
-    {"code": "2", "title": "กฏหมายแรงงาน"},
-    {"code": "3", "title": "ที่ดินและอสังหาริมทรัพย์"},
-    {"code": "4", "title": "ธุรกิจและการค้า"},
-    {"code": "5", "title": "แรงงานต่างด้าว"},
-    {"code": "6", "title": "เทคโนโลยี/ออนไลน์"},
-    {"code": "7", "title": "นักสืบ/สืบสวน"},
+  List<dynamic> subCaseTypeList = [
+    {"code": "", "title": "กรุณาเลือก"},
   ];
 
   // List<Map<String, String>> titleList = [
@@ -81,11 +112,42 @@ class _AppAppointmentState extends State<AppAppointment> {
     {"code": "2", "title": "เดือนนี้"},
   ];
 
-  dynamic model;
+  Map<String, dynamic> model = {};
 
   String? selectedStatusRange = "1";
 
   int page = 0;
+
+  @override
+  void initState() {
+    // canPop = false;
+    if ((widget.lawyer ?? "") != "") model['lawyer'] = widget.lawyer;
+    dateController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    _startController.text = DateFormat('HH:mm').format(DateTime.now());
+    _endController.text = DateFormat('HH:mm').format(DateTime.now());
+    super.initState();
+  }
+
+  changeSubCaseList() {
+    // subCaseTypeList = caseTypeList.where((x) => x['code'] == model['caseType']).toList();
+
+    var selected = caseTypeList.firstWhere(
+      (x) => x['code'] == model['caseType'],
+      orElse: () => {},
+    );
+
+    setState(() {
+      model['subCaseType'] = null;
+      subCaseTypeList = selected['subCase'] != null
+          ? List<Map<String, String>>.from(selected['subCase'])
+          : [
+              {"code": "", "title": "กรุณาเลือก"}
+            ];
+    });
+
+    print('>> caseType >>> ${model['caseType']}');
+    print(model['subCaseType']);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,19 +184,30 @@ class _AppAppointmentState extends State<AppAppointment> {
           dropdown(
               title: 'ประเภทคดี',
               list: caseTypeList,
-              valueSelect: model?['caseType'],
-              isRequired: true),
+              valueSelect: model['caseType'],
+              isRequired: true,
+              onChange: (param) => {
+                    setState(() {
+                      model['caseType'] = param;
+                    }),
+                    changeSubCaseList(),
+                  }),
           const SizedBox(height: 10),
           dropdown(
               title: 'ประเภทคดีย่อย',
               list: subCaseTypeList,
-              valueSelect: model?['subCaseType'],
-              isRequired: true),
+              valueSelect: model['subCaseType'],
+              isRequired: true,
+              onChange: (param) => {
+                    setState(() {
+                      model['subCaseType'] = param;
+                    }),
+                  }),
           const SizedBox(height: 10),
           dropdown(
               title: 'ทนายที่ปรึกษา',
               list: lawyerList,
-              valueSelect: model?['lawyer'],
+              valueSelect: model['lawyer'],
               isRequired: true),
           const SizedBox(height: 30),
           GestureDetector(
@@ -175,7 +248,10 @@ class _AppAppointmentState extends State<AppAppointment> {
       child: Column(
         children: [
           const SizedBox(height: 10),
-          textField(title: 'หัวเรื่อง', controller: titleController),
+          textField(
+              title: 'หัวเรื่อง',
+              hint: 'กรุณาใส่หัวเรื่อง',
+              controller: titleController),
           const SizedBox(height: 10),
           selectDate(title: 'วันนัดหมายปรึกษา*', controller: dateController),
           const SizedBox(height: 10),
@@ -234,7 +310,24 @@ class _AppAppointmentState extends State<AppAppointment> {
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => {dialogSuccess()},
+                  onTap: () => {
+                    // dialogSuccess()
+                    DialogService.showSuccess(
+                      context,
+                      title: "จองนัดหมายสำเร็จ",
+                      message: "ระบบได้บันทึกนัดหมายใหม่เรียบร้อยแล้ว",
+                      onClose: () {
+                        // Navigator.pop(context);
+                        // final navigator = Navigator.of(context);
+                        Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => MenuPage(),
+                            ),
+                            (Route<dynamic> route) => route.isFirst,
+                          );
+                      },
+                    ),
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         vertical: 15, horizontal: 10),
@@ -263,7 +356,7 @@ class _AppAppointmentState extends State<AppAppointment> {
   }
 
   dropdown(
-      {required List<Map<String, String>>? list,
+      {required List<dynamic>? list,
       Function? onChange,
       String title = '',
       String? valueSelect = '',
@@ -324,13 +417,14 @@ class _AppAppointmentState extends State<AppAppointment> {
             color: Colors.black,
           ),
           value: valueSelect,
-          items: list!.map((e) {
-            return DropdownMenuItem(
-              value: e['code'],
-              child: Text(e['title']!),
-            );
-          }).toList(),
+          items: list!
+              .map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(
+                    value: e['code'],
+                    child: Text(e['title']),
+                  ))
+              .toList(),
           onChanged: (value) {
+            onChange!(value);
             setState(() {
               valueSelect = value.toString();
             });
@@ -437,14 +531,14 @@ class _AppAppointmentState extends State<AppAppointment> {
         RichText(
           text: TextSpan(
             text: title,
-            style: const TextStyle(
+            style: GoogleFonts.prompt(
               color: Color(0xFF0262EC),
               fontSize: 12,
             ),
             children: <TextSpan>[
               TextSpan(
                 text: isRequired ? '*' : '',
-                style: const TextStyle(
+                style: GoogleFonts.prompt(
                   color: Color(0xFFDB2E26),
                   fontSize: 12,
                 ),
@@ -535,6 +629,7 @@ class _AppAppointmentState extends State<AppAppointment> {
   textField(
       {Function? onChange,
       String title = '',
+      String hint = '',
       TextEditingController? controller,
       bool isRequired = false}) {
     return Column(
@@ -543,16 +638,17 @@ class _AppAppointmentState extends State<AppAppointment> {
         RichText(
           text: TextSpan(
             text: title,
-            style: const TextStyle(
+            style: GoogleFonts.prompt(
               color: Color(0xFF0262EC),
               fontSize: 12,
             ),
             children: <TextSpan>[
               TextSpan(
                 text: isRequired ? '*' : '',
-                style: const TextStyle(
+                style: GoogleFonts.prompt(
                   color: Color(0xFFDB2E26),
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -561,7 +657,17 @@ class _AppAppointmentState extends State<AppAppointment> {
         const SizedBox(height: 5),
         TextField(
           controller: controller,
+          style: GoogleFonts.prompt(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             border: OutlineInputBorder(
@@ -590,25 +696,24 @@ class _AppAppointmentState extends State<AppAppointment> {
     );
   }
 
-  textArea({
-    String title = '',
-    TextEditingController? controller,
-    bool isRequired = false
-  }) {
+  textArea(
+      {String title = '',
+      TextEditingController? controller,
+      bool isRequired = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
           text: TextSpan(
             text: title,
-            style: const TextStyle(
+            style: GoogleFonts.prompt(
               color: Color(0xFF0262EC),
               fontSize: 12,
             ),
             children: <TextSpan>[
               TextSpan(
                 text: isRequired ? '*' : '',
-                style: const TextStyle(
+                style: GoogleFonts.prompt(
                   color: Color(0xFFDB2E26),
                   fontSize: 12,
                 ),
@@ -645,114 +750,6 @@ class _AppAppointmentState extends State<AppAppointment> {
           ),
         ),
       ],
-    );
-  }
-
-  _selectTime({TextEditingController? controller}) async {
-    return showCupertinoModalPopup(
-      context: context,
-      builder: (_) => Container(
-        height: 300,
-        color: Colors.white,
-        child: Column(
-          children: [
-            /// ปุ่ม Done ด้านบน
-            Container(
-              alignment: Alignment.centerRight,
-              child: CupertinoButton(
-                child: Text(
-                  "เสร็จสิ้น",
-                  style: GoogleFonts.prompt(
-                    fontSize: 16,
-                    // fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0262EC),
-                  ),
-                ),
-                onPressed: () {
-                  // timeCallBack!(DateFormat('HH:mm').format(selectedTime));
-                  setState(() {
-                    controller!.text = DateFormat('HH:mm').format(selectedTime);
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-
-            /// Time Picker
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: true, // เปลี่ยนเป็น false ถ้าอยากได้ AM/PM
-                initialDateTime: selectedTime,
-                onDateTimeChanged: (DateTime newTime) {
-                  selectedTime = newTime;
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  _buildStatusRange({String? title}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title!,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF0262EC)),
-        ),
-        const SizedBox(height: 5),
-        Row(
-          children: [
-            for (int i = 0; i < statusRangeList.length; i++) ...[
-              Expanded(
-                child: _statusRangeItem(
-                  title: statusRangeList[i]['title'],
-                  value: statusRangeList[i]['code'],
-                  onChange: () => {
-                    setState(
-                      () {
-                        selectedStatusRange = statusRangeList[i]['code'];
-                      },
-                    ),
-                  },
-                ),
-              ),
-              if (i != statusRangeList.length - 1) const SizedBox(width: 15),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-
-  _statusRangeItem(
-      {Function? onChange, String title = '', String value = '0'}) {
-    return GestureDetector(
-      onTap: () => onChange!(),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 15),
-        width: double.infinity,
-        decoration: BoxDecoration(
-            border: Border.all(
-                color: value == selectedStatusRange
-                    ? const Color(0xFF0262EC)
-                    : const Color(0xFFBAD5FF)),
-            borderRadius: BorderRadius.circular(12)),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: value == selectedStatusRange
-                ? const Color(0xFF0262EC)
-                : const Color(0xFF555E67),
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
     );
   }
 

@@ -1,7 +1,9 @@
+import 'package:LawyerOnline/change-password.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/menu.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:LawyerOnline/menu.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,41 +12,66 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
+
+  bool remember = false;
+  bool obscure = true;
+
+  late AnimationController controller;
+  late Animation<double> fade;
 
   @override
   void initState() {
     super.initState();
+
+    controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+
+    fade = CurvedAnimation(parent: controller, curve: Curves.easeOut);
+
+    controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0d0d1b), Color(0xFF282a35)],
-                begin: Alignment.topCenter,
-                end: Alignment.topRight,
+      body: FadeTransition(
+        opacity: fade,
+        child: Stack(
+          children: [
+            /// 🔵 Background
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0F172A),
+                    Color(0xFF1E293B),
+                    Color(0xFF334155)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-            ), // สีเข้มด้านบน
-          ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 30),
+            ),
 
-                  /// Logo + Title
+            SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+
+                  /// 🔹 Logo
+                  const Icon(
+                    Icons.gavel,
+                    color: Colors.white,
+                    size: 60,
+                  ),
+
+                  const SizedBox(height: 12),
 
                   const Text(
                     'หมอความออนไลน์',
@@ -52,221 +79,237 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
                     ),
                   ),
+
                   const SizedBox(height: 6),
+
                   const Text(
-                    'Create an account or log in to explore our app',
+                    'ปรึกษากฎหมายได้ทุกที่',
                     style: TextStyle(color: Colors.white70),
                   ),
+
                   const SizedBox(height: 40),
 
                   /// 🔹 Login Card
                   Expanded(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20)),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(30),
                         ),
-                        child: ListView(
-                          physics: BouncingScrollPhysics(),
-                          // mainAxisAlignment: MainAxisAlignment.start,
-                          // crossAxisAlignment: CrossAxisAlignment.start,
-                          // mainAxisSize: MainAxisSize.min,
-                          children: [
-                            /// Tabs
-                            // Row(
-                            //   children: [
-                            //     Expanded(
-                            //       child: Text(
-                            //         'Log In',
-                            //         textAlign: TextAlign.center,
-                            //         style: TextStyle(
-                            //           fontWeight: FontWeight.bold,
-                            //           fontSize: 16,
-                            //         ),
-                            //       ),
-                            //     ),
-                            //     Expanded(
-                            //       child: Text(
-                            //         'Sign Up',
-                            //         textAlign: TextAlign.center,
-                            //         style: TextStyle(
-                            //           color: Colors.grey,
-                            //         ),
-                            //       ),
-                            //     ),
-                            //   ],
-                            // ),
-                            Text(
-                              'เข้าสู่ระบบ',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 30,
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 30,
+                            color: Colors.black26,
+                          )
+                        ],
+                      ),
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          const Text(
+                            "เข้าสู่ระบบ",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          /// Username
+                          TextField(
+                            controller: usernameController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.person_outline),
+                              labelText: "ชื่อผู้ใช้",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
                             ),
+                          ),
 
-                            const SizedBox(height: 30),
+                          const SizedBox(height: 16),
 
-                            /// Email
-                            TextField(
-                              controller: usernameController,
-                              decoration: InputDecoration(
-                                labelText: 'ชื่อผู้ใช้',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                          /// Password
+                          TextField(
+                            controller: passwordController,
+                            obscureText: obscure,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              labelText: "รหัสผ่าน",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              onChanged: (value) {
-                                setState(() {});
-                              },
-                            ),
-                            const SizedBox(height: 12),
-
-                            /// Password
-                            TextField(
-                              obscureText: true,
-                              controller: passwordController,
-                              decoration: InputDecoration(
-                                labelText: 'รหัสผ่าน',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                setState(() {});
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            /// Remember + Forgot
-                            Row(
-                              children: [
-                                Checkbox(value: false, onChanged: (_) {}),
-                                const Text('Remember me'),
-                                const Spacer(),
-                                TextButton(
-                                  onPressed: () {},
-                                  child: const Text('Forgot Password?'),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            /// Login Button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscure
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                 ),
                                 onPressed: () {
-                                  login();
+                                  setState(() {
+                                    obscure = !obscure;
+                                  });
                                 },
-                                child: const Text('เข้าสู่ระบบ',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 14)),
                               ),
                             ),
+                          ),
 
-                            // const SizedBox(height: 16),
+                          const SizedBox(height: 12),
 
-                            // const Text('or'),
+                          /// Remember
+                          Row(
+                            children: [
+                              // Checkbox(
+                              //   value: remember,
+                              //   activeColor: Colors.blue,
+                              //   onChanged: (v) {
+                              //     setState(() {
+                              //       remember = v!;
+                              //     });
+                              //   },
+                              // ),
+                              // const Text("Remember me"),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ChangePasswordPage(),
+                                    ),
+                                  );
+                                },
+                                child: const Text("ลืมรหัสผ่าน"),
+                              )
+                            ],
+                          ),
 
-                            // const SizedBox(height: 12),
+                          const SizedBox(height: 20),
 
-                            /// Social buttons
-                            // OutlinedButton.icon(
-                            //   onPressed: () {},
-                            //   icon: const Icon(Icons.g_mobiledata),
-                            //   label: const Text('Continue with Google'),
-                            // ),
-                            // OutlinedButton.icon(
-                            //   onPressed: () {},
-                            //   icon: const Icon(Icons.facebook),
-                            //   label: const Text('Continue with Facebook'),
-                            // ),
-                          ],
-                        ),
+                          /// 🔹 Login Button
+                          SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: login,
+                              child: Ink(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0xFF2563EB),
+                                      Color(0xFF3B82F6),
+                                    ],
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(14)),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    "เข้าสู่ระบบ",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          /// Divider
+                          // Row(
+                          //   children: const [
+                          //     Expanded(child: Divider()),
+                          //     Padding(
+                          //       padding: EdgeInsets.symmetric(horizontal: 10),
+                          //       child: Text("หรือ"),
+                          //     ),
+                          //     Expanded(child: Divider()),
+                          //   ],
+                          // ),
+
+                          // const SizedBox(height: 20),
+
+                          // /// Demo user
+                          // const Center(
+                          //   child: Text(
+                          //     "Demo Login\nlawyer / lawyer\nuser / user",
+                          //     textAlign: TextAlign.center,
+                          //     style: TextStyle(color: Colors.grey),
+                          //   ),
+                          // ),
+                        ],
                       ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   login() async {
-    if (usernameController.text.isNotEmpty &&
-        passwordController.text.isNotEmpty) {
-      if (usernameController.text.toLowerCase() == 'lawyer' &&
-          passwordController.text.toLowerCase() == 'lawyer') {
-        storage.write(
-            key: 'userType', value: usernameController.text.toLowerCase());
-        await Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => MenuPage(userType: 'lawyer',),
-          ),
-          (Route<dynamic> route) => false,
-        );
-      } else if (usernameController.text.toLowerCase() == 'user' &&
-          passwordController.text.toLowerCase() == 'user') {
-        storage.write(
-            key: 'userType', value: usernameController.text.toLowerCase());
-        await Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => MenuPage(userType: 'user',),
-          ),
-          (Route<dynamic> route) => false,
-        );
-      } else {
-        AwesomeDialog(
-          context: context,
-          dialogType: DialogType.warning,
-          animType: AnimType.scale,
-          customHeader: Icon(
-            Icons.info_outline,
-            color: Colors.yellow.shade700,
-            size: 110,
-          ),
-          title: 'ไม่พบผู้ใช้',
-          desc: 'ชื่อผู้ใช้งาน หรือหรัสผ่านผิด',
-          btnOkText: 'ลองอีกครั้ง',
-          btnCancelText: 'ยิกเลิก',
-          btnOkOnPress: () {},
-        ).show();
-      }
-    } else {
-      AwesomeDialog(
-        context: context,
-        dialogType: DialogType.warning,
-        animType: AnimType.scale,
-        customHeader: Icon(
-          Icons.info_outline,
-          color: Colors.yellow.shade700,
-          size: 110,
+    if (usernameController.text == "lawyer" &&
+        passwordController.text == "lawyer") {
+      await storage.write(key: 'userType', value: 'lawyer');
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MenuPage(userType: "lawyer"),
         ),
-        title: 'ไม่พบผู้ใช้',
-        desc: 'ชื่อผู้ใช้งาน หรือหรัสผ่านผิด',
-        btnOkText: 'ลองอีกครั้ง',
-        btnCancelText: 'ยิกเลิก',
-        btnOkOnPress: () {},
-      ).show();
+      );
+    } else if (usernameController.text == "user" &&
+        passwordController.text == "user") {
+      await storage.write(key: 'userType', value: 'user');
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MenuPage(userType: "user"),
+        ),
+      );
+    } else {
+      // AwesomeDialog(
+      //   context: context,
+      //   dialogType: DialogType.warning,
+      //   title: "ไม่พบผู้ใช้",
+      //   desc: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      //   btnOkOnPress: () {},
+      // ).show();
+
+      DialogService.showError(
+        context,
+        title: "ไม่พบผู้ใช้",
+        message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+        // onClose: () {
+        //   // Navigator.pop(context);
+        //   // final navigator = Navigator.of(context);
+        //   Navigator.of(context).pushAndRemoveUntil(
+        //     MaterialPageRoute(
+        //       builder: (context) => MenuPage(),
+        //     ),
+        //     (Route<dynamic> route) => route.isFirst,
+        //   );
+        // },
+      );
     }
   }
 }

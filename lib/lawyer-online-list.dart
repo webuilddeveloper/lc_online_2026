@@ -37,8 +37,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Corporate lawyer",
+        "กฏหมายแพ่งและอาญา",
+        "กฏหมายครอบครัว",
       ]
     },
     {
@@ -52,8 +52,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Family lawyer",
-        "Estate planning lawyer",
+        "กฏหมายครอบครัว",
+        "ธุรกิจและการค้า",
       ]
     },
     {
@@ -67,8 +67,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Tax lawyer",
+        "กฏหมายแรงงาน",
+        "ธุรกิจและการค้า",
       ]
     },
     {
@@ -82,7 +82,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Tax lawyer",
+        "แรงงานต่างด้าว",
       ]
     },
     {
@@ -96,8 +96,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Bankruptcy lawyer",
+        "เทคโนโลยี/ออนไลน์",
+        "นักสืบ/สืบสวน",
       ]
     }
   ];
@@ -262,6 +262,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
     "status": "1",
     "statusText": "กำลังดำเนินการ"
   };
+
+  String? selectedLawType;
 
   @override
   void initState() {
@@ -433,21 +435,14 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         backAction: () => goBack(),
         rightWidget: selectTab == '0'
             ? GestureDetector(
-                onTap: () => 
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => AppAppointment(
-                //       title: 'โพสปัญหา',
-                //     ),
-                //   ),
-                // ),
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CallRoom(),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AppAppointment(
+                      title: 'โพสปัญหา',
                     ),
                   ),
+                ),
                 child: Container(
                   width: 40,
                   alignment: Alignment.center,
@@ -514,119 +509,24 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
             //   padding: const EdgeInsets.symmetric(horizontal: 20),
             //   child: tabCategory(),
             // ),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child:  _buildFilter2()
-              // selectTab == '0' ? Container() : _buildFilter2(),
+              child: Column(
+                children: [
+                  _buildFilter2(),
+                  const SizedBox(height: 10),
+                  _buildSelectedFilter()
+                ],
+              ),
             ),
-            
-            selectTab == '0'
-                ? Container()
-                : const SizedBox(
-                    height: 20,
-                  ),
-            Expanded(
-                child: _buildLawyerOnline()
+
+            Expanded(child: _buildLawyerOnline()
                 // selectTab == '0' ? _buildPost() : _buildLawyerOnline()
-            ),
+                ),
           ],
         ),
       ),
-    );
-  }
-
-  _buildPost() {
-    if (currentLocation == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: mapController,
-          options: MapOptions(
-            initialCenter: currentLocation!,
-            initialZoom: 14,
-            onMapReady: () {
-              _mapReady = true;
-            },
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              userAgentPackageName: 'td.webuild.lawyer',
-            ),
-            MarkerLayer(
-              markers: locations.map((location) {
-                return Marker(
-                  point: location["position"],
-                  width: 60,
-                  height: 60,
-                  child: buildMarker(location),
-                );
-              }).toList(),
-            ),
-            MarkerLayer(
-              markers: [
-                // current location marker
-                Marker(
-                  point: currentLocation!,
-                  width: 80,
-                  height: 80,
-                  child: const Icon(
-                    Icons.my_location,
-                    color: Colors.blue,
-                    size: 40,
-                  ),
-                ),
-              ],
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: userLocation,
-                  width: 150,
-                  height: 150,
-                  child: GestureDetector(
-                    onTap: () => onMarkerTap(modelPost),
-                    child: AnimatedBuilder(
-                      animation: rippleController,
-                      builder: (context, child) {
-                        return CustomPaint(
-                          painter: RipplePainter(
-                            rippleController.value,
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.location_pin,
-                              color: Colors.red,
-                              size: 50,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                // Marker(
-                //   point: carLocation,
-                //   width: 50,
-                //   height: 50,
-                //   child: const Icon(
-                //     Icons.local_taxi,
-                //     color: Colors.green,
-                //     size: 40,
-                //   ),
-                // ),
-              ],
-            ),
-          ],
-        ),
-        buildLocateButton(),
-        buildAddPostButton(),
-        buildBottomCard(),
-        found ? buildLawyerAccept() : Container()
-      ],
     );
   }
 
@@ -682,6 +582,15 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               MaterialPageRoute(
                 builder: (context) => const LawyerOnlineFilter(),
               ),
+            ).then(
+              (value) {
+                if (value != null) {
+                  setState(() {
+                    selectedLawType = value;
+                    filteredLawyers();
+                  });
+                }
+              },
             ),
           },
           child: Container(
@@ -703,6 +612,53 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               )),
         ),
       ],
+    );
+  }
+
+  Widget _buildSelectedFilter() {
+    if (selectedLawType == null) return const SizedBox();
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0262EC).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF0262EC),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selectedLawType!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF0262EC),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 5),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedLawType = null;
+                });
+              },
+              child: const Icon(
+                Icons.close,
+                size: 14,
+                color: Color(0xFF0262EC),
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 
@@ -846,27 +802,12 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
     );
   }
 
-  tabCategory() {
-    return Row(
-      children: [
-        for (int i = 0; i < tab.length; i++) ...[
-          Expanded(
-            child: tabItem(
-              title: tab[i]['title'],
-              active: tab[i]['code'] == selectTab,
-              onTap: () => {
-                setState(
-                  () {
-                    selectTab = tab[i]['code'];
-                  },
-                ),
-              },
-            ),
-          ),
-          if (i != tab.length - 1) const SizedBox(width: 10),
-        ],
-      ],
-    );
+  List<dynamic> filteredLawyers() {
+    if (selectedLawType == null) return lawyerOnlineList;
+
+    return lawyerOnlineList.where((lawyer) {
+      return lawyer['skills'].contains(selectedLawType);
+    }).toList();
   }
 
   tabItem({required String title, bool active = false, Function? onTap}) {

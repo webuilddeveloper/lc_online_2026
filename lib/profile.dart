@@ -1,6 +1,8 @@
 import 'package:LawyerOnline/about-us.dart';
 import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
+import 'package:LawyerOnline/favorite-lawyers.dart';
+import 'package:LawyerOnline/lawyer-appointment-history.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
 import 'package:flutter/material.dart';
@@ -156,8 +158,27 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       }),
-              menuItem(title: 'การถูกใจ', onTap: () => {}),
-              menuItem(title: 'ประวัตินัดหมาย', onTap: () => {}),
+              menuItem(
+                  title: 'การถูกใจ',
+                  onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FavoriteLawyersPage(),
+                          ),
+                        ),
+                      }),
+              menuItem(
+                  title: 'ประวัตินัดหมาย',
+                  onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                LawyerAppointmentHistoryPage(),
+                          ),
+                        ),
+                      }),
               menuItem(
                 title: 'โพสต์ของฉัน',
                 onTap: () => {

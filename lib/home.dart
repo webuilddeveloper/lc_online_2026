@@ -34,11 +34,14 @@ class _HomePageState extends State<HomePage> {
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       "scroll": 4.8,
       "cost": "Free",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-1.png",
       "experience": "11+ years",
+      "clientReviews": "60+",
+      "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Corporate lawyer",
+        "กฏหมายแพ่งและอาญา",
+        "กฏหมายครอบครัว",
       ]
     },
     {
@@ -46,11 +49,14 @@ class _HomePageState extends State<HomePage> {
       "name": "ธนากร นิติศักดิ์",
       "scroll": 4.1,
       "cost": "Free",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-2.png",
       "experience": "19+ years",
+      "clientReviews": "60+",
+      "casesWon": "148+",
       "skills": [
-        "Family lawyer",
-        "Estate planning lawyer",
+        "กฏหมายครอบครัว",
+        "ธุรกิจและการค้า",
       ]
     },
     {
@@ -58,34 +64,43 @@ class _HomePageState extends State<HomePage> {
       "name": "พงษ์ภพ ยุติธรรม",
       "scroll": 3.9,
       "cost": "Free",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-3.png",
       "experience": "10+ years",
+      "clientReviews": "60+",
+      "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Tax lawyer",
+        "กฏหมายแรงงาน",
+        "ธุรกิจและการค้า",
       ]
     },
     {
       "code": "3",
       "name": "อาริย์ ศิษย์กฎหมาย",
       "scroll": 3.0,
-      "cost": "200/hr",
+      "cost": "200",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-4.png",
       "experience": "12+ years",
+      "clientReviews": "60+",
+      "casesWon": "148+",
       "skills": [
-        "Tax lawyer",
+        "แรงงานต่างด้าว",
       ]
     },
     {
       "code": "4",
       "name": "Sachin K",
       "scroll": 4.9,
-      "cost": "1000/hr",
+      "cost": "1000",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-5.png",
       "experience": "20+ years",
+      "clientReviews": "60+",
+      "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Bankruptcy lawyer",
+        "เทคโนโลยี/ออนไลน์",
+        "นักสืบ/สืบสวน",
       ]
     }
   ];

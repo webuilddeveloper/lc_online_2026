@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
@@ -19,14 +20,14 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       "scroll": 4.8,
       "cost": "Free",
-      "costUnit": "/hour",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-1.png",
       "experience": "11+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Corporate lawyer",
+        "กฏหมายแพ่งและอาญา",
+        "กฏหมายครอบครัว",
       ]
     },
     {
@@ -34,14 +35,14 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
       "name": "ธนากร นิติศักดิ์",
       "scroll": 4.1,
       "cost": "Free",
-      "costUnit": "/hour",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-2.png",
       "experience": "19+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Family lawyer",
-        "Estate planning lawyer",
+        "กฏหมายครอบครัว",
+        "ธุรกิจและการค้า",
       ]
     },
     {
@@ -49,14 +50,14 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
       "name": "พงษ์ภพ ยุติธรรม",
       "scroll": 3.9,
       "cost": "Free",
-      "costUnit": "/hour",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-3.png",
       "experience": "10+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Tax lawyer",
+        "กฏหมายแรงงาน",
+        "ธุรกิจและการค้า",
       ]
     },
     {
@@ -64,13 +65,13 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
       "name": "อาริย์ ศิษย์กฎหมาย",
       "scroll": 3.0,
       "cost": "200",
-      "costUnit": "/hour",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-4.png",
       "experience": "12+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Tax lawyer",
+        "แรงงานต่างด้าว",
       ]
     },
     {
@@ -78,14 +79,14 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
       "name": "Sachin K",
       "scroll": 4.9,
       "cost": "1000",
-      "costUnit": "/hour",
+      "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-5.png",
       "experience": "20+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
       "skills": [
-        "Criminal lawyer",
-        "Bankruptcy lawyer",
+        "เทคโนโลยี/ออนไลน์",
+        "นักสืบ/สืบสวน",
       ]
     }
   ];
@@ -118,11 +119,11 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
     },
   ];
 
-  Map<String, dynamic> model = {
-    
-  };
+  Map<String, dynamic> model = {};
 
   String code = "";
+
+  bool isFavorite = false;
 
   @override
   void initState() {
@@ -154,11 +155,17 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "หมอความออนไลน์",
+        title: "รายละเอียดหมอความ",
         backBtn: true,
         rightBtn: true,
         backAction: () => goBack(false),
-        rightAction: () => {},
+        isFavorite: isFavorite,
+        rightAction: () => {
+          setState(() {
+            isFavorite = !isFavorite;
+            print(isFavorite);
+          }),
+        },
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
@@ -183,14 +190,20 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: () {
-              AwesomeDialog(
-                context: context,
-                dialogType: DialogType.success,
-                animType: AnimType.scale,
-                title: 'สำเร็จ',
-                desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
-                btnOkOnPress: () => goBack(true),
-              ).show();
+              // AwesomeDialog(
+              //   context: context,
+              //   dialogType: DialogType.success,
+              //   animType: AnimType.scale,
+              //   title: 'สำเร็จ',
+              //   desc: 'บันทึกข้อมูลเรียบร้อยแล้ว',
+              //   btnOkOnPress: () => goBack(true),
+              // ).show();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AppAppointment(lawyer: code,),
+                ),
+              );
             },
             child: const Text(
               "จองนัดหมาย",
@@ -243,13 +256,19 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
 
                 // AVATAR
                 Positioned(
-                  right: 0,
-                  top: 10,
-                  bottom: 0,
-                  child: Image.asset(
-                    'assets/images/avatar-lawyer-card.png',
-                    height: constraints.maxHeight,
-                    fit: BoxFit.contain,
+                  right: 20,
+                  top: 20,
+                  bottom: 20,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      // 'assets/images/avatar-lawyer-card.png',
+                      model['imageUrl'],
+                      height: constraints.maxHeight,
+                      width: 120,
+                      // height: 100,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
 

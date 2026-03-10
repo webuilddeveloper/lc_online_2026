@@ -50,6 +50,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 const SizedBox(height: 10),
                 passwordField(
                   title: "รหัสผ่านใหม่",
+                  hint: "กรุณากรอกรหัสผ่านใหม่",
                   controller: passwordController,
                   hide: hidePassword,
                   toggle: () {
@@ -61,6 +62,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 const SizedBox(height: 20),
                 passwordField(
                   title: "ยืนยันรหัสผ่านใหม่",
+                  hint: "กรุณากรอกยืนยันรหัสผ่านใหม่",
                   controller: confirmPasswordController,
                   hide: hideConfirmPassword,
                   toggle: () {
@@ -81,6 +83,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Widget passwordField(
       {String title = "",
+      String? hint = "",
       TextEditingController? controller,
       bool hide = true,
       Function()? toggle}) {
@@ -99,6 +102,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           controller: controller,
           obscureText: hide,
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             filled: true,
