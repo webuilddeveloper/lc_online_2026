@@ -1027,7 +1027,7 @@ class _PostFormState extends State<PostForm> with TickerProviderStateMixin {
               ),
               child: Column(
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
@@ -1147,7 +1147,7 @@ class _PostFormState extends State<PostForm> with TickerProviderStateMixin {
               ),
               child: Column(
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(

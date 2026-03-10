@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -600,7 +601,12 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                   //     context,
                   //     MaterialPageRoute(
                   //         builder: (_) => const LawyerRatingPage()))
-                  ? SizedBox()
+                  ? Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MessageFormPage(model: widget.lawyer),
+                      ),
+                    )
                   // รีวิว → ไปหน้าให้คะแนน
                   : showRatingDialog(context);
             },

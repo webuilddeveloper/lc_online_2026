@@ -433,14 +433,21 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         backAction: () => goBack(),
         rightWidget: selectTab == '0'
             ? GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AppAppointment(
-                      title: 'โพสปัญหา',
+                onTap: () => 
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => AppAppointment(
+                //       title: 'โพสปัญหา',
+                //     ),
+                //   ),
+                // ),
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CallRoom(),
                     ),
                   ),
-                ),
                 child: Container(
                   width: 40,
                   alignment: Alignment.center,
@@ -469,7 +476,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PickImagePage(),
+                      builder: (context) => CallRoom(),
                     ),
                   ),
                 },

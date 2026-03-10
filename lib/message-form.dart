@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
@@ -81,7 +82,9 @@ class _MessageFormPageState extends State<MessageFormPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  widget.model['active'] ? 'Active Now' : 'Not Active',
+                  (widget.model['active'] ?? true)
+                      ? 'Active Now'
+                      : 'Not Active',
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -99,13 +102,13 @@ class _MessageFormPageState extends State<MessageFormPage> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(100),
                   child: Image.asset(
-                    widget.model['imageUrl'] ?? '',
+                    widget.model['imageUrl'] ?? 'assets/icons/profile.png',
                     height: 48,
                     width: 48,
                     fit: BoxFit.cover,
                   ),
                 ),
-                widget.model['active']
+                (widget.model['active'] ?? true)
                     ? Positioned(
                         right: 0,
                         child: Container(
@@ -173,7 +176,8 @@ class _MessageFormPageState extends State<MessageFormPage> {
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(100),
                                 child: Image.asset(
-                                  widget.model['imageUrl'] ?? '',
+                                  widget.model['imageUrl'] ??
+                                      'assets/icons/profile.png',
                                   height: 40,
                                   width: 40,
                                   fit: BoxFit.cover,
@@ -356,13 +360,29 @@ class _MessageFormPageState extends State<MessageFormPage> {
 
               bool allGranted =
                   statuses.values.every((status) => status.isGranted);
-
+//  "jle-wjbx-gyk",
               if (allGranted) {
+                final navigator = Navigator.of(context);
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => HMSPrebuilt(
                       roomCode: "jle-wjbx-gyk",
+                      onLeave: () {
+                        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> วางสายแล้ว');
+                        // ✅ หน่วงเวลานิดนึง รอให้ HMS cleanup เสร็จก่อน navigate
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          navigator.pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => ConsultStatusPage(
+                                currentStep: 4,
+                              ),
+                            ),
+                            (Route<dynamic> route) => route.isFirst,
+                          );
+                        });
+                      },
                     ),
                   ),
                 );

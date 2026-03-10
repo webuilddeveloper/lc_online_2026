@@ -60,7 +60,7 @@ class ConsultQrPage extends StatelessWidget {
                       color: const Color(0xFFEEF4FF),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.qr_code_2_outlined,

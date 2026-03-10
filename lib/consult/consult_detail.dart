@@ -446,7 +446,7 @@ class ConsultDetailPage extends StatelessWidget {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ConsultStatusPage(),
+                      builder: (_) => ConsultStatusPage(lawyer: lawyer),
                     ),
                   );
                 },

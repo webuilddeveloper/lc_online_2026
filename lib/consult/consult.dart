@@ -67,9 +67,9 @@ class _ConsultPageState extends State<ConsultPage> {
       _selectedSubCategory != null &&
       _selectedDate != null &&
       _selectedProvince != null &&
-      _detailController.text.trim().isNotEmpty ;
-      // _demandController.text.trim().isNotEmpty &&
-      // _wageController.text.trim().isNotEmpty;
+      _detailController.text.trim().isNotEmpty;
+  // _demandController.text.trim().isNotEmpty &&
+  // _wageController.text.trim().isNotEmpty;
 
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
@@ -431,11 +431,15 @@ class _ConsultPageState extends State<ConsultPage> {
                 GestureDetector(
                   onTap: _pickImages,
                   child: DottedBorder(
-                    options: const RoundedRectDottedBorderOptions(
-                      radius: Radius.circular(12),
-                      color: Color(0xFFEEF2F5),
-                      strokeWidth: 1.5,
-                    ),
+                    // options: const RoundedRectDottedBorderOptions(
+                    //   radius: Radius.circular(12),
+                    //   color: Color(0xFFEEF2F5),
+                    //   strokeWidth: 1.5,
+                    // ),
+                    borderType: BorderType.RRect,
+                    radius: const Radius.circular(12),
+                    color: Color(0xFFEEF2F5),
+                    strokeWidth: 1.5,
                     child: Container(
                       width: 140,
                       height: 140,
