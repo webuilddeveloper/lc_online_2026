@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "129790191006",
+    "project_id": "lawyeronline-a8424",
+    "storage_bucket": "lawyeronline-a8424.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129790191006:android:bbbf0c43a42eeb3d9c628f",
+        "android_client_info": {
+          "package_name": "td.webuild.lawyer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBN9jMqDw8rnrsYxQlCLX-6_Q8Y6SMONAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -149,6 +149,7 @@ class _HomePageState extends State<HomePage> {
   String userType = "";
   String imageUrl = "";
   String name = "";
+  String typeLogin = "";
 
   @override
   void initState() {
@@ -161,20 +162,20 @@ class _HomePageState extends State<HomePage> {
     var userType = await storage.read(key: 'userType');
     var imageProfile = await storage.read(key: 'imageUrlSocial');
     var nameProfile = await storage.read(key: 'name');
+    var type = await storage.read(key: 'typeLogin');
+
+    // อ่านค่าเสร็จหมดแล้วค่อย setState
     setState(() {
-      userType = widget.userType ?? userType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
+      this.userType = userType ?? ''; // ใช้ this. เพื่อไม่ให้ทับ local variable
+      name = nameProfile ?? 'assets/images/profile-avatar.jpg';
+      imageUrl = imageProfile ?? '';
+      typeLogin = type.toString();
     });
-    await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10}).then(
-      (value) async => {
-        setState(
-          () {
-            mockBannerList = value;
-          },
-        )
-      },
-    );
+
+    var value = await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
+    setState(() {
+      mockBannerList = value;
+    });
   }
 
   @override
@@ -189,6 +190,7 @@ class _HomePageState extends State<HomePage> {
           name: name ?? 'ผู้ใช้งาน',
           memberType: userType == 'user' ? 'บุคคลทั่วไป' : 'หมอความ',
           imageUrl: imageUrl,
+          typeLogin: typeLogin,
           rightWidget: Row(
             children: [
               // GestureDetector(
@@ -327,46 +329,52 @@ class _HomePageState extends State<HomePage> {
             //   height: 20,
             // ),
 
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: actionCard(
-                      title: "เปิดเคสให้ทนาย",
-                      icon: "assets/icons/open-case.png",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ConsultPage(),
-                          ),
-                        );
-                      },
+            userType != "lawyer"
+                ? Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: actionCard(
+                                title: "เปิดเคสให้ทนาย",
+                                icon: "assets/icons/open-case.png",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ConsultPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: actionCard(
+                                title: "นัดหมายทนาย",
+                                icon: "assets/icons/appointment-lawyer.png",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => LawyerOnlineList(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 25,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: actionCard(
-                      title: "นัดหมายทนาย",
-                      icon: "assets/icons/appointment-lawyer.png",
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LawyerOnlineList(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  )
+                : Container(),
 
-            const SizedBox(
-              height: 25,
-            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               height: heightCalculate(150),
@@ -421,23 +429,30 @@ class _HomePageState extends State<HomePage> {
                     ],
                   )
                 : Container(),
-            title(
-              title: "หมอความออนไลน์",
-              isRightBtn: true,
-              titleRightBtn: "ดูทั้งหมด",
-              viewAll: () => {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LawyerOnlineList(),
-                  ),
-                ),
-              },
-            ),
-            _buildLawyerOnline(),
-            const SizedBox(
-              height: 80,
-            ),
+
+            userType != "lawyer"
+                ? Column(
+                    children: [
+                      title(
+                        title: "หมอความออนไลน์",
+                        isRightBtn: true,
+                        titleRightBtn: "ดูทั้งหมด",
+                        viewAll: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LawyerOnlineList(),
+                            ),
+                          ),
+                        },
+                      ),
+                      _buildLawyerOnline(),
+                      const SizedBox(
+                        height: 80,
+                      ),
+                    ],
+                  )
+                : Container()
           ],
         ),
       ),

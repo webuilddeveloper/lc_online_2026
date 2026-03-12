@@ -3,13 +3,21 @@ import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:LawyerOnline/splash.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await initializeDateFormatting('th', null);
-
-  await LineSDK.instance.setup('2009412792');
+  
+  // await LineSDK.instance.setup('2009412792');
+  LineSDK.instance.setup('2009412792').then((_) {
+    // ignore: avoid_print
+    print('LineSDK Prepared');
+  });
 
   runApp(const MyApp());
 }

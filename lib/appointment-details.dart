@@ -139,38 +139,38 @@ class _AppointmentDetailsState extends State<AppointmentDetails> {
         child: Column(
           children: [
             appointmentItem(
-                title: 'ชื่อลูกความ', value: widget.model['clientName']),
+                title: 'ชื่อลูกความ', value: widget.model['clientName'] ?? ""),
             SizedBox(height: 10),
             appointmentItem(
-                title: 'ประเภทคดี', value: widget.model['caseType']),
+                title: 'ประเภทคดี', value: widget.model['caseType'] ?? ""),
             SizedBox(height: 10),
             appointmentItem(
-                title: 'ประเภทคดีย่อย', value: widget.model['subCaseType']),
+                title: 'ประเภทคดีย่อย', value: widget.model['subCaseType'] ?? ""),
             SizedBox(height: 10),
             appointmentItem(
                 title: 'วันที่นัดหมาย',
-                value: widget.model['appointmentDate'],
+                value: widget.model['appointmentDate'] ?? "",
                 icon: 'assets/icons/calendar-appointment.png'),
             SizedBox(height: 10),
             appointmentItem(
                 title: 'ช่วงเวลา',
-                value: widget.model['appointmentTime'],
+                value: widget.model['appointmentTime'] ?? "",
                 icon: 'assets/icons/time-appointment.png'),
             SizedBox(height: 10),
-            appointmentItem(title: 'ห้วข้อคดี', value: widget.model['title']),
+            appointmentItem(title: 'ห้วข้อคดี', value: widget.model['title'] ?? ""),
             SizedBox(height: 10),
             appointmentItem(
-                title: 'รายละเอียดเพิ่มเติม', value: widget.model['details']),
+                title: 'รายละเอียดเพิ่มเติม', value: widget.model['details'] ?? ""),
             SizedBox(height: 10),
             appointmentItem(
                 title: 'สถานะการชำระเงิน',
-                value: widget.model['paymentStatus'],
+                value: widget.model['paymentStatus'] ?? "",
                 isStatus: true,
                 statusType: '1'),
             SizedBox(height: 10),
             appointmentItem(
                 title: 'สถานะการนัดหมาย',
-                value: widget.model['appointmentStatus'],
+                value: widget.model['appointmentStatus'] ?? "",
                 isStatus: true,
                 statusType: '2'),
             SizedBox(height: 10),

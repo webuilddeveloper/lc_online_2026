@@ -29,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String userType = "";
   String name = "";
   String imageUrl = '';
+  String typeLogin = "";
 
   @override
   void initState() {
@@ -41,10 +42,13 @@ class _ProfilePageState extends State<ProfilePage> {
     var userType = await storage.read(key: 'userType');
     var imageProfile = await storage.read(key: 'imageUrlSocial');
     var nameProfile = await storage.read(key: 'name');
+    var type = await storage.read(key: 'typeLogin');
+
     setState(() {
-      userType = widget.userType ?? userType.toString();
+      this.userType = widget.userType ?? userType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
+      typeLogin = type.toString();
     });
   }
 
@@ -173,16 +177,19 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       }),
-              menuItem(
-                  title: 'การถูกใจ',
-                  onTap: () => {
+              userType != "lawyer"
+                  ? menuItem(
+                      title: 'การถูกใจ',
+                      onTap: () => {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => FavoriteLawyersPage(),
                           ),
                         ),
-                      }),
+                      },
+                    )
+                  : Container(),
               menuItem(
                   title: 'ประวัตินัดหมาย',
                   onTap: () => {
@@ -194,17 +201,19 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       }),
-              menuItem(
-                title: 'โพสต์ของฉัน',
-                onTap: () => {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PostList(),
-                    ),
-                  ),
-                },
-              ),
+              userType != "lawyer"
+                  ? menuItem(
+                      title: 'โพสต์ของฉัน',
+                      onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PostList(),
+                          ),
+                        ),
+                      },
+                    )
+                  : Container(),
               const SizedBox(height: 20),
 
               const Padding(
@@ -291,15 +300,15 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(100),
-                child: imageUrl != ''
-                    ? Image.network(
+                child: typeLogin == 'local'
+                    ? Image.asset(
                         imageUrl,
                         fit: BoxFit.cover,
                         width: 100,
                         height: 100,
                       )
-                    : Image.asset(
-                        'assets/images/profile-avatar.jpg',
+                    : Image.network(
+                        imageUrl,
                         fit: BoxFit.cover,
                         width: 100,
                         height: 100,

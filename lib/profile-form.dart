@@ -29,6 +29,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   String userType = "";
   String name = "";
   String imageUrl = '';
+  String typeLogin = "";
 
   @override
   void initState() {
@@ -74,11 +75,12 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     var userType = await storage.read(key: 'userType');
     var imageProfile = await storage.read(key: 'imageUrlSocial');
     var nameProfile = await storage.read(key: 'name');
+    var type = await storage.read(key: 'typeLogin');
     setState(() {
-      userType = userType.toString();
+      this.userType = userType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
-
+      typeLogin = type.toString();
       nameController.text = name.toString();
     });
   }
@@ -120,16 +122,35 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                       CircleAvatar(
                         radius: 45,
                         backgroundColor: const Color(0xFF0262EC),
-                        backgroundImage: imageUrl != ''
-                            ? NetworkImage(imageUrl)
-                            : profileImage != null
-                                ? FileImage(profileImage!)
+                        backgroundImage:
+                            (typeLogin == 'local' && profileImage == null)
+                                ? AssetImage(imageUrl)
+                                : profileImage != null
+                                    ? FileImage(profileImage!)
+                                    : NetworkImage(imageUrl),
+                        child: imageUrl != ''
+                            ? null
+                            : profileImage == null
+                                ? const Icon(Icons.person,
+                                    size: 45, color: Colors.white)
                                 : null,
-                        child: imageUrl != '' ? null : profileImage == null
-                            ? const Icon(Icons.person,
-                                size: 45, color: Colors.white)
-                            : null,
                       ),
+                      // ClipRRect(
+                      //   borderRadius: BorderRadius.circular(100),
+                      //   child: typeLogin == 'local'
+                      //       ? Image.asset(
+                      //           imageUrl,
+                      //           fit: BoxFit.cover,
+                      //           width: 100,
+                      //           height: 100,
+                      //         )
+                      //       : Image.network(
+                      //           imageUrl,
+                      //           fit: BoxFit.cover,
+                      //           width: 100,
+                      //           height: 100,
+                      //         ),
+                      // ),
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
@@ -232,17 +253,30 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         if (nameController.text.isEmpty ||
             phoneController.text.isEmpty ||
             emailController.text.isEmpty) {
-          showError("กรุณากรอกข้อมูลให้ครบ");
+          // showError("กรุณากรอกข้อมูลให้ครบ");
+          DialogService.showError(
+            context,
+            title: "กรุณากรอกข้อมูลให้ครบ",
+            message: "",
+          );
           return;
         }
 
         if (!isPhoneValid(phoneController.text)) {
-          showError("เบอร์โทรไม่ถูกต้อง");
+          DialogService.showError(
+            context,
+            title: "เบอร์โทรไม่ถูกต้อง",
+            message: "",
+          );
           return;
         }
 
         if (!isEmailValid(emailController.text)) {
-          showError("อีเมลไม่ถูกต้อง");
+          DialogService.showError(
+            context,
+            title: "อีเมลไม่ถูกต้อง",
+            message: "",
+          );
           return;
         }
 

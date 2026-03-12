@@ -416,7 +416,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
   }
 
   void goBack() async {
-    Navigator.pop(context, false);
+    Navigator.pop(context);
   }
 }
 

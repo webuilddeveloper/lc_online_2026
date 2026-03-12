@@ -4,6 +4,7 @@ appBarHome(
     {String? name = "",
     String? memberType = "",
     String? imageUrl = "",
+    String? typeLogin = "local",
     Widget? rightWidget,
     Function? rightAction,
     Function? profileAction}) {
@@ -51,16 +52,32 @@ appBarHome(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          image: DecorationImage(
-                            image: NetworkImage(imageUrl!),
-                            // assets/images/avatar.png
-                          ),
-                        ),
+                      // Container(
+                      //   width: 32,
+                      //   height: 32,
+                      //   decoration: BoxDecoration(
+                      //     borderRadius: BorderRadius.circular(14),
+                      //     image: DecorationImage(
+                      //       image: NetworkImage(imageUrl!),
+                      //       // assets/images/avatar.png
+                      //     ),
+                      //   ),
+                      // ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: typeLogin == 'local'
+                            ? Image.asset(
+                                imageUrl!,
+                                fit: BoxFit.cover,
+                                width: 32,
+                                height: 32,
+                              )
+                            : Image.network(
+                                imageUrl!,
+                                fit: BoxFit.cover,
+                                width: 32,
+                                height: 32,
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Column(

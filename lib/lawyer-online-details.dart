@@ -1,8 +1,10 @@
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/message-form.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LawyerOnlineDetails extends StatefulWidget {
   LawyerOnlineDetails({Key? key, this.code});
@@ -201,7 +203,9 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AppAppointment(lawyer: code,),
+                  builder: (context) => AppAppointment(
+                    lawyer: code,
+                  ),
                 ),
               );
             },
@@ -321,15 +325,42 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
                               children: [
                                 btmCard(
                                     icon: "assets/icons/phone.png",
-                                    action: () {}),
+                                    action: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MessageFormPage(
+                                            model: model,
+                                          ),
+                                        ),
+                                      );
+                                    }),
                                 const SizedBox(width: 15),
                                 btmCard(
                                     icon: "assets/icons/videocall.png",
-                                    action: () {}),
+                                    action: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MessageFormPage(
+                                            model: model,
+                                          ),
+                                        ),
+                                      );
+                                    }),
                                 const SizedBox(width: 15),
                                 btmCard(
                                     icon: "assets/icons/chat.png",
-                                    action: () {}),
+                                    action: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MessageFormPage(
+                                            model: model,
+                                          ),
+                                        ),
+                                      );
+                                    }),
                               ],
                             ),
                           ],
@@ -455,14 +486,28 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails> {
                     child: Row(
                       children: [
                         socialItem(
-                            icon: "assets/icons/facebook.png", action: () {}),
-                        const SizedBox(width: 15),
-                        socialItem(icon: "assets/icons/ig.png", action: () {}),
-                        const SizedBox(width: 15),
-                        socialItem(icon: "assets/icons/x.png", action: () {}),
+                            icon: "assets/icons/facebook.png",
+                            action: () {
+                              launch("https://www.facebook.com/");
+                            }),
                         const SizedBox(width: 15),
                         socialItem(
-                            icon: "assets/icons/linkin.png", action: () {}),
+                            icon: "assets/icons/ig.png",
+                            action: () {
+                              launch("https://www.instagram.com/");
+                            }),
+                        const SizedBox(width: 15),
+                        socialItem(
+                            icon: "assets/icons/x.png",
+                            action: () {
+                              launch("https://x.com/");
+                            }),
+                        const SizedBox(width: 15),
+                        socialItem(
+                            icon: "assets/icons/linkin.png",
+                            action: () {
+                              launch("https://www.linkedin.com/");
+                            }),
                       ],
                     ),
                   ),

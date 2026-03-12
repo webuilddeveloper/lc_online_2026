@@ -63,6 +63,7 @@ class _LoginPageState extends State<LoginPage>
             ),
 
             SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   const SizedBox(height: 40),
@@ -442,18 +443,21 @@ class _LoginPageState extends State<LoginPage>
           value: '${model['firstName']} ${model['lastName']}',
         );
 
+        await storage.write(
+          key: 'typeLogin',
+          value: 'social',
+        );
+
         // ปิด Loading
         Navigator.pop(context);
 
-        Navigator.pushReplacement(
+        await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MenuPage(),
           ),
         );
       } else {
-        Navigator.pop(context);
-
         DialogService.showError(
           context,
           title: "เข้าสู่ระบบไม่สำเร็จ",
@@ -461,8 +465,6 @@ class _LoginPageState extends State<LoginPage>
         );
       }
     } catch (e) {
-      Navigator.pop(context);
-
       DialogService.showError(
         context,
         title: "เข้าสู่ระบบไม่สำเร็จ",
@@ -509,6 +511,18 @@ class _LoginPageState extends State<LoginPage>
     if (usernameController.text == "lawyer" &&
         passwordController.text == "lawyer") {
       await storage.write(key: 'userType', value: 'lawyer');
+      await storage.write(
+        key: 'name',
+        value: 'ศักดิ์สิทธิ์ พิพากษ์',
+      );
+      await storage.write(
+        key: 'imageUrlSocial',
+        value: 'assets/images/lawyer-avatar-1.png',
+      );
+      await storage.write(
+        key: 'typeLogin',
+        value: 'local',
+      );
 
       Navigator.pushReplacement(
         context,
@@ -519,7 +533,18 @@ class _LoginPageState extends State<LoginPage>
     } else if (usernameController.text == "user" &&
         passwordController.text == "user") {
       await storage.write(key: 'userType', value: 'user');
-
+      await storage.write(
+        key: 'name',
+        value: 'ออกแบบ ทดลอง',
+      );
+      await storage.write(
+        key: 'imageUrlSocial',
+        value: 'assets/images/profile-avatar.jpg',
+      );
+      await storage.write(
+        key: 'typeLogin',
+        value: 'local',
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

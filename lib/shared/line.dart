@@ -9,6 +9,20 @@ Future<LoginResult> loginLine() async {
   );
 }
 
+// Future<LoginResult> loginLine() async {
+//   final loginOption = LoginOption(
+//     false,
+//     "normal",
+//   );
+
+//   final result = await LineSDK.instance.login(
+//     scopes: ["profile", "openid", "email"],
+//     option: loginOption,
+//   );
+
+//   return result;
+// }
+
 void logoutLine() {
   LineSDK.instance.logout();
 }
