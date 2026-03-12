@@ -13,7 +13,11 @@ import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/post-list.dart';
 
 class ProfilePage extends StatefulWidget {
-  ProfilePage({Key? key});
+  ProfilePage({Key? key, this.userType, this.name, this.imageUrl});
+
+  final String? userType;
+  final String? name;
+  final String? imageUrl;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -22,6 +26,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final storage = FlutterSecureStorage();
 
+  String userType = "";
+  String name = "";
+  String imageUrl = '';
+
   @override
   void initState() {
     // canPop = false;
@@ -29,8 +37,15 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
   }
 
-  callRead() {
-    setState(() {});
+  callRead() async {
+    var userType = await storage.read(key: 'userType');
+    var imageProfile = await storage.read(key: 'imageUrlSocial');
+    var nameProfile = await storage.read(key: 'name');
+    setState(() {
+      userType = widget.userType ?? userType.toString();
+      name = nameProfile.toString();
+      imageUrl = imageProfile.toString();
+    });
   }
 
   @override
@@ -88,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'ออกแบบ ทดลอง',
+                    name,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -276,12 +291,19 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(100),
-                child: Image.asset(
-                  'assets/images/profile-avatar.jpg',
-                  fit: BoxFit.cover,
-                  width: 100,
-                  height: 100,
-                ),
+                child: imageUrl != ''
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: 100,
+                        height: 100,
+                      )
+                    : Image.asset(
+                        'assets/images/profile-avatar.jpg',
+                        fit: BoxFit.cover,
+                        width: 100,
+                        height: 100,
+                      ),
               ),
 
               // ปุ่มกล้อง

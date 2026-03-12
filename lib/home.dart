@@ -147,6 +147,8 @@ class _HomePageState extends State<HomePage> {
 
   final storage = FlutterSecureStorage();
   String userType = "";
+  String imageUrl = "";
+  String name = "";
 
   @override
   void initState() {
@@ -156,9 +158,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   callRead() async {
-    var user = await storage.read(key: 'userType');
+    var userType = await storage.read(key: 'userType');
+    var imageProfile = await storage.read(key: 'imageUrlSocial');
+    var nameProfile = await storage.read(key: 'name');
     setState(() {
-      userType = widget.userType ?? user.toString();
+      userType = widget.userType ?? userType.toString();
+      name = nameProfile.toString();
+      imageUrl = imageProfile.toString();
     });
     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10}).then(
       (value) async => {
@@ -180,9 +186,9 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F5),
         appBar: appBarHome(
-          name: 'ออกแบบ ทดลอง',
+          name: name ?? 'ผู้ใช้งาน',
           memberType: userType == 'user' ? 'บุคคลทั่วไป' : 'หมอความ',
-          imageUrl: 'assets/images/avatar.png',
+          imageUrl: imageUrl,
           rightWidget: Row(
             children: [
               // GestureDetector(
@@ -423,7 +429,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const LawyerOnlineList(),
+                    builder: (context) => LawyerOnlineList(),
                   ),
                 ),
               },
@@ -800,36 +806,76 @@ class _HomePageState extends State<HomePage> {
         children: [
           Expanded(
             child: _lawTypeItem(
-                title: "กฎหมายอาญา",
-                icons: "assets/icons/law-type-1.png",
-                onTap: () => {}),
+              title: "กฏหมายแพ่งและอาญา",
+              icons: "assets/icons/law-type-1.png",
+              onTap: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LawyerOnlineList(
+                      lawType: "กฏหมายแพ่งและอาญา",
+                    ),
+                  ),
+                ),
+              },
+            ),
           ),
           const SizedBox(
             width: 25,
           ),
           Expanded(
             child: _lawTypeItem(
-                title: "กฎหมาย\nครอบครัว",
-                icons: "assets/icons/law-type-2.png",
-                onTap: () => {}),
+              title: "กฎหมายครอบครัว",
+              icons: "assets/icons/law-type-2.png",
+              onTap: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LawyerOnlineList(
+                      lawType: "กฏหมายครอบครัว",
+                    ),
+                  ),
+                ),
+              },
+            ),
           ),
           const SizedBox(
             width: 25,
           ),
           Expanded(
             child: _lawTypeItem(
-                title: "กฎหมายบริษัท",
-                icons: "assets/icons/law-type-3.png",
-                onTap: () => {}),
+              title: "กฎหมายบริษัท",
+              icons: "assets/icons/law-type-3.png",
+              onTap: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LawyerOnlineList(
+                      lawType: "กฏหมายแรงงาน",
+                    ),
+                  ),
+                ),
+              },
+            ),
           ),
           const SizedBox(
             width: 25,
           ),
           Expanded(
             child: _lawTypeItem(
-                title: "กฎหมายธุรกิจ",
-                icons: "assets/icons/law-type-4.png",
-                onTap: () => {}),
+              title: "กฎหมายธุรกิจ",
+              icons: "assets/icons/law-type-4.png",
+              onTap: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LawyerOnlineList(
+                      lawType: "ธุรกิจและการค้า",
+                    ),
+                  ),
+                ),
+              },
+            ),
           ),
         ],
       ),
@@ -879,7 +925,7 @@ class _HomePageState extends State<HomePage> {
   _lawTypeItem(
       {required String title, required String icons, Function? onTap}) {
     return GestureDetector(
-      onTap: () => onTap,
+      onTap: () => onTap!(),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,

@@ -57,7 +57,8 @@ appBarHome(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
                           image: DecorationImage(
-                            image: AssetImage(imageUrl!),
+                            image: NetworkImage(imageUrl!),
+                            // assets/images/avatar.png
                           ),
                         ),
                       ),

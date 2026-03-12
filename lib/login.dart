@@ -1,6 +1,9 @@
 import 'package:LawyerOnline/change-password.dart';
+import 'package:LawyerOnline/component/comming-soon.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
+import 'package:LawyerOnline/shared/apple_firebase.dart';
+import 'package:LawyerOnline/shared/line.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -182,7 +185,8 @@ class _LoginPageState extends State<LoginPage>
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => ChangePasswordPage(),
+                                      builder: (context) =>
+                                          const ChangePasswordPage(),
                                     ),
                                   );
                                 },
@@ -230,28 +234,113 @@ class _LoginPageState extends State<LoginPage>
 
                           const SizedBox(height: 20),
 
-                          /// Divider
-                          // Row(
-                          //   children: const [
-                          //     Expanded(child: Divider()),
-                          //     Padding(
-                          //       padding: EdgeInsets.symmetric(horizontal: 10),
-                          //       child: Text("หรือ"),
-                          //     ),
-                          //     Expanded(child: Divider()),
-                          //   ],
-                          // ),
+                          //  Divider
+                          const Row(
+                            children: [
+                              Expanded(child: Divider()),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: Text("หรือ"),
+                              ),
+                              Expanded(child: Divider()),
+                            ],
+                          ),
 
-                          // const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                          // /// Demo user
-                          // const Center(
-                          //   child: Text(
-                          //     "Demo Login\nlawyer / lawyer\nuser / user",
-                          //     textAlign: TextAlign.center,
-                          //     style: TextStyle(color: Colors.grey),
-                          //   ),
-                          // ),
+                          /// Demo user
+                          Center(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  socialItem(
+                                      icon: "assets/icons/facebook.png",
+                                      action: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const ComingSoonPage(
+                                              title: "Comming Soon",
+                                              lottieUrl:
+                                                  "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                  const SizedBox(width: 15),
+                                  // socialItem(
+                                  //     icon: "assets/icons/ig.png",
+                                  //     action: () {}),
+                                  // const SizedBox(width: 15),
+                                  // socialItem(
+                                  //     icon: "assets/icons/x.png",
+                                  //     action: () {}),
+                                  // const SizedBox(width: 15),
+                                  socialItem(
+                                      icon: "assets/icons/apple.png",
+                                      action: () {
+                                        // pressApple();
+
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const ComingSoonPage(
+                                              title: "Comming Soon",
+                                              lottieUrl:
+                                                  "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                  const SizedBox(width: 15),
+                                  socialItem(
+                                      icon: "assets/icons/google.png",
+                                      action: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const ComingSoonPage(
+                                              title: "Comming Soon",
+                                              lottieUrl:
+                                                  "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                  const SizedBox(width: 15),
+                                  socialItem(
+                                    icon: "assets/icons/line.png",
+                                    isLine: true,
+                                    action: () {
+                                      pressLine();
+                                    },
+                                  ),
+                                  const SizedBox(width: 15),
+                                  socialItem(
+                                    icon: "assets/icons/thaiid.png",
+                                    isThaiid: true,
+                                    action: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ComingSoonPage(
+                                            title: "Comming Soon",
+                                            lottieUrl:
+                                                "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -263,6 +352,157 @@ class _LoginPageState extends State<LoginPage>
         ),
       ),
     );
+  }
+
+  Widget socialItem(
+      {String? icon,
+      Function? action,
+      bool isLine = false,
+      bool isThaiid = false}) {
+    return GestureDetector(
+      onTap: () => action?.call(),
+      child: Container(
+        width: 42,
+        height: 42,
+        alignment: Alignment.center,
+        // padding: const EdgeInsets.symmetric(
+        //   horizontal: 12,
+        //   vertical: 10,
+        // ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.8),
+          border: Border.all(
+            width: 1,
+            color: const Color(0xFFDBDBDB),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.asset(
+            icon ?? '',
+            width: isThaiid
+                ? 42
+                : isLine
+                    ? 25
+                    : 18,
+            height: isThaiid
+                ? 42
+                : isLine
+                    ? 25
+                    : 18,
+          ),
+        ),
+      ),
+    );
+  }
+
+  pressLine() async {
+    try {
+      // เรียก LINE LOGIN ก่อน
+      var obj = await loginLine();
+
+      // เมื่อกลับมาที่แอพแล้วค่อยโชว์ Loading
+      DialogService.showLoading(context);
+
+      final idToken = obj.accessToken.idToken;
+      final userEmail = (idToken != null) ? idToken['email'] ?? '' : '';
+
+      if (obj != null) {
+        var model = {
+          "username": (userEmail != '') ? userEmail : obj.userProfile!.userId,
+          "email": userEmail,
+          "imageUrl": (obj.userProfile!.pictureUrl != '')
+              ? obj.userProfile!.pictureUrl
+              : '',
+          "firstName": obj.userProfile!.displayName,
+          "lastName": '',
+          "lineID": obj.userProfile!.userId
+        };
+
+        await storage.write(
+          key: 'categorySocial',
+          value: 'Line',
+        );
+
+        await storage.write(
+          key: 'userType',
+          value: 'user',
+        );
+
+        await storage.write(
+          key: 'imageUrlSocial',
+          value: (obj.userProfile!.pictureUrl != '')
+              ? obj.userProfile!.pictureUrl
+              : '',
+        );
+
+        await storage.write(
+          key: 'name',
+          value: '${model['firstName']} ${model['lastName']}',
+        );
+
+        // ปิด Loading
+        Navigator.pop(context);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MenuPage(),
+          ),
+        );
+      } else {
+        Navigator.pop(context);
+
+        DialogService.showError(
+          context,
+          title: "เข้าสู่ระบบไม่สำเร็จ",
+          message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+
+      DialogService.showError(
+        context,
+        title: "เข้าสู่ระบบไม่สำเร็จ",
+        message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
+      );
+    }
+  }
+
+  pressApple() async {
+    var obj = await signInWithApple();
+    var model = {
+      "username": obj!.user?.email ?? obj.user?.uid,
+      "email": obj.user?.email ?? '',
+      "imageUrl": '',
+      "firstName": obj.user?.email,
+      "lastName": '',
+      "appleID": obj.user?.uid
+    };
+    print(
+        "---------------------------------------------------------------------");
+    print(model);
+    print(
+        "---------------------------------------------------------------------");
+    // Dio dio = Dio();
+    // var response = await dio.post(
+    //   '${server}m/v2/register/apple/login',
+    //   data: model,
+    // );
+    // createStorageApp(
+    //   model: response.data['objectData'],
+    //   category: 'apple',
+    // );
+    // if (obj != null) {
+    //   Navigator.pushReplacement(
+    //     context,
+    //     MaterialPageRoute(
+    //       builder: (context) => MenuV4(),
+    //     ),
+    //   );
+    // }
   }
 
   login() async {

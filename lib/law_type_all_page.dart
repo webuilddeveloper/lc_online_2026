@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:flutter/material.dart';
 import 'law_type_detail_page.dart';
 
@@ -7,24 +8,32 @@ class LawTypeAllPage extends StatelessWidget {
 
   final List lawTypes = [
     {
-      "title": "กฎหมายอาญา",
+      "code": "0",
+      "title": "กฏหมายแพ่งและอาญา",
       "icon": "assets/icons/law-type-1.png",
-      "desc": "เกี่ยวกับคดีอาญา เช่น ลักทรัพย์ ทำร้ายร่างกาย"
+      "desc": "เกี่ยวกับคดีอาญา เช่น ลักทรัพย์ ทำร้ายร่างกาย",
+      "lawType": "กฏหมายแพ่งและอาญา"
     },
     {
-      "title": "ครอบครัว",
+      "code": "1",
+      "title": "กฎหมายครอบครัว",
       "icon": "assets/icons/law-type-2.png",
-      "desc": "คดีแพ่ง เช่น หนี้สิน สัญญา"
+      "desc": "คดีแพ่ง เช่น หนี้สิน สัญญา",
+      "lawType": "กฏหมายครอบครัว"
     },
     {
-      "title": "บริษัท",
+      "code": "2",
+      "title": "กฎหมายบริษัท",
       "icon": "assets/icons/law-type-3.png",
-      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
+      "desc": "บริษัท หุ้นส่วน ธุรกิจ",
+      "lawType": "กฏหมายแรงงาน"
     },
     {
-      "title": "ธุรกิจ",
+      "code": "3",
+      "title": "กฎหมายธุรกิจ",
       "icon": "assets/icons/law-type-4.png",
-      "desc": "บริษัท หุ้นส่วน ธุรกิจ"
+      "desc": "บริษัท หุ้นส่วน ธุรกิจ",
+      "lawType": "ธุรกิจและการค้า"
     },
   ];
 
@@ -52,10 +61,18 @@ class LawTypeAllPage extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (_) => LawTypeDetailPage(data: item),
+              //   ),
+              // );
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => LawTypeDetailPage(data: item),
+                  builder: (context) => LawyerOnlineList(
+                    lawType: item['lawType'],
+                  ),
                 ),
               );
             },

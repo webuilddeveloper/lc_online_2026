@@ -17,7 +17,9 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 class LawyerOnlineList extends StatefulWidget {
-  const LawyerOnlineList({super.key});
+  LawyerOnlineList({super.key, this.lawType});
+
+  String? lawType;
 
   @override
   State<LawyerOnlineList> createState() => _LawyerOnlineListState();
@@ -270,95 +272,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
     getCurrentLocation();
     super.initState();
 
-    cardController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    cardAnimation = Tween<double>(
-      begin: -200,
-      end: 0,
-    ).animate(
-      CurvedAnimation(
-        parent: cardController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    // cardLawyerController = AnimationController(
-    //   vsync: this,
-    //   duration: const Duration(milliseconds: 300),
-    // );
-
-    // cardLawyerAnimation = Tween<double>(
-    //   begin: -200,
-    //   end: 0,
-    // ).animate(
-    //   CurvedAnimation(
-    //     parent: cardLawyerController,
-    //     curve: Curves.easeOut,
-    //   ),
-    // );
-
-    rippleController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-
-    addAnimationCardLawyer();
-  }
-
-  addAnimationCardLawyer() {
-    cardLawyerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-
-    cardLawyerAnimation = Tween<double>(
-      begin: -400,
-      end: 0,
-    ).animate(cardLawyerController)
-      ..addListener(() {
-        // moveCar();
-      })
-      ..addStatusListener(
-        (status) {
-          if (status == AnimationStatus.completed) {
-            setState(
-              () {
-                isSearching = false;
-                lawyerApproveDetail = {
-                  "code": "0",
-                  "name": "ศักดิ์สิทธิ์ พิพากษ์",
-                  "scroll": 4.8,
-                  "cost": "ไม่เสียค่าใช้จ่าย",
-                  "costUnit": "/hr",
-                  "imageUrl": "assets/images/lawyer-avatar-1.png",
-                  "experience": "11+ years",
-                  "skills": [
-                    "Family lawyer",
-                    "Estate planning lawyer",
-                  ]
-                };
-
-                found = true;
-              },
-            );
-          }
-        },
-      );
-  }
-
-  void moveCar() {
-    double lat = lerpDouble(carLocation.latitude, userLocation.latitude,
-        cardLawyerAnimation.value)!;
-
-    double lng = lerpDouble(carLocation.longitude, userLocation.longitude,
-        cardLawyerAnimation.value)!;
-
-    setState(() {
-      carLocation = LatLng(lat, lng);
-    });
+    selectedLawType = widget.lawType;
+    filteredLawyers();
   }
 
   Future<void> getCurrentLocation() async {
@@ -663,15 +578,24 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   _buildLawyerOnline() {
+    final lawyers = filteredLawyers();
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-      itemCount: lawyerOnlineList.length,
+      itemCount: lawyers.length,
       itemBuilder: (context, index) =>
-          _lawyerOnlineItem(lawyerOnlineList[index], onTap: () => {}),
+          _lawyerOnlineItem(lawyers[index], onTap: () => {}),
       separatorBuilder: (BuildContext context, int index) => const SizedBox(
         height: 15,
       ),
     );
+  }
+
+  List<dynamic> filteredLawyers() {
+    if (selectedLawType == null) return lawyerOnlineList;
+
+    return lawyerOnlineList.where((lawyer) {
+      return lawyer['skills'].contains(selectedLawType);
+    }).toList();
   }
 
   _lawyerOnlineItem(dynamic model, {Function? onTap}) {
@@ -800,14 +724,6 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         ),
       ),
     );
-  }
-
-  List<dynamic> filteredLawyers() {
-    if (selectedLawType == null) return lawyerOnlineList;
-
-    return lawyerOnlineList.where((lawyer) {
-      return lawyer['skills'].contains(selectedLawType);
-    }).toList();
   }
 
   tabItem({required String title, bool active = false, Function? onTap}) {

@@ -36,6 +36,8 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
   };
 
   String? selectedCategory = "0";
+  String? selectedCategoryTitle = "";
+
 
   int? trueCount;
 
@@ -144,6 +146,7 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value;
+                  selectedCategoryTitle = postCategoryList.firstWhere((x) => x['code'] == value)['title'];
                 });
               },
             ),
@@ -249,7 +252,7 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
             GestureDetector(
               onTap: () => {
                 // goBack()
-                Navigator.pop(context, "คดีแพ่ง"),
+                Navigator.pop(context, selectedCategoryTitle),
               },
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),

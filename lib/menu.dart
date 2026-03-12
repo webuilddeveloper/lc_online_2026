@@ -8,6 +8,7 @@ import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:LawyerOnline/message.dart';
 import 'package:LawyerOnline/my-appointment.dart';
 import 'package:LawyerOnline/profile.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MenuPage extends StatefulWidget {
   MenuPage({Key? key, this.pageIndex, this.modelprofile, this.userType})
@@ -15,14 +16,14 @@ class MenuPage extends StatefulWidget {
 
   final int? pageIndex;
   final modelprofile;
- String? userType;
+  String? userType;
 
   @override
   State<MenuPage> createState() => _MenuPageState();
 }
 
 class _MenuPageState extends State<MenuPage> {
-  String imageUrl = '';
+  
   List<Widget> pages = <Widget>[];
   int _currentPage = 0;
   DateTime? currentBackPressTime;
@@ -30,18 +31,39 @@ class _MenuPageState extends State<MenuPage> {
   final TextEditingController chatController = TextEditingController();
   final storage = FlutterSecureStorage();
   String userType = "";
+  String name = "";
+  String imageUrl = '';
 
   @override
   void initState() {
     callRead();
     super.initState();
+    Future.delayed(Duration.zero, () {
+      requestPermissions();
+    });
     // _loadUserProfile();
   }
 
+  Future requestPermissions() async {
+    var cameraStatus = await Permission.camera.request();
+    var micStatus = await Permission.microphone.request();
+
+    if (cameraStatus.isGranted && micStatus.isGranted) {
+      print("Permission granted");
+    } else {
+      print("Permission denied");
+    }
+  }
+
   callRead() async {
-    var user = await storage.read(key: 'userType');
+    var userType = await storage.read(key: 'userType');
+    var imageProfile = await storage.read(key: 'imageUrlSocial');
+    var nameProfile = await storage.read(key: 'name');
     setState(() {
-      userType = widget.userType ?? user.toString();
+      userType = widget.userType ?? userType.toString();
+      name = nameProfile.toString();
+      imageUrl = imageProfile.toString();
+      
       pages = <Widget>[
         HomePage(),
         MessagePage(),
@@ -113,7 +135,7 @@ class _MenuPageState extends State<MenuPage> {
                 child: _bottomItem("assets/icons/profile.png", 3,
                     title: 'โปรไฟล์'),
               )
- 
+
               // _bottomItem(
               //   Icons.person,
               //   3,

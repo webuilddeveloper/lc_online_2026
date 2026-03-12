@@ -48,11 +48,11 @@ class DialogService {
         return _dialogLayout(
           context,
           animationUrl:
-              "https://assets10.lottiefiles.com/packages/lf20_jbrw3hcz.json",
+              "https://assets6.lottiefiles.com/packages/lf20_bhw1ul4g.json",
           title: title,
           message: message,
           buttonText: "ปิด",
-          buttonColor: Colors.red,
+          buttonColor: Color(0xFF0262EC),
           onPressed: () => Navigator.pop(context),
         );
       },
@@ -209,7 +209,8 @@ class DialogService {
                   child: Text(
                     buttonText,
                     style: TextStyle(
-                            color: Colors.white
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600
                           ),
                   ),
                 ),

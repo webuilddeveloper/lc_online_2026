@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:LawyerOnline/splash.dart';
 
-void main() async{
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await initializeDateFormatting('th', null);
+
+  await LineSDK.instance.setup('2009412792');
+
   runApp(const MyApp());
 }
 

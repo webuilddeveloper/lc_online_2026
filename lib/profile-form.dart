@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -23,6 +24,11 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   late Animation<double> _scaleAnimation;
   File? profileImage;
   final ImagePicker picker = ImagePicker();
+  final storage = FlutterSecureStorage();
+
+  String userType = "";
+  String name = "";
+  String imageUrl = '';
 
   @override
   void initState() {
@@ -33,6 +39,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
     _scaleAnimation =
         CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+    callRead();
   }
 
   @override
@@ -61,6 +68,19 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         profileImage = File(image.path);
       });
     }
+  }
+
+  callRead() async {
+    var userType = await storage.read(key: 'userType');
+    var imageProfile = await storage.read(key: 'imageUrlSocial');
+    var nameProfile = await storage.read(key: 'name');
+    setState(() {
+      userType = userType.toString();
+      name = nameProfile.toString();
+      imageUrl = imageProfile.toString();
+
+      nameController.text = name.toString();
+    });
   }
 
   @override
@@ -100,10 +120,12 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                       CircleAvatar(
                         radius: 45,
                         backgroundColor: const Color(0xFF0262EC),
-                        backgroundImage: profileImage != null
-                            ? FileImage(profileImage!)
-                            : null,
-                        child: profileImage == null
+                        backgroundImage: imageUrl != ''
+                            ? NetworkImage(imageUrl)
+                            : profileImage != null
+                                ? FileImage(profileImage!)
+                                : null,
+                        child: imageUrl != '' ? null : profileImage == null
                             ? const Icon(Icons.person,
                                 size: 45, color: Colors.white)
                             : null,
@@ -125,7 +147,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 ),
 
                 const SizedBox(height: 25),
-
                 textField(
                   title: "ชื่อ - นามสกุล",
                   controller: nameController,
