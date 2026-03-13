@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,18 +32,17 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   String? selectedCategory = "0";
 
   List<dynamic> statusRangeList = [
-    {"code": "0", "title": "วันนี้"},
-    {"code": "1", "title": "สัปดาห์นี้"},
-    {"code": "2", "title": "เดือนนี้"},
+    {"code": "0", "title": "ว่าง"},
+    {"code": "1", "title": "ไม่ว่าง"},
   ];
-  String? selectedStatusRange = "1";
+  String? selectedStatusRange = "0";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "ตารางวันปรึกษา",
+        title: "สถานะวันปรึกษา",
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -67,7 +67,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                       _startController.text = "";
                       _endController.text = "";
                       costPerHrController.text = "";
-                      selectedCategory = '';
+                      selectedCategory = '0';
                     })
 
                     // successDialog()
@@ -129,7 +129,17 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                     //     goBack();
                     //   },
                     // ).show()
-                    dialogSuccess()
+
+                    // dialogSuccess()
+
+                    DialogService.showSuccess(
+                      context,
+                      title: "บันทึกข้อมูลแล้ว",
+                      message: "ระบบได้บันทึกค่าเรียบร้อย",
+                      onClose: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -188,7 +198,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
             ],
           ),
           const SizedBox(height: 20),
-          textField(title: 'ราคาต่อชั่วโมง'),
+          textField(title: 'ราคาต่อชั่วโมง', hint: "บาท/ชั่วโมง"),
           const SizedBox(height: 20),
           _buildStatusRange(title: 'สถานะ')
         ],
@@ -345,7 +355,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     );
   }
 
-  textField({Function? onChange, String title = ''}) {
+  textField({Function? onChange, String title = '', String hint = '',}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,7 +366,17 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         const SizedBox(height: 5),
         TextField(
           controller: costPerHrController,
+          style: GoogleFonts.prompt(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             border: OutlineInputBorder(

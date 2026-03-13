@@ -101,11 +101,21 @@ class DialogService {
                   children: [
                     Expanded(
                       child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          // padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: Color(0xFF0262EC),
+                            width: 1,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
                         onPressed: () => Navigator.pop(context),
                         child: const Text(
                           "ยกเลิก",
                           style: TextStyle(
-                            color: Colors.white
+                            color: Color(0xFF0262EC),
                           ),
                         ),
                       ),

@@ -255,7 +255,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       appBar: appBar(
         title: "หมอความออนไลน์",
         backBtn: true,
-        rightBtn: true,
+        rightBtn: false,
         rightAction: () {},
         backAction: () => Navigator.pop(context),
       ),

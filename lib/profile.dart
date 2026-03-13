@@ -167,16 +167,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
-              menuItem(
-                  title: 'ตารางวันปรึกษา',
-                  onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ConsultationSchedule(),
-                          ),
-                        ),
-                      }),
               userType != "lawyer"
                   ? menuItem(
                       title: 'การถูกใจ',
@@ -226,6 +216,20 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
+              userType != "user"
+                  ? menuItem(
+                      title: 'สถานะวันปรึกษา',
+                      onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ConsultationSchedule(),
+                          ),
+                        ),
+                      },
+                    )
+                  : Container(),
+
               menuItem(
                   title: 'ตั้งค่าการแจ้งเตือน',
                   onTap: () => {

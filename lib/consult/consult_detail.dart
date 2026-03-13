@@ -1,80 +1,50 @@
+import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class ConsultDetailPage extends StatelessWidget {
+class ConsultDetailPage extends StatefulWidget {
   final Map<String, dynamic> lawyer;
   const ConsultDetailPage({super.key, required this.lawyer});
 
   @override
+  State<ConsultDetailPage> createState() => _ConsultDetailPageState();
+}
+
+class _ConsultDetailPageState extends State<ConsultDetailPage> {
+  bool isFavorite = false;
+
+  @override
   Widget build(BuildContext context) {
-    final color = Color(lawyer['color'] as int);
+    final color = Color(widget.lawyer['color'] as int);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-            child: const Icon(Icons.chevron_left, color: Colors.black87),
-          ),
-        ),
-        title: const Text(
-          'หมอความออนไลน์',
-          style: TextStyle(
-              color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        centerTitle: true,
-        actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.favorite_border,
-                  color: Colors.black87, size: 20),
-              onPressed: () {},
-            ),
-          ),
-        ],
+      appBar: appBar(
+        title: "รายละเอียดหมอความ",
+        backBtn: true,
+        rightBtn: true,
+        backAction: () => Navigator.pop(context, false),
+        isFavorite: isFavorite,
+        rightAction: () {
+          setState(() {
+            isFavorite = !isFavorite;
+          });
+        },
       ),
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: [
-                  // ── Header Card ──
-                  _buildHeaderCard(context, color),
-                  const SizedBox(height: 16),
-                  // ── About Card ──
-                  _buildAboutCard(lawyer),
-                ],
-              ),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+              children: [
+                _buildHeaderCard(context, color),
+                const SizedBox(height: 16),
+                _buildAboutCard(widget.lawyer),
+              ],
             ),
           ),
-          // ── Bottom Button ──
           _buildBookingButton(context),
         ],
       ),
@@ -97,7 +67,6 @@ class ConsultDetailPage extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Background decorative lines (like in screenshot)
           Positioned(
             right: 0,
             top: 0,
@@ -118,7 +87,7 @@ class ConsultDetailPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          lawyer['name'] as String,
+                          widget.lawyer['name'] as String,
                           style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
@@ -128,7 +97,7 @@ class ConsultDetailPage extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              '${lawyer['rating']}',
+                              '${widget.lawyer['rating']}',
                               style: const TextStyle(
                                   color: Color(0xFF0262EC),
                                   fontWeight: FontWeight.w700,
@@ -139,40 +108,70 @@ class ConsultDetailPage extends StatelessWidget {
                                 color: Color(0xFFFFC107), size: 18),
                           ],
                         ),
-
                         const SizedBox(height: 14),
-                        // ── Contact buttons ──
                         Row(
                           children: [
-                            _contactBtn(Icons.phone_outlined),
-                            const SizedBox(width: 10),
-                            _contactBtn(Icons.videocam_outlined),
-                            const SizedBox(width: 10),
-                            _contactBtn(Icons.chat_bubble_outline),
+                            btmCard(
+                                icon: "assets/icons/phone.png",
+                                action: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MessageFormPage(
+                                        model: widget.lawyer,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                            const SizedBox(width: 15),
+                            btmCard(
+                                icon: "assets/icons/videocall.png",
+                                action: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MessageFormPage(
+                                        model: widget.lawyer,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                            const SizedBox(width: 15),
+                            btmCard(
+                                icon: "assets/icons/chat.png",
+                                action: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MessageFormPage(
+                                        model: widget.lawyer,
+                                      ),
+                                    ),
+                                  );
+                                }),
                           ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Lawyer photo
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       width: 110,
                       height: 130,
                       color: const Color(0xFFF2F4F7),
-                      child: lawyer['imageUrl'] != null
+                      child: widget.lawyer['imageUrl'] != null
                           ? Image.network(
-                              lawyer['imageUrl'] as String,
+                              widget.lawyer['imageUrl'] as String,
                               fit: BoxFit.cover,
                             )
                           : Center(
                               child: Text(
-                                lawyer['avatar'] as String,
+                                widget.lawyer['avatar'] as String,
                                 style: TextStyle(
                                     fontSize: 48,
-                                    color: Color(lawyer['color'] as int),
+                                    color: Color(widget.lawyer['color'] as int),
                                     fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -187,15 +186,31 @@ class ConsultDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _contactBtn(IconData icon) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2F4F7),
-        borderRadius: BorderRadius.circular(12),
+  Widget btmCard({String? icon, Function? action}) {
+    return GestureDetector(
+      onTap: () => action?.call(),
+      child: Container(
+        width: 35,
+        height: 35,
+        alignment: Alignment.center,
+        // padding: const EdgeInsets.symmetric(
+        //   horizontal: 12,
+        //   vertical: 10,
+        // ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(12.8),
+          border: Border.all(
+            width: 1,
+            color: const Color(0xFFDBDBDB),
+          ),
+        ),
+        child: Image.asset(
+          icon ?? '',
+          width: 16,
+          height: 16,
+        ),
       ),
-      child: Icon(icon, color: Colors.black54, size: 20),
     );
   }
 
@@ -223,7 +238,6 @@ class ConsultDetailPage extends StatelessWidget {
                   fontSize: 16,
                   color: Color(0xFF1A2340))),
           const SizedBox(height: 14),
-          // Specialty tags
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -244,7 +258,6 @@ class ConsultDetailPage extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(color: Color(0xFFEEF2F5)),
           const SizedBox(height: 16),
-          // Stats row
           Row(
             children: [
               _statBox('🏆', '148+', 'Cases Won'),
@@ -263,13 +276,29 @@ class ConsultDetailPage extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _socialBtn('f'),
-              const SizedBox(width: 12),
-              _socialBtnIcon(Icons.camera_alt_outlined),
-              const SizedBox(width: 12),
-              _socialBtn('𝕏'),
-              const SizedBox(width: 12),
-              _socialBtn('in'),
+              socialItem(
+                  icon: "assets/icons/facebook.png",
+                  action: () {
+                    launch("https://www.facebook.com/");
+                  }),
+              const SizedBox(width: 15),
+              socialItem(
+                  icon: "assets/icons/ig.png",
+                  action: () {
+                    launch("https://www.instagram.com/");
+                  }),
+              const SizedBox(width: 15),
+              socialItem(
+                  icon: "assets/icons/x.png",
+                  action: () {
+                    launch("https://x.com/");
+                  }),
+              const SizedBox(width: 15),
+              socialItem(
+                  icon: "assets/icons/linkin.png",
+                  action: () {
+                    launch("https://www.linkedin.com/");
+                  }),
             ],
           ),
         ],
@@ -305,20 +334,30 @@ class ConsultDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _socialBtn(String label) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFDDE3EE)),
-      ),
-      child: Center(
-        child: Text(label,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Color(0xFF1A2340))),
+  Widget socialItem({String? icon, Function? action}) {
+    return GestureDetector(
+      onTap: () => action?.call(),
+      child: Container(
+        width: 42,
+        height: 42,
+        alignment: Alignment.center,
+        // padding: const EdgeInsets.symmetric(
+        //   horizontal: 12,
+        //   vertical: 10,
+        // ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.8),
+          border: Border.all(
+            width: 1,
+            color: const Color(0xFFDBDBDB),
+          ),
+        ),
+        child: Image.asset(
+          icon ?? '',
+          width: 18,
+          height: 18,
+        ),
       ),
     );
   }
@@ -356,7 +395,7 @@ class ConsultDetailPage extends StatelessWidget {
           ),
           child: const Center(
             child: Text(
-              'จองนัดหมาย ',
+              'จองนัดหมาย',
               style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -446,7 +485,7 @@ class ConsultDetailPage extends StatelessWidget {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ConsultStatusPage(lawyer: lawyer),
+                      builder: (_) => ConsultStatusPage(lawyer: widget.lawyer),
                     ),
                   );
                 },
@@ -470,5 +509,9 @@ class ConsultDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void goBack(value) async {
+    Navigator.pop(context, value);
   }
 }
