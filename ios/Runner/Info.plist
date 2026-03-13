@@ -66,6 +66,10 @@
 				</array>
 			</dict>
 		</array>
+	<key>NSBonjourServices</key>
+	<array>
+	<string>_dartobservatory._tcp</string>
+	</array>
 
 	<key>NSMicrophoneUsageDescription</key>
 	<string>แอปนี้ต้องใช้ไมโครโฟนสำหรับการสนทนาและให้คำปรึกษากฎหมายผ่านเสียง</string>

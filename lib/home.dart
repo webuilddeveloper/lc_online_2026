@@ -14,6 +14,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key, this.userType});
@@ -156,6 +157,23 @@ class _HomePageState extends State<HomePage> {
     // canPop = false;
     callRead();
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      requestPermissions();
+    });
+  }
+
+  Future<void> requestPermissions() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.camera,
+      Permission.microphone,
+      Permission.photos,
+      Permission.location,
+    ].request();
+
+    // เช็คว่าได้รับอนุญาตไหม
+    if (statuses[Permission.camera]!.isDenied) {
+      // แจ้งผู้ใช้
+    }
   }
 
   callRead() async {
