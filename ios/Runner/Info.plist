@@ -83,5 +83,11 @@
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>แอพต้องการเข้าถึงตำแหน่งของคุณเพื่อให้สามารถค้นหาทนายใกล้คุณได้</string>
 
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>แอปนี้ต้องใช้ Bluetooth สำหรับการเชื่อมต่อเสียงระหว่างวิดีโอคอล</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>แอปนี้ต้องใช้ Bluetooth สำหรับการเชื่อมต่อเสียงระหว่างวิดีโอคอล</string>
+<key>NSLocalNetworkUsageDescription</key>
+<string>Lawyer App wants to use your local network</string>
 </dict>
 </plist>

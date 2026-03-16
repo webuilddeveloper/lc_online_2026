@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:LawyerOnline/splash.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -12,6 +15,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await initializeDateFormatting('th', null);
+
+  if (Platform.isIOS) {
+    await [Permission.camera, Permission.microphone].request();
+  }
   
   // await LineSDK.instance.setup('2009412792');
   LineSDK.instance.setup('2009412792').then((_) {

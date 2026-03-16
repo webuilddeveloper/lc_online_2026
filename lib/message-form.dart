@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
+// import 'package:hms_room_kit_fixed/hms_room_kit_fixed.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class MessageFormPage extends StatefulWidget {
@@ -323,24 +325,25 @@ class _MessageFormPageState extends State<MessageFormPage> {
       title: "คำแนะนำก่อนเข้าห้อง",
       message: "กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now",
       onConfirm: () async {
-        // request ก่อนเพื่อให้ iOS popup ถ้ายังไม่เคยอนุญาต
-        await [Permission.camera, Permission.microphone].request();
+        // ✅ ตาม 100ms docs: iOS ให้ OS จัดการ permission เอง ไม่ต้อง request
+        if (!Platform.isIOS) {
+          await Permission.camera.request();
+          await Permission.microphone.request();
 
-        // block เฉพาะ permanentlyDenied เท่านั้น
-        final camDenied = await Permission.camera.isPermanentlyDenied;
-        final micDenied = await Permission.microphone.isPermanentlyDenied;
-
-        if (camDenied || micDenied) {
-          DialogService.showConfirm(
-            context,
-            title: "ต้องเปิดการเข้าถึงใน Settings",
-            message: "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
-            onConfirm: () => openAppSettings(),
-          );
-          return;
+          final camDenied = await Permission.camera.isPermanentlyDenied;
+          final micDenied = await Permission.microphone.isPermanentlyDenied;
+          if (camDenied || micDenied) {
+            DialogService.showConfirm(
+              context,
+              title: "ต้องเปิดการเข้าถึงใน Settings",
+              message: "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
+              onConfirm: () => openAppSettings(),
+            );
+            return;
+          }
         }
 
-        // เข้า HMSPrebuilt เลย — HMS มี permission flow ของตัวเองอยู่แล้ว
+        // เข้า HMS ได้เลย — iOS ให้ HMSPrebuilt จัดการ permission เอง
         final navigator = Navigator.of(context);
         Navigator.push(
           context,
