@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 class ConsultPage extends StatefulWidget {
   const ConsultPage({super.key});
@@ -16,8 +17,8 @@ class ConsultPage extends StatefulWidget {
 class _ConsultPageState extends State<ConsultPage> {
   String? _selectedCategory;
   String? _selectedSubCategory;
-  DateTime? _selectedDate;
-  String? _selectedProvince;
+  DateTime? _selectedDate = DateTime.now();
+  String? _selectedProvince = "กรุงเทพมหานคร";
   final TextEditingController _detailController = TextEditingController();
   final TextEditingController _demandController = TextEditingController();
   final TextEditingController _wageController = TextEditingController();
@@ -188,9 +189,10 @@ class _ConsultPageState extends State<ConsultPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: _selectedDate != null
-                    ? const Color(0xFF0262EC)
-                    : const Color(0xFFEEF2F5),
+                color: const Color(0xFFEEF2F5),
+                // _selectedDate != null
+                //     ? const Color(0xFF0262EC)
+                //     : const Color(0xFFEEF2F5),
                 width: 1.5,
               ),
             ),

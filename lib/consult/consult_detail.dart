@@ -162,7 +162,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage> {
                       height: 130,
                       color: const Color(0xFFF2F4F7),
                       child: widget.lawyer['imageUrl'] != null
-                          ? Image.network(
+                          ? Image.asset(
                               widget.lawyer['imageUrl'] as String,
                               fit: BoxFit.cover,
                             )

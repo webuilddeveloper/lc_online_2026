@@ -64,6 +64,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       'office': 'สำนักงาน ศักดิ์สิทธิ์',
       'avatar': 'ศ',
       'color': 0xFF1565C0,
+      "imageUrl": "assets/images/lawyer-avatar-1.png",
     },
     {
       'name': 'พิมพ์ใจ รักษาธรรม',
@@ -79,6 +80,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       'office': 'สำนักงานกฎหมาย พิมพ์ใจ',
       'avatar': 'พ',
       'color': 0xFF6A1B9A,
+      "imageUrl": "assets/images/lawyer-avatar-2.png",
     },
     {
       'name': 'ธนากร นิติบัณฑิต',
@@ -94,6 +96,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       'office': 'บริษัท นิติธนากร จำกัด',
       'avatar': 'ธ',
       'color': 0xFF2E7D32,
+      "imageUrl": "assets/images/lawyer-avatar-3.png",
     },
     {
       'name': 'วีระ ศักดิ์สิทธิ์กุล',
@@ -109,6 +112,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       'office': 'สำนักงาน วีระ ลอว์',
       'avatar': 'ว',
       'color': 0xFFBF360C,
+      "imageUrl": "assets/images/lawyer-avatar-5.png",
     },
     {
       'name': 'อรุณี ยุติธรรม',
@@ -124,6 +128,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       'office': 'สำนักงานกฎหมาย อรุณี',
       'avatar': 'อ',
       'color': 0xFF00695C,
+      "imageUrl": "assets/images/lawyer-avatar-4.png",
     },
   ];
 
@@ -659,13 +664,25 @@ class _ConsultMapPageState extends State<ConsultMapPage>
         ),
         child: Row(children: [
           Stack(children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: color.withOpacity(0.12),
-              child: Text(l['avatar'] as String,
-                  style: TextStyle(
-                      color: color, fontWeight: FontWeight.bold, fontSize: 24)),
-            ),
+            (l['imageUrl'] ?? "") != ""
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.asset(
+                      l['imageUrl'],
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : CircleAvatar(
+                    radius: 30,
+                    backgroundColor: color.withOpacity(0.12),
+                    child: Text(l['avatar'] as String,
+                        style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24)),
+                  ),
             Positioned(
               right: 1,
               bottom: 1,
@@ -762,14 +779,25 @@ class _ConsultMapPageState extends State<ConsultMapPage>
             ]),
         child: Column(children: [
           Row(children: [
-            CircleAvatar(
-                radius: 28,
-                backgroundColor: color.withOpacity(0.12),
-                child: Text(l['avatar'] as String,
-                    style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22))),
+            (l['imageUrl'] ?? "") != ""
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.asset(
+                      l['imageUrl'],
+                      width: 55,
+                      height: 55,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : CircleAvatar(
+                    radius: 30,
+                    backgroundColor: color.withOpacity(0.12),
+                    child: Text(l['avatar'] as String,
+                        style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24)),
+                  ),
             const SizedBox(width: 14),
             Expanded(
                 child: Column(
