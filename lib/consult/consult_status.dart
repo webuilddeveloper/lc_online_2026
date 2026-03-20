@@ -5,7 +5,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ConsultStatusPage extends StatefulWidget {
   final int currentStep;
-  final Map<String, dynamic>? lawyer;
+  final dynamic? lawyer;
   final String? appointmentDate;
   final String? appointmentTime;
 
@@ -210,13 +210,35 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         ],
       ),
       child: Row(children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: _kPrimary.withOpacity(0.12),
-          child: Text(
-            lawyer['avatar'] as String? ?? 'ท',
-            style: const TextStyle(
-                color: _kPrimary, fontWeight: FontWeight.bold, fontSize: 20),
+        // CircleAvatar(
+        //   radius: 26,
+        //   backgroundColor: _kPrimary.withOpacity(0.12),
+        //   child: Text(
+        //     lawyer['avatar'] as String? ?? 'ท',
+        //     style: const TextStyle(
+        //         color: _kPrimary, fontWeight: FontWeight.bold, fontSize: 20),
+        //   ),
+        // ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(50),
+          child: Container(
+            width: 60,
+            height: 60,
+            color: const Color(0xFFF2F4F7),
+            child: lawyer['imageUrl'] != null
+                ? Image.asset(
+                    lawyer['imageUrl'] as String,
+                    fit: BoxFit.cover,
+                  )
+                : Center(
+                    child: Text(
+                      lawyer['avatar'] as String,
+                      style: TextStyle(
+                          fontSize: 48,
+                          color: Color(lawyer['color'] as int),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
           ),
         ),
         const SizedBox(width: 14),
@@ -244,15 +266,15 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _kPrimary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.chat_bubble_outline_rounded,
-              color: _kPrimary, size: 20),
-        ),
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        //   decoration: BoxDecoration(
+        //     color: _kPrimary.withOpacity(0.1),
+        //     borderRadius: BorderRadius.circular(12),
+        //   ),
+        //   child: const Icon(Icons.chat_bubble_outline_rounded,
+        //       color: _kPrimary, size: 20),
+        // ),
       ]),
     );
   }
@@ -357,8 +379,8 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                 );
                 return Opacity(
                   opacity: t,
-                  child:
-                      Transform.translate(offset: Offset(20 * (1 - t), 0), child: child),
+                  child: Transform.translate(
+                      offset: Offset(20 * (1 - t), 0), child: child),
                 );
               },
               child: _stepItem(i, currentStep),
@@ -518,9 +540,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-              color: Color(0x15000000),
-              blurRadius: 10,
-              offset: Offset(0, -3))
+              color: Color(0x15000000), blurRadius: 10, offset: Offset(0, -3))
         ],
       ),
       child: Column(
@@ -567,21 +587,18 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
           ),
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: () =>
-                Navigator.popUntil(context, (route) => route.isFirst),
+            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
             child: Container(
               height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border:
-                    Border.all(color: const Color(0xFFEEF2F5), width: 1.5),
+                border: Border.all(color: const Color(0xFFEEF2F5), width: 1.5),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.home_outlined,
-                      color: Color(0xFF64748B), size: 18),
+                  Icon(Icons.home_outlined, color: Color(0xFF64748B), size: 18),
                   SizedBox(width: 8),
                   Text('กลับหน้าหลัก',
                       style: TextStyle(
@@ -625,11 +642,9 @@ void showRatingDialog(BuildContext context) {
             backgroundColor: Colors.transparent,
             // ✅ insetPadding ตอบสนอง keyboard (viewInsets.bottom)
             insetPadding: EdgeInsets.fromLTRB(
-              24,
-              MediaQuery.of(context).size.height * 0.01,
-              24,0
-              // MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
+                24, MediaQuery.of(context).size.height * 0.01, 24, 0
+                // MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: AnimatedSwitcher(
@@ -688,8 +703,7 @@ Widget _buildSuccessContent(BuildContext context) {
         ),
         const SizedBox(height: 28),
         GestureDetector(
-          onTap: () =>
-              Navigator.popUntil(context, (route) => route.isFirst),
+          onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
           child: Container(
             height: 50,
             width: double.infinity,
@@ -791,18 +805,17 @@ Widget _buildFormContent(
                 contentPadding: const EdgeInsets.all(14),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFEEF2F5), width: 1.5)),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFEEF2F5), width: 1.5)),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF0262EC), width: 1.5)),
-                counterStyle:
-                    TextStyle(color: Colors.grey[400], fontSize: 11),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF0262EC), width: 1.5)),
+                counterStyle: TextStyle(color: Colors.grey[400], fontSize: 11),
               ),
             ),
             const SizedBox(height: 16),
@@ -838,10 +851,8 @@ Widget _buildFormContent(
                     height: 48,
                     decoration: BoxDecoration(
                       gradient: rating > 0
-                          ? const LinearGradient(colors: [
-                              Color(0xFF0262EC),
-                              Color(0xFF0485FF)
-                            ])
+                          ? const LinearGradient(
+                              colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
                           : null,
                       color: rating > 0 ? null : const Color(0xFFCDD5E0),
                       borderRadius: BorderRadius.circular(14),
@@ -859,9 +870,7 @@ Widget _buildFormContent(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.send_rounded,
-                            color: rating > 0
-                                ? Colors.white
-                                : Colors.grey[400],
+                            color: rating > 0 ? Colors.white : Colors.grey[400],
                             size: 16),
                         const SizedBox(width: 6),
                         Text('ส่งคะแนน',
@@ -886,11 +895,17 @@ Widget _buildFormContent(
 
 String _ratingLabel(double rating) {
   switch (rating.toInt()) {
-    case 1: return 'แย่มาก';
-    case 2: return 'พอใช้';
-    case 3: return 'ดีพอสมควร';
-    case 4: return 'ดีมาก';
-    case 5: return 'ยอดเยี่ยม! 🎉';
-    default: return 'กรุณาให้คะแนน';
+    case 1:
+      return 'แย่มาก';
+    case 2:
+      return 'พอใช้';
+    case 3:
+      return 'ดีพอสมควร';
+    case 4:
+      return 'ดีมาก';
+    case 5:
+      return 'ยอดเยี่ยม! 🎉';
+    default:
+      return 'กรุณาให้คะแนน';
   }
 }

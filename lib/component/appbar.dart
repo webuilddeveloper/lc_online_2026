@@ -244,6 +244,7 @@ appBar(
 
 appBarCustom(
     {String? title = "",
+    String? subTitle = "",
     bool backBtn = true,
     bool isRightWidget = true,
     Widget? rightWidget,
@@ -306,9 +307,14 @@ appBarCustom(
               const SizedBox(width: 12),
               Expanded(
                 child: Center(
-                  child: Text(
-                    title!,
-                    style: const TextStyle(fontSize: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        title!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
                   ),
                 ),
               ),

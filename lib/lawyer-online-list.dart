@@ -17,9 +17,10 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 class LawyerOnlineList extends StatefulWidget {
-  LawyerOnlineList({super.key, this.lawType});
+  LawyerOnlineList({super.key, this.topic, this.subTopic});
 
-  String? lawType;
+  String? topic;
+  String? subTopic;
 
   @override
   State<LawyerOnlineList> createState() => _LawyerOnlineListState();
@@ -31,6 +32,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
     {
       "code": "0",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.8,
       "cost": "Free",
       "costUnit": "/hr",
@@ -38,14 +40,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "experience": "11+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": [
-        "กฏหมายแพ่งและอาญา",
-        "กฏหมายครอบครัว",
-      ]
+      "price": 500,
+      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
     },
     {
       "code": "1",
       "name": "ธนากร นิติศักดิ์",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.1,
       "cost": "Free",
       "costUnit": "/hr",
@@ -53,14 +54,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "experience": "19+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": [
-        "กฏหมายครอบครัว",
-        "ธุรกิจและการค้า",
-      ]
+      "price": 500,
+      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
     },
     {
       "code": "2",
       "name": "พงษ์ภพ ยุติธรรม",
+      'title': 'ทนายความอาวุโส',
       "scroll": 3.9,
       "cost": "Free",
       "costUnit": "/hr",
@@ -68,14 +68,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "experience": "10+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": [
-        "กฏหมายแรงงาน",
-        "ธุรกิจและการค้า",
-      ]
+      "price": 500,
+      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
     },
     {
       "code": "3",
       "name": "อาริย์ ศิษย์กฎหมาย",
+      'title': 'ทนายความอาวุโส',
       "scroll": 3.0,
       "cost": "200",
       "costUnit": "/hr",
@@ -83,13 +82,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "experience": "12+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": [
-        "แรงงานต่างด้าว",
-      ]
+      "price": 500,
+      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
     },
     {
       "code": "4",
       "name": "Sachin K",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.9,
       "cost": "1000",
       "costUnit": "/hr",
@@ -97,11 +96,9 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       "experience": "20+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": [
-        "เทคโนโลยี/ออนไลน์",
-        "นักสืบ/สืบสวน",
-      ]
-    }
+      "price": 500,
+      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
+    },
   ];
 
   String selectTab = "0";
@@ -198,81 +195,17 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   DateTime selectedTime = DateTime.now();
   final TextEditingController dateController = TextEditingController();
 
-  final List<Map<String, dynamic>> locations = [
-    {
-      "code": "0",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "กฏหมายครอบครัว",
-      "story":
-          "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามีเพื่อหาวิธีสู้คดีเพราะเราบริสุทธิ์คือโดนแทนพี่ชายอ่ะคะทนายท่านนี้ได้เข้ามาเป็นทนายและมีค่าจ้างทนาย ตามใบเสร็จศาล ประมาณ150000 บาท ดิฉันไม่มีเงินก้อนเลยตกลงกันว่าจะผ่อนให้  เรื่อยๆ เเล้วแต่เค้าจะเรียก 5000 บ้าง 7000 บ้าง 1หมื่นบ้าง เป็นครั้งคราวไป ดิฉันขายขายของได้เท่าไหร่ ก็ให้เค้าหมด เพื่อหวังให้ทุกอย่าง จบ .....แต่มันไม่เป็นแบบนั้น  ศาลชั้นต้นตัดสินยืน ทนายเลยบอกให้ อุธรณ์อีกครั้ง เพราะศาลชั้นต้นอ่านจะไม่ละเอียดพอ  ระหว่างนั้นสามีดิฉันเข้าไปอยู่ในเรือนจำ รอประกันออกมา  อ่อลืมบอกไปค่ะ ตอนเเรกที่เจอทนายคนนี้เพราะเค้าโทรมาบอกว่าเป็นเจ้าของหลักทรัพย์ที่เราไปเช่ากับนายหน้า ตอนนั้นไม่มรทนายเลยให้เค้าช่วย ใจคิดแล้วว่าเป็นโชคดีของเรา",
-      "createDate": "9 ชั่วโมงที่ผ่านมา",
-      "lawyerApprove": true,
-      "lawyerModel": {
-        "code": "0",
-        "name": "ศักดิ์สิทธิ์ พิพากษ์",
-        "scroll": 4.8,
-        "cost": "ไม่เสียค่าใช้จ่าย",
-        "costUnit": "/hr",
-        "imageUrl": "assets/images/lawyer-avatar-1.png",
-        "experience": "11+ years",
-        "skills": [
-          "Family lawyer",
-          "Estate planning lawyer",
-        ]
-      },
-      "position": const LatLng(13.7466, 100.5393),
-      "status": "1",
-      "statusText": "กำลังดำเนินการ"
-    },
-    {
-      "code": "2",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "ที่ดินและอสังหาริมทรัพย์",
-      "story":
-          "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามีเพื่อหาวิธีสู้คดีเพราะเราบริสุทธิ์คือโดนแทนพี่ชายอ่ะคะทนายท่านนี้ได้เข้ามาเป็นทนายและมีค่าจ้างทนาย ตามใบเสร็จศาล ประมาณ150000 บาท ดิฉันไม่มีเงินก้อนเลยตกลงกันว่าจะผ่อนให้  เรื่อยๆ เเล้วแต่เค้าจะเรียก 5000 บ้าง 7000 บ้าง 1หมื่นบ้าง เป็นครั้งคราวไป ดิฉันขายขายของได้เท่าไหร่ ก็ให้เค้าหมด เพื่อหวังให้ทุกอย่าง จบ .....แต่มันไม่เป็นแบบนั้น  ศาลชั้นต้นตัดสินยืน ทนายเลยบอกให้ อุธรณ์อีกครั้ง เพราะศาลชั้นต้นอ่านจะไม่ละเอียดพอ  ระหว่างนั้นสามีดิฉันเข้าไปอยู่ในเรือนจำ รอประกันออกมา  อ่อลืมบอกไปค่ะ ตอนเเรกที่เจอทนายคนนี้เพราะเค้าโทรมาบอกว่าเป็นเจ้าของหลักทรัพย์ที่เราไปเช่ากับนายหน้า ตอนนั้นไม่มรทนายเลยให้เค้าช่วย ใจคิดแล้วว่าเป็นโชคดีของเรา",
-      "createDate": "05/02/2569",
-      "lawyerApprove": false,
-      "lawyerModel": {},
-      "position": const LatLng(13.7440, 100.5297),
-      "status": "0",
-      "statusText": "รอทนายรับเรื่อง"
-    },
-  ];
 
-  dynamic modelPost = {
-    "code": "0",
-    "name": "ศักดิ์สิทธิ์ พิพากษ์",
-    "category": "กฏหมายครอบครัว",
-    "story":
-        "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามีเพื่อหาวิธีสู้คดีเพราะเราบริสุทธิ์คือโดนแทนพี่ชายอ่ะคะทนายท่านนี้ได้เข้ามาเป็นทนายและมีค่าจ้างทนาย ตามใบเสร็จศาล ประมาณ150000 บาท ดิฉันไม่มีเงินก้อนเลยตกลงกันว่าจะผ่อนให้  เรื่อยๆ เเล้วแต่เค้าจะเรียก 5000 บ้าง 7000 บ้าง 1หมื่นบ้าง เป็นครั้งคราวไป ดิฉันขายขายของได้เท่าไหร่ ก็ให้เค้าหมด เพื่อหวังให้ทุกอย่าง จบ .....แต่มันไม่เป็นแบบนั้น  ศาลชั้นต้นตัดสินยืน ทนายเลยบอกให้ อุธรณ์อีกครั้ง เพราะศาลชั้นต้นอ่านจะไม่ละเอียดพอ  ระหว่างนั้นสามีดิฉันเข้าไปอยู่ในเรือนจำ รอประกันออกมา  อ่อลืมบอกไปค่ะ ตอนเเรกที่เจอทนายคนนี้เพราะเค้าโทรมาบอกว่าเป็นเจ้าของหลักทรัพย์ที่เราไปเช่ากับนายหน้า ตอนนั้นไม่มรทนายเลยให้เค้าช่วย ใจคิดแล้วว่าเป็นโชคดีของเรา",
-    "createDate": "9 ชั่วโมงที่ผ่านมา",
-    "lawyerApprove": true,
-    "lawyerModel": {
-      "code": "0",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "scroll": 4.8,
-      "cost": "ไม่เสียค่าใช้จ่าย",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "experience": "11+ years",
-      "skills": [
-        "Family lawyer",
-        "Estate planning lawyer",
-      ]
-    },
-    "position": const LatLng(0, 0),
-    "status": "1",
-    "statusText": "กำลังดำเนินการ"
-  };
-
-  String? selectedLawType;
+  String? selectedTopic;
+  String? selectedSubTopic;
 
   @override
   void initState() {
     getCurrentLocation();
     super.initState();
 
-    selectedLawType = widget.lawType;
+    selectedTopic = widget.topic;
+    selectedSubTopic = widget.subTopic;
     filteredLawyers();
   }
 
@@ -501,7 +434,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               (value) {
                 if (value != null) {
                   setState(() {
-                    selectedLawType = value;
+                    selectedTopic = value;
                     filteredLawyers();
                   });
                 }
@@ -531,7 +464,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   Widget _buildSelectedFilter() {
-    if (selectedLawType == null) return const SizedBox();
+    if (selectedTopic == null) return const SizedBox();
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -551,7 +484,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              selectedLawType!,
+              selectedTopic!,
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF0262EC),
@@ -562,7 +495,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
             GestureDetector(
               onTap: () {
                 setState(() {
-                  selectedLawType = null;
+                  selectedTopic = null;
                 });
               },
               child: const Icon(
@@ -591,10 +524,10 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   List<dynamic> filteredLawyers() {
-    if (selectedLawType == null) return lawyerOnlineList;
+    if (selectedTopic == null) return lawyerOnlineList;
 
     return lawyerOnlineList.where((lawyer) {
-      return lawyer['skills'].contains(selectedLawType);
+      return lawyer['skills'].contains(selectedTopic);
     }).toList();
   }
 
@@ -699,6 +632,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
                       MaterialPageRoute(
                         builder: (context) => LawyerOnlineDetails(
                           code: model['code'],
+                          topic: widget.topic,
+                          subTopic: widget.subTopic,
                         ),
                       ),
                     )
@@ -1142,27 +1077,6 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
     );
   }
 
-  Widget buildAddPostButton() {
-    return Positioned(
-      right: 16,
-      bottom: 130,
-      child: FloatingActionButton(
-        backgroundColor: Color(0xFF0262EC),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100),
-          // side: const BorderSide(color: Color(0xFF0262EC)),
-        ),
-        onPressed: () {
-          openChatBottomSheet(context);
-        },
-        child: const Icon(
-          Icons.edit,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
   void startSearch() {
     setState(() {
       isSearching = true;
@@ -1195,262 +1109,6 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         // addAnimationCardLawyer();
       }
     });
-  }
-
-  void openChatBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      elevation: 10,
-      builder: (context) {
-        return FractionallySizedBox(
-          heightFactor: 0.9,
-          child: SafeArea(
-            bottom: false,
-            child: AnimatedPadding(
-              curve: Curves.linear,
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              duration: const Duration(milliseconds: 50),
-              child: Container(
-                height: (MediaQuery.of(context).size.height -
-                        MediaQuery.of(context).padding.bottom) -
-                    50,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.all(15),
-                child: SafeArea(
-                  child: Stack(
-                    children: [
-                      Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              "โพสต์ปัญหา",
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  // height: 43,
-                                  child: dropdownCustom(
-                                      label: "ประเภทคดี",
-                                      list: postCategoryList,
-                                      isRequired: true,
-                                      valueSelect: selectedCategory),
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 15,
-                              ),
-                              Expanded(
-                                child: SizedBox(
-                                  // height: 43,
-                                  child: dropdownCustom(
-                                      label: "ประเภทคดีย่อย",
-                                      list: postSubCategoryList,
-                                      isRequired: true,
-                                      valueSelect: selectedSubCategory),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          selectDate(
-                              title: 'วันนัดหมายปรึกษา*',
-                              controller: dateController),
-                          Row(
-                            children: [],
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Expanded(
-                            child: ListView(
-                              physics: BouncingScrollPhysics(),
-                              // padding: EdgeInsets.symmetric(vertical: 10),
-                              // mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  maxLines: null,
-                                  minLines: 10,
-                                  keyboardType: TextInputType.multiline,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color(0xFFFFFFFF),
-                                    contentPadding: const EdgeInsets.fromLTRB(
-                                        0.0, 5.0, 0.0, 5.0),
-                                    hintText: "พิมพ์ปัญหาที่นี่...",
-                                    hintStyle:
-                                        const TextStyle(letterSpacing: 0.5),
-                                    helperStyle: TextStyle(
-                                      color: const Color(0xFF151A2D)
-                                          .withOpacity(0.7),
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18.0),
-                                      // borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18.0),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(18.0),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Row(
-                            // mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(
-                                'assets/icons/chat-camera.png',
-                                width: 26,
-                                height: 26,
-                                color: Color(0xFF0262EC),
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Image.asset(
-                                'assets/icons/input-gallery.png',
-                                width: 26,
-                                height: 26,
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Image.asset(
-                                'assets/icons/input-emoji.png',
-                                width: 26,
-                                height: 26,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        child: GestureDetector(
-                          onTap: () {
-                            goBack();
-                          },
-                          child: Container(
-                            // width: 50,
-                            // height: 50,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFAFAFA),
-                              // borderRadius: BorderRadius.circular(18),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                width: 1,
-                                color: const Color(0xFFDBDBDB),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () => {
-                            if (!isSearching && !found)
-                              {
-                                setState(() {
-                                  modelPost['position'] = currentLocation;
-                                  lawyerApproveDetail = {
-                                    "code": "0",
-                                    "name": "ศักดิ์สิทธิ์ พิพากษ์",
-                                    "scroll": 4.8,
-                                    "cost": "ไม่เสียค่าใช้จ่าย",
-                                    "costUnit": "/hr",
-                                    "imageUrl":
-                                        "assets/images/lawyer-avatar-1.png",
-                                    "experience": "11+ years",
-                                    "skills": [
-                                      "Family lawyer",
-                                      "Estate planning lawyer",
-                                    ]
-                                  };
-                                }),
-                                startSearch(),
-                                goBack(),
-                              }
-                          },
-                          child: Container(
-                            // width: 50,
-                            // height: 50,
-                            padding: const EdgeInsets.all(10),
-                            // decoration: BoxDecoration(
-                            //   color: const Color(0xFFFAFAFA),
-                            //   // borderRadius: BorderRadius.circular(18),
-                            //   shape: BoxShape.circle,
-                            //   border: Border.all(
-                            //     width: 1,
-                            //     color: const Color(0xFFDBDBDB),
-                            //   ),
-                            // ),
-                            child: const Text(
-                              "โพสต์",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF0262EC),
-                                  fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   dropdownCustom(

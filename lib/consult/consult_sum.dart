@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/consult/consult_map.dart';
 import 'package:LawyerOnline/consult/consult_qr.dart';
 
 import 'package:flutter/material.dart';
@@ -316,23 +317,34 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                         const SizedBox(height: 16),
                         const Divider(height: 1, color: Color(0xFFEEF2F5)),
                         const SizedBox(height: 16),
-                        Row(
+                        const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('ยอดรวม',
+                            Text('ยอดรวม',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                     color: Color(0xFF1A2340))),
                             Text(
-                                // '฿${_formatAmount(_total)}',
-                                // '฿ ${_formatAmount(widget.wage)}',
-                                '500',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 22,
-                                    color: Color(0xFF0262EC))),
+                              // '฿${_formatAmount(_total)}',
+                              // '฿ ${_formatAmount(widget.wage)}',
+                              '500',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                                color: Color(0xFF0262EC),
+                              ),
+                            ),
                           ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '*ชำระเงินเมื่อค้นหาทนายความ และทนายความกดรับเคยแล้ว*',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: Colors.red,
+                          ),
                         ),
                       ],
                     ),
@@ -391,13 +403,22 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
             ),
             child: GestureDetector(
               onTap: () {
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     // builder: (_) => ConsultQrPage(amount: _total),
+                //     builder: (_) =>
+                //         // ConsultQrPage(amount: int.parse(widget.wage)),
+                //         ConsultQrPage(amount: int.parse('500')),
+                //   ),
+                // );
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     // builder: (_) => ConsultQrPage(amount: _total),
                     builder: (_) =>
                         // ConsultQrPage(amount: int.parse(widget.wage)),
-                        ConsultQrPage(amount: int.parse('500')),
+                        ConsultMapPage(),
                   ),
                 );
               },
@@ -416,7 +437,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                   ],
                 ),
                 child: const Center(
-                  child: Text('ยืนยันและชำระเงิน',
+                  child: Text('ยืนยันและค้นหาทนายความ',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,

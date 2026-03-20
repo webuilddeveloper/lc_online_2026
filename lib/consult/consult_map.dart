@@ -635,7 +635,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
                     color: _isReassigning ? Colors.grey[200] : null,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Text('ยืนยันทนายนี้',
+                  child: Text('ยืนยันทนายคนนี้',
                       style: TextStyle(
                           color:
                               _isReassigning ? Colors.grey[400] : Colors.white,
@@ -769,103 +769,111 @@ class _ConsultMapPageState extends State<ConsultMapPage>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2))
-            ]),
-        child: Column(children: [
-          Row(children: [
-            (l['imageUrl'] ?? "") != ""
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Image.asset(
-                      l['imageUrl'],
-                      width: 55,
-                      height: 55,
-                      fit: BoxFit.cover,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(children: [
+              (l['imageUrl'] ?? "") != ""
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: Image.asset(
+                        l['imageUrl'],
+                        width: 55,
+                        height: 55,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : CircleAvatar(
+                      radius: 30,
+                      backgroundColor: color.withOpacity(0.12),
+                      child: Text(l['avatar'] as String,
+                          style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24)),
                     ),
-                  )
-                : CircleAvatar(
-                    radius: 30,
-                    backgroundColor: color.withOpacity(0.12),
-                    child: Text(l['avatar'] as String,
-                        style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24)),
-                  ),
-            const SizedBox(width: 14),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Row(children: [
-                    Expanded(
-                        child: Text(l['name'] as String,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                color: Color(0xFF1A2340)))),
-                    _badge(l['available'] as bool),
-                  ]),
-                  const SizedBox(height: 2),
-                  Text(l['title'] as String,
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    const Icon(Icons.star_rounded,
-                        color: Color(0xFFFFC107), size: 14),
-                    const SizedBox(width: 2),
-                    Text('${l['rating']}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 12)),
-                    Text(' (${l['reviews']} รีวิว)',
+              const SizedBox(width: 14),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Row(children: [
+                      Expanded(
+                          child: Text(l['name'] as String,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: Color(0xFF1A2340)))),
+                      _badge(l['available'] as bool),
+                    ]),
+                    const SizedBox(height: 2),
+                    Text(l['title'] as String,
                         style:
                             TextStyle(color: Colors.grey[400], fontSize: 12)),
-                  ]),
-                ])),
-          ]),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFEEF2F5)),
-          const SizedBox(height: 12),
-          Row(children: [
-            _chip(Icons.gavel_outlined, l['specialty'] as String),
-            const SizedBox(width: 8),
-            _chip(Icons.history_outlined, l['experience'] as String),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            _chip(Icons.location_on_outlined, l['distance'] as String),
-            const SizedBox(width: 8),
-            _chip(Icons.business_outlined, l['office'] as String),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: l['available'] as bool
-                    ? const LinearGradient(
-                        colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
-                    : null,
-                color: l['available'] as bool ? null : Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text('นัดหมาย',
-                  style: TextStyle(
-                      color: l['available'] as bool
-                          ? Colors.white
-                          : Colors.grey[400],
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.star_rounded,
+                          color: Color(0xFFFFC107), size: 14),
+                      const SizedBox(width: 2),
+                      Text('${l['rating']}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 12)),
+                      Text(' (${l['reviews']} รีวิว)',
+                          style:
+                              TextStyle(color: Colors.grey[400], fontSize: 12)),
+                    ]),
+                  ])),
+            ]),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFEEF2F5)),
+            const SizedBox(height: 12),
+            Row(children: [
+              _chip(Icons.gavel_outlined, l['specialty'] as String),
+              const SizedBox(width: 8),
+              _chip(Icons.history_outlined, l['experience'] as String),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              _chip(Icons.location_on_outlined, l['distance'] as String),
+              const SizedBox(width: 8),
+              _chip(Icons.business_outlined, l['office'] as String),
+            ]),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: l['available'] as bool
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
+                        : null,
+                    color: l['available'] as bool ? null : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('นัดหมาย',
+                      style: TextStyle(
+                          color: l['available'] as bool
+                              ? Colors.white
+                              : Colors.grey[400],
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13)),
+                ),
+              ],
             ),
-          ]),
-        ]),
+          ],
+        ),
       ),
     );
   }

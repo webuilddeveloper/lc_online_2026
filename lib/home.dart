@@ -1,4 +1,7 @@
+import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/appointment-details.dart';
+import 'package:LawyerOnline/booking/boobking-flow.dart';
+import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/carousel_form.dart';
 import 'package:LawyerOnline/case-status-all.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -36,6 +39,7 @@ class _HomePageState extends State<HomePage> {
     {
       "code": "0",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.8,
       "cost": "Free",
       "costUnit": "/hr",
@@ -43,11 +47,13 @@ class _HomePageState extends State<HomePage> {
       "experience": "11+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": ["กฏหมายแพ่งและอาญา", "กฏหมายครอบครัว"]
+      "price": 500,
+      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
     },
     {
       "code": "1",
       "name": "ธนากร นิติศักดิ์",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.1,
       "cost": "Free",
       "costUnit": "/hr",
@@ -55,11 +61,13 @@ class _HomePageState extends State<HomePage> {
       "experience": "19+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": ["กฏหมายครอบครัว", "ธุรกิจและการค้า"]
+      "price": 500,
+      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
     },
     {
       "code": "2",
       "name": "พงษ์ภพ ยุติธรรม",
+      'title': 'ทนายความอาวุโส',
       "scroll": 3.9,
       "cost": "Free",
       "costUnit": "/hr",
@@ -67,11 +75,13 @@ class _HomePageState extends State<HomePage> {
       "experience": "10+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": ["กฏหมายแรงงาน", "ธุรกิจและการค้า"]
+      "price": 500,
+      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
     },
     {
       "code": "3",
       "name": "อาริย์ ศิษย์กฎหมาย",
+      'title': 'ทนายความอาวุโส',
       "scroll": 3.0,
       "cost": "200",
       "costUnit": "/hr",
@@ -79,11 +89,13 @@ class _HomePageState extends State<HomePage> {
       "experience": "12+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": ["แรงงานต่างด้าว"]
+      "price": 500,
+      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
     },
     {
       "code": "4",
       "name": "Sachin K",
+      'title': 'ทนายความอาวุโส',
       "scroll": 4.9,
       "cost": "1000",
       "costUnit": "/hr",
@@ -91,8 +103,9 @@ class _HomePageState extends State<HomePage> {
       "experience": "20+ years",
       "clientReviews": "60+",
       "casesWon": "148+",
-      "skills": ["เทคโนโลยี/ออนไลน์", "นักสืบ/สืบสวน"]
-    }
+      "price": 500,
+      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
+    },
   ];
 
   List<Map<String, String>> postCategoryList = [
@@ -270,7 +283,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ── แมป lawyerModel → lawyer ที่ ConsultStatusPage ต้องการ ────────
-  Map<String, dynamic>? _buildLawyerForConsult(Map? lawyerModel) {
+  dynamic _buildLawyerForConsult(Map? lawyerModel) {
     if (lawyerModel == null) return null;
     return {
       'name': lawyerModel['name'] ?? '',
@@ -354,10 +367,27 @@ class _HomePageState extends State<HomePage> {
                             child: actionCard(
                               title: "นัดหมายทนาย",
                               icon: "assets/icons/appointment-lawyer.png",
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => LawyerOnlineList())),
+                              onTap: () => 
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => AppAppointment(
+                              //       title: 'นัดหมายทนาย',
+                              //     ),
+                              //   ),
+                              // ),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TopicPage(),
+                                ),
+                              ),
+                              // BookingFlowPage
+                              
+                              // Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //         builder: (_) => LawyerOnlineList())),
                             ),
                           ),
                         ]),
@@ -662,7 +692,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(lawType: "กฏหมายแพ่งและอาญา"))),
+                          LawyerOnlineList(topic: "กฏหมายแพ่งและอาญา"))),
             ),
           ),
           const SizedBox(width: 25),
@@ -674,7 +704,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(lawType: "กฏหมายครอบครัว"))),
+                          LawyerOnlineList(topic: "กฏหมายครอบครัว"))),
             ),
           ),
           const SizedBox(width: 25),
@@ -686,7 +716,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(lawType: "กฏหมายแรงงาน"))),
+                          LawyerOnlineList(topic: "กฏหมายแรงงาน"))),
             ),
           ),
           const SizedBox(width: 25),
@@ -698,7 +728,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(lawType: "ธุรกิจและการค้า"))),
+                          LawyerOnlineList(topic: "ธุรกิจและการค้า"))),
             ),
           ),
         ],

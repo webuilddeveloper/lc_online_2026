@@ -1,12 +1,14 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_map.dart';
+import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class ConsultQrPage extends StatelessWidget {
   final int amount;
+  final dynamic lawyer;
 
-  const ConsultQrPage({super.key, required this.amount});
+  const ConsultQrPage({super.key, required this.amount, required this.lawyer});
 
   String _generatePromptPayPayload(int amount) {
     final amountStr = amount.toDouble().toStringAsFixed(2);
@@ -233,12 +235,18 @@ class ConsultQrPage extends StatelessWidget {
 
                 Future.delayed(const Duration(seconds: 2), () {
                   Navigator.pop(context); // ปิด dialog
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ConsultMapPage(),
+                      builder: (_) => ConsultStatusPage(lawyer: lawyer),
                     ),
                   );
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (_) => const ConsultMapPage(),
+                  //   ),
+                  // );
                 });
               },
               child: Container(
@@ -269,4 +277,108 @@ class ConsultQrPage extends StatelessWidget {
       ),
     );
   }
+
+  // void _showSuccessDialog(BuildContext context) {
+  //   showGeneralDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     barrierColor: Colors.black.withOpacity(0.6),
+  //     transitionDuration: const Duration(milliseconds: 400),
+  //     transitionBuilder: (context, animation, secondaryAnimation, child) {
+  //       return ScaleTransition(
+  //         scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+  //         child: FadeTransition(opacity: animation, child: child),
+  //       );
+  //     },
+  //     pageBuilder: (context, _, __) => Dialog(
+  //       backgroundColor: Colors.transparent,
+  //       elevation: 0,
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+  //         decoration: BoxDecoration(
+  //           color: Colors.white,
+  //           borderRadius: BorderRadius.circular(28),
+  //           boxShadow: [
+  //             BoxShadow(
+  //               color: const Color(0xFF4CAF50).withOpacity(0.15),
+  //               blurRadius: 40,
+  //               offset: const Offset(0, 16),
+  //             ),
+  //             BoxShadow(
+  //               color: Colors.black.withOpacity(0.08),
+  //               blurRadius: 24,
+  //               offset: const Offset(0, 4),
+  //             ),
+  //           ],
+  //         ),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Container(
+  //               width: 80,
+  //               height: 80,
+  //               decoration: BoxDecoration(
+  //                 gradient: const LinearGradient(
+  //                   colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+  //                   begin: Alignment.topLeft,
+  //                   end: Alignment.bottomRight,
+  //                 ),
+  //                 shape: BoxShape.circle,
+  //                 boxShadow: [
+  //                   BoxShadow(
+  //                     color: const Color(0xFF4CAF50).withOpacity(0.4),
+  //                     blurRadius: 20,
+  //                     offset: const Offset(0, 8),
+  //                   ),
+  //                 ],
+  //               ),
+  //               child: const Icon(Icons.check_rounded,
+  //                   color: Colors.white, size: 40),
+  //             ),
+  //             const SizedBox(height: 24),
+  //             const Text(
+  //               'สำเร็จ',
+  //               style: TextStyle(
+  //                 fontWeight: FontWeight.w700,
+  //                 fontSize: 20,
+  //                 color: Color(0xFF1A1A2E),
+  //                 letterSpacing: -0.3,
+  //               ),
+  //             ),
+  //             const SizedBox(height: 8),
+  //             Text(
+  //               'บันทึกข้อมูลเรียบร้อยแล้ว...',
+  //               style: TextStyle(color: Colors.grey[400], fontSize: 13.5),
+  //             ),
+  //             const SizedBox(height: 28),
+  //             GestureDetector(
+  //               onTap: () {
+  //                 Navigator.pushReplacement(
+  //                   context,
+  //                   MaterialPageRoute(
+  //                     builder: (_) => ConsultStatusPage(lawyer: widget.lawyer),
+  //                   ),
+  //                 );
+  //               },
+  //               child: Container(
+  //                 height: 48,
+  //                 decoration: BoxDecoration(
+  //                   color: const Color(0xFF4CAF50),
+  //                   borderRadius: BorderRadius.circular(14),
+  //                 ),
+  //                 child: const Center(
+  //                   child: Text('ตกลง',
+  //                       style: TextStyle(
+  //                           color: Colors.white,
+  //                           fontWeight: FontWeight.w600,
+  //                           fontSize: 15)),
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

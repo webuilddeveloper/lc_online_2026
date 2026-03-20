@@ -1,0 +1,2 @@
+/Users/panuwitchaiton/webuild/election/lc_online_2026/android/app/.cxx/RelWithDebInfo/5l73o5i3/x86/CMakeFiles/edit_cache.dir
+/Users/panuwitchaiton/webuild/election/lc_online_2026/android/app/.cxx/RelWithDebInfo/5l73o5i3/x86/CMakeFiles/rebuild_cache.dir
