@@ -102,39 +102,41 @@ class _MyAppointmentState extends State<MyAppointment> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-          title: "นัดหมายของฉัน",
-          backBtn: false,
-          isRightWidget: true,
-          rightWidget: GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AppAppointment(),
-              ),
-            ),
-            child: Container(
-              width: 40,
-              alignment: Alignment.center,
-              // padding: const EdgeInsets.symmetric(
-              //   horizontal: 12,
-              //   vertical: 10,
-              // ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
-                // borderRadius: BorderRadius.circular(22),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  width: 1,
-                  color: const Color(0xFFDBDBDB),
-                ),
-              ),
-              child: SizedBox(
-                width: 20,
-                height: 18,
-                child: Image.asset("assets/icons/app-appointment.png"),
-              ),
-            ),
-          )),
+        title: "นัดหมายของฉัน",
+        backBtn: false,
+        isRightWidget: false,
+        rightWidget: SizedBox()
+        // GestureDetector(
+        //   onTap: () => Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (context) => AppAppointment(),
+        //     ),
+        //   ),
+        //   child: Container(
+        //     width: 40,
+        //     alignment: Alignment.center,
+        //     // padding: const EdgeInsets.symmetric(
+        //     //   horizontal: 12,
+        //     //   vertical: 10,
+        //     // ),
+        //     decoration: BoxDecoration(
+        //       color: const Color(0xFFFAFAFA),
+        //       // borderRadius: BorderRadius.circular(22),
+        //       shape: BoxShape.circle,
+        //       border: Border.all(
+        //         width: 1,
+        //         color: const Color(0xFFDBDBDB),
+        //       ),
+        //     ),
+        //     child: SizedBox(
+        //       width: 20,
+        //       height: 18,
+        //       child: Image.asset("assets/icons/app-appointment.png"),
+        //     ),
+        //   ),
+        // ),
+      ),
       body: Container(
         child: Column(
           children: [

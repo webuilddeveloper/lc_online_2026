@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CaseStatusAllPage extends StatefulWidget {
   final List<dynamic> caseList;
@@ -67,7 +68,8 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF2F5),
+      // backgroundColor: const Color(0xFFEEF2F5),
+      backgroundColor: Colors.white,
       appBar: appBar(
         title: "สถานะเคสทั้งหมด",
         backBtn: true,
@@ -102,7 +104,10 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                 return Tab(
                   child: Row(
                     children: [
-                      Text(tab['label']),
+                      Text(
+                        tab['label'],
+                        style: GoogleFonts.prompt(),
+                      ),
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -113,7 +118,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                         ),
                         child: Text(
                           '$count',
-                          style: const TextStyle(
+                          style: GoogleFonts.prompt(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF8E8E93),
@@ -129,21 +134,24 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
 
           // ── Tab Views ─────────────────────────────────────────
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: _tabs.map((tab) {
-                final list = _filteredList(tab['status']);
-                return list.isEmpty
-                    ? _buildEmpty()
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(15, 16, 15, 30),
-                        itemCount: list.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) =>
-                            _caseCard(list[index]),
-                      );
-              }).toList(),
+            child: Container(
+              color: const Color(0xFFEEF2F5),
+              child: TabBarView(
+                controller: _tabController,
+                children: _tabs.map((tab) {
+                  final list = _filteredList(tab['status']);
+                  return list.isEmpty
+                      ? _buildEmpty()
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(15, 16, 15, 30),
+                          itemCount: list.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) =>
+                              _caseCard(list[index]),
+                        );
+                }).toList(),
+              ),
             ),
           ),
         ],
@@ -280,8 +288,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFFE8F0FE),
                 borderRadius: BorderRadius.circular(8),
@@ -366,9 +373,8 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                       '2': 2, // กำลังดำเนินการ → ยืนยันแล้ว
                       '4': 4, // เสร็จสิ้น
                     };
-                    final currentStep = statusToStep[
-                            model['status']?.toString() ?? '1'] ??
-                        3;
+                    final currentStep =
+                        statusToStep[model['status']?.toString() ?? '1'] ?? 3;
 
                     Navigator.push(
                       context,
@@ -384,8 +390,8 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                     print(currentStep);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0262EC),
                       borderRadius: BorderRadius.circular(20),
