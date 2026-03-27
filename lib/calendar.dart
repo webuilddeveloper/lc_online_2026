@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:LawyerOnline/appointment-details.dart';
+import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/shared/extension.dart';
 import 'package:flutter/material.dart';
@@ -465,7 +465,7 @@ class _CalendarPageState extends State<CalendarPage>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AppointmentDetails(
+                        builder: (context) => AppointmentDetailsLawyer(
                           model: value[index],
                         ),
                       ),

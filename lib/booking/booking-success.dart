@@ -125,7 +125,9 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   @override
   Widget build(BuildContext context) {
     final lawyer = widget.lawyer;
-    final lawyerColor = Color(lawyer?['color'] as int? ?? 0xFF0262EC);
+    final lawyerColor = Color(0xFF0262EC
+      // lawyer?['color'] as int? ?? 0xFF0262EC
+      );
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -452,26 +454,26 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           ),
         ),
         // Status badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: _kGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGreen.withOpacity(0.3), width: 1),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration:
-                  const BoxDecoration(color: _kGreen, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 5),
-            const Text('ว่าง',
-                style: TextStyle(
-                    fontSize: 11, color: _kGreen, fontWeight: FontWeight.w700)),
-          ]),
-        ),
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        //   decoration: BoxDecoration(
+        //     color: _kGreen.withOpacity(0.1),
+        //     borderRadius: BorderRadius.circular(10),
+        //     border: Border.all(color: _kGreen.withOpacity(0.3), width: 1),
+        //   ),
+        //   child: Row(mainAxisSize: MainAxisSize.min, children: [
+        //     Container(
+        //       width: 6,
+        //       height: 6,
+        //       decoration:
+        //           const BoxDecoration(color: _kGreen, shape: BoxShape.circle),
+        //     ),
+        //     const SizedBox(width: 5),
+        //     const Text('ว่าง',
+        //         style: TextStyle(
+        //             fontSize: 11, color: _kGreen, fontWeight: FontWeight.w700)),
+        //   ]),
+        // ),
       ]),
     );
   }
@@ -648,7 +650,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                         color: Color(0xFF7A5800))),
                 const SizedBox(height: 4),
                 Text(
-                  'ทนายความจะติดต่อยืนยันนัดหมายผ่านระบบข้อความ กรุณาตรวจสอบการแจ้งเตือนของคุณ',
+                  'ทนายความจะติดต่อยืนยันนัดหมายผ่านระบบข้อความ โปรดตรวจสอบการแจ้งเตือนของคุณ และกรุณาเตรียมความพร้อมก่อนเวลาปรึกษาทนายความ 30 นาที',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.brown[400],
@@ -679,75 +681,75 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           // ── Primary: เข้าหน้าปรึกษา ──────────────────
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              // Navigator.pushAndRemoveUntil(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (_) => ConsultStatusPage(
-              //       currentStep: 3,
-              //       lawyer: widget.lawyer,
-              //       appointmentDate: widget.appointmentDate,
-              //       appointmentTime: widget.appointmentTime,
-              //     ),
-              //   ),
-              //   (route) => route.isFirst,
-              // );
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MessageFormPage(
-                    model: widget.lawyer,
-                  ),
-                ),
-                (route) => route.isFirst,
-              );
-            },
-            child: Container(
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.8)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.headset_mic_rounded,
-                        color: Colors.white, size: 16),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'เข้าหน้าปรึกษาทนายความ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
+          // GestureDetector(
+          //   onTap: () {
+          //     HapticFeedback.mediumImpact();
+          //     // Navigator.pushAndRemoveUntil(
+          //     //   context,
+          //     //   MaterialPageRoute(
+          //     //     builder: (_) => ConsultStatusPage(
+          //     //       currentStep: 3,
+          //     //       lawyer: widget.lawyer,
+          //     //       appointmentDate: widget.appointmentDate,
+          //     //       appointmentTime: widget.appointmentTime,
+          //     //     ),
+          //     //   ),
+          //     //   (route) => route.isFirst,
+          //     // );
+          //     Navigator.pushAndRemoveUntil(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (_) => MessageFormPage(
+          //           model: widget.lawyer,
+          //         ),
+          //       ),
+          //       (route) => route.isFirst,
+          //     );
+          //   },
+          //   child: Container(
+          //     height: 54,
+          //     decoration: BoxDecoration(
+          //       gradient: LinearGradient(
+          //         colors: [color, color.withOpacity(0.8)],
+          //         begin: Alignment.centerLeft,
+          //         end: Alignment.centerRight,
+          //       ),
+          //       borderRadius: BorderRadius.circular(16),
+          //       boxShadow: [
+          //         BoxShadow(
+          //           color: color.withOpacity(0.4),
+          //           blurRadius: 16,
+          //           offset: const Offset(0, 5),
+          //         ),
+          //       ],
+          //     ),
+          //     child: Row(
+          //       mainAxisAlignment: MainAxisAlignment.center,
+          //       children: [
+          //         Container(
+          //           padding: const EdgeInsets.all(6),
+          //           decoration: BoxDecoration(
+          //             color: Colors.white.withOpacity(0.2),
+          //             borderRadius: BorderRadius.circular(8),
+          //           ),
+          //           child: const Icon(Icons.headset_mic_rounded,
+          //               color: Colors.white, size: 16),
+          //         ),
+          //         const SizedBox(width: 10),
+          //         const Text(
+          //           'เข้าหน้าปรึกษาทนายความ',
+          //           style: TextStyle(
+          //             color: Colors.white,
+          //             fontWeight: FontWeight.w800,
+          //             fontSize: 15,
+          //             letterSpacing: 0.2,
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          // const SizedBox(height: 10),
 
           // ── Secondary: กลับหน้าหลัก ──────────────────
           GestureDetector(

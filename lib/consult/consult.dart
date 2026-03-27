@@ -224,7 +224,7 @@ class _ConsultPageState extends State<ConsultPage> {
   bool get _canSubmit {
     if (_selectedTopic == null) return false;
     if (_hasSubCase && _selectedSubCase == null) return false;
-    if (_selectedDate == null) return false;
+    // if (_selectedDate == null) return false;
     if (_selectedProvince == null) return false;
     if (_detailController.text.trim().isEmpty) return false;
     return true;
@@ -304,8 +304,8 @@ class _ConsultPageState extends State<ConsultPage> {
                           ],
 
                           // ── วันที่ ───────────────────
-                          _buildDateField(),
-                          const SizedBox(height: 20),
+                          // _buildDateField(),
+                          // const SizedBox(height: 20),
 
                           // ── จังหวัด ─────────────────
                           _buildDropdownField(
@@ -832,7 +832,7 @@ class _ConsultPageState extends State<ConsultPage> {
                     builder: (_) => ConsultSummaryPage(
                       category: _selectedTopic!['title'] as String,
                       subCategory: _selectedSubCase?['title'] as String? ?? '',
-                      date: _selectedDate!,
+                      // date: _selectedDate!,
                       province: _selectedProvince!,
                       detail: _detailController.text.trim(),
                       demand: _demandController.text.trim(),

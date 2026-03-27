@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 
 class LawyerPage extends StatefulWidget {
@@ -22,7 +23,8 @@ class _LawyerPageState extends State<LawyerPage> {
   bool _filterAvailableOnly = false;
   String _sortBy = 'none'; // none | rating | experience | distance
   String _searchText = '';
-
+  String _selectedProvince = 'ทั้งหมด'; // ← NEW
+  static const _kPrimary = Color(0xFF0262EC);
   final List<dynamic> _lawyers = [
     {
       'name': 'ศักดิ์สิทธิ์ พิพากษ์',
@@ -41,6 +43,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'avatar': 'ศ',
       'color': 0xFF1565C0,
       'imageUrl': 'assets/images/lawyer-avatar-1.png',
+      'province': 'กรุงเทพมหานครฯ', // ← NEW
     },
     {
       'name': 'พิมพ์ใจ รักษาธรรม',
@@ -59,6 +62,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'avatar': 'พ',
       'color': 0xFF6A1B9A,
       'imageUrl': 'assets/images/lawyer-avatar-2.png',
+      'province': 'เชียงใหม่', // ← NEW
     },
     {
       'name': 'ธนากร นิติบัณฑิต',
@@ -77,6 +81,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'avatar': 'ธ',
       'color': 0xFF2E7D32,
       'imageUrl': 'assets/images/lawyer-avatar-3.png',
+      'province': 'ขอนแก่น', // ← NEW
     },
     {
       'name': 'วีระ ศักดิ์สิทธิ์กุล',
@@ -95,6 +100,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'avatar': 'ว',
       'color': 0xFFBF360C,
       'imageUrl': 'assets/images/lawyer-avatar-5.png',
+      'province': 'กรุงเทพมหานคร', // ← NEW
     },
     {
       'name': 'อรุณี ยุติธรรม',
@@ -113,8 +119,12 @@ class _LawyerPageState extends State<LawyerPage> {
       'avatar': 'อ',
       'color': 0xFF00695C,
       'imageUrl': 'assets/images/lawyer-avatar-4.png',
+      'province': 'ชลบุรี', // ← NEW
     },
   ];
+
+  // ── All provinces derived from data ───────────────────
+  List<dynamic> _allProvinces = [];
 
   // ── Computed filtered + sorted list ───────────────────
   List<dynamic> get _filteredLawyers {
@@ -133,6 +143,13 @@ class _LawyerPageState extends State<LawyerPage> {
     // Filter: available only
     if (_filterAvailableOnly) {
       list = list.where((l) => l['available'] as bool).toList();
+    }
+
+    // Filter: province ← NEW
+    if (_selectedProvince != 'ทั้งหมด') {
+      list = list
+          .where((l) => (l['province'] as String) == _selectedProvince)
+          .toList();
     }
 
     // Sort
@@ -159,6 +176,7 @@ class _LawyerPageState extends State<LawyerPage> {
     if (_filterAvailableOnly) c++;
     if (_sortBy != 'none') c++;
     if (_searchText.isNotEmpty) c++;
+    if (_selectedProvince != 'ทั้งหมด') c++; // ← NEW
     return c;
   }
 
@@ -166,6 +184,7 @@ class _LawyerPageState extends State<LawyerPage> {
         _filterAvailableOnly = false;
         _sortBy = 'none';
         _searchText = '';
+        _selectedProvince = 'ทั้งหมด'; // ← NEW
       });
 
   // ── Bottom Sheet Filter ────────────────────────────────
@@ -174,17 +193,43 @@ class _LawyerPageState extends State<LawyerPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _FilterSheet(
-        availableOnly: _filterAvailableOnly,
-        sortBy: _sortBy,
-        onApply: (available, sort) {
-          setState(() {
-            _filterAvailableOnly = available;
-            _sortBy = sort;
-          });
+      builder: (_) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return filter(context, setModalState);
         },
       ),
+
+      // _FilterSheet(
+      //   availableOnly: _filterAvailableOnly,
+      //   sortBy: _sortBy,
+      //   selectedProvince: _selectedProvince, // ← NEW
+      //   allProvinces: _allProvinces, // ← NEW
+      //   onApply: (available, sort, province) {
+      //     setState(() {
+      //       _filterAvailableOnly = available;
+      //       _sortBy = sort;
+      //       _selectedProvince = province; // ← NEW
+      //     });
+      //   },
+      // ),
     );
+  }
+
+  Future<void> _callReadProvince() async {
+    final param = await postDio("${server}route/province/read", {});
+
+    setState(() {
+      _allProvinces = [
+        {"code": "0", "title": "เลือกจังหวัด"},
+        ...param
+      ];
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _callReadProvince();
   }
 
   @override
@@ -205,19 +250,10 @@ class _LawyerPageState extends State<LawyerPage> {
         behavior: HitTestBehavior.opaque,
         child: Column(
           children: [
-            // ── Header ──────────────────────────────────────
             _buildHeader(),
-
-            // ── Topic chip ──────────────────────────────────
-            // _buildTopicChip(),
-
-            // ── Search + Filter bar ─────────────────────────
             _buildSearchFilterBar(),
-
-            // ── Active filter chips ─────────────────────────
+            // _buildProvinceScrollRow(), // ← NEW: horizontal province quick-filter
             if (_activeFilterCount > 0) _buildActiveChips(),
-
-            // ── Result count ────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(children: [
@@ -231,8 +267,6 @@ class _LawyerPageState extends State<LawyerPage> {
                 ),
               ]),
             ),
-
-            // ── List ────────────────────────────────────────
             Expanded(
               child: filtered.isEmpty
                   ? _buildEmpty()
@@ -375,11 +409,16 @@ class _LawyerPageState extends State<LawyerPage> {
                                   ]),
                                   const SizedBox(height: 8),
                                   Row(children: [
+                                    // ── Province chip ← NEW ──────────────
+                                    _chip(
+                                      Icons.location_city_outlined,
+                                      l['province'] as String,
+                                      highlight:
+                                          _selectedProvince == l['province'],
+                                    ),
+                                    const SizedBox(width: 8),
                                     _chip(Icons.location_on_outlined,
                                         l['distance'] as String),
-                                    const SizedBox(width: 8),
-                                    _chip(Icons.business_outlined,
-                                        l['office'] as String),
                                   ]),
                                 ],
                               ),
@@ -396,7 +435,7 @@ class _LawyerPageState extends State<LawyerPage> {
   }
 
   // ════════════════════════════════════════════════════════
-  //  Widgets
+  //  Existing Widgets (unchanged + minor tweak to _chip)
   // ════════════════════════════════════════════════════════
 
   Widget _buildHeader() {
@@ -437,140 +476,108 @@ class _LawyerPageState extends State<LawyerPage> {
     );
   }
 
-  Widget _buildTopicChip() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0262EC).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.label_outline_rounded,
-                size: 14, color: Color(0xFF0262EC)),
-            const SizedBox(width: 4),
-            Text(widget.topic,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF0262EC),
-                    fontWeight: FontWeight.w600)),
-            if (widget.subTopic.isNotEmpty)
-              Text(' › ${widget.subTopic}',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF0262EC),
-                      fontWeight: FontWeight.w600)),
-          ]),
-        ),
-      ]),
-    );
-  }
-
   Widget _buildSearchFilterBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-      child: Row(children: [
-        // Search field
-        Expanded(
-          child: Container(
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F4)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: (v) => setState(() => _searchText = v),
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'ค้นหาชื่อหรือความเชี่ยวชาญ...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  prefixIcon: Icon(Icons.search_rounded,
+                      color: Colors.grey[400], size: 18),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-              ],
-            ),
-            child: TextField(
-              onChanged: (v) => setState(() => _searchText = v),
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'ค้นหาชื่อหรือความเชี่ยวชาญ...',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                prefixIcon: Icon(Icons.search_rounded,
-                    color: Colors.grey[400], size: 18),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-
-        // Filter button
-        GestureDetector(
-          onTap: _showFilterSheet,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: _activeFilterCount > 0
-                  ? const Color(0xFF0262EC)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: _showFilterSheet,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
                 color: _activeFilterCount > 0
                     ? const Color(0xFF0262EC)
-                    : const Color(0xFFE2E8F4),
-              ),
-              boxShadow: [
-                BoxShadow(
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
                   color: _activeFilterCount > 0
-                      ? const Color(0xFF0262EC).withOpacity(0.3)
-                      : Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                      ? const Color(0xFF0262EC)
+                      : const Color(0xFFE2E8F4),
                 ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  Icons.tune_rounded,
-                  color:
-                      _activeFilterCount > 0 ? Colors.white : Colors.grey[500],
-                  size: 20,
-                ),
-                // Badge count
-                if (_activeFilterCount > 0)
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: const Color(0xFF0262EC), width: 1.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$_activeFilterCount',
-                          style: const TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0262EC),
+                boxShadow: [
+                  BoxShadow(
+                    color: _activeFilterCount > 0
+                        ? const Color(0xFF0262EC).withOpacity(0.3)
+                        : Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.tune_rounded,
+                    color: _activeFilterCount > 0
+                        ? Colors.white
+                        : Colors.grey[500],
+                    size: 20,
+                  ),
+                  if (_activeFilterCount > 0)
+                    Positioned(
+                      top: 5,
+                      right: 5,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0xFF0262EC), width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$_activeFilterCount',
+                            style: const TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0262EC),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -578,21 +585,22 @@ class _LawyerPageState extends State<LawyerPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(children: [
-        // ว่างอยู่ chip
         if (_filterAvailableOnly)
           _activeChip('ว่างอยู่',
               onRemove: () => setState(() => _filterAvailableOnly = false)),
-
         if (_filterAvailableOnly && _sortBy != 'none') const SizedBox(width: 6),
-
-        // Sort chip
         if (_sortBy != 'none')
           _activeChip(_sortLabel(_sortBy),
               onRemove: () => setState(() => _sortBy = 'none')),
-
+        // ── Province active chip ← NEW ─────────────────
+        if (_selectedProvince != 'ทั้งหมด') ...[
+          if (_filterAvailableOnly || _sortBy != 'none')
+            const SizedBox(width: 6),
+          _activeChip(_selectedProvince,
+              icon: Icons.location_city_outlined,
+              onRemove: () => setState(() => _selectedProvince = 'ทั้งหมด')),
+        ],
         const Spacer(),
-
-        // Clear all
         GestureDetector(
           onTap: _clearFilters,
           child: Text('ล้างทั้งหมด',
@@ -605,7 +613,8 @@ class _LawyerPageState extends State<LawyerPage> {
     );
   }
 
-  Widget _activeChip(String label, {required VoidCallback onRemove}) =>
+  Widget _activeChip(String label,
+          {required VoidCallback onRemove, IconData? icon}) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
@@ -614,6 +623,10 @@ class _LawyerPageState extends State<LawyerPage> {
           border: Border.all(color: const Color(0xFF0262EC).withOpacity(0.3)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icon != null) ...[
+            Icon(icon, size: 11, color: const Color(0xFF0262EC)),
+            const SizedBox(width: 3),
+          ],
           Text(label,
               style: const TextStyle(
                   fontSize: 11,
@@ -633,8 +646,8 @@ class _LawyerPageState extends State<LawyerPage> {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF2F5),
+            decoration: const BoxDecoration(
+              color: Color(0xFFEEF2F5),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.person_search_rounded,
@@ -673,22 +686,39 @@ class _LawyerPageState extends State<LawyerPage> {
         ),
       );
 
-  Widget _chip(IconData icon, String label) => Expanded(
+  // ── _chip: added optional highlight param ← NEW ───────
+  Widget _chip(IconData icon, String label, {bool highlight = false}) =>
+      Expanded(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF2F5),
+            color: highlight
+                ? const Color(0xFF0262EC).withOpacity(0.08)
+                : const Color(0xFFEEF2F5),
             borderRadius: BorderRadius.circular(8),
+            border: highlight
+                ? Border.all(color: const Color(0xFF0262EC).withOpacity(0.3))
+                : null,
           ),
           child: Row(children: [
-            Icon(icon, size: 13, color: const Color(0xFF0262EC)),
+            Icon(icon,
+                size: 13,
+                color: highlight
+                    ? const Color(0xFF0262EC)
+                    : const Color(0xFF0262EC)),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF1A2340)),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: highlight ? FontWeight.w700 : FontWeight.w400,
+                  color: highlight
+                      ? const Color(0xFF0262EC)
+                      : const Color(0xFF1A2340),
+                ),
               ),
             ),
           ]),
@@ -707,42 +737,8 @@ class _LawyerPageState extends State<LawyerPage> {
         return '';
     }
   }
-}
 
-// ══════════════════════════════════════════════════════════
-//  _FilterSheet — Bottom Sheet
-// ══════════════════════════════════════════════════════════
-
-class _FilterSheet extends StatefulWidget {
-  final bool availableOnly;
-  final String sortBy;
-  final Function(bool available, String sort) onApply;
-
-  const _FilterSheet({
-    required this.availableOnly,
-    required this.sortBy,
-    required this.onApply,
-  });
-
-  @override
-  State<_FilterSheet> createState() => _FilterSheetState();
-}
-
-class _FilterSheetState extends State<_FilterSheet> {
-  late bool _available;
-  late String _sort;
-
-  static const _kPrimary = Color(0xFF0262EC);
-
-  @override
-  void initState() {
-    super.initState();
-    _available = widget.availableOnly;
-    _sort = widget.sortBy;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  filter(context, setModalState) {
     return Container(
       padding: EdgeInsets.fromLTRB(
           20, 0, 20, MediaQuery.of(context).padding.bottom + 20),
@@ -750,181 +746,311 @@ class _FilterSheetState extends State<_FilterSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 20),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F4),
-                borderRadius: BorderRadius.circular(4),
+      // ── Use SingleChildScrollView so sheet doesn't overflow ──
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F4),
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-          ),
 
-          // Title
-          const Text('ตัวกรอง',
-              style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A2340))),
-          const SizedBox(height: 20),
+            const Text('ตัวกรอง',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A2340))),
+            const SizedBox(height: 20),
 
-          // ── ว่างอยู่ ──────────────────────────────────
-          const Text('สถานะ',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A2340))),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => setState(() => _available = !_available),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(14),
+            // ── สถานะ ─────────────────────────────────────
+            const Text('สถานะ',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2340))),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => setModalState(
+                  () => _filterAvailableOnly = !_filterAvailableOnly),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _filterAvailableOnly
+                      ? _kPrimary.withOpacity(0.08)
+                      : const Color(0xFFF8F9FB),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _filterAvailableOnly
+                        ? _kPrimary.withOpacity(0.4)
+                        : const Color(0xFFE2E8F4),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: _filterAvailableOnly ? _kPrimary : Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: _filterAvailableOnly
+                            ? _kPrimary
+                            : const Color(0xFFCCCCCC),
+                      ),
+                    ),
+                    child: _filterAvailableOnly
+                        ? const Icon(Icons.check_rounded,
+                            color: Colors.white, size: 14)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                        color: Color(0xFF34C759), shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text('แสดงเฉพาะที่ว่างอยู่',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A2340))),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // // ── จังหวัด ← NEW ─────────────────────────────
+            Row(
+              children: [
+                const Text('จังหวัด',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A2340))),
+                const Spacer(),
+                if (_selectedProvince != 'ทั้งหมด')
+                  GestureDetector(
+                    onTap: () =>
+                        setModalState(() => _selectedProvince = 'ทั้งหมด'),
+                    child: Text('ล้าง',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: _kPrimary.withOpacity(0.7),
+                            fontWeight: FontWeight.w600)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: BoxDecoration(
-                color: _available
+                color: _selectedProvince != 'ทั้งหมด'
                     ? _kPrimary.withOpacity(0.08)
                     : const Color(0xFFF8F9FB),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _available
+                  color: _selectedProvince != 'ทั้งหมด'
                       ? _kPrimary.withOpacity(0.4)
                       : const Color(0xFFE2E8F4),
                   width: 1.5,
                 ),
               ),
-              child: Row(children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: _available ? _kPrimary : Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: _available ? _kPrimary : const Color(0xFFCCCCCC),
-                    ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  // value: _selectedProvince,
+                  value:
+                      _allProvinces.any((e) => e['title'] == _selectedProvince)
+                          ? _selectedProvince
+                          : null, // 🔥
+                  isExpanded: true,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _selectedProvince != 'ทั้งหมด'
+                        ? _kPrimary
+                        : Colors.grey[400],
+                    size: 20,
                   ),
-                  child: _available
-                      ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 14)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                      color: Color(0xFF34C759), shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 6),
-                const Text('แสดงเฉพาะที่ว่างอยู่',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A2340))),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // ── เรียงตาม ──────────────────────────────────
-          const Text('เรียงตาม',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A2340))),
-          const SizedBox(height: 10),
-          Row(children: [
-            _sortChip('none', 'ค่าเริ่มต้น', Icons.sort_rounded),
-            const SizedBox(width: 8),
-            _sortChip('rating', 'คะแนน', Icons.star_rounded),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            _sortChip('experience', 'ประสบการณ์', Icons.history_rounded),
-            const SizedBox(width: 8),
-            _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded),
-          ]),
-          const SizedBox(height: 24),
-
-          // ── Buttons ───────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _available = false;
-                    _sort = 'none';
-                  });
-                },
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F6FF),
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: const Color(0xFFDDE5F4), width: 1.5),
-                  ),
-                  child: const Center(
-                    child: Text('ล้างฟิลเตอร์',
-                        style: TextStyle(
-                            color: Color(0xFF5B6E8A),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 2,
-              child: GestureDetector(
-                onTap: () {
-                  widget.onApply(_available, _sort);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _kPrimary.withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                  selectedItemBuilder: (_) => _allProvinces.map((p) {
+                    return Row(children: [
+                      Icon(
+                        p['title'] != 'ทั้งหมด'
+                            ? Icons.location_city_outlined
+                            : Icons.public_rounded,
+                        size: 15,
+                        color: _selectedProvince != 'ทั้งหมด'
+                            ? _kPrimary
+                            : Colors.grey[400],
                       ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text('นำฟิลเตอร์ไปใช้',
+                      const SizedBox(width: 8),
+                      Text(
+                        p['title'],
                         style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14)),
-                  ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _selectedProvince != 'ทั้งหมด'
+                              ? _kPrimary
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ]);
+                  }).toList(),
+                  items: _allProvinces.map<DropdownMenuItem<String>>(
+                    (p) {
+                      final isSelected = _selectedProvince == p['title'];
+                      return DropdownMenuItem<String>(
+                        value: p['title'],
+                        child: Row(
+                          children: [
+                            Icon(
+                              p['title'] != 'ทั้งหมด'
+                                  ? Icons.location_city_outlined
+                                  : Icons.public_rounded,
+                              size: 15,
+                              color: isSelected ? _kPrimary : Colors.grey[400],
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                p['title'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? _kPrimary
+                                      : const Color(0xFF1A2340),
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check_rounded,
+                                  size: 15, color: _kPrimary),
+                          ],
+                        ),
+                      );
+                    },
+                  ).toList(),
+                  onChanged: (val) {
+                    print(val);
+                    if (val != null)
+                      setModalState(() => _selectedProvince = val);
+                  },
                 ),
               ),
             ),
-          ]),
-        ],
+
+            const SizedBox(height: 20),
+
+            // ── เรียงตาม ──────────────────────────────────
+            const Text('เรียงตาม',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2340))),
+            const SizedBox(height: 10),
+            Row(children: [
+              _sortChip('none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
+              const SizedBox(width: 8),
+              _sortChip('rating', 'คะแนน', Icons.star_rounded, setModalState),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded, setModalState),
+              const SizedBox(width: 8),
+              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded, setModalState),
+            ]),
+            const SizedBox(height: 24),
+
+            // ── Buttons ───────────────────────────────────
+            Row(children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setModalState(() {
+                      _filterAvailableOnly = false;
+                      _sortBy = 'none';
+                      _selectedProvince = 'ทั้งหมด'; // ← NEW
+                    });
+                  },
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F6FF),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: const Color(0xFFDDE5F4), width: 1.5),
+                    ),
+                    child: const Center(
+                      child: Text('ล้างฟิลเตอร์',
+                          style: TextStyle(
+                              color: Color(0xFF5B6E8A),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {});
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kPrimary.withOpacity(0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text('นำฟิลเตอร์ไปใช้',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14)),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _sortChip(String value, String label, IconData icon) {
-    final selected = _sort == value;
+  Widget _sortChip(String value, String label, IconData icon, setModalState) {
+    final selected = _sortBy == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _sort = value),
+        onTap: () => setModalState(() => _sortBy = value),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 10),

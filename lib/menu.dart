@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:LawyerOnline/map-card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -23,7 +25,6 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
-  
   List<Widget> pages = <Widget>[];
   int _currentPage = 0;
   DateTime? currentBackPressTime;
@@ -63,13 +64,13 @@ class _MenuPageState extends State<MenuPage> {
       userType = widget.userType ?? userType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
-      
+
       pages = <Widget>[
         HomePage(),
         MessagePage(),
         // LawyerOnlineList(),
         // MapCardPage(),
-        userType == "user" ? MyAppointment() : CalendarPage(),
+        userType == "user" ? AppointmentListPage() : CalendarPage(),
         ProfilePage(),
       ];
       _currentPage = widget.pageIndex ?? 0;
@@ -90,59 +91,62 @@ class _MenuPageState extends State<MenuPage> {
           child: IndexedStack(index: _currentPage, children: pages),
         ),
       ),
-      bottomNavigationBar: Container(
-        // decoration: const BoxDecoration(
-
-        //   borderRadius: BorderRadius.only(
-        //       topLeft: Radius.circular(29), topRight: Radius.circular(29)),
-        //   // boxShadow: [
-        //   //   BoxShadow(
-        //   //     color: Color(0xFF000000).withOpacity(0.15),
-        //   //     blurRadius: 15,
-        //   //     offset: Offset(0, -4),
-        //   //   ),
-        //   // ],
-        // ),
-        padding: const EdgeInsets.all(20), // ระยะลอยจากขอบ
-        child: Container(
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(15), // ระยะลอยจากขอบ
+        child: ClipRRect(
           // padding: const EdgeInsets.all(20),
-          padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-          decoration: BoxDecoration(
-            color: const Color(0xFF010101),
-            borderRadius: BorderRadius.circular(67),
-          ),
-          height: 80,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child:
-                    _bottomItem("assets/icons/home.png", 0, title: 'หนัาหลัก'),
+          // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          borderRadius: BorderRadius.circular(30),
+          // decoration: BoxDecoration(
+          //   color: const Color(0xFF010101),
+          //   borderRadius: BorderRadius.circular(67),
+          // ),
+          // height: 70,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 65,
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              decoration: BoxDecoration(
+                color: Color(0xFF010101).withOpacity(0.50),
+                borderRadius: BorderRadius.circular(67),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                ),
               ),
-              Expanded(
-                child: _bottomItem("assets/icons/message.png", 1,
-                    title: 'ข้อความ'),
-              ),
-              // Expanded(
-              //   child:
-              //       _bottomItem("assets/icons/consult.png", 2, title: 'ปรึกษา'),
-              // ),
-              Expanded(
-                child: _bottomItem("assets/icons/appointment.png", 2,
-                    title: 'นัดหมาย'),
-              ),
-              Expanded(
-                child: _bottomItem("assets/icons/profile.png", 3,
-                    title: 'โปรไฟล์'),
-              )
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Flexible(
+                    flex: _currentPage == 0 ? 2 : 1,
+                    child: _bottomItem("assets/icons/home.png", 0,
+                        title: 'หนัาหลัก'),
+                  ),
+                  Flexible(
+                    flex: _currentPage == 1 ? 2 : 1,
+                    child: _bottomItem("assets/icons/message.png", 1,
+                        title: 'ข้อความ'),
+                  ),
+                  Flexible(
+                    flex: _currentPage == 2 ? 2 : 1,
+                    child: _bottomItem("assets/icons/appointment.png", 2,
+                        title: 'นัดหมาย'),
+                  ),
+                  Flexible(
+                    flex: _currentPage == 3 ? 2 : 1,
+                    child: _bottomItem("assets/icons/profile.png", 3,
+                        title: 'โปรไฟล์'),
+                  )
 
-              // _bottomItem(
-              //   Icons.person,
-              //   3,
-              //   isImageUrl: true,
-              //   title: 'โปรไฟล์',
-              // ),
-            ],
+                  // _bottomItem(
+                  //   Icons.person,
+                  //   3,
+                  //   isImageUrl: true,
+                  //   title: 'โปรไฟล์',
+                  // ),
+                ],
+              ),
+            ),
           ),
         ),
         //   ),
@@ -173,86 +177,179 @@ class _MenuPageState extends State<MenuPage> {
     required String title,
   }) {
     final isSelected = _currentPage == index;
+    // return GestureDetector(
+    //   onTap: () {
+    //     // if (index == 2) {
+    //     //   postTrackClick("แจ้งเตือน");
+    //     // }
+    //     setState(() {
+    //       _currentPage = index;
+    //     });
+    //     // _loadUserProfile();
+    //   },
+    //   // borderRadius: BorderRadius.circular(50),
+    //   child: AnimatedContainer(
+    //     duration: Duration(milliseconds: 500),
+    //     curve: Curves.linearToEaseOut,
+    //     padding: EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+    //     child: Container(
+    //       height: double.infinity,
+    //       // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+    //       decoration: BoxDecoration(
+    //         color: isSelected
+    //             ? Theme.of(context).primaryColor
+    //             : Colors.transparent,
+    //         borderRadius: BorderRadius.circular(45),
+    //         boxShadow: [
+    //           BoxShadow(
+    //             color: isSelected
+    //                 ? Colors.black.withOpacity(0.2)
+    //                 : Colors.transparent,
+    //             blurRadius: 20,
+    //             offset: Offset(0, 10),
+    //           ),
+    //         ],
+    //         // shape: BoxShape.circle,
+    //       ),
+    //       child: Row(
+    //         mainAxisAlignment: MainAxisAlignment.center,
+    //         crossAxisAlignment: CrossAxisAlignment.center,
+    //         children: [
+    //           Image.asset(
+    //             icon,
+    //             width: 24,
+    //             height: 24,
+    //             color: isSelected ? Colors.white : Color(0xFF666666),
+    //           ),
+
+    //           isSelected
+    //               ? Row(
+    //                   children: [
+    //                     const SizedBox(
+    //                       width: 10,
+    //                     ),
+    //                     Text(
+    //                       title,
+    //                       style: TextStyle(
+    //                         fontSize: 14,
+    //                         color: isSelected
+    //                             ? Colors.white
+    //                             : const Color(0xFF666666),
+    //                       ),
+    //                     ),
+    //                   ],
+    //                 )
+    //               : const SizedBox()
+    //         ],
+    //       ),
+    //     ),
+    //   ),
+    // );
     return GestureDetector(
-      onTap: () {
-        // if (index == 2) {
-        //   postTrackClick("แจ้งเตือน");
-        // }
-        setState(() {
-          _currentPage = index;
-        });
-        // _loadUserProfile();
-      },
-      // borderRadius: BorderRadius.circular(50),
+      onTap: () => setState(() {
+        _currentPage = index;
+      }),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 500),
-        curve: Curves.linearToEaseOut,
-        // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-        child: Container(
-          // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-          decoration: BoxDecoration(
-            // color:
-            //     isSelected ? Theme.of(context).primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(45),
-            // boxShadow: [
-            //   BoxShadow(
-            //     color:
-            //         isSelected
-            //             ? Colors.black.withOpacity(0.2)
-            //             : Colors.transparent,
-            //     blurRadius: 20,
-            //     offset: Offset(0, 10),
-            //   ),
-            // ],
-            // shape: BoxShape.circle,
+        curve: Curves.easeInCubic,
+        duration: Duration(milliseconds: 750),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              icon,
+              color: isSelected ? Colors.white : Colors.white70,
+              width: 24,
+              height: 24,
+              // size: 26,
+            ),
+            isSelected
+                ? Row(
+                    children: [
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF666666),
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox()
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GlassBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const GlassBottomBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 70,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _item(Icons.home_rounded, 0),
+                _item(Icons.search_rounded, 1),
+                _item(Icons.person_rounded, 2),
+              ],
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(
-                icon,
-                width: 28,
-                height: 28,
-                color: isSelected ? Colors.white : Color(0xFF666666),
-              ),
-              // isImageUrl
-              // ? Container(
-              //     // padding: EdgeInsets.all('${imageUrl}' != '' ? 0.0 : 5.0),
-              //     decoration: BoxDecoration(
-              //       borderRadius: BorderRadius.circular(30),
-              //       // color: const Color(0xFFFF7900),
-              //     ),
-              //     alignment: Alignment.center,
-              //     height: 30,
-              //     width: 30,
-              //     child: imageUrl != ''
-              //         ? checkAvatar(context, '${imageUrl}')
-              //         : Icon(
-              //             icon,
-              //             size: 30,
-              //             color: isSelected
-              //                 ? Color(0xFF011895)
-              //                 : Color(0xFF877573),
-              //           ),
-              //   )
-              // : Icon(
-              //     icon,
-              //     size: 30,
-              //     color: isSelected ? Color(0xFF011895) : Color(0xFF877573),
-              //   ),
-              const SizedBox(
-                height: 3,
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSelected ? Colors.white : const Color(0xFF666666),
-                ),
-              ),
-            ],
-          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _item(IconData icon, int index) {
+    final selected = index == currentIndex;
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 250),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white.withOpacity(0.25) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(
+          icon,
+          color: selected ? Colors.white : Colors.white70,
+          size: 26,
         ),
       ),
     );

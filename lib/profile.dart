@@ -180,30 +180,30 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     )
                   : Container(),
-              menuItem(
-                  title: 'ประวัตินัดหมาย',
-                  onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                LawyerAppointmentHistoryPage(),
-                          ),
-                        ),
-                      }),
-              userType != "lawyer"
-                  ? menuItem(
-                      title: 'โพสต์ของฉัน',
-                      onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PostList(),
-                          ),
-                        ),
-                      },
-                    )
-                  : Container(),
+              // menuItem(
+              //     title: 'ประวัตินัดหมาย',
+              //     onTap: () => {
+              //           Navigator.push(
+              //             context,
+              //             MaterialPageRoute(
+              //               builder: (context) =>
+              //                   LawyerAppointmentHistoryPage(),
+              //             ),
+              //           ),
+              //         }),
+              // userType != "lawyer"
+              //     ? menuItem(
+              //         title: 'โพสต์ของฉัน',
+              //         onTap: () => {
+              //           Navigator.push(
+              //             context,
+              //             MaterialPageRoute(
+              //               builder: (context) => const PostList(),
+              //             ),
+              //           ),
+              //         },
+              //       )
+              //     : Container(),
               const SizedBox(height: 20),
 
               const Padding(

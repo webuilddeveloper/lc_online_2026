@@ -279,7 +279,7 @@ class SummaryPage extends StatelessWidget {
             Text(label,
                 style: TextStyle(fontSize: 11, color: Colors.grey[400])),
             const SizedBox(height: 2),
-            Text(value,
+            Text(value == '' ? '-' : value,
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

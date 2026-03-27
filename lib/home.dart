@@ -1,6 +1,4 @@
-import 'package:LawyerOnline/add-appointment.dart';
-import 'package:LawyerOnline/appointment-details.dart';
-import 'package:LawyerOnline/booking/boobking-flow.dart';
+import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/carousel_form.dart';
 import 'package:LawyerOnline/case-status-all.dart';
@@ -10,6 +8,7 @@ import 'package:LawyerOnline/component/link_url_in.dart';
 import 'package:LawyerOnline/consult/consult.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/law_type_all_page.dart';
+import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:LawyerOnline/menu.dart';
@@ -106,17 +105,6 @@ class _HomePageState extends State<HomePage> {
       "price": 500,
       "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
     },
-  ];
-
-  List<Map<String, String>> postCategoryList = [
-    {"code": "0", "title": "กฏหมายแพ่งและอาญา"},
-    {"code": "1", "title": "กฏหมายครอบครัว"},
-    {"code": "2", "title": "กฏหมายแรงงาน"},
-    {"code": "3", "title": "ที่ดินและอสังหาริมทรัพย์"},
-    {"code": "4", "title": "ธุรกิจและการค้า"},
-    {"code": "5", "title": "แรงงานต่างด้าว"},
-    {"code": "6", "title": "เทคโนโลยี/ออนไลน์"},
-    {"code": "7", "title": "นักสืบ/สืบสวน"},
   ];
 
   String? selectedCategory = "0";
@@ -351,51 +339,85 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: Column(
                       children: [
-                        Row(children: [
-                          Expanded(
-                            child: actionCard(
-                              title: "เปิดเคสให้ทนาย",
-                              icon: "assets/icons/open-case.png",
-                              onTap: () => Navigator.push(
+                        Row(
+                          children: [
+                            Expanded(
+                              child: actionCard(
+                                title: "เปิดเคสให้ทนาย",
+                                icon: "assets/icons/open-case.png",
+                                onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => ConsultPage())),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: actionCard(
+                                title: "นัดหมายทนาย",
+                                icon: "assets/icons/appointment-lawyer.png",
+                                onTap: () =>
+                                    // Navigator.push(
+                                    //   context,
+                                    //   MaterialPageRoute(
+                                    //     builder: (context) => AppAppointment(
+                                    //       title: 'นัดหมายทนาย',
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (_) => ConsultPage())),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: actionCard(
-                              title: "นัดหมายทนาย",
-                              icon: "assets/icons/appointment-lawyer.png",
-                              onTap: () => 
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => AppAppointment(
-                              //       title: 'นัดหมายทนาย',
-                              //     ),
-                              //   ),
-                              // ),
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TopicPage(),
+                                    builder: (context) => TopicPage(),
+                                  ),
                                 ),
+                                // BookingFlowPage
+
+                                // Navigator.push(
+                                //     context,
+                                //     MaterialPageRoute(
+                                //         builder: (_) => LawyerOnlineList())),
                               ),
-                              // BookingFlowPage
-                              
-                              // Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //         builder: (_) => LawyerOnlineList())),
                             ),
-                          ),
-                        ]),
+                          ],
+                        ),
                         const SizedBox(height: 25),
                       ],
                     ),
                   )
-                : const SizedBox.shrink(),
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Expanded(
+                      child: actionCard(
+                        title: "รับเคสลูกความ",
+                        icon: "assets/icons/appointment-lawyer.png",
+                        onTap: () =>
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => AppAppointment(
+                            //       title: 'นัดหมายทนาย',
+                            //     ),
+                            //   ),
+                            // ),
+                            Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LawyerJobListPage(),
+                          ),
+                        ),
+                        // BookingFlowPage
+
+                        // Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //         builder: (_) => LawyerOnlineList())),
+                      ),
+                    ),
+                  ),
+            // const SizedBox.shrink(),
+
+            // LawyerJobListPage
 
             // ── Banner ───────────────────────────────────────────
             Container(
@@ -430,7 +452,7 @@ class _HomePageState extends State<HomePage> {
 
             // ── Law Type Category ────────────────────────────────
             title(
-              title: "ประเภทกฏหมาย",
+              title: "ประเด็นหัวข้อ",
               isRightBtn: true,
               titleRightBtn: "ดูทั้งหมด",
               viewAll: () => Navigator.push(
@@ -686,49 +708,48 @@ class _HomePageState extends State<HomePage> {
         children: [
           Expanded(
             child: _lawTypeItem(
-              title: "กฏหมายแพ่งและอาญา",
+              title: "อาญาและอาชญากรรม",
               icons: "assets/icons/law-type-1.png",
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(topic: "กฏหมายแพ่งและอาญา"))),
+                          LawyerOnlineList(topic: "อาญาและอาชญากรรม"))),
             ),
           ),
           const SizedBox(width: 25),
           Expanded(
             child: _lawTypeItem(
-              title: "กฎหมายครอบครัว",
+              title: "ครอบครัวและมรดก",
               icons: "assets/icons/law-type-2.png",
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(topic: "กฏหมายครอบครัว"))),
+                          LawyerOnlineList(topic: "ครอบครัวและมรดก"))),
             ),
           ),
           const SizedBox(width: 25),
           Expanded(
             child: _lawTypeItem(
-              title: "กฎหมายบริษัท",
+              title: "ธุรกิจและบริษัท",
               icons: "assets/icons/law-type-3.png",
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                          LawyerOnlineList(topic: "กฏหมายแรงงาน"))),
+                      builder: (_) => LawyerOnlineList(topic: "ธุรกิจและบริษัท"))),
             ),
           ),
           const SizedBox(width: 25),
           Expanded(
             child: _lawTypeItem(
-              title: "กฎหมายธุรกิจ",
+              title: "แรงงานและการจ้างงาน",
               icons: "assets/icons/law-type-4.png",
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          LawyerOnlineList(topic: "ธุรกิจและการค้า"))),
+                          LawyerOnlineList(topic: "แรงงานและการจ้างงาน"))),
             ),
           ),
         ],
@@ -880,7 +901,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          AppointmentDetails(model: appointmentList[index])))),
+                          AppointmentDetailsLawyer(model: appointmentList[index])))),
         ),
         separatorBuilder: (_, __) => const SizedBox(width: 15),
       ),

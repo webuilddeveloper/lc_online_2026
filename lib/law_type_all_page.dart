@@ -223,7 +223,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF2F6FF),
         appBar: appBarCustom(
-          title: 'ประเภทกฎหมายทั้งหมด',
+          title: 'ประเด็นหัวข้อต่างๆ',
           backBtn: true,
           isRightWidget: false,
           backAction: () => Navigator.pop(context),

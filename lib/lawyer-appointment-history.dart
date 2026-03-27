@@ -1,7 +1,7 @@
 import 'package:LawyerOnline/appointment-history-detail.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
-import 'appointment-details.dart';
+import 'appointment-details-lawyer.dart';
 
 class LawyerAppointmentHistoryPage extends StatefulWidget {
   const LawyerAppointmentHistoryPage({super.key});

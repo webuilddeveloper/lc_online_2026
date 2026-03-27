@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 class ConsultSummaryPage extends StatefulWidget {
   final String category;
   final String subCategory;
-  final DateTime date;
+  // final DateTime date;
   final String province;
   final String detail;
   final String demand;
@@ -22,7 +22,7 @@ class ConsultSummaryPage extends StatefulWidget {
       {super.key,
       required this.category,
       required this.subCategory,
-      required this.date,
+      // required this.date,
       required this.province,
       required this.detail,
       required this.demand,
@@ -229,12 +229,12 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                         _buildInfoRow('ประเภทย่อย', widget.subCategory,
                             Icons.folder_outlined),
                         const SizedBox(height: 14),
-                        _buildInfoRow(
-                          'วันที่นัดหมาย',
-                          '${widget.date.day}/${widget.date.month}/${widget.date.year + 543}',
-                          Icons.calendar_today_outlined,
-                        ),
-                        const SizedBox(height: 14),
+                        // _buildInfoRow(
+                        //   'วันที่นัดหมาย',
+                        //   '${widget.date.day}/${widget.date.month}/${widget.date.year + 543}',
+                        //   Icons.calendar_today_outlined,
+                        // ),
+                        // const SizedBox(height: 14),
                         _buildInfoRow('จังหวัด', widget.province,
                             Icons.location_on_outlined),
                         const SizedBox(height: 14),
