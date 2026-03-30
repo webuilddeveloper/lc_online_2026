@@ -250,13 +250,23 @@ class _MenuPageState extends State<MenuPage> {
         _currentPage = index;
       }),
       child: AnimatedContainer(
-        curve: Curves.easeInCubic,
-        duration: Duration(milliseconds: 750),
+        curve: Curves.easeOutCubic,
+        duration: Duration(milliseconds: 250),
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color:
-              isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
+          // color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
+          color: isSelected ? Color.fromARGB(255, 248, 249, 253).withOpacity(0.9) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
+          // border: Border.all(
+          //   color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
+          // ),
+          boxShadow: [
+                BoxShadow(
+                  color: isSelected ? Color.fromARGB(255, 8, 93, 211).withOpacity(0.3) : Colors.transparent,
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -264,7 +274,7 @@ class _MenuPageState extends State<MenuPage> {
           children: [
             Image.asset(
               icon,
-              color: isSelected ? Colors.white : Colors.white70,
+              color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
               width: 24,
               height: 24,
               // size: 26,
@@ -280,7 +290,7 @@ class _MenuPageState extends State<MenuPage> {
                         style: TextStyle(
                           fontSize: 14,
                           color: isSelected
-                              ? Colors.white
+                              ? Color.fromARGB(255, 8, 93, 211)
                               : const Color(0xFF666666),
                         ),
                       ),

@@ -301,7 +301,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             prefixIcon: Icon(Icons.search_rounded,
                 color: const Color(0xFF1A2340).withOpacity(0.35), size: 18),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            contentPadding: const EdgeInsets.only(top: 9, bottom: 0),
           ),
         ),
       ),

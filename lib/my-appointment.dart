@@ -156,7 +156,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
       'time': '11:00 - 12:00',
       'status': 3,
       'type': 'video',
-      'rating': 4.0,
+      'rating': null,
     },
   ];
 
@@ -357,6 +357,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                         ),
                       ),
               ),
+              const SizedBox(height: 50,)
             ],
           ),
         ),
@@ -436,11 +437,11 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                       clipBehavior: Clip.none,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             color: badgeColor,
-                            borderRadius: BorderRadius.circular(10),
+                            // borderRadius: BorderRadius.circular(10),
+                            shape: BoxShape.circle
                           ),
                           child: Text(
                             '$count',
@@ -503,7 +504,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
               onChanged: (v) => _updateFilter(f.copyWith(search: v)),
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'ค้นหาชื่อทนาย, หัวข้อ, รหัส...',
+                hintText: 'ค้นหาทนาย...',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
                 prefixIcon: Icon(Icons.search_rounded,
                     color: Colors.grey[400], size: 17),
@@ -518,7 +519,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                contentPadding: const EdgeInsets.only(bottom: 0, top: 5),
               ),
             ),
           ),

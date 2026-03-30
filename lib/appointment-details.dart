@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
 // ══════════════════════════════════════════════════════════
 //  AppointmentDetailPage  (Redesigned — Clean Premium)
 //
@@ -113,8 +115,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   }
 
   // ── Shorthand getters ────────────────────────────────────
-  Map<String, dynamic> get a => widget.appointment;
-  int get status => (a['status'] as int).clamp(0, 4);
+  Map<String, dynamic> get appointmentModel => widget.appointment;
+  int get status => (appointmentModel['status'] as int).clamp(0, 4);
   bool get isDone => status == 4;
   bool get isActive => status == 3;
   Color get statusColor => _statusColors[status];
@@ -136,7 +138,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             slivers: [
               _buildHero(),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 120),
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 100),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _stagger(0, _buildDateTimeRow()),
@@ -146,7 +148,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                     _stagger(2, _buildInfoCard()),
                     // _gap(14),
                     // _stagger(3, _buildTimelineCard()),
-                    if (isDone && a['rating'] != null) ...[
+                    if (appointmentModel['status'] == 3 &&
+                        appointmentModel['rating'] != null) ...[
                       _gap(14),
                       _stagger(4, _buildRatingCard()),
                     ],
@@ -459,9 +462,11 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   Widget _buildDateTimeRow() {
     return Row(children: [
-      _pill(Icons.calendar_today_rounded, 'วันนัด', a['date'] as String, _blue),
+      _pill(Icons.calendar_today_rounded, 'วันนัด',
+          appointmentModel['date'] as String, _blue),
       const SizedBox(width: 10),
-      _pill(Icons.schedule_rounded, 'เวลา', a['time'] as String, _green),
+      _pill(Icons.schedule_rounded, 'เวลา', appointmentModel['time'] as String,
+          _green),
       const SizedBox(width: 10),
       _pill(
           Icons.videocam_rounded, 'รูปแบบ', 'วิดีโอ', const Color(0xFF8B5CF6)),
@@ -522,8 +527,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   width: 64,
                   height: 64,
                   color: lawyerColor.withOpacity(0.15),
-                  child: a['imageUrl'] != null
-                      ? Image.asset(a['imageUrl'] as String,
+                  child: appointmentModel['imageUrl'] != null
+                      ? Image.asset(appointmentModel['imageUrl'] as String,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) =>
                               _avatarText(lawyerColor))
@@ -561,7 +566,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    a['name'] as String,
+                    appointmentModel['name'] as String,
                     style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -577,7 +582,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      a['title'] as String,
+                      appointmentModel['title'] as String,
                       style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -634,7 +639,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   Widget _avatarText(Color color) => Center(
         child: Text(
-          a['lawyerAvatar'] as String,
+          appointmentModel['lawyerAvatar'] as String,
           style: TextStyle(
               fontSize: 26, color: color, fontWeight: FontWeight.w900),
         ),
@@ -677,13 +682,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
         children: [
           _cardTitle(Icons.info_outline_rounded, 'ข้อมูลการนัดหมาย'),
           const SizedBox(height: 14),
-          _infoRow('หัวข้อ', a['topic'] as String),
+          _infoRow('หัวข้อ', appointmentModel['topic'] as String),
           _divider(),
-          _infoRow('ประเด็น', a['subTopic'] as String),
+          _infoRow('ประเด็น', appointmentModel['subTopic'] as String),
           _divider(),
           _infoRow('ประเภท', 'วิดีโอคอล'),
           _divider(),
-          _infoRow('รหัสนัด', '# ${a['id']}', accent: true),
+          _infoRow('รหัสนัด', '# ${appointmentModel['id']}', accent: true),
         ],
       ),
     );
@@ -891,7 +896,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   // ════════════════════════════════════════════════════════
 
   Widget _buildRatingCard() {
-    final r = (a['rating'] as num).toDouble();
+    final r = (appointmentModel['rating'] as num).toDouble();
     return _cardWrap(
       child: Column(children: [
         _cardTitle(Icons.star_outline_rounded, 'คะแนนที่ให้'),
@@ -1014,13 +1019,27 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _ctaBtn(
-                    label: 'ให้คะแนน',
-                    icon: Icons.star_rounded,
-                    color: _amber,
-                    filled: true,
-                    onTap: () => HapticFeedback.lightImpact(),
-                  ),
+                  child: appointmentModel['rating'] == null
+                      ? _ctaBtn(
+                          label: 'ให้คะแนน',
+                          icon: Icons.star_rounded,
+                          color: _amber,
+                          filled: true,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            showRatingDialog(context);
+                          },
+                        )
+                      : _ctaBtn(
+                          label: 'กลับหน้าหลัก',
+                          icon: Icons.home,
+                          color: Theme.of(context).primaryColor,
+                          filled: true,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            goBack();
+                          },
+                        ),
                 ),
               ],
             )
@@ -1028,15 +1047,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                
                     GestureDetector(
                       onTap: () => {
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    MessageFormPage(model: widget.appointment)),
-                            )
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  MessageFormPage(model: widget.appointment)),
+                        )
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -1339,6 +1357,297 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
         HapticFeedback.lightImpact();
         Navigator.pop(context);
       },
+    );
+  }
+
+  void goBack() async {
+    Navigator.pop(context, false);
+  }
+
+  void showRatingDialog(BuildContext context) {
+    double rating = 0;
+    bool submitted = false;
+    final TextEditingController commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      // ✅ ทำให้ dialog ขยับขึ้นเมื่อ keyboard เปิด
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              // ✅ insetPadding ตอบสนอง keyboard (viewInsets.bottom)
+              insetPadding: EdgeInsets.fromLTRB(
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0
+                  // MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 350),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: FadeTransition(opacity: animation, child: child),
+                  ),
+                  child: submitted
+                      ? _buildSuccessContent(context)
+                      : _buildFormContent(
+                          context,
+                          rating,
+                          commentController,
+                          (value) => setState(() => rating = value),
+                          () => setState(() => submitted = true),
+                        ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFormContent(
+    BuildContext context,
+    double rating,
+    TextEditingController commentController,
+    ValueChanged<double> onRatingUpdate,
+    VoidCallback onSubmit,
+  ) {
+    return Container(
+      key: const ValueKey('form'),
+      color: Colors.white,
+      // ✅ ครอบด้วย SingleChildScrollView ป้องกัน overflow เมื่อ keyboard ขึ้น
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('ให้คะแนนทนาย',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2340))),
+              const SizedBox(height: 4),
+              Text('ความคิดเห็นของคุณมีคุณค่ามาก',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+              const SizedBox(height: 20),
+              RatingBar.builder(
+                initialRating: 0,
+                minRating: 1,
+                direction: Axis.horizontal,
+                allowHalfRating: false,
+                itemCount: 5,
+                itemSize: 38,
+                glow: false,
+                itemPadding: const EdgeInsets.symmetric(horizontal: 4),
+                itemBuilder: (context, _) =>
+                    const Icon(Icons.star_rounded, color: Color(0xFFFFC107)),
+                onRatingUpdate: onRatingUpdate,
+              ),
+              const SizedBox(height: 8),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Text(
+                  _ratingLabel(rating),
+                  key: ValueKey(rating),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF0262EC),
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: commentController,
+                maxLines: 3,
+                maxLength: 300,
+                // ✅ ป้องกัน keyboard ดัน content แล้ว overflow
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  hintText: 'กรอกความคิดเห็น...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: const Color(0xFFEEF2F5),
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF0262EC), width: 1.5)),
+                  counterStyle:
+                      TextStyle(color: Colors.grey[400], fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFEEF2F5), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Text('ยกเลิก',
+                            style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: rating > 0 ? onSubmit : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: rating > 0
+                            ? const LinearGradient(
+                                colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
+                            : null,
+                        color: rating > 0 ? null : const Color(0xFFCDD5E0),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: rating > 0
+                            ? [
+                                BoxShadow(
+                                    color: const Color(0xFF0262EC)
+                                        .withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4))
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded,
+                              color:
+                                  rating > 0 ? Colors.white : Colors.grey[400],
+                              size: 16),
+                          const SizedBox(width: 6),
+                          Text('ส่งคะแนน',
+                              style: TextStyle(
+                                  color: rating > 0
+                                      ? Colors.white
+                                      : Colors.grey[400],
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _ratingLabel(double rating) {
+    switch (rating.toInt()) {
+      case 1:
+        return 'แย่มาก';
+      case 2:
+        return 'พอใช้';
+      case 3:
+        return 'ดีพอสมควร';
+      case 4:
+        return 'ดีมาก';
+      case 5:
+        return 'ยอดเยี่ยม! 🎉';
+      default:
+        return 'กรุณาให้คะแนน';
+    }
+  }
+
+  Widget _buildSuccessContent(BuildContext context) {
+    return Container(
+      key: const ValueKey('success'),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+                color: Color(0xFFE8F5E9), shape: BoxShape.circle),
+            child: const Icon(Icons.check_rounded,
+                color: Color(0xFF2E7D32), size: 44),
+          ),
+          const SizedBox(height: 20),
+          const Text('ส่งคะแนนสำเร็จ!',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A2340))),
+          const SizedBox(height: 8),
+          Text(
+            'ขอบคุณที่ให้ความคิดเห็น\nคะแนนของคุณมีคุณค่ามากสำหรับเรา',
+            textAlign: TextAlign.center,
+            style:
+                TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.6),
+          ),
+          const SizedBox(height: 28),
+          GestureDetector(
+            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                      color: const Color(0xFF0262EC).withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.home_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('กลับหน้าหลัก',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
