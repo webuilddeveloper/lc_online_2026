@@ -3,6 +3,7 @@ import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
 import 'package:LawyerOnline/lawyer-appointment-history.dart';
+import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
 import 'package:flutter/material.dart';
@@ -156,17 +157,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 },
               ),
-              const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
-                child: Text(
-                  'กิจกรรมของคุณ',
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
+
+              userType == "user"
+                  ? const Column(
+                      children: [
+                        SizedBox(height: 20),
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                          child: Text(
+                            'กิจกรรมของคุณ',
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    )
+                  : Container(),
+
               userType != "lawyer"
                   ? menuItem(
                       title: 'การถูกใจ',
@@ -191,19 +201,20 @@ class _ProfilePageState extends State<ProfilePage> {
               //             ),
               //           ),
               //         }),
-              // userType != "lawyer"
-              //     ? menuItem(
-              //         title: 'โพสต์ของฉัน',
-              //         onTap: () => {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => const PostList(),
-              //             ),
-              //           ),
-              //         },
-              //       )
-              //     : Container(),
+              
+              userType == "lawyer"
+                  ? menuItem(
+                      title: 'อัพเกรดฟีเจอร์',
+                      onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SubscribePage(),
+                          ),
+                        ),
+                      },
+                    )
+                  : Container(),
               const SizedBox(height: 20),
 
               const Padding(

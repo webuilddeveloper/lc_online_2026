@@ -57,6 +57,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
 
   @override
   void initState() {
+    print('>>>>>><<<<<>>>> ======= ${widget.lawyer}');
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
@@ -442,7 +443,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                     color: Color(0xFFFFC107), size: 13),
                 const SizedBox(width: 3),
                 Text(
-                  '${lawyer['rating'] ?? ''} · ${lawyer['experience'] ?? ''}',
+                  '${lawyer['scroll'] ?? ''} · ${lawyer['experience'] ?? ''}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF1A2340),

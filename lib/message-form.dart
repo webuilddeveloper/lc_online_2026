@@ -3,6 +3,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 // import 'package:hms_room_kit_fixed/hms_room_kit_fixed.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,11 +22,21 @@ class _MessageFormPageState extends State<MessageFormPage> {
   final ScrollController _scrollController = ScrollController();
 
   final List<ChatMessage> messages = [];
+  final storage = FlutterSecureStorage();
+  String userType = "";
 
   @override
   void dispose() {
     chatController.dispose();
     super.dispose();
+  }
+
+  callRead() async {
+    var userType = await storage.read(key: 'userType');
+
+    setState(() {
+      this.userType = userType ?? '';
+    });
   }
 
   void _sendMessage() {
@@ -58,37 +69,48 @@ class _MessageFormPageState extends State<MessageFormPage> {
     DialogService.showConfirm(
       context,
       title: "จบการปรึกษา",
-      message: "คุณต้องการจบการปรึกษากับทนายความใช่หรือไม่?",
+      message: userType == 'user'
+          ? "คุณต้องการจบการปรึกษากับทนายความใช่หรือไม่?"
+          : "คุณต้องการจบการปรึกษากับลูกความใช่หรือไม่",
       onConfirm: () {
         // แมป model → lawyer ที่ ConsultStatusPage ต้องการ
         final lawyer = widget.model != null
             ? {
-                'name'    : widget.model['name'] ?? '',
-                'avatar'  : (widget.model['name'] as String? ?? 'ท')
-                                .characters.first,
-                'title'   : widget.model['title'] ??
-                            (widget.model['skills'] != null &&
-                                (widget.model['skills'] as List).isNotEmpty
-                                ? (widget.model['skills'] as List).first
-                                : widget.model['experience'] ?? ''),
-                'rating'  : widget.model['rating'] ??
-                            widget.model['scroll'] ?? 0,
+                'name': widget.model['name'] ?? '',
+                'avatar':
+                    (widget.model['name'] as String? ?? 'ท').characters.first,
+                'title': widget.model['title'] ??
+                    (widget.model['skills'] != null &&
+                            (widget.model['skills'] as List).isNotEmpty
+                        ? (widget.model['skills'] as List).first
+                        : widget.model['experience'] ?? ''),
+                'rating': widget.model['rating'] ?? widget.model['scroll'] ?? 0,
                 'imageUrl': widget.model['imageUrl'] ?? '',
               }
             : null;
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ConsultStatusPage(
-              currentStep     : 4,           // เสร็จสิ้น
-              lawyer          : lawyer,
-              appointmentDate : widget.model?['appointmentDate'],
-              appointmentTime : widget.model?['appointmentTime'],
-            ),
-          ),
-          (Route<dynamic> route) => route.isFirst,
-        );
+        userType == 'user'
+            ? Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ConsultStatusPage(
+                    currentStep: 4, // เสร็จสิ้น
+                    lawyer: lawyer,
+                    appointmentDate: widget.model?['appointmentDate'],
+                    appointmentTime: widget.model?['appointmentTime'],
+                  ),
+                ),
+                (Route<dynamic> route) => route.isFirst,
+              )
+            : DialogService.showSuccess(
+                context,
+                title: "สำเร็จ",
+                message:
+                    "สถานะงานกับลูกความเสร็จสิ้นเรียบร้อย",
+                onClose: () {
+                  Navigator.pop(context);
+                },
+              );
       },
     );
   }
@@ -116,7 +138,9 @@ class _MessageFormPageState extends State<MessageFormPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  (widget.model['active'] ?? true) ? 'Active Now' : 'Not Active',
+                  (widget.model['active'] ?? true)
+                      ? 'Active Now'
+                      : 'Not Active',
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -178,8 +202,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0FFF4),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                      width: 1, color: const Color(0xFF34C759)),
+                  border: Border.all(width: 1, color: const Color(0xFF34C759)),
                 ),
                 child: const Icon(
                   Icons.task_alt_rounded,
@@ -262,9 +285,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
         child: Container(
           color: const Color(0xFFEEF2F5),
           padding: EdgeInsets.only(
-              left: 15,
-              right: 15,
-              bottom: isKeyboardOpen(context) ? 15 : 25),
+              left: 15, right: 15, bottom: isKeyboardOpen(context) ? 15 : 25),
           child: TextField(
             controller: chatController,
             maxLines: null,
@@ -279,8 +300,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFFFFFFF),
-              contentPadding:
-                  const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
+              contentPadding: const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
               hintText: "พิมพ์ข้อความ...",
               helperStyle: const TextStyle(color: Color(0xFF8593A8)),
               suffixIcon: Padding(
@@ -302,8 +322,8 @@ class _MessageFormPageState extends State<MessageFormPage> {
                         ],
                       ),
               ),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18.0)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(18.0)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18.0),
                 borderSide: const BorderSide(color: Color(0xFF0262EC)),
@@ -336,7 +356,8 @@ class _MessageFormPageState extends State<MessageFormPage> {
             DialogService.showConfirm(
               context,
               title: "ต้องเปิดการเข้าถึงใน Settings",
-              message: "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
+              message:
+                  "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
               onConfirm: () => openAppSettings(),
             );
             return;

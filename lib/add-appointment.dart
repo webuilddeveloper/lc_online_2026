@@ -239,6 +239,7 @@ class _AppAppointmentState extends State<AppAppointment> {
     {'code': '3', 'title': 'อารีย์ ศิษย์กฎหมาย'},
     {'code': '4', 'title': 'Sachin K'},
   ];
+  
   String? _selectedLawyerCode;
 
   // ── can proceed ───────────────────────────────────────

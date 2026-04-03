@@ -112,6 +112,7 @@ class DialogService {
       context: context,
       builder: (context) {
         return Dialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),

@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/message-form.dart';
@@ -1007,12 +1008,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       //     builder: (context) => TopicPage(),
                       //   )
                       // )
-                      Navigator.pushAndRemoveUntil(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => TopicPage(),
+                          builder: (_) => AppAppointment(
+                            lawyer: widget.appointment,
+                          ),
                         ),
-                        (Route<dynamic> route) => route.isFirst,
                       );
                     },
                   ),

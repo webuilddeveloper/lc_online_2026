@@ -17,22 +17,34 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// ─── Palette & theme constants ───────────────────────────────────────
+const _kPrimary = Color(0xFF0262EC); // deep navy
+const _kAccent = Color(0xFF2F80ED); // bright blue
+const _kGold = Color(0xFFF5A623); // justice-gold accent
+const _kSurface = Color(0xFFF4F6FB); // cool light background
+const _kCard = Colors.white;
+const _kText = Color(0xFF0D1B2A);
+const _kSub = Color(0xFF6B7A99);
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key, this.userType});
-
   final String? userType;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<dynamic> mockBannerList = [];
-  int _currentBanner = 1;
+  int _currentBanner = 0;
+  late AnimationController _fadeCtrl;
+  late Animation<double> _fadeAnim;
 
   List<dynamic> lawyerOnlineList = [
     {
@@ -43,9 +55,7 @@ class _HomePageState extends State<HomePage> {
       "cost": "Free",
       "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "experience": "11+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
+      "experience": "11+ ปี",
       "price": 500,
       "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
     },
@@ -57,9 +67,7 @@ class _HomePageState extends State<HomePage> {
       "cost": "Free",
       "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-2.png",
-      "experience": "19+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
+      "experience": "19+ ปี",
       "price": 500,
       "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
     },
@@ -71,9 +79,7 @@ class _HomePageState extends State<HomePage> {
       "cost": "Free",
       "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-3.png",
-      "experience": "10+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
+      "experience": "10+ ปี",
       "price": 500,
       "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
     },
@@ -85,9 +91,7 @@ class _HomePageState extends State<HomePage> {
       "cost": "200",
       "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-4.png",
-      "experience": "12+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
+      "experience": "12+ ปี",
       "price": 500,
       "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
     },
@@ -96,18 +100,14 @@ class _HomePageState extends State<HomePage> {
       "name": "Sachin K",
       'title': 'ทนายความอาวุโส',
       "scroll": 4.9,
-      "cost": "1000",
+      "cost": "1,000",
       "costUnit": "/hr",
       "imageUrl": "assets/images/lawyer-avatar-5.png",
-      "experience": "20+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
+      "experience": "20+ ปี",
       "price": 500,
       "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
     },
   ];
-
-  String? selectedCategory = "0";
 
   List<dynamic> appointmentList = [
     {
@@ -119,7 +119,7 @@ class _HomePageState extends State<HomePage> {
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกพี่น้อง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1"
+      "paymentStatus": "1",
     },
     {
       "code": "1",
@@ -130,14 +130,10 @@ class _HomePageState extends State<HomePage> {
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกพี่น้อง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1"
+      "paymentStatus": "1",
     },
   ];
 
-  // ── caseList ─────────────────────────────────────────────────────
-  // status ต้องสอดคล้องกับ CaseStatusAllPage tabs และ ConsultStatusPage:
-  //   "1" = กำลังปรึกษา  → currentStep: 3
-  //   "3" = เสร็จสิ้น    → currentStep: 4
   List<dynamic> caseList = [
     {
       "code": "0",
@@ -160,7 +156,7 @@ class _HomePageState extends State<HomePage> {
       },
       "position": const LatLng(13.7466, 100.5393),
       "status": "3",
-      "statusText": "กำลังปรึกษา"
+      "statusText": "กำลังปรึกษา",
     },
     {
       "code": "1",
@@ -183,7 +179,31 @@ class _HomePageState extends State<HomePage> {
       },
       "position": const LatLng(13.7466, 100.5393),
       "status": "4",
-      "statusText": "เสร็จสิ้น"
+      "statusText": "เสร็จสิ้น",
+    },
+  ];
+
+  // ─── law categories ───────────────────────────────────────────────
+  final List<Map<String, dynamic>> _lawCategories = [
+    {
+      "title": "อาญา\nและอาชญากรรม",
+      "icon": "assets/icons/law-type-1.png",
+      "topic": "อาญาและอาชญากรรม"
+    },
+    {
+      "title": "ครอบครัว\nและมรดก",
+      "icon": "assets/icons/law-type-2.png",
+      "topic": "ครอบครัวและมรดก"
+    },
+    {
+      "title": "ธุรกิจ\nและบริษัท",
+      "icon": "assets/icons/law-type-3.png",
+      "topic": "ธุรกิจและบริษัท"
+    },
+    {
+      "title": "แรงงาน\nและจ้างงาน",
+      "icon": "assets/icons/law-type-4.png",
+      "topic": "แรงงานและการจ้างงาน"
     },
   ];
 
@@ -195,777 +215,564 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    callRead();
     super.initState();
+    _fadeCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 600));
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    callRead();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
+      _fadeCtrl.forward();
     });
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
+    await [
       Permission.camera,
       Permission.microphone,
       Permission.photos,
-      Permission.location,
+      Permission.location
     ].request();
-    if (statuses[Permission.camera]!.isDenied) {}
   }
 
   callRead() async {
-    var userType = await storage.read(key: 'userType');
-    var imageProfile = await storage.read(key: 'imageUrlSocial');
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
-
+    final uType = await storage.read(key: 'userType');
+    final imgPro = await storage.read(key: 'imageUrlSocial');
+    final namePro = await storage.read(key: 'name');
+    final type = await storage.read(key: 'typeLogin');
     setState(() {
-      this.userType = userType ?? '';
-      name = nameProfile ?? 'assets/images/profile-avatar.jpg';
-      imageUrl = imageProfile ?? '';
+      userType = uType ?? '';
+      name = namePro ?? '';
+      imageUrl = imgPro ?? '';
       typeLogin = type.toString();
     });
-
-    var value = await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
+    final value =
+        await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
     setState(() {
       mockBannerList = value;
     });
   }
 
-  // ── สี + icon ตาม status ─────────────────────────────────────────
-  Color _statusColor(String status) {
+  // ─── status helpers ───────────────────────────────────────────────
+  _StatusStyle _statusStyle(String status) {
     switch (status) {
       case '1':
-        return const Color(0xFFEF4444);
+        return _StatusStyle(const Color(0xFFDC2626), const Color(0xFFFEF2F2),
+            Icons.info_outline_rounded);
       case '2':
-        return const Color(0xFFFF9500);
+        return _StatusStyle(const Color(0xFFD97706), const Color(0xFFFFFBEB),
+            Icons.pending_actions_rounded);
       case '3':
-        return const Color(0xFF0262EC);
+        return _StatusStyle(
+            _kAccent, const Color(0xFFEFF6FF), Icons.pending_actions_rounded);
       default:
-        return const Color(0xFF34C759);
+        return _StatusStyle(const Color(0xFF059669), const Color(0xFFECFDF5),
+            Icons.check_circle_outline_rounded);
     }
   }
 
-  IconData _statusIcon(String status) {
-    switch (status) {
-      case '1':
-        return Icons.info_outline_rounded;
-      case '2':
-        return Icons.pending_actions_rounded;
-      case '3':
-        return Icons.pending_actions_rounded;
-      default:
-        return Icons.check_circle_outline_rounded;
-    }
-  }
+  int _statusToStep(String status) => status == '4' ? 4 : 3;
 
-  // ── แปลง status → currentStep ของ ConsultStatusPage ──────────────
-  int _statusToStep(String status) {
-    switch (status) {
-      case '3':
-        return 3; // กำลังปรึกษา
-      case '4':
-        return 4; // เสร็จสิ้น
-      default:
-        return 3;
-    }
-  }
-
-  // ── แมป lawyerModel → lawyer ที่ ConsultStatusPage ต้องการ ────────
-  dynamic _buildLawyerForConsult(Map? lawyerModel) {
-    if (lawyerModel == null) return null;
+  dynamic _buildLawyerForConsult(Map? m) {
+    if (m == null) return null;
     return {
-      'name': lawyerModel['name'] ?? '',
-      'avatar': (lawyerModel['name'] as String? ?? 'ท').characters.first,
-      'title': (lawyerModel['skills'] as List?)?.isNotEmpty == true
-          ? (lawyerModel['skills'] as List).first
-          : lawyerModel['experience'] ?? '',
-      'rating': lawyerModel['scroll'] ?? 0,
-      'imageUrl': lawyerModel['imageUrl'] ?? '',
+      'name': m['name'] ?? '',
+      'avatar': (m['name'] as String? ?? 'ท').characters.first,
+      'title': (m['skills'] as List?)?.isNotEmpty == true
+          ? (m['skills'] as List).first
+          : m['experience'] ?? '',
+      'rating': m['scroll'] ?? 0,
+      'imageUrl': m['imageUrl'] ?? '',
     };
   }
 
-  // ── navigate → ConsultStatusPage ─────────────────────────────────
   void _goToConsultStatus(Map model) {
     Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ConsultStatusPage(
-          currentStep: _statusToStep(model['status']?.toString() ?? '1'),
-          lawyer: _buildLawyerForConsult(model['lawyerModel'] as Map?),
-          appointmentDate: model['appointmentDate'],
-          appointmentTime: model['appointmentTime'],
-        ),
-      ),
-    );
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConsultStatusPage(
+            currentStep: _statusToStep(model['status']?.toString() ?? '1'),
+            lawyer: _buildLawyerForConsult(model['lawyerModel'] as Map?),
+            appointmentDate: model['appointmentDate'],
+            appointmentTime: model['appointmentTime'],
+          ),
+        ));
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  //  BUILD
+  // ═══════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFEEF2F5),
-        appBar: appBarHome(
-          name: name,
-          memberType: userType == 'user' ? 'บุคคลทั่วไป' : 'หมอความ',
-          imageUrl: imageUrl,
-          typeLogin: typeLogin,
-          rightWidget: Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => NotificationPage())),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFAFAFA),
-                    borderRadius: BorderRadius.circular(18),
-                    border:
-                        Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+    final size = MediaQuery.of(context).size;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          backgroundColor: const Color.fromARGB(255, 233, 242, 249),
+          body: FadeTransition(
+            opacity: _fadeAnim,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // ── SliverAppBar with gradient ──────────────────────
+                _buildSliverAppBar(size),
+                // SliverToBoxAdapter(child: _buildBody(size)),
+                SliverToBoxAdapter(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      // อย่างน้อยต้องสูงเต็มจอ หักความสูง appbar ออก
+                      minHeight: MediaQuery.of(context).size.height - 100,
+                    ),
+                    child: _buildBody(size),
                   ),
-                  child: Image.asset("assets/icons/bell.png",
-                      width: 20, height: 20),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        body: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
-          children: [
-            // ── Action Cards (user only) ──────────────────────────
-            userType != "lawyer"
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: actionCard(
-                                title: "เปิดเคสให้ทนาย",
-                                icon: "assets/icons/open-case.png",
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => ConsultPage())),
-                              ),
-                            ),
-                            const SizedBox(width: 15),
-                            Expanded(
-                              child: actionCard(
-                                title: "นัดหมายทนาย",
-                                icon: "assets/icons/appointment-lawyer.png",
-                                onTap: () =>
-                                    // Navigator.push(
-                                    //   context,
-                                    //   MaterialPageRoute(
-                                    //     builder: (context) => AppAppointment(
-                                    //       title: 'นัดหมายทนาย',
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TopicPage(),
-                                  ),
-                                ),
-                                // BookingFlowPage
+      ),
+    );
+  }
 
-                                // Navigator.push(
-                                //     context,
-                                //     MaterialPageRoute(
-                                //         builder: (_) => LawyerOnlineList())),
-                              ),
+  // ─── Sliver App Bar ───────────────────────────────────────────────
+
+  Widget _buildSliverAppBar(Size size) {
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      snap: false,
+      expandedHeight: 100, // เท่ากับ collapsedHeight → ไม่ expand/collapse
+      collapsedHeight: 100,
+      toolbarHeight: 10,
+      backgroundColor: const Color.fromARGB(255, 233, 242, 249),
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black.withOpacity(0.7),
+      elevation: 0,
+      scrolledUnderElevation: 6, // shadow โชว์เฉพาะตอน scroll ผ่าน
+      automaticallyImplyLeading: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.pin,
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // gavel icon watermark
+            Positioned(
+              right: 20,
+              bottom: 0,
+              child: Icon(
+                Icons.gavel_rounded,
+                color: const Color(0xFF1565C0).withOpacity(0.06),
+                size: 100,
+              ),
+            ),
+            Positioned(
+              left: 5,
+              bottom: -20,
+              child: Icon(
+                Icons.balance,
+                color: const Color(0xFF1565C0).withOpacity(0.06),
+                size: 150,
+              ),
+            ),
+            // content
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildAvatar(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "สวัสดี,",
+                            style: GoogleFonts.prompt(
+                              color: Colors.black.withOpacity(0.5),
+                              fontSize: 12,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 25),
-                      ],
+                          ),
+                          Text(
+                            name.isNotEmpty ? name : "ผู้ใช้งาน",
+                            style: GoogleFonts.prompt(
+                              color: Colors.black,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          _buildMemberBadge(),
+                        ],
+                      ),
                     ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Expanded(
-                      child: actionCard(
-                        title: "รับเคสลูกความ",
-                        icon: "assets/icons/appointment-lawyer.png",
-                        onTap: () =>
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => AppAppointment(
-                            //       title: 'นัดหมายทนาย',
-                            //     ),
-                            //   ),
-                            // ),
-                            Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LawyerJobListPage(),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => NotificationPage()),
+                      ),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1565C0).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF1565C0).withOpacity(0.2),
                           ),
                         ),
-                        // BookingFlowPage
-
-                        // Navigator.push(
-                        //     context,
-                        //     MaterialPageRoute(
-                        //         builder: (_) => LawyerOnlineList())),
-                      ),
-                    ),
-                  ),
-            // const SizedBox.shrink(),
-
-            // LawyerJobListPage
-
-            // ── Banner ───────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              height: heightCalculate(150),
-              child: _buildBanner(),
-            ),
-
-            // ── Case Status Cards ─────────────────────────────────
-            userType == "user"
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      title(
-                        title: "สถานะเคส",
-                        isRightBtn: true,
-                        titleRightBtn: "ดูทั้งหมด",
-                        viewAll: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                CaseStatusAllPage(caseList: caseList),
+                        child: Stack(alignment: Alignment.center, children: [
+                          Image.asset(
+                            "assets/icons/bell.png",
+                            width: 20,
+                            height: 20,
+                            color: const Color(0xFF1565C0),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _buildCaseStatusList(),
-                      const SizedBox(height: 10),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-
-            // ── Law Type Category ────────────────────────────────
-            title(
-              title: "ประเด็นหัวข้อ",
-              isRightBtn: true,
-              titleRightBtn: "ดูทั้งหมด",
-              viewAll: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => LawTypeAllPage())),
-            ),
-            const SizedBox(height: 5),
-            _buildMenuLowCategory(),
-            const SizedBox(height: 25),
-
-            // ── Upcoming Appointments (lawyer only) ──────────────
-            userType == 'lawyer'
-                ? Column(
-                    children: [
-                      title(
-                        title: "นัดหมายที่กำลังจะมาถึง",
-                        isRightBtn: true,
-                        titleRightBtn: "ดูทั้งหมด",
-                        viewAll: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => MenuPage(pageIndex: 2))),
-                      ),
-                      const SizedBox(height: 10),
-                      _buildAppointmentList(),
-                      const SizedBox(height: 10),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-
-            // ── Lawyer Online (user only) ─────────────────────────
-            userType != "lawyer"
-                ? Column(
-                    children: [
-                      title(
-                        title: "หมอความออนไลน์",
-                        isRightBtn: true,
-                        titleRightBtn: "ดูทั้งหมด",
-                        viewAll: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => LawyerOnlineList())),
-                      ),
-                      _buildLawyerOnline(),
-                      const SizedBox(height: 80),
-                    ],
-                  )
-                : const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Case Status List ──────────────────────────────────────────────
-  Widget _buildCaseStatusList() {
-    return SizedBox(
-      height: 110,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-        itemCount: caseList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (_, index) => _caseStatusItem(caseList[index]),
-      ),
-    );
-  }
-
-  Widget _caseStatusItem(Map model) {
-    final status = model['status']?.toString() ?? '1';
-    final statusText = model['statusText'] ?? '';
-    final category = model['category'] ?? '';
-    final lawyerModel = model['lawyerModel'] as Map?;
-    final lawyerName = lawyerModel?['name'] ?? '';
-    final lawyerImage = lawyerModel?['imageUrl'] ?? '';
-    final color = _statusColor(status);
-    final icon = _statusIcon(status);
-
-    return GestureDetector(
-      onTap: () => _goToConsultStatus(model),
-      child: Container(
-        width: MediaQuery.of(context).size.width - 60,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset(lawyerImage,
-                  width: 56, height: 56, fit: BoxFit.cover),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    lawyerName,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black87),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    category,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, size: 12, color: color),
-                        const SizedBox(width: 4),
-                        Text(statusText,
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: color,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Banner ─────────────────────────────────────────────────────────
-  _buildBanner() {
-    return Stack(
-      children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            aspectRatio: 3,
-            enlargeCenterPage: false,
-            scrollDirection: Axis.horizontal,
-            viewportFraction: 1,
-            enlargeFactor: 1,
-            autoPlay: true,
-            onPageChanged: (index, reason) => setState(() {}),
-          ),
-          items: mockBannerList.map((item) {
-            return GestureDetector(
-              onTap: () {
-                if (item['action'] == 'out') {
-                  launchInWebViewWithJavaScript(item['path']);
-                  // launchURL(path);
-                } else if (item['action'] == 'in') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CarouselForm(
-                        code: item['code'],
-                        model: item,
-                        url: mainBannerApi,
-                        urlGallery: bannerGalleryApi,
+                          Positioned(
+                            top: 8,
+                            right: 9,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: _kGold,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ]),
                       ),
                     ),
-                  );
-                } else if (item['action'].toUpperCase() == 'P') {
-                  // postDio('${server}m/Rotation/innserlog', item);
-                  // _callReadPolicyPrivilegeAtoZ(item['code']);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ComingSoonPage(
-                        title: "Comming Soon",
-                        lottieUrl:
-                            "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  image: DecorationImage(
-                    image: NetworkImage(item['imageUrl']),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(
-                      const Color.fromARGB(133, 70, 70, 70).withOpacity(0.5),
-                      BlendMode.srcATop,
-                    ),
-                  ),
-                ),
-                child: CachedNetworkImage(
-                  imageUrl: item['imageUrl'],
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
+                  ],
                 ),
               ),
-            );
-          }).toList(),
-        ),
-        Positioned(
-          bottom: 30,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: mockBannerList.map<Widget>((url) {
-              int index = mockBannerList.indexOf(url);
-              return Container(
-                width: _currentBanner == index ? 17.5 : 7.0,
-                height: 7.0,
-                margin: const EdgeInsets.all(2.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.white,
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  _buildMenuLowCategory() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: _lawTypeItem(
-              title: "อาญาและอาชญากรรม",
-              icons: "assets/icons/law-type-1.png",
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          LawyerOnlineList(topic: "อาญาและอาชญากรรม"))),
             ),
-          ),
-          const SizedBox(width: 25),
-          Expanded(
-            child: _lawTypeItem(
-              title: "ครอบครัวและมรดก",
-              icons: "assets/icons/law-type-2.png",
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          LawyerOnlineList(topic: "ครอบครัวและมรดก"))),
-            ),
-          ),
-          const SizedBox(width: 25),
-          Expanded(
-            child: _lawTypeItem(
-              title: "ธุรกิจและบริษัท",
-              icons: "assets/icons/law-type-3.png",
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => LawyerOnlineList(topic: "ธุรกิจและบริษัท"))),
-            ),
-          ),
-          const SizedBox(width: 25),
-          Expanded(
-            child: _lawTypeItem(
-              title: "แรงงานและการจ้างงาน",
-              icons: "assets/icons/law-type-4.png",
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          LawyerOnlineList(topic: "แรงงานและการจ้างงาน"))),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  _lawTypeItem(
-      {required String title, required String icons, Function? onTap}) {
-    return GestureDetector(
-      onTap: () => onTap!(),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: Color(0xFF0262EC)),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Image.asset(icons, fit: BoxFit.contain, height: 50),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(title,
-              style: const TextStyle(fontSize: 12),
-              textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
-
-  _buildLawyerOnline() {
-    return SizedBox(
-      height: 205,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(15, 12, 15, 20),
-        itemCount: lawyerOnlineList.length,
-        itemBuilder: (context, index) => Align(
-          alignment: Alignment.topCenter,
-          child: _lawyerOnlineItem(lawyerOnlineList[index],
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => LawyerOnlineDetails(
-                          code: lawyerOnlineList[index]['code'])))),
-        ),
-        separatorBuilder: (_, __) => const SizedBox(width: 15),
-      ),
-    );
-  }
-
-  _lawyerOnlineItem(Map model, {Function? onTap}) {
-    return GestureDetector(
-      onTap: () => onTap!(),
-      child: Container(
-        width: 140,
-        padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 15,
-                offset: const Offset(0, 4))
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: _kPrimary.withOpacity(0.7), width: 1),
+      ),
+      child: ClipOval(
+          child: imageUrl.isNotEmpty
+              ? typeLogin == 'social'
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      width: 32,
+                      height: 32,
+                    )
+                  : Image.asset(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      width: 32,
+                      height: 32,
+                    )
+              : Image.asset(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  width: 32,
+                  height: 32,
+                )
+
+          // CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
+          // : Image.asset('assets/images/profile-avatar.jpg',
+          //     fit: BoxFit.cover),
+          ),
+    );
+  }
+
+  Widget _buildMemberBadge() {
+    final label = userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _kGold),
+      ),
+      child: Text(label,
+          style: GoogleFonts.prompt(
+              color: _kGold, fontSize: 10, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  // ─── Body ────────────────────────────────────────────────────────
+  Widget _buildBody(Size size) {
+    return IntrinsicHeight(
+      child: Container(
+        padding: const EdgeInsets.only(bottom: 100),
+        decoration: const BoxDecoration(
+          color: _kCard,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          // boxShadow: [
+          //     BoxShadow(
+          //       color: Colors.black.withOpacity(0.2),
+          //       blurRadius: 16,
+          //       offset: const Offset(0, -6),
+          //     )
+          //   ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(model['imageUrl'] ?? '',
-                  height: 80, width: 60, fit: BoxFit.cover),
+            const SizedBox(height: 20),
+      
+            // Action cards
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: userType != 'lawyer'
+                  ? Row(children: [
+                      Expanded(
+                        child: _actionCard(
+                          title: "เปิดเคส",
+                          subtitle: "ให้ทนายรับงาน",
+                          // icon: Icons.folder_open_rounded,
+                          iconAssets: "assets/icons/open-case.png",
+                          gradientColors: [
+                            // const Color(0xFF0B3D91),
+                            // const Color(0xFF1565C0)
+                            _kCard,
+                            _kCard
+                          ],
+                          titleColor: const Color(0xFF1565C0),
+                          subTitleColor: const Color(0xFF1565C0),
+                          iconColor: const Color(0xFF1565C0),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ConsultPage(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                          child: _actionCard(
+                        title: "นัดหมาย",
+                        subtitle: "จองเวลาปรึกษา",
+                        // icon: Icons.calendar_today_rounded,
+                        iconAssets: "assets/icons/appointment-lawyer.png",
+                        gradientColors: [
+                          const Color(0xFF1565C0),
+                          const Color(0xFF1E88E5)
+                        ],
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TopicPage(),
+                          ),
+                        ),
+                      )),
+                    ])
+                  : _actionCard(
+                      title: "รับเคส",
+                      subtitle: "ลูกความรอทนาย",
+                      icon: Icons.work_rounded,
+                      gradientColors: [_kPrimary, _kAccent],
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+                    ),
             ),
-            const SizedBox(height: 12),
-            Text(model['name'] ?? '',
-                style: const TextStyle(fontSize: 12),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 8),
-            Text('${model['scroll'] ?? 0} ⭐',
-                style: const TextStyle(fontSize: 12)),
-            Text(model['cost'] ?? '', style: const TextStyle(fontSize: 12)),
+      
+            const SizedBox(height: 24),
+      
+            // Banner
+            _buildBannerSection(size),
+      
+            const SizedBox(height: 24),
+      
+            // Case Status (user only)
+            if (userType == 'user') ...[
+              _sectionHeader("สถานะเคสของคุณ",
+                  onViewAll: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              CaseStatusAllPage(caseList: caseList)))),
+              // const SizedBox(height: 12),
+              _buildCaseStatusList(),
+              const SizedBox(height: 24),
+            ],
+      
+            // Law Categories (user only)
+            if (userType == 'user') ...[
+              _sectionHeader("ประเด็นหัวข้อกฎหมาย",
+                  onViewAll: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => LawTypeAllPage()))),
+              const SizedBox(height: 14),
+              _buildLawCategories(),
+              const SizedBox(height: 24),
+            ],
+      
+            // Appointments (lawyer only)
+            if (userType == 'lawyer') ...[
+              _sectionHeader("นัดหมายที่กำลังจะมาถึง",
+                  onViewAll: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 2)))),
+              const SizedBox(height: 12),
+              _buildAppointmentList(),
+              const SizedBox(height: 24),
+            ],
+      
+            // Lawyer Online (user only)
+            if (userType != 'lawyer') ...[
+              _sectionHeader("หมอความออนไลน์",
+                  onViewAll: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => LawyerOnlineList()))),
+              const SizedBox(height: 12),
+              _buildLawyerOnline(),
+            ],
+      
+            const SizedBox()
           ],
         ),
       ),
     );
   }
 
-  heightCalculate(double height) {
-    return (((MediaQuery.of(context).size.width *
-                    MediaQuery.of(context).size.height) /
-                MediaQuery.of(context).size.height) -
-            MediaQuery.of(context).size.width) +
-        height;
-  }
-
-  title(
-      {String? title,
-      bool isRightBtn = false,
-      String? titleRightBtn,
-      Function? viewAll}) {
+  // ─── Section Header ───────────────────────────────────────────────
+  Widget _sectionHeader(String title, {VoidCallback? onViewAll}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(title!,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          isRightBtn
-              ? GestureDetector(
-                  onTap: () => viewAll!(),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border:
-                          Border.all(width: 1, color: const Color(0xFFDBDBDB)),
-                    ),
-                    child: Text(titleRightBtn!,
-                        style: const TextStyle(
-                            color: Color(0xFF0262EC), fontSize: 12)),
-                  ),
-                )
-              : const SizedBox.shrink(),
+          Text(title,
+              style: GoogleFonts.prompt(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _kText,
+              )),
+          if (onViewAll != null)
+            GestureDetector(
+              onTap: onViewAll,
+              child: Row(children: [
+                Text("ดูทั้งหมด",
+                    style: GoogleFonts.prompt(
+                      fontSize: 12,
+                      color: _kAccent,
+                      fontWeight: FontWeight.w600,
+                    )),
+                const SizedBox(width: 2),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 10, color: _kAccent),
+              ]),
+            ),
         ],
       ),
     );
   }
 
-  _buildAppointmentList() {
-    return SizedBox(
-      height: 86,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 10),
-        itemCount: appointmentList.length,
-        itemBuilder: (context, index) => Align(
-          alignment: Alignment.topCenter,
-          child: _appointmentItem(appointmentList[index],
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          AppointmentDetailsLawyer(model: appointmentList[index])))),
-        ),
-        separatorBuilder: (_, __) => const SizedBox(width: 15),
-      ),
-    );
-  }
-
-  _appointmentItem(Map model, {Function? onTap}) {
+  // ─── Action Card ─────────────────────────────────────────────────
+  Widget _actionCard({
+    required String title,
+    required String subtitle,
+    IconData? icon,
+    String iconAssets = "",
+    Color? titleColor = Colors.white,
+    Color? subTitleColor = Colors.white,
+    Color? iconColor = Colors.white,
+    required List<Color> gradientColors,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () => onTap!(),
+      onTap: onTap,
       child: Container(
-        width: MediaQuery.of(context).size.width - 30,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
         decoration: BoxDecoration(
-            color: const Color(0xFFBAD5FF),
-            borderRadius: BorderRadius.circular(10)),
+          gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(18),
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Color.fromARGB(255, 157, 183, 211).withOpacity(0.2),
+          //     blurRadius: 16,
+          //     offset: const Offset(0, 6),
+          //   )
+          // ],
+          boxShadow: [
+            BoxShadow(
+              color: _kAccent.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ],
+          border: Border.all(
+            color: const Color(0xFFE2EAF8),
+          ),
+        ),
         child: Row(
           children: [
             Container(
-              width: 58,
-              height: 56,
-              padding: const EdgeInsets.all(11),
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: const Color(0xFF0262EC)),
-              child: Image.asset('assets/icons/calendar-appointment.png',
-                  height: 34,
-                  width: 36,
-                  fit: BoxFit.contain,
-                  color: Colors.white),
+                // color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              // ignore: unnecessary_null_comparison
+              child: icon != null
+                  ? Icon(icon, color: iconColor, size: 22)
+                  : Image.asset(
+                      iconAssets,
+                      width: 18,
+                      height: 18,
+                      color: iconColor,
+                    ),
             ),
-            const SizedBox(width: 30),
+            const SizedBox(width: 12),
             Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(model['title'] ?? '',
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                Row(children: [
-                  Image.asset('assets/icons/calendar-appointment.png',
-                      height: 13,
-                      width: 13,
-                      fit: BoxFit.contain,
-                      color: Colors.black),
-                  const SizedBox(width: 5),
-                  Text(model['appointmentDate'] ?? '',
-                      style: const TextStyle(fontSize: 10),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ]),
-                Row(children: [
-                  Image.asset('assets/icons/time-appointment.png',
-                      height: 13,
-                      width: 13,
-                      fit: BoxFit.contain,
-                      color: Colors.black),
-                  const SizedBox(width: 5),
-                  Text(model['appointmentTime'] ?? '',
-                      style: const TextStyle(fontSize: 10),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ]),
+                Text(
+                  title,
+                  style: GoogleFonts.prompt(
+                    color: titleColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.prompt(
+                    color: subTitleColor,
+                    fontSize: 11,
+                  ),
+                ),
               ],
             ),
           ],
@@ -974,78 +781,615 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget actionCard(
-      {required String title,
-      required String icon,
-      required VoidCallback onTap}) {
+  // ─── Banner ───────────────────────────────────────────────────────
+  Widget _buildBannerSection(Size size) {
+    if (mockBannerList.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        child: Container(
+          height: 160,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.grey.shade200,
+          ),
+          child:
+              const Center(child: CircularProgressIndicator(color: _kAccent)),
+        ),
+      );
+    }
+    return Column(children: [
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 0),
+        height: 140,
+        child: CarouselSlider(
+          options: CarouselOptions(
+            viewportFraction: 0.9,
+            aspectRatio: 3,
+            enlargeCenterPage: true,
+            enlargeFactor: 0.32,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            onPageChanged: (index, _) => setState(() => _currentBanner = index),
+          ),
+          items: mockBannerList.map((item) {
+            return GestureDetector(
+                onTap: () => _onBannerTap(item),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: DecorationImage(
+                      image: NetworkImage(item['imageUrl']),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        const Color.fromARGB(133, 55, 55, 55)
+                            .withOpacity(0.5), // ความจางของสี
+                        BlendMode.srcATop, // โหมดการผสมสี
+                      ),
+                    ),
+                  ),
+                  child: CachedNetworkImage(
+                    imageUrl: item['imageUrl'],
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ));
+          }).toList(),
+        ),
+      ),
+      // const SizedBox(height: 10),
+      // dots
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(mockBannerList.length, (i) {
+          final active = i == _currentBanner;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: active ? 18 : 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: active ? _kAccent : Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          );
+        }),
+      ),
+    ]);
+  }
+
+  void _onBannerTap(dynamic item) {
+    if (item['action'] == 'out') {
+      launchInWebViewWithJavaScript(item['path']);
+    } else if (item['action'] == 'in') {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CarouselForm(
+                code: item['code'],
+                model: item,
+                url: mainBannerApi,
+                urlGallery: bannerGalleryApi),
+          ));
+    } else if ((item['action'] as String).toUpperCase() == 'P') {
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ComingSoonPage(
+              title: "Comming Soon",
+              lottieUrl:
+                  "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+            ),
+          ));
+    }
+  }
+
+  // ─── Case Status List ─────────────────────────────────────────────
+  Widget _buildCaseStatusList() {
+    return SizedBox(
+      height: 130,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
+        itemCount: caseList.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _caseStatusItem(caseList[i]),
+      ),
+    );
+  }
+
+  Widget _caseStatusItem(Map model) {
+    final status = model['status']?.toString() ?? '1';
+    final s = _statusStyle(status);
+    final lawyerModel = model['lawyerModel'] as Map?;
+    final lawyerName = lawyerModel?['name'] ?? '';
+    final lawyerImage = lawyerModel?['imageUrl'] ?? '';
+    final category = model['category'] ?? '';
+    final statusText = model['statusText'] ?? '';
+
+    return GestureDetector(
+      onTap: () => _goToConsultStatus(model),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.72,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _kCard,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Row(children: [
+          // left colored bar
+          Container(
+            width: 4,
+            height: double.infinity,
+            decoration: BoxDecoration(
+                color: s.color, borderRadius: BorderRadius.circular(4)),
+          ),
+          const SizedBox(width: 12),
+          // avatar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(lawyerImage,
+                width: 48, height: 48, fit: BoxFit.cover),
+          ),
+          const SizedBox(width: 12),
+          // info
+          Expanded(
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(lawyerName,
+                  style: GoogleFonts.prompt(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _kText,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
+              Text(category,
+                  style: GoogleFonts.prompt(
+                    fontSize: 11,
+                    color: _kSub,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: s.bg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(s.icon, size: 11, color: s.color),
+                  const SizedBox(width: 4),
+                  Text(statusText,
+                      style: GoogleFonts.prompt(
+                        fontSize: 10,
+                        color: s.color,
+                        fontWeight: FontWeight.w600,
+                      )),
+                ]),
+              ),
+            ],
+          )),
+          Icon(Icons.chevron_right_rounded,
+              size: 18, color: Colors.grey.shade400),
+        ]),
+      ),
+    );
+  }
+
+  // ─── Law Categories Grid ──────────────────────────────────────────
+  Widget _buildLawCategories() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Row(
+        children: _lawCategories
+            .map((cat) => Expanded(
+                  child: _lawCategoryItem(
+                    title: cat['title']!,
+                    icon: cat['icon']!,
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                LawyerOnlineList(topic: cat['topic']))),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _lawCategoryItem({
+    required String title,
+    required String icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _kCard,
+              // borderRadius: BorderRadius.circular(100),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: _kAccent.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )
+              ],
+              border: Border.all(
+                color: const Color(0xFFE2EAF8),
+              ),
+            ),
+            child: Image.asset(
+              icon,
+              height: 34,
+              fit: BoxFit.contain,
+              color: _kPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(title,
+              style: GoogleFonts.prompt(
+                fontSize: 10.5,
+                color: _kText,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+
+  // ─── Lawyer Online ────────────────────────────────────────────────
+  Widget _buildLawyerOnline() {
+    return Container(
+      height: 210,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 15),
+        itemCount: lawyerOnlineList.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _lawyerCard(
+          lawyerOnlineList[i],
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LawyerOnlineDetails(
+                code: lawyerOnlineList[i]['code'],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _lawyerCard(Map model, {VoidCallback? onTap}) {
+    final isFree = (model['cost'] ?? '') == 'Free';
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        width: 148,
         decoration: BoxDecoration(
-          color: const Color(0xFF0262EC),
-          borderRadius: BorderRadius.circular(20),
+          color: _kCard,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 15,
-                offset: const Offset(0, 6))
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            )
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(icon, width: 40),
-            const SizedBox(height: 12),
-            Text(title,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16)),
+            // image area with gradient overlay
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
+              child: Stack(children: [
+                Image.asset(model['imageUrl'] ?? '',
+                    height: 100, width: double.infinity, fit: BoxFit.cover),
+                Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.5)
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    )),
+                Positioned(
+                    bottom: 6,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isFree ? const Color(0xFF059669) : _kPrimary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isFree
+                            ? 'ฟรี'
+                            : '฿${model['cost']}${model['costUnit']}',
+                        style: GoogleFonts.prompt(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )),
+              ]),
+            ),
+            // info
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(model['name'] ?? '',
+                        style: GoogleFonts.prompt(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _kText,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.star_rounded, size: 13, color: _kGold),
+                      const SizedBox(width: 3),
+                      Text('${model['scroll'] ?? 0}',
+                          style: GoogleFonts.prompt(
+                            fontSize: 11,
+                            color: _kText,
+                            fontWeight: FontWeight.w600,
+                          )),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.work_outline_rounded,
+                          size: 11, color: _kSub),
+                      const SizedBox(width: 3),
+                      Text(model['experience'] ?? '',
+                          style: GoogleFonts.prompt(
+                            fontSize: 10,
+                            color: _kSub,
+                          )),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(
+                      (model['skills'] as List?)?.isNotEmpty == true
+                          ? (model['skills'] as List).first
+                          : '',
+                      style: GoogleFonts.prompt(
+                        fontSize: 9.5,
+                        color: _kAccent,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ]),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // Future<Null> _callReadPolicyPrivilegeAtoZ(code) async {
-  //   var policy =
-  //       await postDio(server + "m/policy/readAtoZ", {"reference": "AtoZ"});
-  //   if (policy.length <= 0) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         // ignore: missing_required_param
-  //         // builder: (context) => PolicyIdentityVerificationPage(),
-  //         builder: (context) => PolicyV2Page(
-  //           category: 'AtoZ',
-  //           navTo: () {
-  //             Navigator.pop(context);
-  //             Navigator.pushReplacement(
-  //               context,
-  //               MaterialPageRoute(
-  //                 builder: (context) => EnfranchiseMain(
-  //                   reference: code,
-  //                 ),
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //     );
-  //   } else {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         builder: (context) => EnfranchiseMain(
-  //           reference: code,
-  //         ),
-  //       ),
-  //     );
-  //   }
-  // }
-
-  void goBack() async {
-    Navigator.pop(context, false);
+  // ─── Appointment List (lawyer) ────────────────────────────────────
+  Widget _buildAppointmentList() {
+    return SizedBox(
+      height: 90,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
+        itemCount: appointmentList.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _appointmentCard(appointmentList[i],
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        AppointmentDetailsLawyer(model: appointmentList[i])))),
+      ),
+    );
   }
+
+  Widget _appointmentCard(Map model, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: MediaQuery.of(context).size.width - 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0B3D91), Color(0xFF1E88E5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _kPrimary.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child:
+                const Icon(Icons.event_rounded, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(model['title'] ?? '',
+                  style: GoogleFonts.prompt(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.calendar_today_rounded,
+                    size: 11, color: Colors.white70),
+                const SizedBox(width: 4),
+                Text(model['appointmentDate'] ?? '',
+                    style: GoogleFonts.prompt(
+                      fontSize: 10.5,
+                      color: Colors.white70,
+                    )),
+                const SizedBox(width: 10),
+                const Icon(Icons.access_time_rounded,
+                    size: 11, color: Colors.white70),
+                const SizedBox(width: 4),
+                Text(model['appointmentTime'] ?? '',
+                    style: GoogleFonts.prompt(
+                      fontSize: 10.5,
+                      color: Colors.white70,
+                    )),
+              ]),
+            ],
+          )),
+          const Icon(Icons.chevron_right_rounded,
+              color: Colors.white54, size: 18),
+        ]),
+      ),
+    );
+  }
+}
+
+// ─── Helper class ─────────────────────────────────────────────────
+class _StatusStyle {
+  final Color color;
+  final Color bg;
+  final IconData icon;
+  const _StatusStyle(this.color, this.bg, this.icon);
+}
+
+class AppBarOverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // ── rings top-right ──────────────────────────────────────
+    final ringPaint = Paint()..style = PaintingStyle.stroke;
+    final c = Offset(size.width * 0.90, size.height * 0.16);
+    for (final r in [140.0, 100.0, 60.0]) {
+      canvas.drawCircle(
+          c,
+          r,
+          ringPaint
+            ..color = Colors.white.withOpacity(0.09)
+            ..strokeWidth = 0.8);
+    }
+    canvas.drawCircle(c, 24, Paint()..color = Colors.white.withOpacity(0.05));
+
+    // ── rings bottom-left (gold) ─────────────────────────────
+    const gold = Color(0xFFF5A623);
+    final cg = Offset(size.width * 0.10, size.height * 0.94);
+    for (final r in [80.0, 46.0]) {
+      canvas.drawCircle(
+          cg,
+          r,
+          ringPaint
+            ..color = gold.withOpacity(0.13)
+            ..strokeWidth = 0.8);
+    }
+    canvas.drawCircle(cg, 18, Paint()..color = gold.withOpacity(0.06));
+
+    // ── diagonal lines ───────────────────────────────────────
+    final diagPaint = Paint()
+      ..color = Colors.white.withOpacity(0.04)
+      ..strokeWidth = 0.7;
+    for (int i = 0; i < 6; i++) {
+      canvas.drawLine(
+        Offset(i * 80.0, size.height),
+        Offset(i * 80.0 + size.height, 0),
+        diagPaint,
+      );
+    }
+
+    // ── horizontal rules ─────────────────────────────────────
+    final hPaint = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 0.6;
+    for (double y = 64; y < size.height; y += 64) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), hPaint);
+    }
+
+    // ── dot grid top-left ────────────────────────────────────
+    final dotW = Paint()..color = Colors.white.withOpacity(0.13);
+    for (int r = 0; r < 3; r++) {
+      for (int col = 0; col < 4; col++) {
+        canvas.drawCircle(Offset(44 + col * 16.0, 38 + r * 16.0), 1.8, dotW);
+      }
+    }
+
+    // ── dot grid bottom-right (gold) ─────────────────────────
+    final dotG = Paint()..color = gold.withOpacity(0.18);
+    for (int r = 0; r < 2; r++) {
+      for (int col = 0; col < 4; col++) {
+        canvas.drawCircle(
+          Offset(size.width - 92 + col * 16.0, size.height - 62 + r * 16.0),
+          1.8,
+          dotG,
+        );
+      }
+    }
+
+    // ── accent lines ─────────────────────────────────────────
+    canvas.drawLine(
+      Offset(30, size.height - 24),
+      Offset(200, size.height - 24),
+      Paint()
+        ..color = gold.withOpacity(0.22)
+        ..strokeWidth = 0.8,
+    );
+    canvas.drawLine(
+      Offset(30, size.height - 24),
+      Offset(80, size.height - 24),
+      Paint()
+        ..color = gold.withOpacity(0.55)
+        ..strokeWidth = 1.4,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
 }

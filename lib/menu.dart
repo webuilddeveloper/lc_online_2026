@@ -84,11 +84,43 @@ class _MenuPageState extends State<MenuPage> {
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
       drawerScrimColor: Colors.transparent,
+      // body: GestureDetector(
+      //   onTap: () => FocusScope.of(context).unfocus(),
+      //   child: WillPopScope(
+      //     onWillPop: confirmExit,
+      //     child: IndexedStack(index: _currentPage, children: pages),
+      //   ),
+      // ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: WillPopScope(
           onWillPop: confirmExit,
-          child: IndexedStack(index: _currentPage, children: pages),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) {
+              // Fade + slide up เบาๆ
+              final offsetAnim = Tween<Offset>(
+                begin: const Offset(0, 0.02), // slide up นิดเดียว
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.bounceIn,
+              ));
+              // easeOutCubic
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: offsetAnim,
+                  child: child,
+                ),
+              );
+            },
+            // key สำคัญมาก — บอก AnimatedSwitcher ว่า widget เปลี่ยนแล้ว
+            child: KeyedSubtree(
+              key: ValueKey<int>(_currentPage),
+              child: pages.isNotEmpty ? pages[_currentPage] : const SizedBox(),
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: Padding(
@@ -255,18 +287,22 @@ class _MenuPageState extends State<MenuPage> {
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           // color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
-          color: isSelected ? Color.fromARGB(255, 248, 249, 253).withOpacity(0.9) : Colors.transparent,
+          color: isSelected
+              ? Color.fromARGB(255, 248, 249, 253).withOpacity(0.9)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           // border: Border.all(
           //   color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
           // ),
           boxShadow: [
-                BoxShadow(
-                  color: isSelected ? Color.fromARGB(255, 8, 93, 211).withOpacity(0.3) : Colors.transparent,
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+            BoxShadow(
+              color: isSelected
+                  ? Color.fromARGB(255, 8, 93, 211).withOpacity(0.3)
+                  : Colors.transparent,
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -274,7 +310,8 @@ class _MenuPageState extends State<MenuPage> {
           children: [
             Image.asset(
               icon,
-              color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
+              color:
+                  isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
               width: 24,
               height: 24,
               // size: 26,

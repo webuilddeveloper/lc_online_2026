@@ -57,7 +57,7 @@ class _CalendarPageState extends State<CalendarPage>
 
   getMarkerEvent() async {
     itemEvents = {
-      DateTime(2026, 3, 10): [
+      DateTime(2026, 4, 10): [
         {
           "code": "0",
           "clientName": "อนงค์ ดำเนิน",
@@ -82,7 +82,7 @@ class _CalendarPageState extends State<CalendarPage>
           "paymentStatus": "1"
         },
       ],
-      DateTime(2026, 3, 20): [
+      DateTime(2026, 4, 20): [
         {
           "code": "0",
           "clientName": "อนงค์ ดำเนิน",
@@ -93,10 +93,11 @@ class _CalendarPageState extends State<CalendarPage>
           "title": "ขอฟ้องร้องมรดกพี่น้อง ครั้งที่ 2",
           "details":
               "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดกอย่าตั้งใจเป็นเวลานานไม่แบ่งใครเป็นมรดกของคุณพ่อแต่คุณแม่ยังมีชีวิตอยู่",
-          "paymentStatus": "1"
+          "paymentStatus": "2",
+          "appointmentStatus": "2"
         },
       ],
-      DateTime(2026, 3, 25): [
+      DateTime(2026, 4, 25): [
         {
           "code": "1",
           "clientName": "อนงค์ ดำเนิน",
@@ -107,7 +108,8 @@ class _CalendarPageState extends State<CalendarPage>
           "title": "ขอฟ้องร้องมรดกพี่น้อง",
           "details":
               "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดกอย่าตั้งใจเป็นเวลานานไม่แบ่งใครเป็นมรดกของคุณพ่อแต่คุณแม่ยังมีชีวิตอยู่",
-          "paymentStatus": "1"
+          "paymentStatus": "2",
+          "appointmentStatus": "2"
         },
       ],
     };
