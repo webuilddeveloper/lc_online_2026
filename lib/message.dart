@@ -167,9 +167,10 @@ class _MessagePageState extends State<MessagePage> {
                       children: [
                         Text(
                           model['lastChat'] ?? '',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF8593A8),
+                            color: model['unreadCount'] > 0 ? Colors.black : Color(0xFF8593A8),
+                            fontWeight: model['unreadCount'] > 0 ? FontWeight.w600 : FontWeight.w400
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

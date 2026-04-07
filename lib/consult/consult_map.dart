@@ -182,7 +182,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
   }
 
   void _startSequence() {
-    _textTimer = Timer.periodic(const Duration(milliseconds: 900), (t) {
+    _textTimer = Timer.periodic(const Duration(milliseconds: 2000), (t) {
       if (!mounted) return;
       if (_statusIdx < _statusTexts.length - 1) {
         setState(() => _statusIdx++);

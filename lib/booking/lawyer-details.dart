@@ -339,11 +339,13 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.verified_rounded, size: 11, color: color),
                       const SizedBox(width: 3),
-                      Text('ยืนยันแล้ว',
-                          style: TextStyle(
-                              fontSize: 9,
-                              color: color,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        'ยืนยันแล้ว',
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: color,
+                            fontWeight: FontWeight.w700),
+                      ),
                     ]),
                   ),
                 ]),
@@ -382,34 +384,68 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                       ),
                       const SizedBox(height: 10),
                       // Rating pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.4)),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.star_rounded,
-                              color: Color(0xFFFFC107), size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${widget.lawyer['rating']}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded,
+                                    color: Color(0xFFFFC107), size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${widget.lawyer['rating']}',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13),
+                                ),
+                                Text(
+                                  ' / 5.0',
+                                  style: TextStyle(
+                                      color: Colors.white.withOpacity(0.65),
+                                      fontSize: 11),
+                                ),
+                              ],
+                            ),
                           ),
-                          Text(
-                            ' / 5.0',
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.65),
-                                fontSize: 11),
+                          const SizedBox(width: 5,),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on,
+                                    color: Colors.red.shade600, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${widget.lawyer['province']}',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
-                        ]),
+                        ],
                       ),
+
                       const SizedBox(height: 10),
                       Wrap(spacing: 6, runSpacing: 6, children: [
                         _heroBadge(Icons.work_history_rounded,

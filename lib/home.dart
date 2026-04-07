@@ -41,7 +41,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  List<dynamic> mockBannerList = [];
+  List<dynamic> mockBannerList = [
+    {
+      "code": "0",
+      "imageUrl": "assets/images/banner1.png"
+    },
+    {
+      "code": "1",
+      "imageUrl": "assets/images/banner2.png"
+    },
+  ];
   int _currentBanner = 0;
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -252,11 +261,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       imageUrl = imgPro ?? '';
       typeLogin = type.toString();
     });
-    final value =
-        await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
-    setState(() {
-      mockBannerList = value;
-    });
+    // final value =
+    //     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
+    // setState(() {
+    //   mockBannerList = value;
+    // });
   }
 
   // ─── status helpers ───────────────────────────────────────────────
@@ -818,7 +827,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     image: DecorationImage(
-                      image: NetworkImage(item['imageUrl']),
+                      image: AssetImage(item['imageUrl']),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
                         const Color.fromARGB(133, 55, 55, 55)
@@ -827,12 +836,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  child: CachedNetworkImage(
-                    imageUrl: item['imageUrl'],
+                  child: Image.asset(
+                    item['imageUrl'],
                     fit: BoxFit.contain,
                     width: double.infinity,
                     height: double.infinity,
                   ),
+                  // child: CachedNetworkImage(
+                  //   imageUrl: item['imageUrl'],
+                  //   fit: BoxFit.contain,
+                  //   width: double.infinity,
+                  //   height: double.infinity,
+                  // ),
                 ));
           }).toList(),
         ),
