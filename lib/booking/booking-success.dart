@@ -280,7 +280,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
       delay: 0.0,
       child: Column(children: [
         const Text(
-          'จองนัดหมายสำเร็จ! 🎉',
+          'จองนัดหมายสำเร็จ!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,

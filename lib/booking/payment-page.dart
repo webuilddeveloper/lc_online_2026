@@ -3,13 +3,23 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class PaymentPage extends StatefulWidget {
-  final Map<String, dynamic>? lawyer;
+  final dynamic lawyer;
+  final String topic;
+  final DateTime? date;
+  final String time;
+  final String subTopic;
+
 
   const PaymentPage({
     required this.lawyer,
+    required this.topic,
+    required this.date,
+    required this.time,
+    required this.subTopic
   });
 
   @override
@@ -90,10 +100,10 @@ class _PaymentPageState extends State<PaymentPage> {
                                 MaterialPageRoute(
                                   builder: (_) => BookingSuccessPage(
                                     lawyer: widget.lawyer,
-                                    topic: 'ครอบครัวและมรดก',
-                                    subTopic: 'ฟ้องหย่า / แบ่งสินสมรส',
-                                    appointmentDate: '28 มีนาคม 2569',
-                                    appointmentTime: '10:00 - 11:00',
+                                    topic: widget.topic,
+                                    subTopic: widget.subTopic,
+                                    appointmentDate: DateFormat('dd/MM/yyyy').format(widget.date!).toString(),
+                                    appointmentTime: widget.time,
                                     bookingCode: 'BK-2026-00123',
                                   ),
                                 ),

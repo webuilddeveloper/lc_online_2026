@@ -1,10 +1,11 @@
 import 'package:LawyerOnline/booking/summary-page.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:flutter/material.dart';
 
 class SchedulePage extends StatefulWidget {
-  final Map<String, dynamic>? lawyer;
+  final dynamic lawyer;
   final String topic;
   final String subTopic;
 
@@ -20,17 +21,70 @@ class _SchedulePageState extends State<SchedulePage> {
   DateTime? _selectedDate;
   String? _selectedTime;
 
-  final _timeSlots = [
-    '09:00 - 10:00',
-    '10:00 - 11:00',
-    '11:00 - 12:00',
-    '13:00 - 14:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00',
-    '16:00 - 17:00',
+  // final _timeSlots = [
+  //   '09:00 - 10:00',
+  //   '10:00 - 11:00',
+  //   '11:00 - 12:00',
+  //   '13:00 - 14:00',
+  //   '14:00 - 15:00',
+  //   '15:00 - 16:00',
+  //   '16:00 - 17:00',
+  // ];
+
+  final List<dynamic> _timeSlots = [
+    {
+      "title": '09:00 - 10:00',
+      "dateStart": DateTime(0, 0, 0, 9, 0),
+      "dateEnd": DateTime(0, 0, 0, 10, 0),
+      "isActive": true
+    },
+    {
+      "title": '10:00 - 11:00',
+      "dateStart": DateTime(0, 0, 0, 10, 0),
+      "dateEnd": DateTime(0, 0, 0, 11, 0),
+      "isActive": true
+    },
+    {
+      "title": '11:00 - 12:00',
+      "dateStart": DateTime(0, 0, 0, 11, 0),
+      "dateEnd": DateTime(0, 0, 0, 12, 0),
+      "isActive": true
+    },
+    {
+      "title": '12:00 - 13:00',
+      "dateStart": DateTime(0, 0, 0, 12, 0),
+      "dateEnd": DateTime(0, 0, 0, 13, 0),
+      "isActive": true
+    },
+    {
+      "title": '13:00 - 14:00',
+      "dateStart": DateTime(0, 0, 0, 13, 0),
+      "dateEnd": DateTime(0, 0, 0, 14, 0),
+      "isActive": true
+    },
+    {
+      "title": '14:00 - 15:00',
+      "dateStart": DateTime(0, 0, 0, 14, 0),
+      "dateEnd": DateTime(0, 0, 0, 15, 0),
+      "isActive": true
+    },
+    {
+      "title": '15:00 - 16:00',
+      "dateStart": DateTime(0, 0, 0, 15, 0),
+      "dateEnd": DateTime(0, 0, 0, 16, 0),
+      "isActive": true
+    },
+    {
+      "title": '16:00 - 17:00',
+      "dateStart": DateTime(0, 0, 0, 16, 0),
+      "dateEnd": DateTime(0, 0, 0, 17, 0),
+      "isActive": true
+    },
   ];
 
   final _unavailableSlots = ['10:00 - 11:00', '14:00 - 15:00'];
+
+  bool _slotsLoading = false;
 
   List<DateTime> _getDaysInMonth() {
     final first = DateTime(_focusedDate.year, _focusedDate.month, 1);
@@ -76,8 +130,8 @@ class _SchedulePageState extends State<SchedulePage> {
               ),
             ],
           ),
-          child: const Icon(Icons.calendar_month,
-              color: Colors.white, size: 18),
+          child:
+              const Icon(Icons.calendar_month, color: Colors.white, size: 18),
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -97,6 +151,39 @@ class _SchedulePageState extends State<SchedulePage> {
           ),
         ]),
       ]),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    var dateNow = DateTime.now().hour;
+
+    // setListTimeSlots();
+    // print('>>>>>>> dateNow ${dateNow}');
+    print('>>>>>>> ${_timeSlots}');
+  }
+
+  Future<void> setListTimeSlots() async {
+    setState(() => _slotsLoading = true);
+
+    // จำลอง async (เช่น fetch จาก API ในอนาคต)
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    var dateNow = DateTime.now();
+    setState(
+      () {
+        for (var e in _timeSlots) {
+          final dateStart = (e['dateStart'] as DateTime).hour;
+          if (_selectedDate!.day > dateNow.day ||
+              _selectedDate!.month > dateNow.month) {
+            e['isActive'] = true;
+          } else {
+            e['isActive'] = dateStart > dateNow.hour;
+          }
+        }
+        _slotsLoading = false;
+      },
     );
   }
 
@@ -201,10 +288,15 @@ class _SchedulePageState extends State<SchedulePage> {
                             return GestureDetector(
                               onTap: isPast
                                   ? null
-                                  : () => setState(() {
-                                        _selectedDate = day;
-                                        _selectedTime = null;
-                                      }),
+                                  : () {
+                                      setState(
+                                        () {
+                                          _selectedDate = day;
+                                          _selectedTime = null;
+                                        },
+                                      );
+                                      setListTimeSlots();
+                                    },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
                                 margin: const EdgeInsets.all(2),
@@ -247,85 +339,114 @@ class _SchedulePageState extends State<SchedulePage> {
                       ),
                     ),
                     // const SizedBox(height: 10),
-                    Text(
-                      '*เมื่อเลือกช่วงเวลาแล้ว กรุณาเตรียมเวลาก่อนในการปรึกษาทนายความประมาณ 30 นาที',
-                      style: TextStyle(fontSize: 11, color: Colors.red[400]),
-                    ),
+                    // Text(
+                    //   '*เมื่อเลือกช่วงเวลาแล้ว กรุณาเตรียมเวลาก่อนในการปรึกษาทนายความประมาณ 30 นาที',
+                    //   style: TextStyle(fontSize: 11, color: Colors.red[400]),
+                    // ),
                     const SizedBox(height: 10),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 3,
-                      ),
-                      itemCount: _timeSlots.length,
-                      itemBuilder: (_, i) {
-                        final slot = _timeSlots[i];
-                        final isUnavailable = _unavailableSlots.contains(slot);
-                        final isSelected = _selectedTime == slot;
+                    if (_slotsLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: Center(
+                          child: DotsLoader(color: Color(0xFF0262EC)),
+                        ),
+                      )
+                    else
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 3,
+                        ),
+                        itemCount: _timeSlots.length,
+                        itemBuilder: (_, i) {
+                          final slot = _timeSlots[i];
+                          // final isUnavailable = _unavailableSlots.contains(slot);
+                          final isSelected = _selectedTime == slot['title'];
 
-                        return GestureDetector(
-                          onTap: isUnavailable
-                              ? null
-                              : () => setState(() => _selectedTime = slot),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFF0262EC)
-                                  : isUnavailable
-                                      ? const Color(0xFFF5F7FA)
-                                      : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
+                          return GestureDetector(
+                            // ignore: unnecessary_null_comparison
+                            onTap: slot == null
+                                ? null
+                                : () => setState(
+                                      () {
+                                        print(slot['title']);
+                                        slot['isActive']
+                                            ? _selectedTime = slot['title']
+                                            : null;
+                                      },
+                                    ),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
                                 color: isSelected
                                     ? const Color(0xFF0262EC)
-                                    : const Color(0xFFEEF2F5),
+                                    : !slot['isActive']
+                                        ? const Color(0xFFF5F7FA)
+                                        : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF0262EC)
+                                      : const Color(0xFFEEF2F5),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(slot['title'].toString(),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : !slot['isActive']
+                                                ? Colors.grey[300]
+                                                : const Color(0xFF1A2340))),
                               ),
                             ),
-                            child: Center(
-                              child: Text(slot,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : isUnavailable
-                                              ? Colors.grey[300]
-                                              : const Color(0xFF1A2340))),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
+
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(3))),
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                         const SizedBox(width: 6),
-                        Text('ไม่ว่าง',
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.grey[400])),
+                        Text(
+                          'ไม่ว่าง',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                          ),
+                        ),
                         const SizedBox(width: 16),
                         Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                                color: const Color(0xFF0262EC),
-                                borderRadius: BorderRadius.circular(3))),
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0262EC),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                         const SizedBox(width: 6),
-                        Text('เลือกแล้ว',
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.grey[400])),
+                        Text(
+                          'เลือกแล้ว',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                          ),
+                        ),
                       ],
                     ),
                   ],

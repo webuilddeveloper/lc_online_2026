@@ -251,6 +251,10 @@ class SummaryPage extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => PaymentPage(
                     lawyer: lawyer,
+                      topic: topic,
+                      subTopic: subTopic,
+                      time: time,
+                      date: date,
                   ),
                 ),
               ),
