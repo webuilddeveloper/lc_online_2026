@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/appointment-details.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -55,16 +56,16 @@ class _AppointmentListPageState extends State<AppointmentListPage>
   };
 
   //     'name'    : widget.model['name'] ?? '',
-                // 'avatar'  : (widget.model['name'] as String? ?? 'ท')
-                //                 .characters.first,
-                // 'title'   : widget.model['title'] ??
-                //             (widget.model['skills'] != null &&
-                //                 (widget.model['skills'] as List).isNotEmpty
-                //                 ? (widget.model['skills'] as List).first
-                //                 : widget.model['experience'] ?? ''),
-                // 'rating'  : widget.model['rating'] ??
-                //             widget.model['scroll'] ?? 0,
-                // 'imageUrl': widget.model['imageUrl'] ?? '',
+  // 'avatar'  : (widget.model['name'] as String? ?? 'ท')
+  //                 .characters.first,
+  // 'title'   : widget.model['title'] ??
+  //             (widget.model['skills'] != null &&
+  //                 (widget.model['skills'] as List).isNotEmpty
+  //                 ? (widget.model['skills'] as List).first
+  //                 : widget.model['experience'] ?? ''),
+  // 'rating'  : widget.model['rating'] ??
+  //             widget.model['scroll'] ?? 0,
+  // 'imageUrl': widget.model['imageUrl'] ?? '',
 
   // ── Mock data ─────────────────────────────────────────────
   final List<Map<String, dynamic>> _appointments = [
@@ -266,8 +267,8 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             (a['dateSortKey'] as int).compareTo(b['dateSortKey'] as int));
         break;
       case 'name_asc':
-        list.sort((a, b) =>
-            (a['name'] as String).compareTo(b['name'] as String));
+        list.sort(
+            (a, b) => (a['name'] as String).compareTo(b['name'] as String));
         break;
       default: // date_desc
         list.sort((a, b) =>
@@ -335,7 +336,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
           title: 'นัดหมายของฉัน',
           backBtn: false,
           rightBtn: false,
-          backAction: () => Navigator.pop(context),
+          backAction: () => goBack(),
           rightAction: () {},
         ),
         body: GestureDetector(
@@ -345,13 +346,13 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             children: [
               // ── Tab bar ────────────────────────────────────
               _buildTabBar(),
-      
+
               // ── Filter bar (per-tab) ────────────────────────
               _buildFilterBar(f),
-      
+
               // ── Active filter chips ─────────────────────────
               if (f.hasActiveFilter) _buildActiveFilterChips(f),
-      
+
               // ── Result count ───────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
@@ -365,7 +366,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                   ),
                 ]),
               ),
-      
+
               // ── List ───────────────────────────────────────
               Expanded(
                 child: filtered.isEmpty
@@ -399,7 +400,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                         ),
                       ),
               ),
-              const SizedBox(height: 50,)
+              const SizedBox(
+                height: 50,
+              )
             ],
           ),
         ),
@@ -481,10 +484,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                         Container(
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: badgeColor,
-                            // borderRadius: BorderRadius.circular(10),
-                            shape: BoxShape.circle
-                          ),
+                              color: badgeColor,
+                              // borderRadius: BorderRadius.circular(10),
+                              shape: BoxShape.circle),
                           child: Text(
                             '$count',
                             style: TextStyle(
@@ -1017,7 +1019,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                   color: Color(0xFF1A2340))),
         ]),
         content: Text(
-          'ต้องการยกเลิกเคส #$id ใช่หรือไม่?\nการกระทำนี้ไม่สามารถย้อนกลับได้',
+          'ต้องการยกเลิกเคส #$id ใช่หรือไม่?',
           style: const TextStyle(
               fontSize: 13, color: Color(0xFF64748B), height: 1.6),
         ),
@@ -1026,7 +1028,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
           Row(children: [
             Expanded(
               child: GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () => goBack(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
@@ -1046,9 +1048,8 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  setState(
-                      () => _appointments.removeWhere((a) => a['id'] == id));
-                  Navigator.pop(context);
+                  goBack();
+                  showReasonDialog(context, id);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1074,6 +1075,166 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             ),
           ]),
         ],
+      ),
+    );
+  }
+
+  showReasonDialog(BuildContext context, String id,
+      {String title = "สำเร็จ", String message = "", Function()? onClose}) {
+    final TextEditingController commentController = TextEditingController();
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: "success",
+      barrierColor: Colors.black.withOpacity(.4),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) => StatefulBuilder(
+        builder: (ctx, setModalState) => _dialogLayout(
+          context,
+          title: 'เหตุผลในการยกเลิก',
+          setModalState: setModalState,
+          commentController: commentController,
+          onPressed: () {
+            goBack();
+            DialogService.showAutoClose(
+              context,
+              title: "สำเร็จ",
+              seconds: 3,
+              isBtn: false,
+              message:
+                  "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้",
+              onClose: () {
+                Navigator.pop(context);
+                setState(() {
+                  _appointments.removeWhere((a) => a['id'] == id);
+                });
+              },
+            );
+          },
+        ),
+      ),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(animation.value),
+          child: child,
+        );
+      },
+    );
+  }
+
+  static Widget _dialogLayout(BuildContext context,
+      {required String title,
+      required Function() onPressed,
+      TextEditingController? commentController,
+      StateSetter? setModalState}) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.all(25),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: commentController,
+                maxLines: 3,
+                maxLength: 300,
+                // ✅ ป้องกัน keyboard ดัน content แล้ว overflow
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  hintText: 'กรอกความคิดเห็น...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: const Color(0xFFEEF2F5),
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF0262EC), width: 1.5),
+                  ),
+                  counterStyle:
+                      TextStyle(color: Colors.grey[400], fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 25),
+              SizedBox(
+                width: double.infinity,
+                // height: 45,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:Color(0xFFEA580C),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () {Navigator.pop(context, false);},
+                        // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
+                        child: const Text(
+                          'ยกเลิก',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15,),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: commentController!.text.isNotEmpty
+                              ? Color(0xFF0262EC)
+                              : Color(0xFFEEF2F5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed:
+                            commentController.text.isNotEmpty ? onPressed : null,
+                        // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
+                        child: const Text(
+                          'ตกลง',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1139,6 +1300,10 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 style: TextStyle(color: Colors.grey[400], fontSize: 12)),
         ]),
       );
+
+  void goBack() async {
+    Navigator.pop(context, false);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1226,4 +1391,3 @@ class _SortSheet extends StatelessWidget {
     );
   }
 }
-

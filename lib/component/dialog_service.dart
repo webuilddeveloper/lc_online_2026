@@ -45,7 +45,7 @@ class DialogService {
           "https://assets10.lottiefiles.com/packages/lf20_jbrw3hcz.json",
       Color buttonColor = const Color(0xFF0262EC),
       Function()? onClose,
-      bool isBtn = false}) {
+      bool isBtn = true}) {
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -60,6 +60,7 @@ class DialogService {
           seconds: seconds,
           buttonColor: buttonColor,
           isBtn: isBtn,
+          isShowCountdown: false,
           onClose: () {
             Navigator.pop(ctx);
             if (onClose != null) onClose();
@@ -310,6 +311,7 @@ class _AutoCloseDialogContent extends StatefulWidget {
   final Color buttonColor;
   final VoidCallback onClose;
   final bool isBtn;
+  final bool isShowCountdown;
 
   const _AutoCloseDialogContent(
       {required this.animationUrl,
@@ -318,7 +320,8 @@ class _AutoCloseDialogContent extends StatefulWidget {
       required this.seconds,
       required this.buttonColor,
       required this.onClose,
-      this.isBtn = true});
+      this.isBtn = true,
+      this.isShowCountdown = true});
 
   @override
   State<_AutoCloseDialogContent> createState() =>
@@ -375,7 +378,7 @@ class _AutoCloseDialogContentState extends State<_AutoCloseDialogContent>
       buttonColor: widget.buttonColor,
       onPressed: widget.onClose,
       isShowButton: widget.isBtn,
-      countdownBadge: _buildBadge(),
+      countdownBadge: widget.isShowCountdown ? _buildBadge() : Container(),
     );
   }
 
