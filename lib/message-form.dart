@@ -105,8 +105,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
             : DialogService.showSuccess(
                 context,
                 title: "สำเร็จ",
-                message:
-                    "สถานะงานกับลูกความเสร็จสิ้นเรียบร้อย",
+                message: "สถานะงานกับลูกความเสร็จสิ้นเรียบร้อย",
                 onClose: () {
                   Navigator.pop(context);
                 },
@@ -128,7 +127,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   widget.model['name'] ?? '',
@@ -137,6 +136,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                !widget.model['caseSuccess'] ?
                 Text(
                   (widget.model['active'] ?? true)
                       ? 'Active Now'
@@ -147,7 +147,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
                       color: Color(0xFF8593A8)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                ),
+                ) : const SizedBox()
               ],
             ),
             const SizedBox(width: 10),
@@ -177,40 +177,49 @@ class _MessageFormPageState extends State<MessageFormPage> {
               ],
             ),
             const SizedBox(width: 10),
+            !widget.model['caseSuccess']
+                ? Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _showReminderBeforeJoin(context),
+                        child: Container(
+                          width: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFAFAFA),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                width: 1, color: const Color(0xFFDBDBDB)),
+                          ),
+                          child:
+                              const Icon(Icons.video_call_outlined, size: 20),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // ── ปุ่มจบการปรึกษา ──────────────────────────────────
+                      GestureDetector(
+                        onTap: _endConsultation,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FFF4),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                width: 1, color: const Color(0xFF34C759)),
+                          ),
+                          child: const Icon(
+                            Icons.task_alt_rounded,
+                            size: 20,
+                            color: Color(0xFF34C759),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox()
             // ── ปุ่ม Video Call ──────────────────────────────────
-            GestureDetector(
-              onTap: () => _showReminderBeforeJoin(context),
-              child: Container(
-                width: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFAFAFA),
-                  shape: BoxShape.circle,
-                  border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
-                ),
-                child: const Icon(Icons.video_call_outlined, size: 20),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // ── ปุ่มจบการปรึกษา ──────────────────────────────────
-            GestureDetector(
-              onTap: _endConsultation,
-              child: Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FFF4),
-                  shape: BoxShape.circle,
-                  border: Border.all(width: 1, color: const Color(0xFF34C759)),
-                ),
-                child: const Icon(
-                  Icons.task_alt_rounded,
-                  size: 20,
-                  color: Color(0xFF34C759),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -280,7 +289,8 @@ class _MessageFormPageState extends State<MessageFormPage> {
           ),
         ],
       ),
-      bottomSheet: SafeArea(
+      bottomSheet: !widget.model['caseSuccess']
+                ? SafeArea(
         top: false,
         child: Container(
           color: const Color(0xFFEEF2F5),
@@ -335,7 +345,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
             ),
           ),
         ),
-      ),
+      ) : const SizedBox()
     );
   }
 

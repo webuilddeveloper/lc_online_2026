@@ -1082,6 +1082,15 @@ class _AppointmentListPageState extends State<AppointmentListPage>
   showReasonDialog(BuildContext context, String id,
       {String title = "สำเร็จ", String message = "", Function()? onClose}) {
     final TextEditingController commentController = TextEditingController();
+
+    // ✅ เก็บ navigator reference ก่อนที่ context จะ deactivate
+    final navigator = Navigator.of(context);
+
+    StateSetter? _modalSetState;
+    commentController.addListener(() {
+      _modalSetState?.call(() {});
+    });
+
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -1089,29 +1098,32 @@ class _AppointmentListPageState extends State<AppointmentListPage>
       barrierColor: Colors.black.withOpacity(.4),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) => StatefulBuilder(
-        builder: (ctx, setModalState) => _dialogLayout(
-          context,
-          title: 'เหตุผลในการยกเลิก',
-          setModalState: setModalState,
-          commentController: commentController,
-          onPressed: () {
-            goBack();
-            DialogService.showAutoClose(
-              context,
-              title: "สำเร็จ",
-              seconds: 3,
-              isBtn: false,
-              message:
-                  "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้",
-              onClose: () {
-                Navigator.pop(context);
-                setState(() {
-                  _appointments.removeWhere((a) => a['id'] == id);
-                });
-              },
-            );
-          },
-        ),
+        builder: (ctx, setModalState) {
+          _modalSetState = setModalState;
+          return _dialogLayout(
+            context,
+            title: 'เหตุผลในการยกเลิก',
+            setModalState: setModalState,
+            commentController: commentController,
+            onPressed: () {
+              goBack();
+              DialogService.showAutoClose(
+                context,
+                title: "สำเร็จ",
+                seconds: 3,
+                isBtn: false,
+                message:
+                    "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้",
+                onClose: () {
+                  // navigator.pop();
+                  setState(() {
+                    _appointments.removeWhere((a) => a['id'] == id);
+                  });
+                },
+              );
+            },
+          );
+        },
       ),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return Transform.scale(
@@ -1127,6 +1139,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
       required Function() onPressed,
       TextEditingController? commentController,
       StateSetter? setModalState}) {
+    commentController?.addListener(() {
+      setModalState?.call(() {});
+    });
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 30),
@@ -1190,12 +1205,14 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:Color(0xFFEA580C),
+                          backgroundColor: Color(0xFFEA580C),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed: () {Navigator.pop(context, false);},
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
                         // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
                         child: const Text(
                           'ยกเลิก',
@@ -1206,7 +1223,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 15,),
+                    const SizedBox(
+                      width: 15,
+                    ),
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -1217,8 +1236,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed:
-                            commentController.text.isNotEmpty ? onPressed : null,
+                        onPressed: commentController.text.isNotEmpty
+                            ? onPressed
+                            : null,
                         // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
                         child: const Text(
                           'ตกลง',

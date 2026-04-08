@@ -18,7 +18,8 @@ class _MessagePageState extends State<MessagePage> {
       "active": true,
       "lastChat": "มีเอกสารที่เกี่ยวข้องมั้ยครับ",
       "lastChatDate": "14:28",
-      "unreadCount": 1
+      "unreadCount": 1,
+      "caseSuccess": false
     },
     {
       "code": "1",
@@ -27,7 +28,8 @@ class _MessagePageState extends State<MessagePage> {
       "active": false,
       "lastChat": "ได้รับแล้วครับ",
       "lastChatDate": "yesterday",
-      "unreadCount": 3
+      "unreadCount": 3,
+      "caseSuccess": false
     },
     {
       "code": "2",
@@ -36,7 +38,8 @@ class _MessagePageState extends State<MessagePage> {
       "active": false,
       "lastChat": "ขอบคุณค่ะ",
       "lastChatDate": "yesterday",
-      "unreadCount": 0
+      "unreadCount": 0,
+      "caseSuccess": true
     },
     {
       "code": "3",
@@ -45,7 +48,8 @@ class _MessagePageState extends State<MessagePage> {
       "active": false,
       "lastChat": "Yeah, sure.",
       "lastChatDate": "07/18/2022",
-      "unreadCount": 0
+      "unreadCount": 0,
+      "caseSuccess": true
     },
   ];
 
