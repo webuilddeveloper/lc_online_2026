@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
+
 const kTranslucentBlackColor = Color(0x66000000);
 const _kMaxDragSpeed = 400.0;
 

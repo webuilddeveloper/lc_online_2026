@@ -42,14 +42,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<dynamic> mockBannerList = [
-    {
-      "code": "0",
-      "imageUrl": "assets/images/banner1.png"
-    },
-    {
-      "code": "1",
-      "imageUrl": "assets/images/banner2.png"
-    },
+    {"code": "0", "imageUrl": "assets/images/banner1.png"},
+    {"code": "1", "imageUrl": "assets/images/banner2.png"},
   ];
   int _currentBanner = 0;
   late AnimationController _fadeCtrl;
@@ -135,11 +129,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
+      "appointmentDate": "28/04/2026",
+      "appointmentTime": "11.00 - 14.00",
+      "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
+      "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
+      "paymentStatus": "1",
+    },
+    {
+      "code": "2",
+      "clientName": "อนงค์ ดำเนิน",
+      "caseType": "คดีมรดกทุกประเภท",
+      "subCaseType": "ฟ้องร้องมรดก",
       "appointmentDate": "28/03/2026",
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกพี่น้อง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1",
+      "paymentStatus": "2",
     },
   ];
 
@@ -412,13 +417,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            "สวัสดี,",
-                            style: GoogleFonts.prompt(
-                              color: Colors.black.withOpacity(0.5),
-                              fontSize: 12,
-                            ),
-                          ),
+                          // Text(
+                          //   "สวัสดี,",
+                          //   style: GoogleFonts.prompt(
+                          //     color: Colors.black.withOpacity(0.5),
+                          //     fontSize: 12,
+                          //   ),
+                          // ),
                           Text(
                             name.isNotEmpty ? name : "ผู้ใช้งาน",
                             style: GoogleFonts.prompt(
@@ -463,7 +468,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               width: 7,
                               height: 7,
                               decoration: const BoxDecoration(
-                                color: _kGold,
+                                color: Color.fromARGB(255, 247, 12, 12),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -518,6 +523,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  
+
   Widget _buildMemberBadge() {
     final label = userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป';
     return Container(
@@ -532,6 +539,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: _kGold, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
+
+  
 
   // ─── Body ────────────────────────────────────────────────────────
   Widget _buildBody(Size size) {
@@ -556,7 +565,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-      
+
             // Action cards
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -605,22 +614,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       )),
                     ])
                   : _actionCard(
-                      title: "รับเคส",
-                      subtitle: "ลูกความรอทนาย",
+                      title: "รับเคสด่วน",
+                      subtitle: "ลูกความต้องการคำปรึกษาด่วน",
                       icon: Icons.work_rounded,
-                      gradientColors: [_kPrimary, _kAccent],
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+                      gradientColors: [
+                        const Color(0xFF1565C0),
+                        const Color(0xFF2F80ED)
+                      ],
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => LawyerJobListPage())),
                     ),
             ),
-      
+
             const SizedBox(height: 24),
-      
+
             // Banner
             _buildBannerSection(size),
-      
+
             const SizedBox(height: 24),
-      
+
             // Case Status (user only)
             if (userType == 'user') ...[
               _sectionHeader("สถานะเคสของคุณ",
@@ -633,7 +647,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildCaseStatusList(),
               const SizedBox(height: 24),
             ],
-      
+
             // Law Categories (user only)
             if (userType == 'user') ...[
               _sectionHeader("ประเด็นหัวข้อกฎหมาย",
@@ -643,17 +657,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildLawCategories(),
               const SizedBox(height: 24),
             ],
-      
+
             // Appointments (lawyer only)
             if (userType == 'lawyer') ...[
-              _sectionHeader("นัดหมายที่กำลังจะมาถึง",
-                  onViewAll: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 2)))),
+              _sectionHeader("นัดหมายของคุณ",
+                  onViewAll: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => MenuPage(pageIndex: 2)))),
               const SizedBox(height: 12),
               _buildAppointmentList(),
               const SizedBox(height: 24),
             ],
-      
+
             // Lawyer Online (user only)
             if (userType != 'lawyer') ...[
               _sectionHeader("หมอความออนไลน์",
@@ -662,7 +678,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               const SizedBox(height: 12),
               _buildLawyerOnline(),
             ],
-      
+
             const SizedBox()
           ],
         ),
@@ -1219,17 +1235,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // ─── Appointment List (lawyer) ────────────────────────────────────
   Widget _buildAppointmentList() {
     return SizedBox(
-      height: 90,
+      height: 350,
       child: ListView.separated(
-        scrollDirection: Axis.horizontal,
+        scrollDirection: Axis.vertical,
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
         itemCount: appointmentList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (_, i) => _appointmentCard(appointmentList[i],
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
+
                         AppointmentDetailsLawyer(model: appointmentList[i])))),
       ),
     );

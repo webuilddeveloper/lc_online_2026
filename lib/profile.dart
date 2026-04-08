@@ -287,14 +287,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
                             width: 1,
-                            color: const Color(0xFF3581F0),
+                            color: const Color(0xFFDF0A0A),
                           )),
                       child: const Text(
                         "ออกจากระบบ",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF3581F0),
+                          color: Color(0xFFDF0A0A),
                         ),
                         textAlign: TextAlign.center,
                       ),

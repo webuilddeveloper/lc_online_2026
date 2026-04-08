@@ -272,7 +272,7 @@ class _CalendarPageState extends State<CalendarPage>
                         },
                         child: const Icon(
                           Icons.arrow_back_ios,
-                          size: 12,
+                          size: 14,
                           color: Color(0xFF0262EC),
                         ),
                       ),
@@ -290,7 +290,7 @@ class _CalendarPageState extends State<CalendarPage>
                         },
                         child: const Icon(
                           Icons.arrow_forward_ios,
-                          size: 12,
+                          size: 14,
                           color: Color(0xFF0262EC),
                         ),
                       ),
