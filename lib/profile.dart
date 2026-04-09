@@ -41,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   callRead() async {
     var userType = await storage.read(key: 'userType');
-    var imageProfile = await storage.read(key: 'imageUrlSocial');
+    var imageProfile = await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
     var nameProfile = await storage.read(key: 'name');
     var type = await storage.read(key: 'typeLogin');
 
