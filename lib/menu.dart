@@ -157,12 +157,12 @@ class _MenuPageState extends State<MenuPage> {
                   Flexible(
                     flex: _currentPage == 1 ? 2 : 1,
                     child: _bottomItem("assets/icons/message.png", 1,
-                        title: 'ข้อความ'),
+                        title: 'ข้อความ', showBadge: true),
                   ),
                   Flexible(
                     flex: _currentPage == 2 ? 2 : 1,
                     child: _bottomItem("assets/icons/appointment.png", 2,
-                        title: 'นัดหมาย'),
+                        title: 'นัดหมาย', showBadge: true),
                   ),
                   Flexible(
                     flex: _currentPage == 3 ? 2 : 1,
@@ -207,6 +207,7 @@ class _MenuPageState extends State<MenuPage> {
     int index, {
     bool isImageUrl = false,
     required String title,
+    bool showBadge = false,
   }) {
     final isSelected = _currentPage == index;
     // return GestureDetector(
@@ -308,13 +309,30 @@ class _MenuPageState extends State<MenuPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.asset(
-              icon,
-              color:
-                  isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
-              width: 24,
-              height: 24,
-              // size: 26,
+            Stack(
+              children: [
+                Image.asset(
+                  icon,
+                  color:
+                      isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
+                  width: 24,
+                  height: 24,
+                  // size: 26,
+                ),
+                if (showBadge)
+                  Positioned(
+                    top: -1,
+                    right: 2,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color.fromARGB(255, 247, 12, 12),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             isSelected
                 ? Row(
@@ -327,7 +345,7 @@ class _MenuPageState extends State<MenuPage> {
                         style: TextStyle(
                           fontSize: 14,
                           color: isSelected
-                              ? Color.fromARGB(255, 8, 93, 211)
+                              ? Color(0xFF085DD3)
                               : const Color(0xFF666666),
                         ),
                       ),

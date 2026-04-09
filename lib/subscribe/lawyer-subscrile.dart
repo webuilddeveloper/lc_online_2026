@@ -99,7 +99,7 @@ class _SubscribePageState extends State<SubscribePage>
       // ),
       // อัพเกรดฟีเจอร์
       appBar: appBar(
-        title: "อัพเกรดฟีเจอร์",
+        title: "Lawyer Pro",
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -172,9 +172,15 @@ class _SubscribePageState extends State<SubscribePage>
               const Icon(Icons.layers_rounded, color: Colors.white, size: 26),
         ),
         const SizedBox(height: 14),
-        Text('ปลดล็อกฟีเจอร์เพิ่มเติมของคุณ',
-            style: GoogleFonts.prompt(
-                fontSize: 20, fontWeight: FontWeight.w700, color: _kText)),
+        Text(
+          'ยกระดับการให้บริการของคุณด้วย Lawyer Pro',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.prompt(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: _kText,
+          ),
+        )
         // const SizedBox(height: 6),
         // Text(
         //   'เข้าถึงฟีเจอร์ครบครันที่ช่วยให้\nทนายมืออาชีพเติบโตได้เร็วขึ้น',
@@ -186,60 +192,158 @@ class _SubscribePageState extends State<SubscribePage>
   }
 
   // ─── Billing Toggle ───────────────────────────────────────────────
+  // Widget _buildBillingToggle() {
+  //   return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+  //     Text('รายเดือน',
+  //         style: GoogleFonts.prompt(
+  //           fontSize: 13,
+  //           fontWeight: _isYearly ? FontWeight.w400 : FontWeight.w600,
+  //           color: _isYearly ? _kSub : _kText,
+  //         )),
+  //     const SizedBox(width: 10),
+  //     GestureDetector(
+  //       onTap: () => setState(() => _isYearly = !_isYearly),
+  //       child: AnimatedContainer(
+  //         duration: const Duration(milliseconds: 250),
+  //         curve: Curves.easeOutCubic,
+  //         width: 44,
+  //         height: 24,
+  //         decoration: BoxDecoration(
+  //             color: _kPrimary, borderRadius: BorderRadius.circular(12)),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(3),
+  //           child: AnimatedAlign(
+  //             duration: const Duration(milliseconds: 250),
+  //             curve: Curves.easeOutCubic,
+  //             alignment:
+  //                 _isYearly ? Alignment.centerRight : Alignment.centerLeft,
+  //             child: Container(
+  //               width: 18,
+  //               height: 18,
+  //               decoration: const BoxDecoration(
+  //                   color: Colors.white, shape: BoxShape.circle),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //     const SizedBox(width: 10),
+  //     Text('รายปี',
+  //         style: GoogleFonts.prompt(
+  //           fontSize: 13,
+  //           fontWeight: _isYearly ? FontWeight.w600 : FontWeight.w400,
+  //           color: _isYearly ? _kText : _kSub,
+  //         )),
+  //     if (_isYearly) ...[
+  //       const SizedBox(width: 8),
+  //       Container(
+  //         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+  //         decoration: BoxDecoration(
+  //             color: _kGreenLight, borderRadius: BorderRadius.circular(20)),
+  //         child: Text('ประหยัด 20%',
+  //             style: GoogleFonts.prompt(
+  //                 fontSize: 10, fontWeight: FontWeight.w600, color: _kGreen)),
+  //       ),
+  //     ],
+  //   ]);
+  // }
   Widget _buildBillingToggle() {
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Text('รายเดือน',
-          style: GoogleFonts.prompt(
-            fontSize: 13,
-            fontWeight: _isYearly ? FontWeight.w400 : FontWeight.w600,
-            color: _isYearly ? _kSub : _kText,
-          )),
-      const SizedBox(width: 10),
-      GestureDetector(
-        onTap: () => setState(() => _isYearly = !_isYearly),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          width: 44,
-          height: 24,
-          decoration: BoxDecoration(
-              color: _kPrimary, borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              alignment:
-                  _isYearly ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                    color: Colors.white, shape: BoxShape.circle),
-              ),
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kBorder, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSegmentTab(
+              label: 'รายเดือน',
+              selected: !_isYearly,
+              onTap: () => setState(() => _isYearly = false),
             ),
-          ),
+            _buildSegmentTab(
+              label: 'รายปี',
+              selected: _isYearly,
+              onTap: () => setState(() => _isYearly = true),
+              badge: 'ประหยัด 20%',
+            ),
+          ],
         ),
       ),
-      const SizedBox(width: 10),
-      Text('รายปี',
-          style: GoogleFonts.prompt(
-            fontSize: 13,
-            fontWeight: _isYearly ? FontWeight.w600 : FontWeight.w400,
-            color: _isYearly ? _kText : _kSub,
-          )),
-      if (_isYearly) ...[
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-              color: _kGreenLight, borderRadius: BorderRadius.circular(20)),
-          child: Text('ประหยัด 20%',
-              style: GoogleFonts.prompt(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: _kGreen)),
+    );
+  }
+
+  Widget _buildSegmentTab({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    String? badge,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : [],
         ),
-      ],
-    ]);
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.prompt(
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? _kText : _kSub,
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 6),
+              // Container นี้มีขนาดคงที่เสมอ ไม่ทำให้ layout โยก
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: selected ? 1.0 : 0.5,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selected ? _kGreenLight : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: selected ? _kGreenLight : _kSub.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    badge,
+                    style: GoogleFonts.prompt(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? _kGreen : _kSub,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   // ─── Plan Card ────────────────────────────────────────────────────

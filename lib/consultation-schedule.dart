@@ -26,8 +26,8 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
 
   List<Map<String, String>> postCategoryList = [
     {"code": "0", "title": "ทุกวัน"},
-    {"code": "1", "title": "สุดสัปดาห์"},
-    {"code": "2", "title": "วันธรรมดา"},
+    {"code": "1", "title": "วันธรรมดา"},
+    {"code": "2", "title": "สุดสัปดาห์"},
   ];
   String? selectedCategory = "0";
 
@@ -177,7 +177,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       child: Column(
         children: [
           const SizedBox(height: 10),
-          dropdown(title: 'วันนัดหมายปรึกษา', list: postCategoryList),
+          selectCategory(title: 'วันนัดหมายปรึกษา', list: postCategoryList),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -206,7 +206,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     );
   }
 
-  dropdown(
+  selectCategory(
       {required List<Map<String, String>>? list,
       Function? onChange,
       String title = ''}) {
@@ -217,138 +217,40 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           title,
           style: const TextStyle(fontSize: 12, color: Color(0xFF0262EC)),
         ),
-        const SizedBox(height: 5),
-        DropdownButtonFormField<String>(
-          // underline: const SizedBox(),
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            fillColor: const Color(0xFFFAFAFA),
-            filled: true,
-          ),
-          padding: EdgeInsets.zero,
-          isExpanded: true,
-          style: GoogleFonts.prompt(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-          value: selectedCategory,
-          items: list!.map((e) {
-            return DropdownMenuItem(
-              value: e['code'],
-              child: Text(e['title']!),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedCategory = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  selectTime({String title = '', TextEditingController? controller}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF0262EC)),
-        ),
-        const SizedBox(height: 5),
-        TextField(
-          controller: controller,
-          readOnly: true,
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            suffixIcon: const Icon(Icons.access_time),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFECEDF0),
-              ),
-            ),
-            fillColor: const Color(0xFFFAFAFA),
-            filled: true,
-          ),
-          onTap: () => showCupertinoModalPopup(
-            context: context,
-            builder: (_) => Container(
-              height: 300,
-              color: Colors.white,
-              child: Column(
-                children: [
-                  /// ปุ่ม Done ด้านบน
-                  Container(
-                    alignment: Alignment.centerRight,
-                    child: CupertinoButton(
-                      child: Text(
-                        "เสร็จสิ้น",
-                        style: GoogleFonts.prompt(
-                          fontSize: 16,
-                          // fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0262EC),
-                        ),
-                      ),
-                      onPressed: () {
-                        // timeCallBack!(DateFormat('HH:mm').format(selectedTime));
-                        setState(() {
-                          controller!.text =
-                              DateFormat('HH:mm').format(selectedTime);
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.center,
+          child: Wrap(
+            spacing: 20,
+            runSpacing: 10,
+            children: list!.map((e) {
+              final selected = selectedCategory == e['code'];
+              return ChoiceChip(
+                label: Text(
+                  e['title']!,
+                  style: TextStyle(
+                    color: selected ? Colors.white : const Color(0xFF0D1B2A),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
-
-                  /// Time Picker
-                  Expanded(
-                    child: CupertinoDatePicker(
-                      mode: CupertinoDatePickerMode.time,
-                      use24hFormat: true, // เปลี่ยนเป็น false ถ้าอยากได้ AM/PM
-                      initialDateTime: selectedTime,
-                      onDateTimeChanged: (DateTime newTime) {
-                        selectedTime = newTime;
-                      },
-                    ),
+                ),
+                selected: selected,
+                selectedColor: const Color(0xFF0262EC),
+                backgroundColor: const Color(0xFFF3F6FF),
+                showCheckmark: false,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: selected ? const Color(0xFF0262EC) : const Color(0xFFE2E8F0),
                   ),
-                ],
-              ),
-            ),
+                ),
+                onSelected: (_) {
+                  setState(() {
+                    selectedCategory = e['code'];
+                  });
+                },
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -400,6 +302,49 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
             fillColor: const Color(0xFFFAFAFA),
             filled: true,
           ),
+        ),
+      ],
+    );
+  }
+
+  selectTime({String title = '', TextEditingController? controller}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF0262EC)),
+        ),
+        const SizedBox(height: 5),
+        TextField(
+          controller: controller,
+          readOnly: true,
+          decoration: InputDecoration(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            suffixIcon: const Icon(Icons.access_time),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFECEDF0),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFECEDF0),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFECEDF0),
+              ),
+            ),
+            fillColor: const Color(0xFFFAFAFA),
+            filled: true,
+          ),
+          onTap: () => _selectTime(controller: controller),
         ),
       ],
     );
@@ -501,7 +446,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         child: Text(
           title,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: value == selectedStatusRange
                 ? const Color(0xFF0262EC)
