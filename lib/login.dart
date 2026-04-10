@@ -16,8 +16,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -31,16 +30,71 @@ class _LoginPageState extends State<LoginPage>
 
   bool isLoading = false;
 
+  // late final AnimationController _controllerAnimation = AnimationController(
+  //   duration: const Duration(seconds: 1),
+  //   vsync: this,
+  // )..repeat(reverse: true);
+  // late final Animation<Offset> _offsetAnimation = Tween<Offset>(
+  //   begin: const Offset(2, 0),
+  //   end: const Offset(-0.2, 0),
+  // ).animate(
+  //   CurvedAnimation(
+  //     parent: _controllerAnimation,
+  //     curve: Curves.elasticOut,
+  //   ),
+  // );
+
+  late final AnimationController _controllerAnimationCardLogin =
+      AnimationController(
+    duration: const Duration(seconds: 2),
+    vsync: this,
+  )..repeat(reverse: true);
+  late final Animation<Offset> _animationDialog = Tween<Offset>(
+    begin: const Offset(0, 1.5),
+    end: const Offset(0, 0),
+  ).animate(
+    CurvedAnimation(
+      parent: _controllerAnimationCardLogin,
+      curve: Curves.elasticOut,
+    ),
+  );
+
+  late final AnimationController _controllerAnimationLoginSocial =
+      AnimationController(
+    duration: const Duration(seconds: 2),
+    vsync: this,
+  )..repeat(reverse: true);
+  late final Animation<Offset> _animationLoginSocial = Tween<Offset>(
+    begin: const Offset(0, -1.5),
+    end: const Offset(0, 0),
+  ).animate(
+    CurvedAnimation(
+      parent: _controllerAnimationLoginSocial,
+      curve: Curves.elasticOut,
+    ),
+  );
+
+  // late final Animation<double> _animationDialog = CurvedAnimation(
+  //     parent: _controllerAnimationDialog,
+  //     curve: Curves.easeInOutBack,
+  //     reverseCurve: Curves.elasticIn
+  //     );
+
   @override
   void initState() {
     super.initState();
-
     controller = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 800));
-
     fade = CurvedAnimation(parent: controller, curve: Curves.easeOut);
-
     controller.forward();
+
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      _controllerAnimationLoginSocial.stop();
+      _controllerAnimationCardLogin.stop();
+    });
+    // Future.delayed(const Duration(seconds: 0), () {
+    //   _dialog();
+    // });
   }
 
   @override
@@ -59,219 +113,225 @@ class _LoginPageState extends State<LoginPage>
                 const SizedBox(height: 20),
 
                 /// 🔹 Login Card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(40)),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        color: Color.fromARGB(146, 0, 0, 0),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    // physics: const BouncingScrollPhysics(),
-                    children: [
-                      Image.asset(
-                        "assets/icons/logo.png",
-                        width: 120,
-                        height: 120,
-                      ),
-
-                      // const SizedBox(height: 12),
-
-                      const Text(
-                        'หมอความออนไลน์',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
+                SlideTransition
+                    // ScaleTransition
+                    (
+                  position: _animationDialog,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(40)),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 20,
+                          color: Color.fromARGB(146, 0, 0, 0),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      // physics: const BouncingScrollPhysics(),
+                      children: [
+                        Image.asset(
+                          "assets/icons/logo.png",
+                          width: 120,
+                          height: 120,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
 
-                      const SizedBox(height: 15),
-                      // const Text(
-                      //   "เข้าสู่ระบบ",
-                      //   textAlign: TextAlign.left,
-                      //   style: TextStyle(
-                      //     fontSize: 20,
-                      //     fontWeight: FontWeight.bold,
-                      //   ),
-                      // ),
+                        // const SizedBox(height: 12),
 
-                      // const SizedBox(height: 10),
-
-                      /// Username
-                      TextField(
-                        controller: usernameController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.person_outline),
-                          labelText: "ชื่อผู้ใช้",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                        const Text(
+                          'หมอความออนไลน์',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
 
-                      const SizedBox(height: 15),
+                        const SizedBox(height: 15),
+                        // const Text(
+                        //   "เข้าสู่ระบบ",
+                        //   textAlign: TextAlign.left,
+                        //   style: TextStyle(
+                        //     fontSize: 20,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
 
-                      /// Password
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscure,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          labelText: "รหัสผ่าน",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              obscure ? Icons.visibility_off : Icons.visibility,
+                        // const SizedBox(height: 10),
+
+                        /// Username
+                        TextField(
+                          controller: usernameController,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.person_outline),
+                            labelText: "ชื่อผู้ใช้",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                obscure = !obscure;
-                              });
-                            },
                           ),
                         ),
-                      ),
 
-                      // const SizedBox(height: 5),
-                      /// Remember
-                      Row(
-                        children: [
-                          // Checkbox(
-                          //   value: remember,
-                          //   activeColor: Colors.blue,
-                          //   onChanged: (v) {
-                          //     setState(() {
-                          //       remember = v!;
-                          //     });
-                          //   },
-                          // ),
-                          // const Text("Remember me"),
-                          const Spacer(),
-                          TextButton(
+                        const SizedBox(height: 15),
+
+                        /// Password
+                        TextField(
+                          controller: passwordController,
+                          obscureText: obscure,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            labelText: "รหัสผ่าน",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscure
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  obscure = !obscure;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+
+                        // const SizedBox(height: 5),
+                        /// Remember
+                        Row(
+                          children: [
+                            // Checkbox(
+                            //   value: remember,
+                            //   activeColor: Colors.blue,
+                            //   onChanged: (v) {
+                            //     setState(() {
+                            //       remember = v!;
+                            //     });
+                            //   },
+                            // ),
+                            // const Text("Remember me"),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ChangePasswordPage(),
+                                  ),
+                                );
+                              },
+                              child: const Text("ลืมรหัสผ่าน"),
+                            )
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        /// 🔹 Login Button
+                        SizedBox(
+                          height: 50,
+                          child: GestureDetector(
+                            onTap: () {
+                              !isLoading ? login() : null;
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isLoading
+                                    ? Colors.grey.shade100
+                                    : const Color(0xFF2563EB),
+                                // gradient: LinearGradient(
+                                //   colors: [
+                                //     Color(0xFF2563EB),
+                                //     Color(0xFF3B82F6),
+                                //   ],
+                                // ),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(14),
+                                ),
+                              ),
+                              child: Center(
+                                child: isLoading
+                                    ? const DotsLoader(
+                                        color: Color(0xFF0262EC),
+                                      )
+                                    : Text(
+                                        "เข้าสู่ระบบ",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: isLoading
+                                                ? Colors.grey
+                                                : Colors.white),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ChangePasswordPage(),
+                                  builder: (context) => const ComingSoonPage(
+                                    title: "Comming Soon",
+                                    lottieUrl:
+                                        "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                  ),
                                 ),
                               );
                             },
-                            child: const Text("ลืมรหัสผ่าน"),
-                          )
-                        ],
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      /// 🔹 Login Button
-                      SizedBox(
-                        height: 50,
-                        child: GestureDetector(
-                          onTap: () {
-                            !isLoading ? login() : null;
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isLoading
-                                  ? Colors.grey.shade100
-                                  : const Color(0xFF2563EB),
-                              // gradient: LinearGradient(
-                              //   colors: [
-                              //     Color(0xFF2563EB),
-                              //     Color(0xFF3B82F6),
-                              //   ],
-                              // ),
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(14),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF040651),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(14)),
                               ),
-                            ),
-                            child: Center(
-                              child: isLoading
-                                  ? const DotsLoader(
-                                      color: Color(0xFF0262EC),
-                                    )
-                                  : Text(
-                                      "เข้าสู่ระบบ",
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // assets/icons/thaiid.png
+                                    Image.asset(
+                                      'assets/icons/thaiid.png',
+                                      width: 42,
+                                      height: 42,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      "เข้าสู่ระบบด้วย Thai ID",
                                       style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: isLoading
-                                              ? Colors.grey
-                                              : Colors.white),
+                                          color: Colors.white),
                                     ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ComingSoonPage(
-                                  title: "Comming Soon",
-                                  lottieUrl:
-                                      "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF040651),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(14)),
-                            ),
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // assets/icons/thaiid.png
-                                  Image.asset(
-                                    'assets/icons/thaiid.png',
-                                    width: 42,
-                                    height: 42,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    "เข้าสู่ระบบด้วย Thai ID",
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
                 const Row(
@@ -291,92 +351,96 @@ class _LoginPageState extends State<LoginPage>
                 const SizedBox(height: 20),
 
                 /// Demo user
-                Center(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        socialItem(
-                            icon: "assets/icons/facebook.png",
-                            action: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ComingSoonPage(
-                                    title: "Comming Soon",
-                                    lottieUrl:
-                                        "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                
+                SlideTransition(
+                  position: _animationLoginSocial,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          socialItem(
+                              icon: "assets/icons/facebook.png",
+                              action: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ComingSoonPage(
+                                      title: "Comming Soon",
+                                      lottieUrl:
+                                          "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
-                        const SizedBox(width: 15),
-                        // socialItem(
-                        //     icon: "assets/icons/ig.png",
-                        //     action: () {}),
-                        // const SizedBox(width: 15),
-                        // socialItem(
-                        //     icon: "assets/icons/x.png",
-                        //     action: () {}),
-                        // const SizedBox(width: 15),
-                        socialItem(
-                            icon: "assets/icons/apple.png",
-                            action: () {
-                              // pressApple();
-
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ComingSoonPage(
-                                    title: "Comming Soon",
-                                    lottieUrl:
-                                        "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                );
+                              }),
+                          const SizedBox(width: 15),
+                          // socialItem(
+                          //     icon: "assets/icons/ig.png",
+                          //     action: () {}),
+                          // const SizedBox(width: 15),
+                          // socialItem(
+                          //     icon: "assets/icons/x.png",
+                          //     action: () {}),
+                          // const SizedBox(width: 15),
+                          socialItem(
+                              icon: "assets/icons/apple.png",
+                              action: () {
+                                // pressApple();
+                  
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ComingSoonPage(
+                                      title: "Comming Soon",
+                                      lottieUrl:
+                                          "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
-                        const SizedBox(width: 15),
-                        socialItem(
-                            icon: "assets/icons/google.png",
-                            action: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ComingSoonPage(
-                                    title: "Comming Soon",
-                                    lottieUrl:
-                                        "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                );
+                              }),
+                          const SizedBox(width: 15),
+                          socialItem(
+                              icon: "assets/icons/google.png",
+                              action: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ComingSoonPage(
+                                      title: "Comming Soon",
+                                      lottieUrl:
+                                          "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
-                        const SizedBox(width: 15),
-                        socialItem(
-                          icon: "assets/icons/line.png",
-                          isLine: true,
-                          action: () {
-                            pressLine();
-                          },
-                        ),
-                        // const SizedBox(width: 15),
-                        // socialItem(
-                        //   icon: "assets/icons/thaiid.png",
-                        //   isThaiid: true,
-                        //   action: () {
-                        //     Navigator.push(
-                        //       context,
-                        //       MaterialPageRoute(
-                        //         builder: (context) =>
-                        //             const ComingSoonPage(
-                        //           title: "Comming Soon",
-                        //           lottieUrl:
-                        //               "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
-                        //         ),
-                        //       ),
-                        //     );
-                        //   },
-                        // ),
-                      ],
+                                );
+                              }),
+                          const SizedBox(width: 15),
+                          socialItem(
+                            icon: "assets/icons/line.png",
+                            isLine: true,
+                            action: () {
+                              pressLine();
+                            },
+                          ),
+                          // const SizedBox(width: 15),
+                          // socialItem(
+                          //   icon: "assets/icons/thaiid.png",
+                          //   isThaiid: true,
+                          //   action: () {
+                          //     Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //         builder: (context) =>
+                          //             const ComingSoonPage(
+                          //           title: "Comming Soon",
+                          //           lottieUrl:
+                          //               "https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json",
+                          //         ),
+                          //       ),
+                          //     );
+                          //   },
+                          // ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -582,7 +646,7 @@ class _LoginPageState extends State<LoginPage>
         key: 'typeLogin',
         value: 'local',
       );
-      Navigator.pushReplacement(
+      await Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => MenuPage(userType: "user"),

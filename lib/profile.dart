@@ -115,12 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Color(0xFF0262EC),
                     ),
                   ),
-                  SizedBox(width: 6),
-                  Icon(
-                    Icons.edit,
-                    size: 14,
-                    color: Color(0xFF0262EC),
-                  ),
+                  // s
                 ],
               ),
 
@@ -330,26 +325,26 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
               ),
 
-              // ปุ่มกล้อง
-              Positioned(
-                bottom: -3,
-                right: -3,
-                child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0262EC),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(5.5),
-                      child: Image.asset(
-                        "assets/icons/camera.png",
-                        width: 17,
-                      ),
-                    )),
-              )
+              // // ปุ่มกล้อง
+              // Positioned(
+              //   bottom: -3,
+              //   right: -3,
+              //   child: Container(
+              //       width: 36,
+              //       height: 36,
+              //       decoration: BoxDecoration(
+              //         color: const Color(0xFF0262EC),
+              //         shape: BoxShape.circle,
+              //         border: Border.all(color: Colors.white, width: 3),
+              //       ),
+              //       child: Padding(
+              //         padding: const EdgeInsets.all(5.5),
+              //         child: Image.asset(
+              //           "assets/icons/camera.png",
+              //           width: 17,
+              //         ),
+              //       )),
+              // )
             ],
           ),
         ),
