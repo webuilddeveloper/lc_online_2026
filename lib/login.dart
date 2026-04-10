@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         opacity: fade,
         child: Container(
           decoration: const BoxDecoration(
-            color: Color.fromARGB(255, 6, 27, 74),
+            color: Color(0xFF061B4A),
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
@@ -113,9 +113,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 const SizedBox(height: 20),
 
                 /// 🔹 Login Card
-                SlideTransition
-                    // ScaleTransition
-                    (
+                SlideTransition(
                   position: _animationDialog,
                   child: Container(
                     padding: const EdgeInsets.all(24),
@@ -350,8 +348,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                 const SizedBox(height: 20),
 
-                /// Demo user
-                
+                /// Login Social
                 SlideTransition(
                   position: _animationLoginSocial,
                   child: Center(
@@ -386,7 +383,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               icon: "assets/icons/apple.png",
                               action: () {
                                 // pressApple();
-                  
+
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
