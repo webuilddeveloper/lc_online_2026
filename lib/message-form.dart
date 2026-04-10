@@ -136,7 +136,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                !widget.model['caseSuccess'] ?
+                !(widget.model['caseSuccess'] ?? false) ?
                 Text(
                   (widget.model['active'] ?? true)
                       ? 'Active Now'
@@ -177,7 +177,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
               ],
             ),
             const SizedBox(width: 10),
-            !widget.model['caseSuccess']
+            !(widget.model['caseSuccess'] ?? false)
                 ? Row(
                     children: [
                       GestureDetector(
@@ -289,7 +289,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
           ),
         ],
       ),
-      bottomSheet: !widget.model['caseSuccess']
+      bottomSheet: !(widget.model['caseSuccess'] ?? false)
                 ? SafeArea(
         top: false,
         child: Container(

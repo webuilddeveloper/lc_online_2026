@@ -318,7 +318,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         'label': 'ทั้งหมด',
         'count': _jobs.length,
         'color': _kPrimary,
-
       },
       {
         'key': 'pending',
@@ -340,7 +339,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
             .length,
         'color': Colors.grey,
       },
-      
     ];
 
     return Container(
@@ -694,8 +692,12 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                     context,
                     MaterialPageRoute(
                       builder: (_) => MessageFormPage(model: {
-                        'name': job['clientName'],
-                        'avatar': job['clientAvatar'],
+                        'name': job['clientName'] ?? '',
+                        'avatar': job['clientAvatar'] ?? '',
+                        'imageUrl': '', // เพิ่ม default imageUrl
+                        'active': true, // เพิ่ม default active status
+                        'caseSuccess': false, // เพิ่ม caseSuccess flag
+                        'clientColor': job['clientColor'], // เพิ่มสีถ้าต้องการ
                       }),
                     ),
                   ),
