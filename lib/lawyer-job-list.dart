@@ -19,7 +19,7 @@ class LawyerJobListPage extends StatefulWidget {
 
 class _LawyerJobListPageState extends State<LawyerJobListPage>
     with TickerProviderStateMixin {
-  String _activeTab = 'pending';
+  String _activeTab = 'all';
   late AnimationController _entryCtrl;
 
   static const _kPrimary = Color(0xFF0262EC);
@@ -132,6 +132,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         return _jobs
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .toList();
+      case 'all':
+        return _jobs;
       default:
         return _jobs;
     }
@@ -312,6 +314,13 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   Widget _buildTabBar() {
     final tabs = [
       {
+        'key': 'all',
+        'label': 'ทั้งหมด',
+        'count': _jobs.length,
+        'color': _kPrimary,
+
+      },
+      {
         'key': 'pending',
         'label': 'รอตอบรับ',
         'count': _jobs.where((j) => j['status'] == 'pending').length,
@@ -321,16 +330,17 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         'key': 'accepted',
         'label': 'รับแล้ว',
         'count': _jobs.where((j) => j['status'] == 'accepted').length,
-        'color': _kPrimary,
+        'color': const Color.fromARGB(255, 2, 156, 23),
       },
       {
         'key': 'done',
-        'label': 'ปิดงาน',
+        'label': 'ปิดเคส',
         'count': _jobs
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .length,
         'color': Colors.grey,
       },
+      
     ];
 
     return Container(

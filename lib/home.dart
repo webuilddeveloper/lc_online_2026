@@ -11,6 +11,7 @@ import 'package:LawyerOnline/law_type_all_page.dart';
 import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
+import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
@@ -220,6 +221,91 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "topic": "แรงงานและการจ้างงาน"
     },
   ];
+
+  List<Map<String, dynamic>> _getLawyerJobsMockData() {
+    return [
+      {
+        'id': 'REQ-2026-001',
+        'clientName': 'สมชาย ใจดี',
+        'clientAvatar': 'ส',
+        'clientColor': 0xFF0262EC,
+        'topic': 'ครอบครัวและมรดก',
+        'subTopic': 'ฟ้องหย่า / แบ่งสินสมรส',
+        'detail':
+            'ต้องการปรึกษาเรื่องการฟ้องหย่าและการแบ่งทรัพย์สินสมรส มีบ้านและที่ดิน 2 แปลง ต้องการคำแนะนำเบื้องต้น',
+        'date': '28 มี.ค. 2569',
+        'time': '10:00 - 11:00',
+        'status': 'pending',
+        'requestedAt': '2 ชั่วโมงที่แล้ว',
+        'type': 'video',
+        'budget': 'ฟรี',
+      },
+      {
+        'id': 'REQ-2026-002',
+        'clientName': 'วิภา รักสงบ',
+        'clientAvatar': 'ว',
+        'clientColor': 0xFFE11D48,
+        'topic': 'หนี้สินและการเงิน',
+        'subTopic': 'หนี้กู้ยืมเงิน / ดอกเบี้ย',
+        'detail':
+            'โดนเพื่อนยืมเงิน 200,000 บาท ไม่คืน มีสัญญากู้ยืมเงิน อยากดำเนินคดีเพื่อเรียกคืน',
+        'date': '30 มี.ค. 2569',
+        'time': '14:00 - 15:00',
+        'status': 'pending',
+        'requestedAt': '5 ชั่วโมงที่แล้ว',
+        'type': 'video',
+        'budget': '500 บาท',
+      },
+      {
+        'id': 'REQ-2026-003',
+        'clientName': 'ประสิทธิ์ มั่งมี',
+        'clientAvatar': 'ป',
+        'clientColor': 0xFF059669,
+        'topic': 'ธุรกิจและบริษัท',
+        'subTopic': 'ตรวจร่างสัญญา',
+        'detail':
+            'ต้องการให้ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท กังวลเรื่องเงื่อนไขการรับประกัน',
+        'date': '02 เม.ย. 2569',
+        'time': '09:00 - 10:00',
+        'status': 'accepted',
+        'requestedAt': '1 วันที่แล้ว',
+        'type': 'video',
+        'budget': '1,000 บาท',
+      },
+      {
+        'id': 'REQ-2026-004',
+        'clientName': 'นงลักษณ์ สุขสม',
+        'clientAvatar': 'น',
+        'clientColor': 0xFF7C3AED,
+        'topic': 'ทรัพย์สินและที่ดิน',
+        'subTopic': 'เช่าบ้าน / ขับไล่ผู้เช่า',
+        'detail':
+            'ผู้เช่าค้างค่าเช่า 3 เดือน ไม่ยอมออก ต้องการดำเนินการทางกฎหมาย',
+        'date': '15 มี.ค. 2569',
+        'time': '11:00 - 12:00',
+        'status': 'done',
+        'requestedAt': '2 สัปดาห์ที่แล้ว',
+        'type': 'video',
+        'budget': '800 บาท',
+      },
+      {
+        'id': 'REQ-2026-005',
+        'clientName': 'อนันต์ ชัยชนะ',
+        'clientAvatar': 'อ',
+        'clientColor': 0xFFD97706,
+        'topic': 'อาญาและอาชญากรรม',
+        'subTopic': 'หมิ่นประมาท',
+        'detail':
+            'ถูกโพสต์หมิ่นประมาทบน Facebook ทำให้เสียชื่อเสียง ต้องการฟ้องร้อง',
+        'date': '',
+        'time': '',
+        'status': 'rejected',
+        'requestedAt': '3 วันที่แล้ว',
+        'type': 'video',
+        'budget': 'ฟรี',
+      },
+    ];
+  }
 
   final storage = FlutterSecureStorage();
   String userType = "";
@@ -456,17 +542,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                         child: Stack(alignment: Alignment.center, children: [
                           Image.asset(
-                            "assets/icons/bell.png",
-                            width: 20,
-                            height: 20,
+                            "assets/icons/bell-2.png",
+                            width: 25,
+                            height: 25,
                             color: const Color(0xFF1565C0),
                           ),
                           Positioned(
                             top: 8,
                             right: 9,
                             child: Container(
-                              width: 7,
-                              height: 7,
+                              width: 9,
+                              height: 9,
                               decoration: const BoxDecoration(
                                 color: Color.fromARGB(255, 247, 12, 12),
                                 shape: BoxShape.circle,
@@ -523,8 +609,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  
-
   Widget _buildMemberBadge() {
     final label = userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป';
     return Container(
@@ -539,8 +623,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: _kGold, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
-
-  
 
   // ─── Body ────────────────────────────────────────────────────────
   Widget _buildBody(Size size) {
@@ -613,18 +695,43 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       )),
                     ])
-                  : _actionCard(
-                      title: "รับเคสด่วน",
-                      subtitle: "ลูกความต้องการคำปรึกษาด่วน",
-                      icon: Icons.work_rounded,
-                      gradientColors: [
-                        const Color(0xFF1565C0),
-                        const Color(0xFF2F80ED)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _actionCard(
+                          title: "รับเคสด่วน",
+                          subtitle: "ลูกความต้องการคำปรึกษาด่วน",
+                          icon: Icons.work_rounded,
+                          gradientColors: [
+                            const Color(0xFF1565C0),
+                            const Color(0xFF2F80ED)
+                          ],
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => LawyerJobListPage())),
+                        ),
+                        const SizedBox(height: 14),
+                        _actionCard(
+                          title: "ตั้งค่าวันที่สามารถปรึกษา",
+                          subtitle: "กำหนดวันที่สามารถจองขอคำปรึกษาได้",
+                          icon: Icons.date_range_rounded,
+                          
+                          gradientColors: [
+                            _kCard,
+                            _kCard
+                          ],
+                          titleColor: const Color(0xFF1565C0),
+                          subTitleColor: const Color(0xFF1565C0),
+                          iconColor: const Color(0xFF1565C0),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ConsultationSchedule(),
+                            ),
+                          ),
+                        ),
                       ],
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => LawyerJobListPage())),
                     ),
             ),
 
@@ -660,7 +767,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // Appointments (lawyer only)
             if (userType == 'lawyer') ...[
-              _sectionHeader("นัดหมายของคุณ",
+              _sectionHeader("รายการนัดหมาย",
                   onViewAll: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -741,13 +848,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(18),
-          // boxShadow: [
-          //   BoxShadow(
-          //     color: Color.fromARGB(255, 157, 183, 211).withOpacity(0.2),
-          //     blurRadius: 16,
-          //     offset: const Offset(0, 6),
-          //   )
-          // ],
           boxShadow: [
             BoxShadow(
               color: _kAccent.withOpacity(0.3),
@@ -765,10 +865,87 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                // color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(12),
               ),
-              // ignore: unnecessary_null_comparison
+              child: icon != null
+                  ? Icon(icon, color: iconColor, size: 40)
+                  : Image.asset(
+                      iconAssets,
+                      width: 18,
+                      height: 18,
+                      color: iconColor,
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.prompt(
+                    color: titleColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.prompt(
+                    color: subTitleColor,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionCardBorder({
+    required String title,
+    required String subtitle,
+    IconData? icon,
+    String iconAssets = "",
+    Color? titleColor = Colors.white,
+    Color? subTitleColor = Colors.white,
+    Color? iconColor = Colors.white,
+    required List<Color> gradientColors,
+    Color borderColor = const Color(0xFF0262EC),
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: _kAccent.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ],
+          border: Border.all(
+            color: borderColor,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: icon != null
                   ? Icon(icon, color: iconColor, size: 22)
                   : Image.asset(
@@ -1233,21 +1410,55 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // ─── Appointment List (lawyer) ────────────────────────────────────
+  // Widget _buildAppointmentList() {
+  //   return SizedBox(
+  //     height: 350,
+  //     child: ListView.separated(
+  //       scrollDirection: Axis.vertical,
+  //       padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
+  //       itemCount: appointmentList.length,
+  //       separatorBuilder: (_, __) => const SizedBox(height: 10),
+  //       itemBuilder: (_, i) => _appointmentCard(appointmentList[i],
+  //           onTap: () => Navigator.push(
+  //               context,
+  //               MaterialPageRoute(
+  //                   builder: (_) =>
+
+  //                       AppointmentDetailsLawyer(model: appointmentList[i])))),
+  //     ),
+  //   );
+  // }
   Widget _buildAppointmentList() {
+    final lawyerJobs = _getLawyerJobsMockData();
+    final acceptedJobs =
+        lawyerJobs.where((j) => j['status'] == 'accepted').toList();
+    final pendingJobs =
+        lawyerJobs.where((j) => j['status'] == 'pending').toList();
+    final combinedList = [...acceptedJobs, ...pendingJobs, ...appointmentList];
+
     return SizedBox(
       height: 350,
       child: ListView.separated(
         scrollDirection: Axis.vertical,
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
-        itemCount: appointmentList.length,
+        itemCount: combinedList.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) => _appointmentCard(appointmentList[i],
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
+        itemBuilder: (_, i) {
+          final item = combinedList[i];
+          final isJobRequest = item.containsKey('status');
 
-                        AppointmentDetailsLawyer(model: appointmentList[i])))),
+          return isJobRequest
+              ? _buildUrgentJobCard(item)
+              : _appointmentCard(
+                  item,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AppointmentDetailsLawyer(model: item),
+                    ),
+                  ),
+                );
+        },
       ),
     );
   }
@@ -1325,6 +1536,316 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ]),
       ),
     );
+  }
+
+  Widget _buildUrgentJobCard(Map<String, dynamic> job) {
+    final status = job['status'];
+    final barColors = _getStatusBarColors(status);
+    final badge = _getStatusBadge(status);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => LawyerJobListPage()),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // แถบสีด้านซ้าย
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: barColors,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+
+              // เนื้อหาการ์ด
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header - Avatar + ชื่อ + เวลา + Badge
+                      Row(
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Color(job['clientColor']),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                job['clientAvatar'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  job['clientName'],
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1A2340),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Icon(Icons.access_time,
+                                        size: 12, color: Colors.grey[400]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      job['requestedAt'],
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[500]),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Badge สถานะ
+                          badge,
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Topic badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0262EC).withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          job['topic'],
+                          style: const TextStyle(
+                            color: Color(0xFF0262EC),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Sub-topic (หัวข้อคดี)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              job['subTopic'],
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A2340),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0262EC).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'ดูรายละเอียด',
+                                  style: TextStyle(
+                                    color: Color(0xFF0262EC),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_forward_ios,
+                                    size: 10, color: Color(0xFF0262EC)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // รายละเอียด
+                      // Text(
+                      //   job['detail'],
+                      //   style: TextStyle(
+                      //     fontSize: 13,
+                      //     color: Colors.grey[600],
+                      //     height: 1.4,
+                      //   ),
+                      //   maxLines: 2,
+                      //   overflow: TextOverflow.ellipsis,
+                      // ),
+
+                      // const SizedBox(height: 12),
+
+                      // Footer - งบประมาณ + ปุ่มดูรายละเอียด
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //   children: [
+                          // งบประมาณ
+                          // Row(
+                          //   children: [
+                          //     const Icon(Icons.payments_outlined,
+                          //         size: 16, color: Color(0xFF059669)),
+                          //     const SizedBox(width: 6),
+                          //     Text(
+                          //       job['budget'],
+                          //       style: const TextStyle(
+                          //         fontSize: 14,
+                          //         fontWeight: FontWeight.w700,
+                          //         color: Color(0xFF059669),
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+
+                          // ปุ่มดูรายละเอียด
+                          // Container(
+                          //   padding: const EdgeInsets.symmetric(
+                          //       horizontal: 14, vertical: 8),
+                          //   decoration: BoxDecoration(
+                          //     color: const Color(0xFF0262EC).withOpacity(0.1),
+                          //     borderRadius: BorderRadius.circular(10),
+                          //   ),
+                          //   child: const Row(
+                          //     mainAxisSize: MainAxisSize.min,
+                          //     children: [
+                          //       Text(
+                          //         'ดูรายละเอียด',
+                          //         style: TextStyle(
+                          //           color: Color(0xFF0262EC),
+                          //           fontSize: 12,
+                          //           fontWeight: FontWeight.w700,
+                          //         ),
+                          //       ),
+                          //       SizedBox(width: 4),
+                          //       Icon(Icons.arrow_forward_ios,
+                          //           size: 10, color: Color(0xFF0262EC)),
+                          //     ],
+                          //   ),
+                          // ),
+                      //   ],
+                      // ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Color> _getStatusBarColors(String status) {
+    switch (status) {
+      case 'accepted':
+        return [const Color.fromARGB(255, 2, 236, 41), const Color(0xFF0099FF)];
+      case 'pending':
+        return [const Color(0xFFD97706), const Color(0xFFF59E0B)];
+      default:
+        return [Colors.grey, Colors.grey.shade400];
+    }
+  }
+
+  Widget _getStatusBadge(String status) {
+    final config = _getStatusBadgeConfig(status);
+    if (config == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: config['colors']),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: config['shadowColor'].withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(config['icon'], size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            config['label'],
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic>? _getStatusBadgeConfig(String status) {
+    switch (status) {
+      case 'accepted':
+        return {
+          'colors': [const Color(0xFF0262EC), const Color(0xFF0099FF)],
+          'icon': Icons.check_circle,
+          'label': 'รับแล้ว',
+          'shadowColor': const Color(0xFF0262EC),
+        };
+      case 'pending':
+        return {
+          'colors': [const Color(0xFFD97706), const Color(0xFFF59E0B)],
+          'icon': Icons.hourglass_top,
+          'label': 'รอตอบรับ',
+          'shadowColor': const Color(0xFFD97706),
+        };
+      default:
+        return null;
+    }
   }
 }
 

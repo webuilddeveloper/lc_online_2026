@@ -199,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
               
               userType == "lawyer"
                   ? menuItem(
-                      title: 'อัพเกรดฟีเจอร์',
+                      title: 'อัปเกรด Lawyer Pro',
                       onTap: () => {
                         Navigator.push(
                           context,
