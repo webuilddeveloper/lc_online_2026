@@ -46,11 +46,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   late final AnimationController _controllerAnimationCardLogin =
       AnimationController(
-    duration: const Duration(seconds: 2),
+    duration: const Duration(milliseconds: 1800),
     vsync: this,
   )..repeat(reverse: true);
   late final Animation<Offset> _animationDialog = Tween<Offset>(
-    begin: const Offset(0, 1.5),
+    begin: const Offset(0, 0.7),
     end: const Offset(0, 0),
   ).animate(
     CurvedAnimation(
@@ -61,11 +61,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   late final AnimationController _controllerAnimationLoginSocial =
       AnimationController(
-    duration: const Duration(seconds: 2),
+    duration: const Duration(milliseconds: 1800),
     vsync: this,
   )..repeat(reverse: true);
   late final Animation<Offset> _animationLoginSocial = Tween<Offset>(
-    begin: const Offset(0, -1.5),
+    begin: const Offset(0, -0.7),
     end: const Offset(0, 0),
   ).animate(
     CurvedAnimation(
@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     fade = CurvedAnimation(parent: controller, curve: Curves.easeOut);
     controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2200), () {
+    Future.delayed(const Duration(milliseconds: 1800), () {
       _controllerAnimationLoginSocial.stop();
       _controllerAnimationCardLogin.stop();
     });
