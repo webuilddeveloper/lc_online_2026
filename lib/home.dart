@@ -50,6 +50,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
+  bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
+
   List<dynamic> lawyerOnlineList = [
     {
       "code": "0",
@@ -119,8 +121,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "28/03/2026",
-      "appointmentTime": "11.00 - 14.00",
+      "appointmentDate": "16/04/2026",
+      "appointmentTime": "18.00 - 17.00",
       "title": "ขอฟ้องร้องมรดกพี่น้อง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
       "paymentStatus": "1",
@@ -307,6 +309,98 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String imageUrl = "";
   String name = "";
   String typeLogin = "";
+
+// ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง
+  bool _hasConflictingAppointment() {
+    final now = DateTime.now();
+
+    for (var appt in appointmentList) {
+      String dateStr = appt['appointmentDate'] ?? '';
+      String timeStr = appt['appointmentTime'] ?? '';
+
+      if (dateStr.isEmpty || timeStr.isEmpty) continue;
+
+      List<String> dateParts = dateStr.split('/');
+      if (dateParts.length == 3) {
+        int day = int.parse(dateParts[0]);
+        int month = int.parse(dateParts[1]);
+        int year = int.parse(dateParts[2]);
+
+        // เช็คว่าเป็นนัดของวันนี้หรือไม่
+        if (now.year == year && now.month == month && now.day == day) {
+          List<String> timeParts = timeStr.split(' - ');
+          if (timeParts.length == 2) {
+            // ดึงเวลาเริ่มและเวลาจบของนัดหมาย
+            List<String> startParts = timeParts[0].split('.');
+            List<String> endParts = timeParts[1].split('.');
+
+            DateTime startTime = DateTime(year, month, day,
+                int.parse(startParts[0]), int.parse(startParts[1]));
+            DateTime endTime = DateTime(year, month, day,
+                int.parse(endParts[0]), int.parse(endParts[1]));
+
+            // เช็คว่านัดหมายกำลังจะเริ่มในอีก 60 นาที หรือกำลังดำเนินการอยู่ (ยังไม่หมดเวลา)
+            final minutesToStart = startTime.difference(now).inMinutes;
+            final minutesToEnd = endTime.difference(now).inMinutes;
+
+            // เงื่อนไข: เริ่มภายใน 60 นาที (<= 60) และยังไม่ถึงเวลาสิ้นสุดนัดหมาย (> 0)
+            if (minutesToStart <= 60 && minutesToEnd > 0) {
+              return true; // พบว่ามีคิวชน
+            }
+          }
+        }
+      }
+    }
+    return false; // ไม่มีคิวชน
+  }
+
+// ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
+  void _toggleUrgentCase(bool value) {
+    if (value == true) {
+      // ถ้ากำลังพยายามเปิดรับเคส
+      bool hasConflict = _hasConflictingAppointment();
+
+      if (hasConflict) {
+        // มีคิวชนใน 1 ชั่วโมง แจ้งเตือนและไม่อนุญาตให้เปิด
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: Colors.orange, size: 28),
+                const SizedBox(width: 8),
+                Text("ไม่สามารถเปิดรับเคสด่วนได้",
+                    style: GoogleFonts.prompt(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 18)),
+              ],
+            ),
+            content: Text(
+                "คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง หรือกำลังอยู่ในช่วงเวลาของเคสอื่นอยู่ โปรดดำเนินการให้เสร็จสิ้นก่อนเปิดรับเคสด่วน",
+                style: GoogleFonts.prompt(fontSize: 14)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("ตกลง",
+                    style: GoogleFonts.prompt(
+                        color: const Color(0xFF0262EC),
+                        fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _isUrgentCaseEnabled = value;
+    });
+  }
 
   @override
   void initState() {
@@ -569,39 +663,65 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildAvatar() {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: _kPrimary.withOpacity(0.7), width: 1),
-      ),
-      child: ClipOval(
-          child: imageUrl.isNotEmpty
-              ? typeLogin == 'social'
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: 32,
-                      height: 32,
-                    )
-                  : Image.asset(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: 32,
-                      height: 32,
-                    )
-              : Image.asset(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  width: 32,
-                  height: 32,
-                )
+    bool isLawyerOnline = (userType == 'lawyer' && _isUrgentCaseEnabled);
 
-          // CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
-          // : Image.asset('assets/images/profile-avatar.jpg',
-          //     fit: BoxFit.cover),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isLawyerOnline
+                  ? const Color(0xFF059669)
+                  : _kPrimary.withOpacity(1),
+              width: isLawyerOnline ? 2.5 : 1,
+            ),
+            boxShadow: isLawyerOnline
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withOpacity(0.4),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : [],
           ),
+          child: Center(
+            child: SizedBox(
+              width: 42,
+              height: 42,
+              child: ClipOval(
+                child: imageUrl.isNotEmpty
+                    ? typeLogin == 'social'
+                        ? Image.network(imageUrl, fit: BoxFit.cover)
+                        : Image.asset(imageUrl, fit: BoxFit.cover)
+                    : Image.asset(imageUrl, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+        ),
+        if (isLawyerOnline)
+          Positioned(
+            bottom: -4,
+            right: -4,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF059669),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: const Icon(
+                Icons.balance_rounded,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -694,20 +814,143 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _actionCard(
-                          title: "รับเคสด่วน",
-                          subtitle: "ลูกความต้องการคำปรึกษาด่วน",
-                          icon: Icons.work_rounded,
-                          gradientColors: [
-                            const Color(0xFF1565C0),
-                            const Color(0xFF2F80ED)
-                          ],
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => LawyerJobListPage())),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: _isUrgentCaseEnabled
+                                          ? const Color(0xFF059669)
+                                          : Colors.grey.shade300,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text("รับเคสด่วน",
+                                                style: GoogleFonts.prompt(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: const Color(
+                                                        0xFF0D1B2A))),
+                                          ),
+                                          SizedBox(
+                                            height: 30,
+                                            child: Switch(
+                                              value: _isUrgentCaseEnabled,
+                                              onChanged: _toggleUrgentCase,
+                                              activeColor:
+                                                  const Color(0xFF059669),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                          _isUrgentCaseEnabled
+                                              ? "พร้อมให้คำปรึกษาเคสด่วน"
+                                              : "ปิดรับเคสด่วน",
+                                          style: GoogleFonts.prompt(
+                                              fontSize: 12,
+                                              color: _isUrgentCaseEnabled
+                                                  ? const Color(0xFF059669)
+                                                  : Colors.grey.shade600)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Opacity(
+                                  opacity: _isUrgentCaseEnabled
+                                      ? 1.0
+                                      : 0.4, // สว่างเมื่อเปิดสวิตช์
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (_isUrgentCaseEnabled) {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) =>
+                                                    LawyerJobListPage()));
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF1565C0),
+                                            Color(0xFF2F80ED)
+                                          ], // สีพื้นหลังปุ่ม
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(Icons.work_rounded,
+                                              color: Colors.white, size: 50),
+                                          const Spacer(), // ดันข้อความลงไปด้านล่างให้สมดุล
+                                          const SizedBox(height: 8),
+                                          Text("ดูงานเคสด่วน",
+                                              style: GoogleFonts.prompt(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                          Text("ลูกความต้องการคำปรึกษาด่วน",
+                                              style: GoogleFonts.prompt(
+                                                  fontSize: 11,
+                                                  color: Colors.white70)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        // --- สิ้นสุดส่วนรับเคสด่วน ---
+
                         const SizedBox(height: 14),
+                        // ... (โค้ด Card ตั้งค่าวันที่สามารถปรึกษา ตามเดิม) ...
+                        // ... (โค้ด _actionCard ตั้งค่าวันที่สามารถปรึกษา ตามเดิม) ...
+                        // _actionCard(
+                        //   title: "รับเคสด่วน",
+                        //   subtitle: "ลูกความต้องการคำปรึกษาด่วน",
+                        //   icon: Icons.work_rounded,
+                        //   gradientColors: [
+                        //     const Color(0xFF1565C0),
+                        //     const Color(0xFF2F80ED)
+                        //   ],
+                        //   onTap: () => Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //           builder: (_) => LawyerJobListPage())),
+                        // ),
+                        // const SizedBox(height: 14),
                         _actionCard(
                           title: "ตั้งค่าวันที่สามารถปรึกษา",
                           subtitle: "กำหนดวันที่สามารถจองขอคำปรึกษาได้",
@@ -759,12 +1002,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // Appointments (lawyer only)
             if (userType == 'lawyer') ...[
-              _sectionHeader("คำขอจากลูกความ",
-                  onViewAll: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => LawyerJobListPage()))),
-              const SizedBox(height: 12),
-              _buildJobRequestList(),
-              const SizedBox(height: 16),
               _sectionHeader("รายการนัดหมาย (${appointmentList.length})",
                   onViewAll: () => Navigator.push(
                       context,
@@ -773,6 +1010,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               const SizedBox(height: 12),
               _buildAppointmentList(),
               const SizedBox(height: 24),
+              _sectionHeader("เคสด่วนจากลูกความ",
+                  onViewAll: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => LawyerJobListPage()))),
+              const SizedBox(height: 12),
+              _buildJobRequestList(),
+              const SizedBox(height: 16),
             ],
 
             // Lawyer Online (user only)
@@ -1594,8 +1837,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   const SizedBox(width: 4),
                   Text(
                     model['appointmentTime'] ?? '',
-                    style:
-                        GoogleFonts.prompt(fontSize: 12, color: const Color.fromARGB(179, 255, 255, 255)),
+                    style: GoogleFonts.prompt(
+                        fontSize: 12,
+                        color: const Color.fromARGB(179, 255, 255, 255)),
                   ),
                 ]),
               ],

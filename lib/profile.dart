@@ -12,6 +12,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/post-list.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.userType, this.name, this.imageUrl});
@@ -270,7 +271,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: () => {logout()},
+                onTap: () => _confirmLogout(),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -284,14 +285,25 @@ class _ProfilePageState extends State<ProfilePage> {
                             width: 1,
                             color: const Color(0xFFDF0A0A),
                           )),
-                      child: const Text(
-                        "ออกจากระบบ",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFDF0A0A),
-                        ),
-                        textAlign: TextAlign.center,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.logout,
+                            size: 16,
+                            color: Color(0xFFDF0A0A),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            "ออกจากระบบ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFDF0A0A),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -389,6 +401,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void goBack() async {
     Navigator.pop(context, false);
+  }
+
+  void _confirmLogout() {
+    DialogService.showConfirmLogout(
+      context,
+      title: "ยืนยันการออกจากระบบ",
+      message: "คุณต้องการออกจากระบบหรือไม่?",
+      
+      // confirmText: "ใช่, ออกจากระบบ",
+      // cancelText: "ไม่, ยกเลิก",
+      onConfirm: () => logout(),
+    );
   }
 
   logout() async {
