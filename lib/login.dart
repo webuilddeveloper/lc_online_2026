@@ -5,7 +5,9 @@ import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/shared/apple_firebase.dart';
 import 'package:LawyerOnline/shared/line.dart';
+import 'package:LawyerOnline/shared/notification-service.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -543,6 +545,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           value: 'social',
         );
 
+        await NotificationService.saveFcmToken(
+          await FirebaseMessaging.instance.getToken() ?? '',
+        );
+
         // ปิด Loading
         Navigator.pop(context);
 
@@ -622,6 +628,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         value: 'local',
       );
 
+      await NotificationService.saveFcmToken(
+        await FirebaseMessaging.instance.getToken() ?? '',
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -643,6 +653,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         key: 'typeLogin',
         value: 'local',
       );
+
+      await NotificationService.saveFcmToken(
+        await FirebaseMessaging.instance.getToken() ?? '',
+      );
+
       await Navigator.pushReplacement(
         context,
         MaterialPageRoute(

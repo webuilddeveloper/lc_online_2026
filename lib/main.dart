@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:LawyerOnline/shared/notification-service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,11 +11,23 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'firebase_options.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  // แอพปิดอยู่ — FCM จะแสดง notification อัตโนมัติ
+  // ไม่ต้องทำอะไรเพิ่มถ้า notification payload ครบ
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  await NotificationService.init();
+
   await initializeDateFormatting('th', null);
 
   if (Platform.isIOS) {

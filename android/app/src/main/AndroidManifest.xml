@@ -5,6 +5,10 @@
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-permission android:name="android.permission.RECORD_AUDIO" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+	<uses-permission android:name="android.permission.VIBRATE" />
+	<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<application android:label="video_call" android:name="${applicationName}" android:icon="@mipmap/ic_launcher" android:usesCleartextTraffic="true">
 		<activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/LaunchTheme" android:supportsPictureInPicture="true" android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation">
 			<intent-filter>
@@ -25,6 +29,12 @@
 				<data android:scheme="signinwithapple" android:host="callback" />
 			</intent-filter>
 		</activity>
+		<service android:name="com.google.firebase.messaging.FirebaseMessagingService" android:exported="false">
+			<intent-filter>
+				<action android:name="com.google.firebase.MESSAGING_EVENT" />
+			</intent-filter>
+		</service>
+		<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="incoming_call" />
 		<!--
 		Don't delete the meta-data below.
 		This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
