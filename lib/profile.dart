@@ -42,7 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   callRead() async {
     var userType = await storage.read(key: 'userType');
-    var imageProfile = await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
+    var imageProfile =
+        await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
     var nameProfile = await storage.read(key: 'name');
     var type = await storage.read(key: 'typeLogin');
 
@@ -197,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
               //             ),
               //           ),
               //         }),
-              
+
               userType == "lawyer"
                   ? menuItem(
                       title: 'อัปเกรด Lawyer Pro',
@@ -209,6 +210,16 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       },
+                      titleStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                      trailing: const Icon(
+                        Icons.balance,
+                        size: 18,
+                        color: Color(0xFFF5A623),
+                      ),
                     )
                   : Container(),
               const SizedBox(height: 20),
@@ -364,7 +375,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  menuItem({required String title, Function? onTap}) {
+  menuItem({
+    required String title,
+    Function? onTap,
+    TextStyle? titleStyle,
+    Widget? trailing,
+  }) {
     return GestureDetector(
       onTap: () => onTap!(),
       child: Container(
@@ -376,12 +392,19 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: titleStyle ??
+                          const TextStyle(
+                            fontSize: 12,
+                          ),
                     ),
                   ),
+                  if (trailing != null) ...[
+                    trailing,
+                    const SizedBox(width: 8),
+                  ],
                   const Icon(
                     Icons.arrow_forward_ios,
                     size: 12,
@@ -408,7 +431,7 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       title: "ยืนยันการออกจากระบบ",
       message: "คุณต้องการออกจากระบบหรือไม่?",
-      
+
       // confirmText: "ใช่, ออกจากระบบ",
       // cancelText: "ไม่, ยกเลิก",
       onConfirm: () => logout(),

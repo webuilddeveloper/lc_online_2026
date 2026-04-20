@@ -97,6 +97,7 @@ class _CalendarPageState extends State<CalendarPage>
           "appointmentStatus": "2"
         },
       ],
+      
       DateTime(2026, 4, 25): [
         {
           "code": "1",
@@ -121,6 +122,7 @@ class _CalendarPageState extends State<CalendarPage>
 
     setState(() {
       model = mainEvent;
+      _selectedEvents?.value = _getEventsForDay(_selectedDay!);
     });
   }
 
@@ -133,7 +135,8 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
-    if (!isSameDay(_selectedDay, selectedDay)) {
+    final bool changed = !isSameDay(_selectedDay, selectedDay);
+    if (changed) {
       setState(() {
         _selectedDay = selectedDay;
         _focusedDay = focusedDay;
@@ -141,8 +144,8 @@ class _CalendarPageState extends State<CalendarPage>
         _rangeEnd = null;
         _rangeSelectionMode = RangeSelectionMode.toggledOff;
       });
-      _selectedEvents!.value = _getEventsForDay(selectedDay);
     }
+    _selectedEvents?.value = _getEventsForDay(selectedDay);
   }
 
   @override
@@ -198,18 +201,18 @@ class _CalendarPageState extends State<CalendarPage>
   // ✅ ปฏิทินแยกเป็น widget ของตัวเอง ไม่ใช้ Expanded
   Widget _buildCalendar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(29),
+          bottom: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.06),
+            spreadRadius: 0,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -442,13 +445,36 @@ class _CalendarPageState extends State<CalendarPage>
       valueListenable: _selectedEvents!,
       builder: (context, value, _) {
         if (value.isEmpty) {
-          return const SliverToBoxAdapter(
+          return SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.only(top: 40),
+              padding: const EdgeInsets.only(top: 60),
               child: Center(
-                child: Text(
-                  'ไม่พบนัดหมาย',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'ไม่มีนัดหมายในวันนี้',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'เลือกวันอื่นเพื่อดูนัดหมาย',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -476,78 +502,99 @@ class _CalendarPageState extends State<CalendarPage>
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+                        horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0262EC),
-                      borderRadius: BorderRadius.circular(10),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF0262EC),
+                          const Color(0xFF0048B8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0262EC).withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 58,
+                          width: 56,
                           height: 56,
-                          padding: const EdgeInsets.all(11),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: const Color(0xFFB0D0F9)),
-                          child: Image.asset(
-                            'assets/icons/calendar-appointment.png',
-                            height: 34,
-                            width: 36,
-                            fit: BoxFit.contain,
-                            color: const Color(0xFF0262EC),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white.withOpacity(0.2),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today,
+                            color: Colors.white,
+                            size: 28,
                           ),
                         ),
-                        const SizedBox(width: 30),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 value[index]['title'] ?? '',
                                 style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white),
-                                maxLines: 1,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  Image.asset(
-                                    'assets/icons/calendar-appointment.png',
-                                    height: 13,
-                                    width: 13,
-                                    fit: BoxFit.contain,
-                                    color: Colors.white,
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 12,
+                                    color: Colors.white.withOpacity(0.8),
                                   ),
-                                  const SizedBox(width: 5),
+                                  const SizedBox(width: 6),
                                   Text(
                                     value[index]['appointmentDate'] ?? '',
-                                    style: const TextStyle(
-                                        fontSize: 10, color: Colors.white),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Image.asset(
-                                    'assets/icons/time-appointment.png',
-                                    height: 13,
-                                    width: 13,
-                                    fit: BoxFit.contain,
-                                    color: Colors.white,
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 12,
+                                    color: Colors.white.withOpacity(0.8),
                                   ),
-                                  const SizedBox(width: 5),
+                                  const SizedBox(width: 6),
                                   Text(
                                     value[index]['appointmentTime'] ?? '',
-                                    style: const TextStyle(
-                                        fontSize: 10, color: Colors.white),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
