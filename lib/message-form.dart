@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -117,236 +119,244 @@ class _MessageFormPageState extends State<MessageFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF2F5),
-      appBar: appBarCustom(
-        title: "",
-        backBtn: true,
-        isRightWidget: true,
-        backAction: () => goBack(),
-        rightWidget: Row(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  widget.model['name'] ?? '',
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                !(widget.model['caseSuccess'] ?? false) ?
-                Text(
-                  (widget.model['active'] ?? true)
-                      ? 'Active Now'
-                      : 'Not Active',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF8593A8)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ) : const SizedBox()
-              ],
-            ),
-            const SizedBox(width: 10),
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: Image.asset(
-                    widget.model['imageUrl'] ?? 'assets/icons/profile.png',
-                    height: 48,
-                    width: 48,
-                    fit: BoxFit.cover,
+        backgroundColor: const Color(0xFFEEF2F5),
+        appBar: appBarCustom(
+          title: "",
+          backBtn: true,
+          isRightWidget: true,
+          backAction: () => goBack(),
+          rightWidget: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.model['name'] ?? '',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                (widget.model['active'] ?? true)
-                    ? Positioned(
-                        right: 0,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                              color: const Color(0xFF00CC5E),
-                              borderRadius: BorderRadius.circular(100)),
+                  !(widget.model['caseSuccess'] ?? false)
+                      ? Text(
+                          (widget.model['active'] ?? true)
+                              ? 'Active Now'
+                              : 'Not Active',
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF8593A8)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      : const SizedBox()
+                ],
+              ),
+              const SizedBox(width: 10),
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Image.asset(
+                      widget.model['imageUrl'] ?? 'assets/icons/profile.png',
+                      height: 48,
+                      width: 48,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  (widget.model['active'] ?? true)
+                      ? Positioned(
+                          right: 0,
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                                color: const Color(0xFF00CC5E),
+                                borderRadius: BorderRadius.circular(100)),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ],
+              ),
+              const SizedBox(width: 10),
+              !(widget.model['caseSuccess'] ?? false)
+                  ? Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _showReminderBeforeJoin(context),
+                          child: Container(
+                            width: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFAFAFA),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  width: 1, color: const Color(0xFFDBDBDB)),
+                            ),
+                            child:
+                                const Icon(Icons.video_call_outlined, size: 20),
+                          ),
                         ),
-                      )
-                    : const SizedBox.shrink(),
-              ],
+                        const SizedBox(width: 8),
+                        // ── ปุ่มจบการปรึกษา ──────────────────────────────────
+                        GestureDetector(
+                          onTap: _endConsultation,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FFF4),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  width: 1, color: const Color(0xFF34C759)),
+                            ),
+                            child: const Icon(
+                              Icons.task_alt_rounded,
+                              size: 20,
+                              color: Color(0xFF34C759),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox()
+              // ── ปุ่ม Video Call ──────────────────────────────────
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(12),
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final msg = messages[index];
+                  return Align(
+                    alignment:
+                        msg.isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        !msg.isMe
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(100),
+                                child: Image.asset(
+                                  widget.model['imageUrl'] ??
+                                      'assets/icons/profile.png',
+                                  height: 40,
+                                  width: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                        const SizedBox(width: 5),
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: msg.isMe
+                                ? const Color(0xFF00B900)
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(18),
+                              topRight: const Radius.circular(18),
+                              bottomLeft: msg.isMe
+                                  ? const Radius.circular(18)
+                                  : const Radius.circular(4),
+                              bottomRight: msg.isMe
+                                  ? const Radius.circular(4)
+                                  : const Radius.circular(18),
+                            ),
+                          ),
+                          child: Text(
+                            msg.text,
+                            style: TextStyle(
+                              color: msg.isMe ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-            const SizedBox(width: 10),
-            !(widget.model['caseSuccess'] ?? false)
-                ? Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => _showReminderBeforeJoin(context),
-                        child: Container(
-                          width: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFAFAFA),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                width: 1, color: const Color(0xFFDBDBDB)),
-                          ),
-                          child:
-                              const Icon(Icons.video_call_outlined, size: 20),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // ── ปุ่มจบการปรึกษา ──────────────────────────────────
-                      GestureDetector(
-                        onTap: _endConsultation,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FFF4),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                width: 1, color: const Color(0xFF34C759)),
-                          ),
-                          child: const Icon(
-                            Icons.task_alt_rounded,
-                            size: 20,
-                            color: Color(0xFF34C759),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : const SizedBox()
-            // ── ปุ่ม Video Call ──────────────────────────────────
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(12),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
-                return Align(
-                  alignment:
-                      msg.isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      !msg.isMe
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: Image.asset(
-                                widget.model['imageUrl'] ??
-                                    'assets/icons/profile.png',
-                                height: 40,
-                                width: 40,
-                                fit: BoxFit.cover,
+        bottomSheet: !(widget.model['caseSuccess'] ?? false)
+            ? SafeArea(
+                top: false,
+                child: Container(
+                  color: const Color(0xFFEEF2F5),
+                  padding: EdgeInsets.only(
+                      left: 15,
+                      right: 15,
+                      bottom: isKeyboardOpen(context) ? 15 : 25),
+                  child: TextField(
+                    controller: chatController,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    onChanged: (value) => setState(() {}),
+                    onSubmitted: (value) => _sendMessage(),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 15.00,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFFFFFFF),
+                      contentPadding:
+                          const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
+                      hintText: "พิมพ์ข้อความ...",
+                      helperStyle: const TextStyle(color: Color(0xFF8593A8)),
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 13, 15, 13),
+                        child: chatController.text.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () => _sendMessage(),
+                                child: const Icon(Icons.send,
+                                    size: 26, color: Color(0xFF0262EC)),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset('assets/icons/input-gallery.png',
+                                      width: 26,
+                                      height: 26,
+                                      fit: BoxFit.contain),
+                                  const SizedBox(width: 6),
+                                  Image.asset('assets/icons/input-emoji.png',
+                                      width: 26,
+                                      height: 26,
+                                      fit: BoxFit.contain),
+                                ],
                               ),
-                            )
-                          : const SizedBox.shrink(),
-                      const SizedBox(width: 5),
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: msg.isMe
-                              ? const Color(0xFF00B900)
-                              : Colors.grey.shade300,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(18),
-                            topRight: const Radius.circular(18),
-                            bottomLeft: msg.isMe
-                                ? const Radius.circular(18)
-                                : const Radius.circular(4),
-                            bottomRight: msg.isMe
-                                ? const Radius.circular(4)
-                                : const Radius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          msg.text,
-                          style: TextStyle(
-                            color: msg.isMe ? Colors.white : Colors.black,
-                          ),
-                        ),
                       ),
-                    ],
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18.0)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                        borderSide: const BorderSide(color: Color(0xFF0262EC)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                        borderSide: const BorderSide(color: Color(0xFF0262EC)),
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      bottomSheet: !(widget.model['caseSuccess'] ?? false)
-                ? SafeArea(
-        top: false,
-        child: Container(
-          color: const Color(0xFFEEF2F5),
-          padding: EdgeInsets.only(
-              left: 15, right: 15, bottom: isKeyboardOpen(context) ? 15 : 25),
-          child: TextField(
-            controller: chatController,
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            onChanged: (value) => setState(() {}),
-            onSubmitted: (value) => _sendMessage(),
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.normal,
-              fontSize: 15.00,
-            ),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFFFFFFFF),
-              contentPadding: const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
-              hintText: "พิมพ์ข้อความ...",
-              helperStyle: const TextStyle(color: Color(0xFF8593A8)),
-              suffixIcon: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 13, 15, 13),
-                child: chatController.text.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () => _sendMessage(),
-                        child: const Icon(Icons.send,
-                            size: 26, color: Color(0xFF0262EC)),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset('assets/icons/input-gallery.png',
-                              width: 26, height: 26, fit: BoxFit.contain),
-                          const SizedBox(width: 6),
-                          Image.asset('assets/icons/input-emoji.png',
-                              width: 26, height: 26, fit: BoxFit.contain),
-                        ],
-                      ),
-              ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(18.0)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18.0),
-                borderSide: const BorderSide(color: Color(0xFF0262EC)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18.0),
-                borderSide: const BorderSide(color: Color(0xFF0262EC)),
-              ),
-            ),
-          ),
-        ),
-      ) : const SizedBox()
-    );
+                ),
+              )
+            : const SizedBox());
   }
 
   void _showReminderBeforeJoin(BuildContext context) {
@@ -396,10 +406,30 @@ class _MessageFormPageState extends State<MessageFormPage> {
         );
       },
     );
+
+    callUser();
   }
 
   bool isKeyboardOpen(BuildContext context) =>
       MediaQuery.of(context).viewInsets.bottom > 0;
+
+  Future<void> callUser() async {
+    const storage = FlutterSecureStorage();
+    final name = await storage.read(key: 'name') ?? 'ทนายความ';
+
+    // ✅ ส่งหา receiverType = "user" โดยตรง ไม่ต้องรู้ uid
+    await FirebaseFirestore.instance.collection('calls').add({
+      'callerType': 'lawyer',
+      'callerName': name,
+      'receiverType': 'user', // ← Cloud Function จะหา token จาก devices/user
+      'status': 'ringing',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('📞 กำลังโทรหาผู้ใช้...')),
+    );
+  }
 
   void goBack() => Navigator.pop(context);
 }
