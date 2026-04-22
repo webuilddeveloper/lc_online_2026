@@ -314,7 +314,7 @@ class _SubscribePageState extends State<SubscribePage>
             ),
             if (badge != null) ...[
               const SizedBox(width: 6),
-              // Container นี้มีขนาดคงที่เสมอ ไม่ทำให้ layout โยก
+              
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: selected ? 1.0 : 0.5,
