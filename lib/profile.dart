@@ -186,6 +186,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     )
                   : Container(),
+
+              // userType != "lawyer"
+              //     ? menuItem(
+              //         title: 'โพสต์ของฉัน',
+              //         onTap: () => {
+              //           Navigator.push(
+              //             context,
+              //             MaterialPageRoute(
+              //               builder: (context) => PostList(),
+              //             ),
+              //           ),
+              //         },
+              //       )
+              //     : Container(),
               // menuItem(
               //     title: 'ประวัตินัดหมาย',
               //     onTap: () => {

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:LawyerOnline/map-card.dart';
+import 'package:LawyerOnline/post-list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -68,6 +69,8 @@ class _MenuPageState extends State<MenuPage> {
       pages = <Widget>[
         HomePage(),
         MessagePage(),
+        CommunityPage(),
+        // PostList(),
         // LawyerOnlineList(),
         // MapCardPage(),
         userType == "user" ? AppointmentListPage() : CalendarPage(),
@@ -150,23 +153,28 @@ class _MenuPageState extends State<MenuPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Flexible(
-                    flex: _currentPage == 0 ? 2 : 1,
+                    flex: _currentPage == 0 ? 1 : 1,
                     child: _bottomItem("assets/icons/home.png", 0,
                         title: 'หนัาหลัก'),
                   ),
                   Flexible(
-                    flex: _currentPage == 1 ? 2 : 1,
+                    flex: _currentPage == 1 ? 1 : 1,
                     child: _bottomItem("assets/icons/message.png", 1,
                         title: 'ข้อความ', showBadge: true),
                   ),
                   Flexible(
-                    flex: _currentPage == 2 ? 2 : 1,
-                    child: _bottomItem("assets/icons/appointment.png", 2,
+                    flex: _currentPage == 2 ? 1 : 1,
+                    child: _bottomItem("assets/icons/logo.png", 2,
+                        title: 'social', showBadge: false),
+                  ),
+                  Flexible(
+                    flex: _currentPage == 3 ? 1 : 1,
+                    child: _bottomItem("assets/icons/appointment.png", 3,
                         title: 'นัดหมาย', showBadge: true),
                   ),
                   Flexible(
-                    flex: _currentPage == 3 ? 2 : 1,
-                    child: _bottomItem("assets/icons/profile.png", 3,
+                    flex: _currentPage == 4 ? 1 : 1,
+                    child: _bottomItem("assets/icons/profile.png", 4,
                         title: 'โปรไฟล์'),
                   )
 
@@ -313,7 +321,7 @@ class _MenuPageState extends State<MenuPage> {
               children: [
                 Image.asset(
                   icon,
-                  color:
+                  color: index == 2 ? null :
                       isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
                   width: 24,
                   height: 24,
@@ -334,24 +342,24 @@ class _MenuPageState extends State<MenuPage> {
                   ),
               ],
             ),
-            isSelected
-                ? Row(
-                    children: [
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isSelected
-                              ? Color(0xFF085DD3)
-                              : const Color(0xFF666666),
-                        ),
-                      ),
-                    ],
-                  )
-                : const SizedBox()
+            // isSelected
+            //     ? Row(
+            //         children: [
+            //           const SizedBox(
+            //             width: 10,
+            //           ),
+            //           Text(
+            //             title,
+            //             style: TextStyle(
+            //               fontSize: 14,
+            //               color: isSelected
+            //                   ? Color(0xFF085DD3)
+            //                   : const Color(0xFF666666),
+            //             ),
+            //           ),
+            //         ],
+            //       )
+            //     : const SizedBox()
           ],
         ),
       ),

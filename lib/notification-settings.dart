@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 
@@ -41,14 +42,25 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         value: value,
         onChanged: onChanged,
         activeColor: Color(0xFF0262EC),
+        // activeTrackColor: Colors.amber,
+        inactiveTrackColor: Colors.white,
+        inactiveThumbColor: Colors.black,
+        // trackOutlineColor: WidgetStateProperty.all(Colors.blue),
         secondary: Icon(icon, color: Colors.blue),
         title: Text(
           title,
           style: const TextStyle(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(subtitle),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
       ),
     );
   }
@@ -60,9 +72,9 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(
               Icons.notifications_active,
               color: Colors.green,
@@ -99,11 +111,11 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
-      appBar: AppBar(
-        title: const Text("ตั้งค่าการแจ้งเตือน"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+      appBar: appBarCustom(
+        title: "ตั้งค่าการแจ้งเตือน",
+        backBtn: true,
+        backAction: () => goBack(),
+        isRightWidget: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -211,5 +223,9 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         ),
       ),
     );
+  }
+
+  void goBack() {
+    Navigator.pop(context);
   }
 }
