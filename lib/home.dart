@@ -400,6 +400,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     setState(() {
       _isUrgentCaseEnabled = value;
     });
+
+    // บันทึกสถานะลง persistent storage
+    storage.write(key: 'urgentCaseEnabled', value: value.toString());
   }
 
   @override
@@ -435,11 +438,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final imgPro = await storage.read(key: 'imageUrlSocial');
     final namePro = await storage.read(key: 'name');
     final type = await storage.read(key: 'typeLogin');
+    final urgentCaseEnabled = await storage.read(key: 'urgentCaseEnabled');
     setState(() {
       userType = uType ?? '';
       name = namePro ?? '';
       imageUrl = imgPro ?? '';
       typeLogin = type.toString();
+      _isUrgentCaseEnabled = urgentCaseEnabled == 'true';
     });
     // final value =
     //     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
