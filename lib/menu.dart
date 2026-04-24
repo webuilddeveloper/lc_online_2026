@@ -164,7 +164,7 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                   Flexible(
                     flex: _currentPage == 2 ? 1 : 1,
-                    child: _bottomItem("assets/icons/logo.png", 2,
+                    child: _bottomItem("assets/icons/logo-no-bg.png", 2,
                         title: 'social', showBadge: false),
                   ),
                   Flexible(
@@ -293,7 +293,7 @@ class _MenuPageState extends State<MenuPage> {
       child: AnimatedContainer(
         curve: Curves.easeOutCubic,
         duration: Duration(milliseconds: 250),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: index == 2 ? EdgeInsets.symmetric(horizontal: 14, vertical: 5) : EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           // color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
           color: isSelected
@@ -319,14 +319,25 @@ class _MenuPageState extends State<MenuPage> {
           children: [
             Stack(
               children: [
-                Image.asset(
-                  icon,
-                  color: index == 2 ? null :
-                      isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.white70,
-                  width: 24,
-                  height: 24,
-                  // size: 26,
-                ),
+                index == 2
+                    ? Image.asset(
+                        icon,
+                        color: isSelected
+                            ? Color.fromARGB(255, 8, 93, 211)
+                            : Colors.white70,
+                        width: 34,
+                        height: 34,
+                        // size: 26,
+                      )
+                    : Image.asset(
+                        icon,
+                        color: isSelected
+                            ? Color.fromARGB(255, 8, 93, 211)
+                            : Colors.white70,
+                        width: 22,
+                        height: 22,
+                        // size: 26,
+                      ),
                 if (showBadge)
                   Positioned(
                     top: -1,
