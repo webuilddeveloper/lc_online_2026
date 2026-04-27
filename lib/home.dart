@@ -1025,7 +1025,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // Lawyer Online (user only)
             if (userType != 'lawyer') ...[
-              _sectionHeader("หมอความออนไลน์",
+              _sectionHeader("หมอความสำหรับคุณ",
                   onViewAll: () => Navigator.push(context,
                       MaterialPageRoute(builder: (_) => LawyerOnlineList()))),
               const SizedBox(height: 12),

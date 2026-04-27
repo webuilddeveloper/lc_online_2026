@@ -159,7 +159,7 @@ class _MessageFormPageState extends State<MessageFormPage> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(100),
                     child: Image.asset(
-                      widget.model['imageUrl'] ?? 'assets/icons/profile.png',
+                      (widget.model['imageUrl'] ?? '') != '' ? widget.model['imageUrl'] : 'assets/icons/profile.png',
                       height: 48,
                       width: 48,
                       fit: BoxFit.cover,
