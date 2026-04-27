@@ -53,10 +53,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
 
   List<dynamic> lawyerOnlineList = [
+    // ── เดิม 5 คน ──────────────────────────────────────────────────────────────
     {
       "code": "0",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      'title': 'ทนายความอาวุโส',
+      "title": "ทนายความอาวุโส",
       "scroll": 4.8,
       "cost": "Free",
       "costUnit": "/hr",
@@ -68,7 +69,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {
       "code": "1",
       "name": "ธนากร นิติศักดิ์",
-      'title': 'ทนายความอาวุโส',
+      "title": "ทนายความอาวุโส",
       "scroll": 4.1,
       "cost": "Free",
       "costUnit": "/hr",
@@ -80,7 +81,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {
       "code": "2",
       "name": "พงษ์ภพ ยุติธรรม",
-      'title': 'ทนายความอาวุโส',
+      "title": "ทนายความอาวุโส",
       "scroll": 3.9,
       "cost": "Free",
       "costUnit": "/hr",
@@ -92,7 +93,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {
       "code": "3",
       "name": "อาริย์ ศิษย์กฎหมาย",
-      'title': 'ทนายความอาวุโส',
+      "title": "ทนายความอาวุโส",
       "scroll": 3.0,
       "cost": "200",
       "costUnit": "/hr",
@@ -104,6 +105,155 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {
       "code": "4",
       "name": "Sachin K",
+      "title": "ทนายความอาวุโส",
+      "scroll": 4.9,
+      "cost": "1,000",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-5.png",
+      "experience": "20+ ปี",
+      "price": 500,
+      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
+    },
+
+    // ── เพิ่มใหม่ 25 คน ────────────────────────────────────────────────────────
+    {
+      "code": "5",
+      "name": "วรรณา จิตต์ดี",
+      "title": "ทนายความด้านครอบครัว",
+      "scroll": 4.7,
+      "cost": "300",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-8.png",
+      "experience": "15+ ปี",
+      "price": 300,
+      "skills": ["ครอบครัวและมรดก", "หย่าร้างและสิทธิ์เลี้ยงดูบุตร"],
+    },
+    {
+      "code": "6",
+      "name": "กิตติพงศ์ นิลพัท",
+      "title": "ทนายความด้านอสังหาริมทรัพย์",
+      "scroll": 4.5,
+      "cost": "400",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-7.png",
+      "experience": "13+ ปี",
+      "price": 400,
+      "skills": ["ทรัพย์สินและที่ดิน", "สัญญาซื้อขายอสังหาริมทรัพย์"],
+    },
+    {
+      "code": "7",
+      "name": "ภาณุพงศ์ ศรีสวัสดิ์",
+      "title": "ทนายความด้านแรงงาน",
+      "scroll": 4.6,
+      "cost": "250",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-8.png",
+      "experience": "9+ ปี",
+      "price": 250,
+      "skills": ["แรงงานและการจ้างงาน", "ค่าชดเชยและสวัสดิการ"],
+    },
+    {
+      "code": "8",
+      "name": "สุนทรี แก้วมณี",
+      "title": "ทนายความด้านแพ่ง",
+      "scroll": 4.3,
+      "cost": "350",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-13.png",
+      "experience": "14+ ปี",
+      "price": 350,
+      "skills": ["คดีแพ่ง", "สัญญาและข้อพิพาท"],
+    },
+    {
+      "code": "9",
+      "name": "อนันต์ พรหมพิทักษ์",
+      "title": "ทนายความด้านอาชญากรรมไซเบอร์",
+      "scroll": 4.8,
+      "cost": "600",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-10.png",
+      "experience": "8+ ปี",
+      "price": 600,
+      "skills": ["คดีออนไลน์และเทคโนโลยี", "อาญาและอาชญากรรม"],
+    },
+    {
+      "code": "10",
+      "name": "ปิยะนุช รุ่งเรือง",
+      "title": "ทนายความด้านธุรกิจ",
+      "scroll": 4.4,
+      "cost": "500",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-14.png",
+      "experience": "16+ ปี",
+      "price": 500,
+      "skills": ["ธุรกิจและบริษัท", "สัญญาและข้อพิพาท"],
+    },
+    {
+      "code": "11",
+      "name": "ชาติชาย วิริยะ",
+      "title": "ทนายความอิสระ",
+      "scroll": 3.8,
+      "cost": "Free",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-12.png",
+      "experience": "5+ ปี",
+      "price": 0,
+      "skills": ["อาญาและอาชญากรรม", "ฟ้องศาล เรียกค่าเสียหาย"],
+    },
+    {
+      "code": "12",
+      "name": "มณีรัตน์ สุวรรณโชติ",
+      "title": "ทนายความด้านภาษี",
+      "scroll": 4.2,
+      "cost": "450",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-15.png",
+      "experience": "11+ ปี",
+      "price": 450,
+      "skills": ["ภาษีและการเงิน", "ธุรกิจและบริษัท"],
+    },
+    {
+      "code": "13",
+      "name": "วิทยา ธรรมสาร",
+      "title": "ทนายความด้านสิ่งแวดล้อม",
+      "scroll": 4.0,
+      "cost": "350",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-14.png",
+      "experience": "7+ ปี",
+      "price": 350,
+      "skills": ["สิ่งแวดล้อมและที่ดิน", "ทรัพย์สินและที่ดิน"],
+    },
+    {
+      "code": "14",
+      "name": "ณัฐพล อินทรวิชัย",
+      "title": "ทนายความด้านทรัพย์สินทางปัญญา",
+      "scroll": 4.7,
+      "cost": "700",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-15.png",
+      "experience": "12+ ปี",
+      "price": 700,
+      "skills": ["ทรัพย์สินทางปัญญา", "คดีออนไลน์และเทคโนโลยี"],
+    },
+  ];
+
+  List<dynamic> newLawyerOnlineList = [
+    {
+      "code": "0",
+      "name": "อาริย์ ศิษย์กฎหมาย",
+      'title': 'ทนายความอาวุโส',
+      "scroll": 3.0,
+      "cost": "200",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-4.png",
+      "experience": "12+ ปี",
+      "price": 500,
+      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
+    },
+    {
+      "code": "1",
+      "name": "Sachin K",
       'title': 'ทนายความอาวุโส',
       "scroll": 4.9,
       "cost": "1,000",
@@ -112,6 +262,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "experience": "20+ ปี",
       "price": 500,
       "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
+    },
+    {
+      "code": "2",
+      "name": "ศักดิ์สิทธิ์ พิพากษ์",
+      'title': 'ทนายความอาวุโส',
+      "scroll": 4.8,
+      "cost": "Free",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-1.png",
+      "experience": "11+ ปี",
+      "price": 500,
+      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
+    },
+    {
+      "code": "3",
+      "name": "ธนากร นิติศักดิ์",
+      'title': 'ทนายความอาวุโส',
+      "scroll": 4.1,
+      "cost": "Free",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-2.png",
+      "experience": "19+ ปี",
+      "price": 500,
+      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
+    },
+    {
+      "code": "4",
+      "name": "พงษ์ภพ ยุติธรรม",
+      'title': 'ทนายความอาวุโส',
+      "scroll": 3.9,
+      "cost": "Free",
+      "costUnit": "/hr",
+      "imageUrl": "assets/images/lawyer-avatar-3.png",
+      "experience": "10+ ปี",
+      "price": 500,
+      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
     },
   ];
 
@@ -523,7 +709,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 SliverToBoxAdapter(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      
                       minHeight: MediaQuery.of(context).size.height - 100,
                     ),
                     child: _buildBody(size),
@@ -917,7 +1102,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         children: [
                                           const Icon(Icons.work_rounded,
                                               color: Colors.white, size: 50),
-                                          const Spacer(), 
+                                          const Spacer(),
                                           const SizedBox(height: 8),
                                           Text("ดูงานเคสด่วน",
                                               style: GoogleFonts.prompt(
@@ -1025,11 +1210,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // Lawyer Online (user only)
             if (userType != 'lawyer') ...[
-              _sectionHeader("หมอความสำหรับคุณ",
-                  onViewAll: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => LawyerOnlineList()))),
+              _sectionHeader(
+                "หมอความสำหรับคุณ",
+                onViewAll: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LawyerOnlineList(),
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               _buildLawyerOnline(),
+              const SizedBox(height: 16),
+              _sectionHeader(
+                "หมอความมาแรง",
+                onViewAll: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LawyerOnlineList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildNewLawyerOnline(),
             ],
 
             const SizedBox()
@@ -1535,6 +1738,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  // ─── Lawyer Online ────────────────────────────────────────────────
+  Widget _buildNewLawyerOnline() {
+    return Container(
+      height: 210,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 15),
+        itemCount: newLawyerOnlineList.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _lawyerCard(
+          newLawyerOnlineList[i],
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LawyerOnlineDetails(
+                code: newLawyerOnlineList[i]['code'],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _lawyerCard(Map model, {VoidCallback? onTap}) {
     final isFree = (model['cost'] ?? '') == 'Free';
     return GestureDetector(
@@ -1687,8 +1914,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       height: 180,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding:
-            const EdgeInsets.fromLTRB(18, 4, 48, 0), 
+        padding: const EdgeInsets.fromLTRB(18, 4, 48, 0),
         itemCount: appointmentList.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, i) => _appointmentCard(
@@ -1883,7 +2109,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: IntrinsicHeight(
           child: Row(
             children: [
-              
               Container(
                 width: 8,
                 decoration: BoxDecoration(
