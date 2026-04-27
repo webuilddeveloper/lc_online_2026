@@ -250,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               userType != "user"
                   ? menuItem(
-                      title: 'สถานะวันปรึกษา',
+                      title: 'ตั้งค่าวันที่สามารถจองให้คำปรึกษา',
                       onTap: () => {
                         Navigator.push(
                           context,

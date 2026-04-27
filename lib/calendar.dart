@@ -334,7 +334,7 @@ class _CalendarPageState extends State<CalendarPage>
                   .addPostFrameCallback((_) => _scrollToCurrentHour());
             }),
             const SizedBox(width: 6),
-            _iconBtn(Icons.search_rounded, () {}),
+            // _iconBtn(Icons.search_rounded, () {}),
           ],
         ),
       ),
@@ -463,7 +463,7 @@ class _CalendarPageState extends State<CalendarPage>
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
+            _focusedDay = selectedDay; // sync ให้ตรงกันเสมอ
           });
         },
         onPageChanged: (focusedDay) {
@@ -571,6 +571,8 @@ class _CalendarPageState extends State<CalendarPage>
           markerBuilder: (context, day, events) {
             if (events.isEmpty) return const SizedBox.shrink();
             final isSelected = isSameDay(day, _selectedDay);
+            if (isSelected)
+              return const SizedBox.shrink(); // ซ่อนเมื่อ selected
             return Positioned(
               bottom: 4,
               child: Row(
@@ -581,10 +583,8 @@ class _CalendarPageState extends State<CalendarPage>
                           width: 5,
                           height: 5,
                           margin: const EdgeInsets.symmetric(horizontal: 1),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white.withOpacity(0.8)
-                                : _kPrimary,
+                          decoration: const BoxDecoration(
+                            color: _kPrimary,
                             shape: BoxShape.circle,
                           ),
                         ))

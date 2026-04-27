@@ -523,7 +523,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 SliverToBoxAdapter(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      // อย่างน้อยต้องสูงเต็มจอ หักความสูง appbar ออก
+                      
                       minHeight: MediaQuery.of(context).size.height - 100,
                     ),
                     child: _buildBody(size),
@@ -917,7 +917,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         children: [
                                           const Icon(Icons.work_rounded,
                                               color: Colors.white, size: 50),
-                                          const Spacer(), // ดันข้อความลงไปด้านล่างให้สมดุล
+                                          const Spacer(), 
                                           const SizedBox(height: 8),
                                           Text("ดูงานเคสด่วน",
                                               style: GoogleFonts.prompt(
@@ -1655,59 +1655,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // ─── Appointment List (lawyer) ────────────────────────────────────
-  // Widget _buildAppointmentList() {
-  //   return SizedBox(
-  //     height: 350,
-  //     child: ListView.separated(
-  //       scrollDirection: Axis.vertical,
-  //       padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
-  //       itemCount: appointmentList.length,
-  //       separatorBuilder: (_, __) => const SizedBox(height: 10),
-  //       itemBuilder: (_, i) => _appointmentCard(appointmentList[i],
-  //           onTap: () => Navigator.push(
-  //               context,
-  //               MaterialPageRoute(
-  //                   builder: (_) =>
-
-  //                       AppointmentDetailsLawyer(model: appointmentList[i])))),
-  //     ),
-  //   );
-  // }
-
-  // แบบเดิมที่ยังไม่แยก job กับ appointment
-  // Widget _buildAppointmentList() {
-  //   final lawyerJobs = _getLawyerJobsMockData();
-  //   final acceptedJobs =
-  //       lawyerJobs.where((j) => j['status'] == 'accepted').toList();
-  //   final pendingJobs =
-  //       lawyerJobs.where((j) => j['status'] == 'pending').toList();
-  //   final combinedList = [...acceptedJobs, ...pendingJobs, ...appointmentList];
-
-  //   return Padding(
-  //     padding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
-  //     child: Column(
-  //       children: [
-  //         for (int i = 0; i < combinedList.length; i++) ...[
-  //           if (i > 0) const SizedBox(height: 10),
-  //           combinedList[i].containsKey('status')
-  //               ? _buildUrgentJobCard(combinedList[i])
-  //               : _appointmentCard(
-  //                   combinedList[i],
-  //                   onTap: () => Navigator.push(
-  //                     context,
-  //                     MaterialPageRoute(
-  //                       builder: (_) => AppointmentDetailsLawyer(
-  //                         model: combinedList[i],
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ),
-  //         ]
-  //       ],
-  //     ),
-  //   );
-  // }
   // ── 1. Job request cards ──────────────────────────────────────────
   Widget _buildJobRequestList() {
     final lawyerJobs = _getLawyerJobsMockData();
@@ -1737,12 +1684,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (appointmentList.isEmpty) return const SizedBox();
 
     return SizedBox(
-      height: 160,
+      height: 180,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+        padding:
+            const EdgeInsets.fromLTRB(18, 4, 48, 0), 
         itemCount: appointmentList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, i) => _appointmentCard(
           appointmentList[i],
           onTap: () => Navigator.push(
@@ -1758,6 +1706,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _appointmentCard(Map model, {VoidCallback? onTap}) {
+    final isPaid = (model['paymentStatus'] ?? '') == '1';
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1782,16 +1731,60 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // ── icon ───────────────────────────────────
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.event_rounded,
-                  color: Colors.white, size: 20),
+            // ── icon + payment status badge ─────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.event_rounded,
+                      color: Colors.white, size: 20),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isPaid
+                        ? Colors.white.withOpacity(0.25)
+                        : Colors.orange.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                    style: GoogleFonts.prompt(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ── client name ─────────────────────────
+            Row(
+              children: [
+                const Icon(Icons.person_rounded,
+                    size: 11, color: Colors.white60),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    model['clientName'] ?? '',
+                    style: GoogleFonts.prompt(
+                      color: Colors.white60,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
 
             // ── subCaseType + title ─────────────────
@@ -1802,7 +1795,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   model['subCaseType'] ?? '',
                   style: GoogleFonts.prompt(
                     color: Colors.white70,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -1832,7 +1825,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Text(
                     model['appointmentDate'] ?? '',
                     style:
-                        GoogleFonts.prompt(fontSize: 10, color: Colors.white70),
+                        GoogleFonts.prompt(fontSize: 12, color: Colors.white70),
                   ),
                 ]),
                 const SizedBox(height: 2),
@@ -1890,9 +1883,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: IntrinsicHeight(
           child: Row(
             children: [
-              // แถบสีด้านซ้าย
+              
               Container(
-                width: 6,
+                width: 8,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -1972,7 +1965,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
                       const SizedBox(height: 14),
 
-                      // Topic badge
+                      // Topic badge (เพิ่ม icon นำหน้า)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
@@ -1980,13 +1973,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           color: const Color(0xFF0262EC).withOpacity(0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          job['topic'],
-                          style: const TextStyle(
-                            color: Color(0xFF0262EC),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.gavel_rounded,
+                                size: 12, color: Color(0xFF0262EC)),
+                            const SizedBox(width: 5),
+                            Text(
+                              job['topic'],
+                              style: const TextStyle(
+                                color: Color(0xFF0262EC),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
