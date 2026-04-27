@@ -59,6 +59,9 @@ class _CalendarPageState extends State<CalendarPage>
   // ─── view mode: false = week strip, true = month calendar ─────────
   bool _showMonthCalendar = false;
 
+  // ─── all appointments view ────────────────────────────────────────
+  bool _showAllView = false;
+
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
 
@@ -72,6 +75,9 @@ class _CalendarPageState extends State<CalendarPage>
 
   // ─── Timeline scroll ──────────────────────────────────────────────
   final ScrollController _timelineScroll = ScrollController();
+
+  // ─── All-view scroll (เก็บ position ไว้เมื่อย้อนกลับ) ───────────
+  final ScrollController _allViewScroll = ScrollController();
   static const double _hourHeight = 64.0;
   static const double _timeAxisWidth = 62.0;
 
@@ -94,6 +100,13 @@ class _CalendarPageState extends State<CalendarPage>
 
     _loadEvents();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentHour());
+
+    // ─── restore _showAllView state ───────────────────────────────
+    storage.read(key: 'calendarShowAllView').then((val) {
+      if (val == 'true' && mounted) {
+        setState(() => _showAllView = true);
+      }
+    });
   }
 
   @override
@@ -101,6 +114,7 @@ class _CalendarPageState extends State<CalendarPage>
     _fadeCtrl?.dispose();
     _calPanelCtrl?.dispose();
     _timelineScroll.dispose();
+    _allViewScroll.dispose();
     super.dispose();
   }
 
@@ -112,6 +126,66 @@ class _CalendarPageState extends State<CalendarPage>
         offset.clamp(0.0, _timelineScroll.position.maxScrollExtent),
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _scrollAllViewToToday() {
+    final sortedKeys = itemEvents.keys.toList()..sort();
+    if (sortedKeys.isEmpty) return;
+
+    final today = DateTime.now();
+    final todayKey = DateTime(today.year, today.month, today.day);
+
+    // หา index ของวันปัจจุบัน หรือวันที่ใกล้ที่สุด
+    int targetIndex = 0;
+    bool hasToday = false;
+
+    for (int i = 0; i < sortedKeys.length; i++) {
+      if (isSameDay(sortedKeys[i], todayKey)) {
+        targetIndex = i;
+        hasToday = true;
+        break;
+      }
+      // วันในอนาคตที่ใกล้ที่สุด
+      if (sortedKeys[i].isAfter(todayKey)) {
+        targetIndex = i;
+        break;
+      }
+      // ถ้าผ่านหมดแล้วให้ชี้ไปอันสุดท้าย
+      targetIndex = i;
+    }
+
+    // ประมาณ offset ของแต่ละ item (date header ~72 + cards ~80 each)
+    double offset = 8.0; // padding top
+    for (int i = 0; i < targetIndex; i++) {
+      final evCount = itemEvents[sortedKeys[i]]?.length ?? 0;
+      offset += 72 + (evCount * 88) + 16; // header + cards + divider
+    }
+
+    if (_allViewScroll.hasClients) {
+      _allViewScroll.animateTo(
+        offset.clamp(0.0, _allViewScroll.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
+
+    if (!hasToday) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'วันนี้ไม่มีนัด',
+            style: GoogleFonts.prompt(fontSize: 13, color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF0262EC),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          duration: const Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -252,29 +326,33 @@ class _CalendarPageState extends State<CalendarPage>
     return Scaffold(
       backgroundColor: _kBg,
       appBar: _buildAppBar(),
-      body: FadeTransition(
-        opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
-        child: Column(
-          children: [
-            // ── top panel: week strip OR full month calendar ──────────
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: _showMonthCalendar
-                  ? _buildMonthCalendar()
-                  : _buildWeekStrip(),
+      // IndexedStack เก็บทั้ง 2 view ใน tree ตลอด
+      // → scroll position ไม่หายเมื่อสลับกลับมา
+      body: IndexedStack(
+        index: _showAllView ? 1 : 0,
+        children: [
+          // ── index 0: calendar view ─────────────────────────────
+          FadeTransition(
+            opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
+            child: Column(
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: _showMonthCalendar
+                      ? _buildMonthCalendar()
+                      : _buildWeekStrip(),
+                ),
+                _buildToggleArrow(),
+                _buildDayEventList(),
+                Expanded(child: _buildTimeline()),
+              ],
             ),
+          ),
 
-            // ── toggle arrow button ───────────────────────────────────
-            _buildToggleArrow(),
-
-            // ── event list for selected day (shown above timeline) ────
-            _buildDayEventList(),
-
-            // ── timeline (day view) ───────────────────────────────────
-            Expanded(child: _buildTimeline()),
-          ],
-        ),
+          // ── index 1: all appointments view ────────────────────
+          _buildAllAppointmentsView(),
+        ],
       ),
     );
   }
@@ -325,33 +403,49 @@ class _CalendarPageState extends State<CalendarPage>
               ),
             ),
             const Spacer(),
+            _iconBtn(
+              _showAllView
+                  ? Icons.calendar_today_rounded
+                  : Icons.format_list_bulleted_rounded,
+              () {
+                final next = !_showAllView;
+                setState(() => _showAllView = next);
+                storage.write(
+                    key: 'calendarShowAllView', value: next.toString());
+              },
+              active: _showAllView,
+            ),
+            const SizedBox(width: 6),
             _iconBtn(Icons.today_rounded, () {
-              setState(() {
-                _selectedDay = DateTime.now();
-                _focusedDay = DateTime.now();
-              });
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => _scrollToCurrentHour());
+              if (_showAllView) {
+                _scrollAllViewToToday();
+              } else {
+                setState(() {
+                  _selectedDay = DateTime.now();
+                  _focusedDay = DateTime.now();
+                });
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _scrollToCurrentHour());
+              }
             }),
             const SizedBox(width: 6),
-            // _iconBtn(Icons.search_rounded, () {}),
           ],
         ),
       ),
     );
   }
 
-  Widget _iconBtn(IconData icon, VoidCallback onTap) {
+  Widget _iconBtn(IconData icon, VoidCallback onTap, {bool active = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: _kSurface,
+          color: active ? _kPrimary : _kSurface,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: _kSub, size: 18),
+        child: Icon(icon, color: active ? Colors.white : _kSub, size: 18),
       ),
     );
   }
@@ -954,6 +1048,283 @@ class _CalendarPageState extends State<CalendarPage>
             ),
           ),
         ), // ClipRRect
+      ),
+    );
+  }
+
+  // ─── All Appointments Full View ──────────────────────────────────
+  Widget _buildAllAppointmentsView() {
+    final sortedEntries = itemEvents.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    final thaiMonths = [
+      '',
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
+    ];
+    final thaiDaysFull = [
+      '',
+      'จันทร์',
+      'อังคาร',
+      'พุธ',
+      'พฤหัสบดี',
+      'ศุกร์',
+      'เสาร์',
+      'อาทิตย์',
+    ];
+
+    final totalEvents = sortedEntries.fold(0, (sum, e) => sum + e.value.length);
+
+    return Container(
+      key: const ValueKey('allView'),
+      color: _kBg,
+      child: Column(
+        children: [
+          // ── summary bar ─────────────────────────────────────────
+          Container(
+            color: _kSurface,
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_month_rounded,
+                    color: _kPrimary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'นัดหมายทั้งหมด',
+                  style: GoogleFonts.prompt(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _kText,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _kPrimary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$totalEvents รายการ',
+                    style: GoogleFonts.prompt(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _kPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _kBorder),
+          // ── list ────────────────────────────────────────────────
+          Expanded(
+            child: sortedEntries.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_busy_rounded,
+                            size: 52, color: _kBorder),
+                        const SizedBox(height: 12),
+                        Text(
+                          'ไม่มีนัดหมาย',
+                          style: GoogleFonts.prompt(color: _kSub, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _allViewScroll,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    itemCount: sortedEntries.length,
+                    itemBuilder: (_, i) {
+                      final date = sortedEntries[i].key;
+                      final events = sortedEntries[i].value;
+                      final dayName = thaiDaysFull[date.weekday];
+                      final dateLabel =
+                          '${date.day} ${thaiMonths[date.month]} ${date.year + 543}';
+                      final isToday = isSameDay(date, DateTime.now());
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── date header ──────────────────────
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: isToday ? _kPrimary : _kSurface,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${date.day}',
+                                    style: GoogleFonts.prompt(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: isToday ? Colors.white : _kText,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'วัน$dayName',
+                                      style: GoogleFonts.prompt(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isToday ? _kPrimary : _kSub,
+                                      ),
+                                    ),
+                                    Text(
+                                      dateLabel,
+                                      style: GoogleFonts.prompt(
+                                        fontSize: 11,
+                                        color: _kSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _kSurface,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${events.length} นัด',
+                                    style: GoogleFonts.prompt(
+                                      fontSize: 11,
+                                      color: _kSub,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // ── event cards ──────────────────────
+                          ...events.map((entry) {
+                            final ev = entry as Map;
+                            final startHour = (ev['startHour'] as int? ?? 9);
+                            final color = _periodColor(startHour);
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        AppointmentDetailsLawyer(model: ev),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.06),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: color.withOpacity(0.25),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 4,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            ev['title'] ?? '',
+                                            style: GoogleFonts.prompt(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: _kText,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.access_time_rounded,
+                                                  size: 12, color: _kSub),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                ev['appointmentTime'] ?? '',
+                                                style: GoogleFonts.prompt(
+                                                  fontSize: 11,
+                                                  color: _kSub,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Icon(Icons.person_outline_rounded,
+                                                  size: 12, color: _kSub),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  ev['clientName'] ?? '',
+                                                  style: GoogleFonts.prompt(
+                                                    fontSize: 11,
+                                                    color: _kSub,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(Icons.chevron_right_rounded,
+                                        color: _kBorder, size: 20),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          if (i < sortedEntries.length - 1)
+                            const Divider(height: 16, color: _kBorder),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

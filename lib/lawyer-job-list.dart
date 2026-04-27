@@ -254,14 +254,14 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'มี $pending คำขอใหม่รอการตอบรับ',
+                        'มี $pending คำขอที่รอการตอบรับ',
                         style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 13),
                       ),
                       Text(
-                        'กรุณาตอบรับภายใน 24 ชั่วโมง',
+                        'กรุณาตอบรับด่วน',
                         style: TextStyle(
                             color: Colors.white.withOpacity(0.8), fontSize: 11),
                       ),
