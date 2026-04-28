@@ -1196,7 +1196,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   onViewAll: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => MenuPage(pageIndex: 2)))),
+                          builder: (_) => MenuPage(pageIndex: 3)))),
               const SizedBox(height: 12),
               _buildAppointmentList(),
               const SizedBox(height: 24),
