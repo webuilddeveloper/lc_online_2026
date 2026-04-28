@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:LawyerOnline/shared/notification-service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,25 +19,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  if (!kIsWeb) {
+    await NotificationService.init();
+    
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  await NotificationService.init();
+    await [Permission.camera, Permission.microphone].request();
+
+    // await LineSDK.instance.setup('2009412792');
+    LineSDK.instance.setup('2009412792').then((_) {
+      // ignore: avoid_print
+      print('LineSDK Prepared');
+    });
+  }
 
   await initializeDateFormatting('th', null);
-
-  if (Platform.isIOS) {
-    await [Permission.camera, Permission.microphone].request();
-  }
-  
-  // await LineSDK.instance.setup('2009412792');
-  LineSDK.instance.setup('2009412792').then((_) {
-    // ignore: avoid_print
-    print('LineSDK Prepared');
-  });
 
   runApp(const MyApp());
 }
@@ -68,7 +68,8 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, primary: Color(0xFF0262EC)),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple, primary: Color(0xFF0262EC)),
         useMaterial3: true,
         textTheme: GoogleFonts.promptTextTheme(),
         fontFamily: GoogleFonts.prompt().fontFamily,
