@@ -128,7 +128,7 @@ appBar(
     Function? backAction,
     bool isFavorite = false}) {
   return PreferredSize(
-    preferredSize: const Size.fromHeight(80), // 🔻 ลดความสูง
+    preferredSize: const Size.fromHeight(80),
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       child: Container(
@@ -153,7 +153,7 @@ appBar(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              /// 🔹 LEFT
+              
               backBtn
                   ? GestureDetector(
                       onTap: () => backAction!(),
@@ -193,7 +193,6 @@ appBar(
               ),
               const SizedBox(width: 12),
 
-              /// 🔔 RIGHT
               // ignore: unrelated_type_equality_checks
               rightBtn
                   ? GestureDetector(

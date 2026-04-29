@@ -16,7 +16,6 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-
   @override
   void initState() {
     super.initState();
@@ -35,13 +34,12 @@ class _SplashPageState extends State<SplashPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
-          child: Image.asset(
-            "assets/icons/logo.png",
-            width: 150,
-            height: 150,
-            fit: BoxFit.contain,
-          )
-        ),
+            child: Image.asset(
+          "assets/icons/logo.png",
+          width: 150,
+          height: 150,
+          fit: BoxFit.contain,
+        )),
       ),
     );
   }
@@ -52,16 +50,23 @@ class _SplashPageState extends State<SplashPage> {
 
     if (!mounted) return;
 
-    if (user != null && user.isNotEmpty) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuPage(userType: user,)),
-        (_) => false,
-      );
-    } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (_) => false,
-      );
-    }
+    // if (user != null && user.isNotEmpty) {
+    //   Navigator.of(context).pushAndRemoveUntil(
+    //     MaterialPageRoute(builder: (_) => MenuPage(userType: user,)),
+    //     (_) => false,
+    //   );
+    // } else {
+    //   Navigator.of(context).pushAndRemoveUntil(
+    //     MaterialPageRoute(builder: (_) => const LoginPage()),
+    //     (_) => false,
+    //   );
+    // }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+          builder: (_) => MenuPage(
+                userType: user ?? '',
+              )),
+      (_) => false,
+    );
   }
 }

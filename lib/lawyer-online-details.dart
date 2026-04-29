@@ -1,13 +1,16 @@
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LawyerOnlineDetails extends StatefulWidget {
-  LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic}) : super(key: key);
+  LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic})
+      : super(key: key);
   final String? code;
   String? topic;
   String? subTopic;
@@ -100,6 +103,8 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   dynamic model = {};
   String code = "";
   bool isFavorite = false;
+  String typeLogin = "";
+  final storage = FlutterSecureStorage();
 
   // ── สีตาม rating (เหมือน LawyerDetailPage) ──────────────
   Color get _lawyerColor {
@@ -139,10 +144,15 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   }
 
   // ── Logic เดิมทุกอย่าง ──────────────────────────────────
-  void callRead() {
+  void callRead() async {
     code = widget.code ?? "0";
     final result = lawyerOnlineList.where((x) => x['code'] == code);
     model = result.isNotEmpty ? result.first : lawyerOnlineList.first;
+    final type = await storage.read(key: 'typeLogin');
+
+    setState(() {
+      typeLogin = type.toString();
+    });
   }
 
   void goBack(value) async {
@@ -164,7 +174,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
       // ── AppBar โปร่งใส (เหมือน LawyerDetailPage) ────────
       appBar: AppBar(
         title: const Text(
-          'รายละเอียดหมอความ',
+          '',
           style: TextStyle(fontSize: 16, color: Colors.white),
         ),
         centerTitle: true,
@@ -190,9 +200,18 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
             child: GestureDetector(
               onTap: () {
                 // action เดิม
-                setState(() {
-                  isFavorite = !isFavorite;
-                });
+                typeLogin != 'null'
+                    ? setState(() {
+                        isFavorite = !isFavorite;
+                      })
+                    : Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LoginPage(
+                            isBack: true,
+                          ),
+                        ),
+                      );
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -359,8 +378,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                           decoration: BoxDecoration(
                             color: const Color(0xFF34C759),
                             shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 2.5),
+                            border: Border.all(color: Colors.white, width: 2.5),
                           ),
                         ),
                       ),
@@ -369,8 +387,8 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   const SizedBox(height: 6),
                   // Verified badge
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.88),
                       borderRadius: BorderRadius.circular(20),
@@ -406,7 +424,9 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.4,
                           shadows: [
-                            Shadow(color: Colors.black26, blurRadius: 8,
+                            Shadow(
+                                color: Colors.black26,
+                                blurRadius: 8,
                                 offset: Offset(0, 2))
                           ],
                         ),
@@ -430,12 +450,10 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.4)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.4)),
                         ),
-                        child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.star_rounded,
                               color: Color(0xFFFFC107), size: 14),
                           const SizedBox(width: 4),
@@ -591,9 +609,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               label: 'แชท',
               accent: const Color(0xFF0262EC),
               bg: const Color(0xFFEEF4FF),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: model), // action เดิม
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MessageFormPage(model: model), // action เดิม
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -601,9 +622,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               label: 'โทร',
               accent: const Color(0xFF34C759),
               bg: const Color(0xFFEEFAF1),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: model), // action เดิม
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MessageFormPage(model: model), // action เดิม
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -611,9 +635,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               label: 'วิดีโอ',
               accent: const Color(0xFFFF6B35),
               bg: const Color(0xFFFFF2EE),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: model), // action เดิม
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MessageFormPage(model: model), // action เดิม
+                  )),
             ),
           ]),
         ]),
@@ -715,8 +742,19 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                 height: 50,
                 child: GestureDetector(
                   onTap: () {
-                    HapticFeedback.lightImpact();
-                    launch(s['url'] as String);
+                    typeLogin != 'null'
+                        ? {
+                            HapticFeedback.lightImpact(),
+                            launch(s['url'] as String)
+                          }
+                        : Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LoginPage(
+                                isBack: true,
+                              ),
+                            ),
+                          );
                   },
                   child: Container(
                     width: 42,
@@ -770,16 +808,25 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
           //     builder: (context) => AppAppointment(lawyer: model),
           //   ),
           // );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AppAppointment(
-                lawyer: model,
-                topic: widget.topic,
-                subTopic: widget.subTopic,
-              ),
-            ),
-          );
+          typeLogin != 'null'
+              ? Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AppAppointment(
+                      lawyer: model,
+                      topic: widget.topic,
+                      subTopic: widget.subTopic,
+                    ),
+                  ),
+                )
+              : Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LoginPage(
+                      isBack: true,
+                    ),
+                  ),
+                );
         },
         child: Container(
           height: 54,
@@ -844,8 +891,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            gradient:
-                LinearGradient(colors: [color, color.withOpacity(0.7)]),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
@@ -871,8 +917,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -880,8 +925,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
             children: [
               Lottie.asset('assets/lottie/success.json', width: 120),
               const Text('สำเร็จ!',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               const Text('ดำเนินการเรียบร้อยแล้ว',
                   style: TextStyle(color: Colors.grey)),

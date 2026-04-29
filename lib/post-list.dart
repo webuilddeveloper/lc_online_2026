@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:LawyerOnline/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -831,10 +833,22 @@ class CommunityPage extends StatefulWidget {
 class _CommunityPageState extends State<CommunityPage> {
   List<CommunityPost> _posts = [];
 
+  String typeLogin = "";
+  final storage = FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
+    callRead();
     _posts = List.from(mockPosts);
+  }
+
+  void callRead() async {
+    final type = await storage.read(key: 'typeLogin');
+
+    setState(() {
+      typeLogin = type.toString();
+    });
   }
 
   void _toggleLike(String postId) {
@@ -998,6 +1012,7 @@ class _CommunityPageState extends State<CommunityPage> {
         post: _posts[index],
         onLike: () => _toggleLike(_posts[index].id),
         onBookmark: () => _toggleBookmark(_posts[index].id),
+        typeLogin: typeLogin,
         onTap: () async {
           await Navigator.push(
             context,
@@ -1015,7 +1030,14 @@ class _CommunityPageState extends State<CommunityPage> {
 
   Widget _buildFAB() {
     return GestureDetector(
-      onTap: _openPostForm,
+      onTap: () {
+        if (typeLogin != 'null') {
+          _openPostForm;
+        } else {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => LoginPage(isBack: true)));
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         margin: const EdgeInsets.only(bottom: 80),
@@ -1047,12 +1069,14 @@ class PostCard extends StatefulWidget {
   final VoidCallback onLike;
   final VoidCallback onBookmark;
   final VoidCallback onTap;
+  final String typeLogin;
 
   const PostCard(
       {super.key,
       required this.post,
       required this.onLike,
       required this.onBookmark,
+      required this.typeLogin,
       required this.onTap});
 
   @override
@@ -1119,7 +1143,14 @@ class _PostCardState extends State<PostCard>
         .toList();
 
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: () {
+        if (widget.typeLogin != 'null') {
+          widget.onTap;
+        } else {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => LoginPage(isBack: true)));
+        }
+      },
       child: Container(
         padding: const EdgeInsets.fromLTRB(15, 16, 16, 0),
         // margin: const EdgeInsets.only(bottom: 12),
@@ -1208,7 +1239,16 @@ class _PostCardState extends State<PostCard>
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: widget.onBookmark,
+                        onTap: () {
+                          if (widget.typeLogin != 'null') {
+                            widget.onBookmark();
+                          } else {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => LoginPage(isBack: true)));
+                          }
+                        },
                         child: Icon(
                             widget.post.isBookmarked
                                 ? Icons.bookmark_rounded
@@ -1270,27 +1310,60 @@ class _PostCardState extends State<PostCard>
                     child: Row(
                       children: [
                         _actionBtn(
-                            icon: widget.post.isLiked
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_outline_rounded,
-                            label: _fmt(widget.post.likes),
-                            color: widget.post.isLiked
-                                ? const Color(0xFFE53935)
-                                : const Color(0xFF9E9E9E),
-                            onTap: _handleLike,
-                            scale: _likeScale),
+                          icon: widget.post.isLiked
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_outline_rounded,
+                          label: _fmt(widget.post.likes),
+                          color: widget.post.isLiked
+                              ? const Color(0xFFE53935)
+                              : const Color(0xFF9E9E9E),
+                          onTap: () {
+                            if (widget.typeLogin != 'null') {
+                              _handleLike();
+                            } else {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => LoginPage(isBack: true)));
+                            }
+                          },
+                          scale: _likeScale,
+                        ),
                         const SizedBox(width: 16),
                         _actionBtn(
-                            icon: Icons.chat_bubble_outline_rounded,
-                            label: '${widget.post.comments.length}',
-                            color: const Color(0xFF9E9E9E),
-                            onTap: widget.onTap),
+                          icon: Icons.chat_bubble_outline_rounded,
+                          label: '${widget.post.comments.length}',
+                          color: const Color(0xFF9E9E9E),
+                          onTap: () {
+                            if (widget.typeLogin != 'null') {
+                              widget.onTap;
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LoginPage(isBack: true),
+                                ),
+                              );
+                            }
+                          },
+                        ),
                         const SizedBox(width: 16),
                         _actionBtn(
                             icon: Icons.ios_share_rounded,
                             label: _fmt(widget.post.shares),
                             color: const Color(0xFF9E9E9E),
-                            onTap: () {}),
+                            onTap: () {
+                              if (widget.typeLogin != 'null') {
+                                null;
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LoginPage(isBack: true),
+                                  ),
+                                );
+                              }
+                            }),
                         const Spacer(),
                         Icon(Icons.remove_red_eye_outlined,
                             size: 14, color: Colors.grey.shade400),
@@ -2223,39 +2296,39 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
           const SizedBox(height: 16),
 
-          // Title
-          const Text('หัวข้อคำถาม *',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E))),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2))
-                ]),
-            child: TextField(
-              controller: _titleCtrl,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'เช่น "ถูกเลิกจ้างไม่มีสาเหตุ ต้องทำอย่างไร?"',
-                hintStyle: TextStyle(color: Color(0xFFBDBDBD), fontSize: 13),
-                contentPadding: EdgeInsets.all(16),
-                border: InputBorder.none,
-              ),
-              style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF1A1A2E),
-                  fontWeight: FontWeight.w600),
-              maxLines: 2,
-            ),
-          ),
+          // // Title
+          // const Text('หัวข้อคำถาม *',
+          //     style: TextStyle(
+          //         fontSize: 13,
+          //         fontWeight: FontWeight.w700,
+          //         color: Color(0xFF1A1A2E))),
+          // const SizedBox(height: 8),
+          // Container(
+          //   decoration: BoxDecoration(
+          //       color: Colors.white,
+          //       borderRadius: BorderRadius.circular(14),
+          //       boxShadow: [
+          //         BoxShadow(
+          //             color: Colors.black.withOpacity(0.04),
+          //             blurRadius: 8,
+          //             offset: const Offset(0, 2))
+          //       ]),
+          //   child: TextField(
+          //     controller: _titleCtrl,
+          //     onChanged: (_) => setState(() {}),
+          //     decoration: const InputDecoration(
+          //       hintText: 'เช่น "ถูกเลิกจ้างไม่มีสาเหตุ ต้องทำอย่างไร?"',
+          //       hintStyle: TextStyle(color: Color(0xFFBDBDBD), fontSize: 13),
+          //       contentPadding: EdgeInsets.all(16),
+          //       border: InputBorder.none,
+          //     ),
+          //     style: const TextStyle(
+          //         fontSize: 14,
+          //         color: Color(0xFF1A1A2E),
+          //         fontWeight: FontWeight.w600),
+          //     maxLines: 2,
+          //   ),
+          // ),
 
           const SizedBox(height: 14),
 

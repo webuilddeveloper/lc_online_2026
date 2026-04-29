@@ -3,6 +3,7 @@ import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
 import 'package:LawyerOnline/lawyer-appointment-history.dart';
+import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
@@ -456,7 +457,7 @@ class _ProfilePageState extends State<ProfilePage> {
     storage.deleteAll();
     await Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (context) => const LoginPage(),
+        builder: (context) => MenuPage(),
       ),
       (Route<dynamic> route) => false,
     );

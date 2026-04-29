@@ -12,6 +12,7 @@ import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
+import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
@@ -779,37 +780,93 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     _buildAvatar(),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Text(
-                          //   "สวัสดี,",
-                          //   style: GoogleFonts.prompt(
-                          //     color: Colors.black.withOpacity(0.5),
-                          //     fontSize: 12,
-                          //   ),
-                          // ),
-                          Text(
-                            name.isNotEmpty ? name : "ผู้ใช้งาน",
-                            style: GoogleFonts.prompt(
-                              color: Colors.black,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
+                      child: typeLogin != 'null'
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Text(
+                                //   "สวัสดี,",
+                                //   style: GoogleFonts.prompt(
+                                //     color: Colors.black.withOpacity(0.5),
+                                //     fontSize: 12,
+                                //   ),
+                                // ),
+                                Text(
+                                  name.isNotEmpty ? name : "ผู้ใช้งาน",
+                                  style: GoogleFonts.prompt(
+                                    color: Colors.black,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                _buildMemberBadge(),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => LoginPage(
+                                          isBack: true,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 5, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                          colors: [_kCard, _kCard],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight),
+                                      borderRadius: BorderRadius.circular(18),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: _kAccent.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ],
+                                      border: Border.all(
+                                        color: _kAccent,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'เข้าสู่ระบบ',
+                                      style: GoogleFonts.prompt(
+                                        color: Color(0xFF1565C0),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          _buildMemberBadge(),
-                        ],
-                      ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => NotificationPage()),
-                      ),
+                      onTap: () => typeLogin != 'null'
+                          ? Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => NotificationPage()),
+                            )
+                          : Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LoginPage(
+                                  isBack: true,
+                                ),
+                              ),
+                            ),
                       child: Container(
                         width: 42,
                         height: 42,
@@ -827,18 +884,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             height: 25,
                             color: const Color(0xFF1565C0),
                           ),
-                          Positioned(
-                            top: 8,
-                            right: 9,
-                            child: Container(
-                              width: 9,
-                              height: 9,
-                              decoration: const BoxDecoration(
-                                color: Color.fromARGB(255, 247, 12, 12),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
+                          typeLogin != 'null'
+                              ? Positioned(
+                                  top: 8,
+                                  right: 9,
+                                  child: Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromARGB(255, 247, 12, 12),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox()
                         ]),
                       ),
                     ),
@@ -862,6 +921,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
+            color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
               color: isLawyerOnline
@@ -887,8 +947,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: imageUrl.isNotEmpty
                     ? typeLogin == 'social'
                         ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : Image.asset(imageUrl, fit: BoxFit.cover)
-                    : Image.asset(imageUrl, fit: BoxFit.cover),
+                        : Image.asset(imageUrl ?? 'assets/icons/profile.png',
+                            fit: BoxFit.cover)
+                    : Image.asset('assets/icons/profile.png',
+                        fit: BoxFit.cover),
               ),
             ),
           ),
@@ -974,32 +1036,51 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           titleColor: const Color(0xFF1565C0),
                           subTitleColor: const Color(0xFF1565C0),
                           iconColor: const Color(0xFF1565C0),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ConsultPage(),
-                            ),
-                          ),
+                          onTap: () => typeLogin != 'null'
+                              ? Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ConsultPage(),
+                                  ),
+                                )
+                              : Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LoginPage(
+                                      isBack: true,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                          child: _actionCard(
-                        title: "นัดหมาย",
-                        subtitle: "จองเวลาปรึกษา",
-                        // icon: Icons.calendar_today_rounded,
-                        iconAssets: "assets/icons/appointment-lawyer.png",
-                        gradientColors: [
-                          const Color(0xFF1565C0),
-                          const Color(0xFF1E88E5)
-                        ],
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TopicPage(),
-                          ),
+                        child: _actionCard(
+                          title: "นัดหมาย",
+                          subtitle: "จองเวลาปรึกษา",
+                          // icon: Icons.calendar_today_rounded,
+                          iconAssets: "assets/icons/appointment-lawyer.png",
+                          gradientColors: [
+                            const Color(0xFF1565C0),
+                            const Color(0xFF1E88E5)
+                          ],
+                          onTap: () => typeLogin != 'null'
+                              ? Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TopicPage(),
+                                  ),
+                                )
+                              : Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LoginPage(
+                                      isBack: true,
+                                    ),
+                                  ),
+                                ),
                         ),
-                      )),
+                      ),
                     ])
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/map-card.dart';
 import 'package:LawyerOnline/post-list.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,7 @@ class _MenuPageState extends State<MenuPage> {
   String userType = "";
   String name = "";
   String imageUrl = '';
+  String typeLogin = "";
 
   @override
   void initState() {
@@ -61,20 +63,22 @@ class _MenuPageState extends State<MenuPage> {
     var userType = await storage.read(key: 'userType');
     var imageProfile = await storage.read(key: 'imageUrlSocial');
     var nameProfile = await storage.read(key: 'name');
+    final type = await storage.read(key: 'typeLogin');
     setState(() {
       userType = widget.userType ?? userType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
+      typeLogin = type.toString();
 
       pages = <Widget>[
         HomePage(),
-        MessagePage(),
+        typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false,),
         CommunityPage(),
         // PostList(),
         // LawyerOnlineList(),
         // MapCardPage(),
-        userType == "user" ? AppointmentListPage() : CalendarPage(),
-        ProfilePage(),
+        typeLogin != 'null' ? userType == "user" ? AppointmentListPage() : CalendarPage() : LoginPage(isBack: false,),
+        typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false,),
       ];
       _currentPage = widget.pageIndex ?? 0;
     });
