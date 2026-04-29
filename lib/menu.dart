@@ -164,17 +164,17 @@ class _MenuPageState extends State<MenuPage> {
                   Flexible(
                     flex: _currentPage == 1 ? 1 : 1,
                     child: _bottomItem("assets/icons/message.png", 1,
-                        title: 'ข้อความ', showBadge: true),
+                        title: 'ข้อความ', showBadge: typeLogin != 'null' ? true : false),
                   ),
                   Flexible(
                     flex: _currentPage == 2 ? 1 : 1,
                     child: _bottomItem("assets/icons/logo-no-bg.png", 2,
-                        title: 'social', showBadge: false),
+                        title: 'social', showBadge: typeLogin != 'null' ? true : false),
                   ),
                   Flexible(
                     flex: _currentPage == 3 ? 1 : 1,
                     child: _bottomItem("assets/icons/appointment.png", 3,
-                        title: 'นัดหมาย', showBadge: true),
+                        title: 'นัดหมาย', showBadge: typeLogin != 'null' ? true : false),
                   ),
                   Flexible(
                     flex: _currentPage == 4 ? 1 : 1,
