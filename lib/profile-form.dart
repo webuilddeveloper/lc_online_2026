@@ -4,6 +4,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
 
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
@@ -76,12 +77,16 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     var imageProfile = await storage.read(key: 'imageUrlSocial');
     var nameProfile = await storage.read(key: 'name');
     var type = await storage.read(key: 'typeLogin');
+    var phone = await storage.read(key: 'phone');
+    var email = await storage.read(key: 'email');
     setState(() {
       this.userType = userType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
       typeLogin = type.toString();
-      nameController.text = name.toString();
+      nameController.text = name;
+      phoneController.text = phone ?? '';
+      emailController.text = email ?? '';
     });
   }
 
@@ -180,6 +185,9 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                   title: "เบอร์โทรศัพท์",
                   controller: phoneController,
                   icon: Icons.phone_outlined,
+                  maxLength: 10,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
 
                 const SizedBox(height: 15),
@@ -206,6 +214,9 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     required String title,
     required TextEditingController controller,
     required IconData icon,
+    int? maxLength,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +232,11 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          maxLength: maxLength,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
+            counterText: '',
             prefixIcon: Icon(icon, color: Colors.grey),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -250,19 +265,21 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () async {
-        if (nameController.text.isEmpty ||
-            phoneController.text.isEmpty ||
+        // ต้องกรอกอย่างน้อย 1 ช่อง
+        if (nameController.text.isEmpty &&
+            phoneController.text.isEmpty &&
             emailController.text.isEmpty) {
-          // showError("กรุณากรอกข้อมูลให้ครบ");
           DialogService.showError(
             context,
-            title: "กรุณากรอกข้อมูลให้ครบ",
+            title: "กรุณากรอกข้อมูลอย่างน้อย 1 ช่อง",
             message: "",
           );
           return;
         }
 
-        if (!isPhoneValid(phoneController.text)) {
+        // validate เฉพาะช่องที่กรอก
+        if (phoneController.text.isNotEmpty &&
+            !isPhoneValid(phoneController.text)) {
           DialogService.showError(
             context,
             title: "เบอร์โทรไม่ถูกต้อง",
@@ -271,7 +288,8 @@ class _ProfileFormPageState extends State<ProfileFormPage>
           return;
         }
 
-        if (!isEmailValid(emailController.text)) {
+        if (emailController.text.isNotEmpty &&
+            !isEmailValid(emailController.text)) {
           DialogService.showError(
             context,
             title: "อีเมลไม่ถูกต้อง",

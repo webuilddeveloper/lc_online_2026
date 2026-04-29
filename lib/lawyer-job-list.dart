@@ -133,27 +133,44 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .toList();
       case 'all':
-        return _jobs;
+        const order = {'accepted': 0, 'pending': 1, 'rejected': 2, 'done': 3};
+        return [..._jobs]..sort((a, b) =>
+            (order[a['status']] ?? 9).compareTo(order[b['status']] ?? 9));
       default:
-        return _jobs;
+        const orderDef = {
+          'accepted': 0,
+          'pending': 1,
+          'rejected': 2,
+          'done': 3
+        };
+        return [..._jobs]..sort((a, b) =>
+            (orderDef[a['status']] ?? 9).compareTo(orderDef[b['status']] ?? 9));
     }
   }
 
   void _acceptJob(String id) {
     HapticFeedback.mediumImpact();
-    setState(() {
-      final job = _jobs.firstWhere((j) => j['id'] == id);
-      job['status'] = 'accepted';
-    });
-    _showSnackbar('รับงานสำเร็จ! ลูกความจะได้รับการแจ้งเตือน', true);
+    DialogService.showConfirmAcceptJob(
+      context,
+      title: "รับงาน",
+      message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+      onConfirm: () {
+        // Navigator.pop(context);
+        setState(() {
+          final job = _jobs.firstWhere((j) => j['id'] == id);
+          job['status'] = 'accepted';
+        });
+        _showSnackbar('รับงานสำเร็จ! ลูกความจะได้รับการแจ้งเตือน', true);
+      },
+    );
   }
 
   void _rejectJob(String id) {
     HapticFeedback.lightImpact();
-    DialogService.showConfirm(
+    DialogService.showConfirmRejectJob(
       context,
       title: "ปฏิเสธคำขอ",
-      message: "คุณต้องการปฏิเสธคำขอนี้ใช่ไหม?",
+      message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
       onConfirm: () {
         // Navigator.pop(context);
         setState(() {
@@ -163,38 +180,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         _showSnackbar('ปฏิเสธคำขอแล้ว', false);
       },
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (_) => AlertDialog(
-    //     shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.circular(18)),
-    //     title: const Text('ปฏิเสธคำขอ',
-    //         style:
-    //             TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-    //     content: const Text('คุณต้องการปฏิเสธคำขอนี้ใช่ไหม?',
-    //         style: TextStyle(fontSize: 13)),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.pop(context),
-    //         child: const Text('ยกเลิก',
-    //             style: TextStyle(color: Colors.grey)),
-    //       ),
-    //       TextButton(
-    //         onPressed: () {
-    //           Navigator.pop(context);
-    //           setState(() {
-    //             final job = _jobs.firstWhere((j) => j['id'] == id);
-    //             job['status'] = 'rejected';
-    //           });
-    //           _showSnackbar('ปฏิเสธคำขอแล้ว', false);
-    //         },
-    //         child: const Text('ปฏิเสธ',
-    //             style: TextStyle(
-    //                 color: Colors.red, fontWeight: FontWeight.w600)),
-    //       ),
-    //     ],
-    //   ),
-    // );
   }
 
   void _showSnackbar(String msg, bool success) {

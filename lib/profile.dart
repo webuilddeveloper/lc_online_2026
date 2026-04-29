@@ -129,6 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'บัญชีของฉัน',
                   style: TextStyle(
                     fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -227,7 +228,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       titleStyle: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        // fontWeight: FontWeight.w700,
                         color: Color(0xFF1F2937),
                       ),
                       trailing: const Icon(
@@ -245,6 +246,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'ตั้งค่า',
                   style: TextStyle(
                     fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
