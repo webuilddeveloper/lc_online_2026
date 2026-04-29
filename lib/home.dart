@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/carousel_form.dart';
@@ -51,6 +52,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnim;
 
   bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
+  Timer? _urgentCaseTimer; // timer คอย monitor นัดหมาย
 
   List<dynamic> lawyerOnlineList = [
     // ── เดิม 5 คน ──────────────────────────────────────────────────────────────
@@ -307,8 +309,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "16/04/2026",
-      "appointmentTime": "18.00 - 17.00",
+      "appointmentDate": "28/04/2026",
+      "appointmentTime": "11.20 - 13.00",
       "title": "ขอฟ้องร้องมรดกพี่น้อง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
       "paymentStatus": "1",
@@ -318,7 +320,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "28/04/2026",
+      "appointmentDate": "29/04/2026",
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
@@ -329,7 +331,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "28/04/2026",
+      "appointmentDate": "29/04/2026",
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
@@ -340,7 +342,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       "clientName": "อนงค์ ดำเนิน",
       "caseType": "คดีมรดกทุกประเภท",
       "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "28/04/2026",
+      "appointmentDate": "29/04/2026",
       "appointmentTime": "11.00 - 14.00",
       "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
       "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
@@ -541,6 +543,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
 // ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
+  void _startUrgentCaseTimer() {
+    _urgentCaseTimer?.cancel();
+    _urgentCaseTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      if (_isUrgentCaseEnabled && _hasConflictingAppointment()) {
+        // ปิดอัตโนมัติ
+        setState(() => _isUrgentCaseEnabled = false);
+        storage.write(key: 'urgentCaseEnabled', value: 'false');
+
+        // แจ้งเตือน
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.notifications_active_rounded,
+                    color: Colors.orange, size: 28),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ปิดรับเคสด่วนแล้ว',
+                    style: GoogleFonts.prompt(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 17),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง\nระบบปิดรับเคสด่วนให้อัตโนมัติแล้ว',
+              style: GoogleFonts.prompt(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'รับทราบ',
+                  style: GoogleFonts.prompt(
+                      color: const Color(0xFF0262EC),
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    });
+  }
+
   void _toggleUrgentCase(bool value) {
     if (value == true) {
       // ถ้ากำลังพยายามเปิดรับเคส
@@ -602,10 +657,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       requestPermissions();
       _fadeCtrl.forward();
     });
+    _startUrgentCaseTimer();
   }
 
   @override
   void dispose() {
+    _urgentCaseTimer?.cancel();
     _fadeCtrl.dispose();
     super.dispose();
   }
@@ -1142,8 +1199,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         // ),
                         // const SizedBox(height: 14),
                         _actionCard(
-                          title: "ตั้งค่าวันที่สามารถปรึกษา",
-                          subtitle: "กำหนดวันที่สามารถจองขอคำปรึกษาได้",
+                          title: "ตั้งค่าวันและเวลาที่สามารถนัดปรึกษาได้",
+                          subtitle: "กำหนดวันและเวลาที่สามารถจองขอคำปรึกษาได้",
                           icon: Icons.date_range_rounded,
                           gradientColors: [_kCard, _kCard],
                           titleColor: const Color(0xFF1565C0),
@@ -2003,7 +2060,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     model['clientName'] ?? '',
                     style: GoogleFonts.prompt(
                       color: Colors.white60,
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,

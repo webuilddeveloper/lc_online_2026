@@ -129,7 +129,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "ตั้งค่าเวลาให้คำปรึกษา",
+        title: "ตั้งค่าวันและเวลาที่สามารถนัดปรึกษาได้",
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -181,7 +181,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                           Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
                     child: const Text(
-                      "บันทึกการตั้งค่า",
+                      "บันทึก",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
