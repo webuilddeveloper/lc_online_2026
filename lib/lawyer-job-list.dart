@@ -3,6 +3,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 
 // ══════════════════════════════════════════════════════════
 //  LawyerJobListPage — รายการคำขอจากลูกความ (ฝั่งทนาย)
@@ -24,88 +25,90 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   static const _kPrimary = Color(0xFF0262EC);
 
-  final List<Map<String, dynamic>> _jobs = [
-    {
-      'id': 'REQ-2026-001',
-      'clientName': 'สมชาย ใจดี',
-      'clientAvatar': 'ส',
-      'clientColor': 0xFF0262EC,
-      'topic': 'ครอบครัวและมรดก',
-      'subTopic': 'ฟ้องหย่า / แบ่งสินสมรส',
-      'detail':
-          'ต้องการปรึกษาเรื่องการฟ้องหย่าและการแบ่งทรัพย์สินสมรส มีบ้านและที่ดิน 2 แปลง ต้องการคำแนะนำเบื้องต้น',
-      'date': '28 มี.ค. 2569',
-      'time': '10:00 - 11:00',
-      'status': 'pending', // pending | accepted | rejected | done
-      'requestedAt': '2 ชั่วโมงที่แล้ว',
-      'type': 'video',
-      'budget': 'ฟรี',
-    },
-    {
-      'id': 'REQ-2026-002',
-      'clientName': 'วิภา รักสงบ',
-      'clientAvatar': 'ว',
-      'clientColor': 0xFFE11D48,
-      'topic': 'หนี้สินและการเงิน',
-      'subTopic': 'หนี้กู้ยืมเงิน / ดอกเบี้ย',
-      'detail':
-          'โดนเพื่อนยืมเงิน 200,000 บาท ไม่คืน มีสัญญากู้ยืมเงิน อยากดำเนินคดีเพื่อเรียกคืน',
-      'date': '30 มี.ค. 2569',
-      'time': '14:00 - 15:00',
-      'status': 'pending',
-      'requestedAt': '5 ชั่วโมงที่แล้ว',
-      'type': 'video',
-      'budget': '500 บาท',
-    },
-    {
-      'id': 'REQ-2026-003',
-      'clientName': 'ประสิทธิ์ มั่งมี',
-      'clientAvatar': 'ป',
-      'clientColor': 0xFF059669,
-      'topic': 'ธุรกิจและบริษัท',
-      'subTopic': 'ตรวจร่างสัญญา',
-      'detail':
-          'ต้องการให้ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท กังวลเรื่องเงื่อนไขการรับประกัน',
-      'date': '02 เม.ย. 2569',
-      'time': '09:00 - 10:00',
-      'status': 'accepted',
-      'requestedAt': '1 วันที่แล้ว',
-      'type': 'video',
-      'budget': '1,000 บาท',
-    },
-    {
-      'id': 'REQ-2026-004',
-      'clientName': 'นงลักษณ์ สุขสม',
-      'clientAvatar': 'น',
-      'clientColor': 0xFF7C3AED,
-      'topic': 'ทรัพย์สินและที่ดิน',
-      'subTopic': 'เช่าบ้าน / ขับไล่ผู้เช่า',
-      'detail':
-          'ผู้เช่าค้างค่าเช่า 3 เดือน ไม่ยอมออก ต้องการดำเนินการทางกฎหมาย',
-      'date': '15 มี.ค. 2569',
-      'time': '11:00 - 12:00',
-      'status': 'done',
-      'requestedAt': '2 สัปดาห์ที่แล้ว',
-      'type': 'video',
-      'budget': '800 บาท',
-    },
-    {
-      'id': 'REQ-2026-005',
-      'clientName': 'อนันต์ ชัยชนะ',
-      'clientAvatar': 'อ',
-      'clientColor': 0xFFD97706,
-      'topic': 'อาญาและอาชญากรรม',
-      'subTopic': 'หมิ่นประมาท',
-      'detail':
-          'ถูกโพสต์หมิ่นประมาทบน Facebook ทำให้เสียชื่อเสียง ต้องการฟ้องร้อง',
-      'date': '',
-      'time': '',
-      'status': 'rejected',
-      'requestedAt': '3 วันที่แล้ว',
-      'type': 'video',
-      'budget': 'ฟรี',
-    },
-  ];
+  final _jobs = LawyerJobsStore.instance.jobs;
+
+  // final List<Map<String, dynamic>> _jobs = [
+  //   {
+  //     'id': 'REQ-2026-001',
+  //     'clientName': 'สมชาย ใจดี',
+  //     'clientAvatar': 'ส',
+  //     'clientColor': 0xFF0262EC,
+  //     'topic': 'ครอบครัวและมรดก',
+  //     'subTopic': 'ฟ้องหย่า / แบ่งสินสมรส',
+  //     'detail':
+  //         'ต้องการปรึกษาเรื่องการฟ้องหย่าและการแบ่งทรัพย์สินสมรส มีบ้านและที่ดิน 2 แปลง ต้องการคำแนะนำเบื้องต้น',
+  //     'date': '28 มี.ค. 2569',
+  //     'time': '10:00 - 11:00',
+  //     'status': 'pending', // pending | accepted | rejected | done
+  //     'requestedAt': '2 ชั่วโมงที่แล้ว',
+  //     'type': 'video',
+  //     'budget': 'ฟรี',
+  //   },
+  //   {
+  //     'id': 'REQ-2026-002',
+  //     'clientName': 'วิภา รักสงบ',
+  //     'clientAvatar': 'ว',
+  //     'clientColor': 0xFFE11D48,
+  //     'topic': 'หนี้สินและการเงิน',
+  //     'subTopic': 'หนี้กู้ยืมเงิน / ดอกเบี้ย',
+  //     'detail':
+  //         'โดนเพื่อนยืมเงิน 200,000 บาท ไม่คืน มีสัญญากู้ยืมเงิน อยากดำเนินคดีเพื่อเรียกคืน',
+  //     'date': '30 มี.ค. 2569',
+  //     'time': '14:00 - 15:00',
+  //     'status': 'pending',
+  //     'requestedAt': '5 ชั่วโมงที่แล้ว',
+  //     'type': 'video',
+  //     'budget': '500 บาท',
+  //   },
+  //   {
+  //     'id': 'REQ-2026-003',
+  //     'clientName': 'ประสิทธิ์ มั่งมี',
+  //     'clientAvatar': 'ป',
+  //     'clientColor': 0xFF059669,
+  //     'topic': 'ธุรกิจและบริษัท',
+  //     'subTopic': 'ตรวจร่างสัญญา',
+  //     'detail':
+  //         'ต้องการให้ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท กังวลเรื่องเงื่อนไขการรับประกัน',
+  //     'date': '02 เม.ย. 2569',
+  //     'time': '09:00 - 10:00',
+  //     'status': 'accepted',
+  //     'requestedAt': '1 วันที่แล้ว',
+  //     'type': 'video',
+  //     'budget': '1,000 บาท',
+  //   },
+  //   {
+  //     'id': 'REQ-2026-004',
+  //     'clientName': 'นงลักษณ์ สุขสม',
+  //     'clientAvatar': 'น',
+  //     'clientColor': 0xFF7C3AED,
+  //     'topic': 'ทรัพย์สินและที่ดิน',
+  //     'subTopic': 'เช่าบ้าน / ขับไล่ผู้เช่า',
+  //     'detail':
+  //         'ผู้เช่าค้างค่าเช่า 3 เดือน ไม่ยอมออก ต้องการดำเนินการทางกฎหมาย',
+  //     'date': '15 มี.ค. 2569',
+  //     'time': '11:00 - 12:00',
+  //     'status': 'done',
+  //     'requestedAt': '2 สัปดาห์ที่แล้ว',
+  //     'type': 'video',
+  //     'budget': '800 บาท',
+  //   },
+  //   {
+  //     'id': 'REQ-2026-005',
+  //     'clientName': 'อนันต์ ชัยชนะ',
+  //     'clientAvatar': 'อ',
+  //     'clientColor': 0xFFD97706,
+  //     'topic': 'อาญาและอาชญากรรม',
+  //     'subTopic': 'หมิ่นประมาท',
+  //     'detail':
+  //         'ถูกโพสต์หมิ่นประมาทบน Facebook ทำให้เสียชื่อเสียง ต้องการฟ้องร้อง',
+  //     'date': '',
+  //     'time': '',
+  //     'status': 'rejected',
+  //     'requestedAt': '3 วันที่แล้ว',
+  //     'type': 'video',
+  //     'budget': 'ฟรี',
+  //   },
+  // ];
 
   @override
   void initState() {
@@ -148,38 +151,22 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     }
   }
 
+  // _acceptJob — เปิด Navigator.pop กลับมา
   void _acceptJob(String id) {
-    HapticFeedback.mediumImpact();
-    DialogService.showConfirmAcceptJob(
-      context,
-      title: "รับงาน",
-      message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
-      onConfirm: () {
-        // Navigator.pop(context);
-        setState(() {
-          final job = _jobs.firstWhere((j) => j['id'] == id);
-          job['status'] = 'accepted';
-        });
-        _showSnackbar('รับงานสำเร็จ! ลูกความจะได้รับการแจ้งเตือน', true);
-      },
-    );
+    LawyerJobsStore.instance.acceptJob(context, id, onDone: () {
+      Navigator.pop(context); // pop หน้า detail
+      setState(() {});
+      _showSnackbar('รับงานสำเร็จแล้ว!', true);
+    });
   }
 
+  // _rejectJob — เปิด Navigator.pop กลับมา
   void _rejectJob(String id) {
-    HapticFeedback.lightImpact();
-    DialogService.showConfirmRejectJob(
-      context,
-      title: "ปฏิเสธคำขอ",
-      message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
-      onConfirm: () {
-        // Navigator.pop(context);
-        setState(() {
-          final job = _jobs.firstWhere((j) => j['id'] == id);
-          job['status'] = 'rejected';
-        });
-        _showSnackbar('ปฏิเสธคำขอแล้ว', false);
-      },
-    );
+    LawyerJobsStore.instance.rejectJob(context, id, onDone: () {
+      Navigator.pop(context); // pop หน้า detail
+      setState(() {});
+      _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
+    });
   }
 
   void _showSnackbar(String msg, bool success) {
@@ -197,7 +184,9 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   @override
   Widget build(BuildContext context) {
-    final pending = _jobs.where((j) => j['status'] == 'pending').length;
+    final pending = LawyerJobsStore.instance.jobs
+        .where((j) => j['status'] == 'pending')
+        .length;
     final filtered = _filtered;
 
     return Scaffold(
@@ -412,18 +401,11 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
           MaterialPageRoute(
             builder: (_) => LawyerJobDetailPage(
               job: job,
-              onAccept: isPending
-                  ? () {
-                      _acceptJob(job['id'] as String);
-                      Navigator.pop(context);
-                    }
-                  : null,
-              onReject: isPending
-                  ? () {
-                      Navigator.pop(context);
-                      _rejectJob(job['id'] as String);
-                    }
-                  : null,
+              // _buildJobCard — แก้ onAccept และ onReject
+              onAccept:
+                  isPending ? () => _acceptJob(job['id'] as String) : null,
+              onReject:
+                  isPending ? () => _rejectJob(job['id'] as String) : null,
             ),
           ),
         );
@@ -851,6 +833,11 @@ class LawyerJobDetailPage extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(children: [
+
+                 // ── Status info ─────────────────────────
+                _buildStatusCard(status),
+                 const SizedBox(height: 14),
+                 
                 // ── Client Card ─────────────────────────
                 _buildClientCard(clientColor),
                 const SizedBox(height: 14),
@@ -865,8 +852,7 @@ class LawyerJobDetailPage extends StatelessWidget {
                   const SizedBox(height: 14),
                 ],
 
-                // ── Status info ─────────────────────────
-                _buildStatusCard(status),
+               
               ]),
             ),
           ),
@@ -1059,10 +1045,10 @@ class LawyerJobDetailPage extends StatelessWidget {
         'คุณได้ปฏิเสธคำขอนี้'
       ),
       'done': (
-        const Color(0xFF6D28D9),
+        const Color.fromARGB(255, 6, 235, 36),
         Icons.task_alt_rounded,
         'เสร็จสิ้น',
-        'การปรึกษาเสร็จสมบูรณ์แล้ว'
+        'การปรึกษาเสร็จสิ้นแล้ว'
       ),
     };
     final cfg = configs[status]!;
