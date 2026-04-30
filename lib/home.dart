@@ -2,26 +2,27 @@ import 'package:LawyerOnline/widgets/home/home_app_bar.dart';
 import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
 import 'package:LawyerOnline/widgets/home/home_lawyer_section.dart';
 import 'package:LawyerOnline/widgets/home/home_user_section.dart';
+import 'package:LawyerOnline/widgets/home/home_action_cards.dart';
 import 'dart:async';
-import 'package:LawyerOnline/appointment-details-lawyer.dart';
-import 'package:LawyerOnline/booking/topic-page.dart';
-import 'package:LawyerOnline/carousel_form.dart';
-import 'package:LawyerOnline/case-status-all.dart';
-import 'package:LawyerOnline/component/appbar.dart';
-import 'package:LawyerOnline/component/comming-soon.dart';
-import 'package:LawyerOnline/component/link_url_in.dart';
-import 'package:LawyerOnline/consult/consult.dart';
-import 'package:LawyerOnline/consult/consult_status.dart';
-import 'package:LawyerOnline/law_type_all_page.dart';
-import 'package:LawyerOnline/lawyer-job-list.dart';
-import 'package:LawyerOnline/lawyer-online-details.dart';
-import 'package:LawyerOnline/lawyer-online-list.dart';
-import 'package:LawyerOnline/consultation-schedule.dart';
-import 'package:LawyerOnline/menu.dart';
-import 'package:LawyerOnline/notification.dart';
-import 'package:LawyerOnline/shared/api_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+// import 'package:LawyerOnline/appointment-details-lawyer.dart';
+// import 'package:LawyerOnline/booking/topic-page.dart';
+// import 'package:LawyerOnline/carousel_form.dart';
+// import 'package:LawyerOnline/case-status-all.dart';
+// import 'package:LawyerOnline/component/appbar.dart';
+// import 'package:LawyerOnline/component/comming-soon.dart';
+// import 'package:LawyerOnline/component/link_url_in.dart';
+// import 'package:LawyerOnline/consult/consult.dart';
+// import 'package:LawyerOnline/consult/consult_status.dart';
+// import 'package:LawyerOnline/law_type_all_page.dart';
+// import 'package:LawyerOnline/lawyer-job-list.dart';
+// import 'package:LawyerOnline/lawyer-online-details.dart';
+// import 'package:LawyerOnline/lawyer-online-list.dart';
+// import 'package:LawyerOnline/consultation-schedule.dart';
+// import 'package:LawyerOnline/menu.dart';
+// import 'package:LawyerOnline/notification.dart';
+// import 'package:LawyerOnline/shared/api_provider.dart';
+// import 'package:cached_network_image/cached_network_image.dart';
+// import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -688,232 +689,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
-          // boxShadow: [
-          //     BoxShadow(
-          //       color: Colors.black.withOpacity(0.2),
-          //       blurRadius: 16,
-          //       offset: const Offset(0, -6),
-          //     )
-          //   ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
 
-            // Action cards
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: typeLogin == 'null'
-                  // ── Guest → ซ่อนปุ่มทั้งหมด ──────────────────
-                  ? const SizedBox.shrink()
-                  : userType == 'user'
-                      ? Row(children: [
-                          Expanded(
-                            child: _actionCard(
-                              title: "เปิดเคส",
-                              subtitle: "ให้ทนายรับงาน",
-                              // icon: Icons.folder_open_rounded,
-                              iconAssets: "assets/icons/open-case.png",
-                              gradientColors: [
-                                // const Color(0xFF0B3D91),
-                                // const Color(0xFF1565C0)
-                                _kCard,
-                                _kCard
-                              ],
-                              titleColor: const Color(0xFF1565C0),
-                              subTitleColor: const Color(0xFF1565C0),
-                              iconColor: const Color(0xFF1565C0),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ConsultPage(),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                              child: _actionCard(
-                            title: "นัดหมาย",
-                            subtitle: "จองเวลาปรึกษา",
-                            // icon: Icons.calendar_today_rounded,
-                            iconAssets: "assets/icons/appointment-lawyer.png",
-                            gradientColors: [
-                              const Color(0xFF1565C0),
-                              const Color(0xFF1E88E5)
-                            ],
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TopicPage(),
-                              ),
-                            ),
-                          )),
-                        ])
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: _isUrgentCaseEnabled
-                                              ? const Color(0xFF059669)
-                                              : Colors.grey.shade300,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text("รับเคสด่วน",
-                                                    style: GoogleFonts.prompt(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: const Color(
-                                                            0xFF0D1B2A))),
-                                              ),
-                                              SizedBox(
-                                                height: 30,
-                                                child: Switch(
-                                                  value: _isUrgentCaseEnabled,
-                                                  onChanged: _toggleUrgentCase,
-                                                  activeColor:
-                                                      const Color(0xFF059669),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                              _isUrgentCaseEnabled
-                                                  ? "พร้อมให้คำปรึกษาเคสด่วน"
-                                                  : "ปิดรับเคสด่วน",
-                                              style: GoogleFonts.prompt(
-                                                  fontSize: 12,
-                                                  color: _isUrgentCaseEnabled
-                                                      ? const Color(0xFF059669)
-                                                      : Colors.grey.shade600)),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Opacity(
-                                      opacity: _isUrgentCaseEnabled
-                                          ? 1.0
-                                          : 0.4, // สว่างเมื่อเปิดสวิตช์
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          if (_isUrgentCaseEnabled) {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        LawyerJobListPage()));
-                                          }
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 12),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF1565C0),
-                                                Color(0xFF2F80ED)
-                                              ], // สีพื้นหลังปุ่ม
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Icon(Icons.work_rounded,
-                                                  color: Colors.white,
-                                                  size: 50),
-                                              const Spacer(),
-                                              const SizedBox(height: 8),
-                                              Text("ดูงานเคสด่วน",
-                                                  style: GoogleFonts.prompt(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white)),
-                                              Text("ลูกความต้องการคำปรึกษาด่วน",
-                                                  style: GoogleFonts.prompt(
-                                                      fontSize: 11,
-                                                      color: Colors.white70)),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // --- สิ้นสุดส่วนรับเคสด่วน ---
-
-                            const SizedBox(height: 14),
-                            // ... (โค้ด Card ตั้งค่าวันที่สามารถปรึกษา ตามเดิม) ...
-                            // ... (โค้ด _actionCard ตั้งค่าวันที่สามารถปรึกษา ตามเดิม) ...
-                            // _actionCard(
-                            //   title: "รับเคสด่วน",
-                            //   subtitle: "ลูกความต้องการคำปรึกษาด่วน",
-                            //   icon: Icons.work_rounded,
-                            //   gradientColors: [
-                            //     const Color(0xFF1565C0),
-                            //     const Color(0xFF2F80ED)
-                            //   ],
-                            //   onTap: () => Navigator.push(
-                            //       context,
-                            //       MaterialPageRoute(
-                            //           builder: (_) => LawyerJobListPage())),
-                            // ),
-                            // const SizedBox(height: 14),
-                            _actionCard(
-                              title: "ตั้งค่าวันและเวลาที่สามารถนัดปรึกษาได้",
-                              subtitle:
-                                  "กำหนดวันและเวลาที่สามารถจองขอคำปรึกษาได้",
-                              icon: Icons.date_range_rounded,
-                              gradientColors: [_kCard, _kCard],
-                              titleColor: const Color(0xFF1565C0),
-                              subTitleColor: const Color(0xFF1565C0),
-                              iconColor: const Color(0xFF1565C0),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ConsultationSchedule(),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+            HomeActionCards(
+              typeLogin: typeLogin,
+              userType: userType,
+              isUrgentCaseEnabled: _isUrgentCaseEnabled,
+              onToggleUrgentCase: _toggleUrgentCase,
             ),
 
             const SizedBox(height: 24),
@@ -924,12 +710,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             const SizedBox(height: 24),
 
             // ── User dashboard ───────────────────────────────────
-            if (typeLogin != 'null' && userType == 'user')
+            if (typeLogin == 'null' || userType == 'user')
               HomeUserSection(
                 cases: caseList,
                 lawCategories: _lawCategories,
                 lawyers: lawyerOnlineList,
                 newLawyers: newLawyerOnlineList,
+                isGuest: typeLogin == 'null', 
               ),
 
             // ── Lawyer dashboard ─────────────────────────────────
@@ -951,83 +738,5 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-
   // ─── Action Card ─────────────────────────────────────────────────
-  Widget _actionCard({
-    required String title,
-    required String subtitle,
-    IconData? icon,
-    String iconAssets = "",
-    Color? titleColor = Colors.white,
-    Color? subTitleColor = Colors.white,
-    Color? iconColor = Colors.white,
-    required List<Color> gradientColors,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: _kAccent.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            )
-          ],
-          border: Border.all(
-            color: const Color(0xFFE2EAF8),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: icon != null
-                  ? Icon(icon, color: iconColor, size: 40)
-                  : Image.asset(
-                      iconAssets,
-                      width: 18,
-                      height: 18,
-                      color: iconColor,
-                    ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.prompt(
-                    color: titleColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.prompt(
-                    color: subTitleColor,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
 }
