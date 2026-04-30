@@ -222,6 +222,7 @@ class _HomeAvatar extends StatelessWidget {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
+            color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
               color:
@@ -247,7 +248,10 @@ class _HomeAvatar extends StatelessWidget {
                     ? typeLogin == 'social'
                         ? Image.network(imageUrl, fit: BoxFit.cover)
                         : Image.asset(imageUrl, fit: BoxFit.cover)
-                    : Image.asset(imageUrl, fit: BoxFit.cover),
+                    : Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
+                    ),
               ),
             ),
           ),
