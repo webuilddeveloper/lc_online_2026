@@ -153,7 +153,6 @@ appBar(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              
               backBtn
                   ? GestureDetector(
                       onTap: () => backAction!(),
@@ -329,6 +328,86 @@ appBarCustom(
             ],
           ),
         ),
+      ),
+    ),
+  );
+}
+
+// ─── AppBar สำหรับหน้าแชทโดยเฉพาะ ───────────────────────────────
+PreferredSizeWidget appBarChat({
+  required VoidCallback onBack,
+  required Widget avatarWidget,
+  required String name,
+  String? statusText,
+  Widget? actions,
+}) {
+  return PreferredSize(
+    preferredSize: const Size.fromHeight(80),
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 17,
+            offset: const Offset(0, 0),
+          ),
+        ],
+      ),
+      
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: onBack,
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                shape: BoxShape.circle,
+                border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+              ),
+              child: const Icon(Icons.arrow_back_ios_new, size: 15),
+            ),
+          ),
+          const SizedBox(width: 12),
+          avatarWidget,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (statusText != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    statusText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8593A8),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (actions != null) actions,
+        ],
       ),
     ),
   );

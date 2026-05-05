@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:LawyerOnline/chat/chat_page_user.dart';
 
 class LawyerOnlineDetails extends StatefulWidget {
   LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic})
@@ -613,7 +614,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        MessageFormPage(model: model), // action เดิม
+                        ChatPageUser(model: model), // action เดิม
                   )),
             ),
             const SizedBox(width: 10),
@@ -626,7 +627,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        MessageFormPage(model: model), // action เดิม
+                        ChatPageUser(model: model), // action เดิม
                   )),
             ),
             const SizedBox(width: 10),
@@ -639,7 +640,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        MessageFormPage(model: model), // action เดิม
+                        ChatPageUser(model: model), // action เดิม
                   )),
             ),
           ]),

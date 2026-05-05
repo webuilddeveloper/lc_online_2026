@@ -39,35 +39,31 @@ class HomeLawyerSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Appointments ─────────────────────────────────────────
-        if (appointments.isNotEmpty) ...[
-          _sectionHeader(
-            context,
-            title: 'รายการนัดหมาย (${appointments.length})',
-            onMore: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MenuPage(pageIndex: 3),
-              ),
-            ),
-          ),
-          _buildAppointmentList(context),
-          const SizedBox(height: 20),
-        ],
+        _sectionHeader(
+          context,
+          title: 'รายการนัดหมาย (${appointments.length})',
+          onMore: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
+        ),
+        if (appointments.isNotEmpty)
+          _buildAppointmentList(context)
+        else
+          _emptyState('ยังไม่มีนัดหมาย'),
+        const SizedBox(height: 20),
 
         // ── Job Requests ─────────────────────────────────────────
-        if (activeJobs.isNotEmpty) ...[
-          _sectionHeader(
-            context,
-            title: 'เคสด่วนจากลูกความ',
-            onMore: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => LawyerJobListPage()),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildJobRequestList(context, activeJobs),
-          const SizedBox(height: 20),
-        ],
+        _sectionHeader(
+          context,
+          title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
+          onMore: () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+        ),
+        const SizedBox(height: 8),
+        if (activeJobs.isNotEmpty)
+          _buildJobRequestList(context, activeJobs)
+        else
+          _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -248,6 +244,18 @@ class HomeLawyerSection extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+      child: Center(
+        child: Text(
+          message,
+          style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
         ),
       ),
     );

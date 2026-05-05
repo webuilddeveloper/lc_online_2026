@@ -4,6 +4,7 @@ import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:LawyerOnline/chat/chat_page_user.dart';
 
 class ConsultDetailPage extends StatefulWidget {
   final Map<String, dynamic> lawyer;
@@ -484,7 +485,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
   }
 
   // ════════════════════════════════════════════════════════
-  //  Contact Card — ปุ่ม phone/video/chat → MessageFormPage (action เดิม)
+  //  Contact Card — ปุ่ม phone/video/chat → ChatPageUser (action เดิม)
   // ════════════════════════════════════════════════════════
 
   Widget _buildContactCard(Color color) {
@@ -505,7 +506,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               bg: const Color(0xFFEEF4FF),
               // ── action เดิม ──
               onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: widget.lawyer),
+                builder: (context) => ChatPageUser(model: widget.lawyer),
               )),
             ),
             const SizedBox(width: 10),
@@ -515,7 +516,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               accent: const Color(0xFF34C759),
               bg: const Color(0xFFEEFAF1),
               onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: widget.lawyer),
+                builder: (context) => ChatPageUser(model: widget.lawyer),
               )),
             ),
             const SizedBox(width: 10),
@@ -525,7 +526,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               accent: const Color(0xFFFF6B35),
               bg: const Color(0xFFFFF2EE),
               onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => MessageFormPage(model: widget.lawyer),
+                builder: (context) => ChatPageUser(model: widget.lawyer),
               )),
             ),
           ]),

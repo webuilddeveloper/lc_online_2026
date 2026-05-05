@@ -65,16 +65,17 @@ class HomeUserSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Case Status ──────────────────────────────────────────
-        if (cases.isNotEmpty) ...[
-          _sectionHeader(
-            context,
-            title: 'สถานะเคสของคุณ',
-            onMore: () =>
-                _guardedNavigate(context, CaseStatusAllPage(caseList: cases)),
-          ),
-          _buildCaseStatusList(context),
-          const SizedBox(height: 20),
-        ],
+        _sectionHeader(
+          context,
+          title: 'สถานะเคสของคุณ',
+          onMore: () =>
+              _guardedNavigate(context, CaseStatusAllPage(caseList: cases)),
+        ),
+        if (cases.isNotEmpty)
+          _buildCaseStatusList(context)
+        else
+          _emptyState('ยังไม่มีเคสของคุณ'),
+        const SizedBox(height: 20),
 
         // ── Law Categories ───────────────────────────────────────
         _sectionHeader(
@@ -87,26 +88,28 @@ class HomeUserSection extends StatelessWidget {
         const SizedBox(height: 20),
 
         // ── Lawyers For You ──────────────────────────────────────
-        if (lawyers.isNotEmpty) ...[
-          _sectionHeader(
-            context,
-            title: 'หมอความสำหรับคุณ',
-            onMore: () => _guardedNavigate(context, LawyerOnlineList()),
-          ),
-          _buildLawyerList(context, lawyers),
-          const SizedBox(height: 20),
-        ],
+        _sectionHeader(
+          context,
+          title: 'หมอความสำหรับคุณ',
+          onMore: () => _guardedNavigate(context, LawyerOnlineList()),
+        ),
+        if (lawyers.isNotEmpty)
+          _buildLawyerList(context, lawyers)
+        else
+          _emptyState('ยังไม่มีหมอความสำหรับคุณ'),
+        const SizedBox(height: 20),
 
         // ── New Lawyers ──────────────────────────────────────────
-        if (newLawyers.isNotEmpty) ...[
-          _sectionHeader(
-            context,
-            title: 'หมอความมาแรง',
-            onMore: () => _guardedNavigate(context, LawyerOnlineList()),
-          ),
-          _buildLawyerList(context, newLawyers),
-          const SizedBox(height: 20),
-        ],
+        _sectionHeader(
+          context,
+          title: 'หมอความมาแรง',
+          onMore: () => _guardedNavigate(context, LawyerOnlineList()),
+        ),
+        if (newLawyers.isNotEmpty)
+          _buildLawyerList(context, newLawyers)
+        else
+          _emptyState('ยังไม่มีหมอความมาแรง'),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -157,6 +160,18 @@ class HomeUserSection extends StatelessWidget {
         itemCount: cases.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _caseStatusItem(context, cases[i]),
+      ),
+    );
+  }
+
+  Widget _emptyState(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+      child: Center(
+        child: Text(
+          message,
+          style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+        ),
       ),
     );
   }

@@ -1,7 +1,9 @@
+import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:LawyerOnline/chat/chat_page_user.dart';
 
 class ConsultStatusPage extends StatefulWidget {
   final int currentStep;
@@ -552,8 +554,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                   ? Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              MessageFormPage(model: widget.lawyer)),
+                          builder: (_) => ChatPageUser(model: widget.lawyer)),
                       (Route<dynamic> route) => route.isFirst)
                   : showRatingDialog(context);
             },
@@ -703,7 +704,11 @@ Widget _buildSuccessContent(BuildContext context) {
         ),
         const SizedBox(height: 28),
         GestureDetector(
-          onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+          onTap: () => Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => MenuPage()), // หน้า home จริงๆ
+            (route) => false,
+          ),
           child: Container(
             height: 50,
             width: double.infinity,
