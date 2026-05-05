@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/notification.dart';
+import 'package:LawyerOnline/page_exam.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -218,43 +219,68 @@ class _HomeAvatar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color:
-                  isOnline ? const Color(0xFF059669) : _kPrimary.withOpacity(1),
-              width: isOnline ? 2.5 : 1,
-            ),
-            boxShadow: isOnline
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF059669).withOpacity(0.4),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    )
-                  ]
-                : [],
-          ),
-          child: Center(
-            child: SizedBox(
-              width: 42,
-              height: 42,
-              child: ClipOval(
-                child: imageUrl.isNotEmpty
-                    ? typeLogin == 'social'
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : Image.asset(imageUrl, fit: BoxFit.cover)
-                    : Padding(
-                      padding: const EdgeInsets.all(3.0),
-                      child: Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
-                    ),
+        Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isOnline
+                      ? const Color(0xFF059669)
+                      : _kPrimary.withOpacity(1),
+                  width: isOnline ? 2.5 : 1,
+                ),
+                boxShadow: isOnline
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF059669).withOpacity(0.4),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        )
+                      ]
+                    : [],
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: ClipOval(
+                    child: imageUrl.isNotEmpty
+                        ? typeLogin == 'social'
+                            ? Image.network(imageUrl, fit: BoxFit.cover)
+                            : Image.asset(imageUrl, fit: BoxFit.cover)
+                        : Padding(
+                            padding: const EdgeInsets.all(3.0),
+                            child: Image.asset('assets/icons/profile.png',
+                                fit: BoxFit.cover),
+                          ),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(
+              width: 10,
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PageExam(),
+                  ),
+                );
+              },
+              child: const Icon(
+                Icons.visibility,
+                size: 20,
+              ),
+            ),
+
+            // Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
+          ],
         ),
         if (isOnline)
           Positioned(
