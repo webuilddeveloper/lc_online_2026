@@ -8,7 +8,6 @@ import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-
 // ══════════════════════════════════════════════════════════
 //  NavItem — model สำหรับ nav item แต่ละตัว
 // ══════════════════════════════════════════════════════════
@@ -79,8 +78,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
 
   @override
   Widget build(BuildContext context) {
-    final isUrgentCaseEnabled =
-        LawyerProfileStore.instance.isUrgentCaseEnabled;
+    final isUrgentCaseEnabled = LawyerProfileStore.instance.isUrgentCaseEnabled;
 
     final currentIndex = widget.currentIndex;
     final onTap = widget.onTap;
@@ -125,16 +123,21 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
 
             // ── Nav items (กลาง) ──────────────────────────
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: navItems
-                    .map((item) => DesktopNavItem(
-                          item: item,
-                          isSelected: currentIndex == item.index,
-                          showBadge: item.showBadge && typeLogin != 'null',
-                          onTap: () => onTap(item.index),
-                        ))
-                    .toList(),
+              child: Center(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: navItems
+                        .map((item) => DesktopNavItem(
+                              item: item,
+                              isSelected: currentIndex == item.index,
+                              showBadge: item.showBadge && typeLogin != 'null',
+                              onTap: () => onTap(item.index),
+                            ))
+                        .toList(),
+                  ),
+                ),
               ),
             ),
 
@@ -168,8 +171,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                           width: 8,
                           height: 8,
                           decoration: const BoxDecoration(
-                              color: Color(0xFFF70C0C),
-                              shape: BoxShape.circle),
+                              color: Color(0xFFF70C0C), shape: BoxShape.circle),
                         ),
                       ),
                     ],
@@ -178,13 +180,19 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
               ),
 
               // ── ชื่อ + badge ──────────────────────────
-              Text(name,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF3CD),
                   borderRadius: BorderRadius.circular(20),
@@ -237,8 +245,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                         SizedBox(width: 10),
                         Text('โปรไฟล์',
                             style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500)),
+                                fontSize: 14, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -299,8 +306,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF059669),
                             shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 1.5),
+                            border: Border.all(color: Colors.white, width: 1.5),
                           ),
                           child: const Icon(Icons.balance_rounded,
                               color: Colors.white, size: 12),
@@ -347,8 +353,7 @@ class DesktopNavItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFF0262EC).withOpacity(0.08)
@@ -390,8 +395,7 @@ class DesktopNavItem extends StatelessWidget {
               item.label,
               style: TextStyle(
                 fontSize: 18,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                 color: isSelected
                     ? const Color(0xFF0262EC)
                     : const Color(0xFF666666),
