@@ -3,6 +3,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/notification.dart';
+import 'package:LawyerOnline/notification_dropdown.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:flutter/material.dart';
@@ -144,9 +145,22 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
             // ── Avatar + ชื่อ + role (ขวาสุด) ────────────
             if (typeLogin != 'null') ...[
               // ── bell ──────────────────────────────────
-              GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => NotificationPage())),
+              PopupMenuButton<String>(
+                offset: const Offset(0, 50),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tooltip: "การแจ้งเตือน",
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    enabled: false,
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 350,
+                      height: 400,
+                      child: const NotificationDropdownContent(),
+                    ),
+                  ),
+                ],
                 child: Container(
                   width: 40,
                   height: 40,
