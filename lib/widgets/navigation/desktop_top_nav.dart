@@ -349,6 +349,9 @@ class DesktopNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool showText = screenWidth >= 1250;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -390,18 +393,20 @@ class DesktopNavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              item.label,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? const Color(0xFF0262EC)
-                    : const Color(0xFF666666),
-                height: 1.0,
+            if (showText) ...[
+              const SizedBox(width: 8),
+              Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                  color: isSelected
+                      ? const Color(0xFF0262EC)
+                      : const Color(0xFF666666),
+                  height: 1.0,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
