@@ -1,4 +1,4 @@
-import 'package:LawyerOnline/component/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:flutter/material.dart';
 
 class PageExam extends StatefulWidget {
