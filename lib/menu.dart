@@ -1,128 +1,168 @@
 import 'dart:ui';
-
-import 'package:LawyerOnline/login.dart';
-import 'package:LawyerOnline/map-card.dart';
-import 'package:LawyerOnline/post-list.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:LawyerOnline/calendar.dart';
 import 'package:LawyerOnline/home.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
+import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message.dart';
 import 'package:LawyerOnline/my-appointment.dart';
+import 'package:LawyerOnline/post-list.dart';
 import 'package:LawyerOnline/profile.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
+import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// ══════════════════════════════════════════════════════════
+//  MenuPage — Navigation shell
+//  Mobile/Tablet → FloatingBottomNav (glass effect)
+//  Desktop       → TopNav bar (ตามดีไซน์)
+// ══════════════════════════════════════════════════════════
+
 class MenuPage extends StatefulWidget {
-  MenuPage({Key? key, this.pageIndex, this.modelprofile, this.userType})
+  const MenuPage({Key? key, this.pageIndex, this.modelprofile, this.userType})
       : super(key: key);
 
   final int? pageIndex;
-  final modelprofile;
-  String? userType;
+  final dynamic modelprofile;
+  final String? userType;
 
   @override
   State<MenuPage> createState() => _MenuPageState();
 }
 
 class _MenuPageState extends State<MenuPage> {
-  List<Widget> pages = <Widget>[];
+  List<Widget> pages = [];
   int _currentPage = 0;
   DateTime? currentBackPressTime;
 
-  final TextEditingController chatController = TextEditingController();
   final storage = FlutterSecureStorage();
-  String userType = "";
-  String name = "";
+  String userType = '';
+  String name = '';
   String imageUrl = '';
-  String typeLogin = "";
+  String typeLogin = '';
+
+  // ── Nav items config ───────────────────────────────────
+  final List<NavItem> _navItems = const [
+    NavItem(icon: 'assets/icons/home.png', label: 'หน้าหลัก', index: 0),
+    NavItem(
+        icon: 'assets/icons/message.png',
+        label: 'แชท',
+        index: 1,
+        showBadge: true),
+    NavItem(
+        icon: 'assets/icons/logo-no-bg.png',
+        label: 'ชุมชน',
+        index: 2,
+        isLogo: true,
+        showBadge: true),
+    NavItem(
+        icon: 'assets/icons/appointment.png',
+        label: 'นัดหมาย',
+        index: 3,
+        showBadge: true),
+    NavItem(icon: 'assets/icons/profile.png', label: 'โปรไฟล์', index: 4),
+  ];
 
   @override
   void initState() {
-    callRead();
     super.initState();
-    Future.delayed(Duration.zero, () {
-      requestPermissions();
-    });
-    // _loadUserProfile();
+    callRead();
+    Future.delayed(Duration.zero, requestPermissions);
   }
 
-  Future requestPermissions() async {
-    var cameraStatus = await Permission.camera.request();
-    var micStatus = await Permission.microphone.request();
-
-    if (cameraStatus.isGranted && micStatus.isGranted) {
-      print("Permission granted");
-    } else {
-      print("Permission denied");
-    }
+  Future<void> requestPermissions() async {
+    await Permission.camera.request();
+    await Permission.microphone.request();
   }
 
-  callRead() async {
-    var userType = await storage.read(key: 'userType');
-    var imageProfile = await storage.read(key: 'imageUrlSocial');
-    var nameProfile = await storage.read(key: 'name');
+  Future<void> callRead() async {
+    final uType = await storage.read(key: 'userType');
+    final imageProfile = await storage.read(key: 'imageUrlSocial');
+    final nameProfile = await storage.read(key: 'name');
     final type = await storage.read(key: 'typeLogin');
+
     setState(() {
-      userType = widget.userType ?? userType.toString();
+      userType = widget.userType ?? uType.toString();
       name = nameProfile.toString();
       imageUrl = imageProfile.toString();
       typeLogin = type.toString();
 
-      pages = <Widget>[
+      pages = [
         HomePage(),
-        typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false,),
+        typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false),
         CommunityPage(),
-        // PostList(),
-        // LawyerOnlineList(),
-        // MapCardPage(),
-        typeLogin != 'null' ? userType == "user" ? AppointmentListPage() : CalendarPage() : LoginPage(isBack: false,),
-        typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false,),
+        typeLogin != 'null'
+            ? userType == 'user'
+                ? AppointmentListPage()
+                : CalendarPage()
+            : LoginPage(isBack: false),
+        typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false),
       ];
       _currentPage = widget.pageIndex ?? 0;
     });
   }
 
+  void _onNavTap(int index) => setState(() => _currentPage = index);
+
+  Future<bool> confirmExit() {
+    final now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime!) > const Duration(seconds: 2)) {
+      currentBackPressTime = now;
+      Fluttertoast.showToast(msg: 'กดอีกครั้งเพื่อออก');
+      return Future.value(false);
+    }
+    return Future.value(true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
+      extendBody: !isDesktop,
+      extendBodyBehindAppBar: false,
       backgroundColor: Colors.transparent,
-      drawerScrimColor: Colors.transparent,
-      // body: GestureDetector(
-      //   onTap: () => FocusScope.of(context).unfocus(),
-      //   child: WillPopScope(
-      //     onWillPop: confirmExit,
-      //     child: IndexedStack(index: _currentPage, children: pages),
-      //   ),
-      // ),
+
+      // ── Desktop TopNav ─────────────────────────────────
+      appBar: isDesktop
+          ? PreferredSize(
+              preferredSize: Size.fromHeight(RV.appBarHeight(context)),
+              child: DesktopTopNav(
+                currentIndex: _currentPage,
+                onTap: _onNavTap,
+                navItems: _navItems,
+                name: name,
+                imageUrl: imageUrl,
+                userType: userType,
+                typeLogin: typeLogin,
+              ),
+            )
+          : null,
+
+      // ── Body ───────────────────────────────────────────
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: WillPopScope(
           onWillPop: confirmExit,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) {
-              // Fade + slide up เบาๆ
-              final offsetAnim = Tween<Offset>(
-                begin: const Offset(0, 0.02), // slide up นิดเดียว
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.bounceIn,
-              ));
-              // easeOutCubic
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: offsetAnim,
-                  child: child,
-                ),
-              );
-            },
-            // key สำคัญมาก — บอก AnimatedSwitcher ว่า widget เปลี่ยนแล้ว
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.02),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              ),
+            ),
             child: KeyedSubtree(
               key: ValueKey<int>(_currentPage),
               child: pages.isNotEmpty ? pages[_currentPage] : const SizedBox(),
@@ -130,314 +170,110 @@ class _MenuPageState extends State<MenuPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(15), // ระยะลอยจากขอบ
-        child: ClipRRect(
-          // padding: const EdgeInsets.all(20),
-          // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          borderRadius: BorderRadius.circular(30),
-          // decoration: BoxDecoration(
-          //   color: const Color(0xFF010101),
-          //   borderRadius: BorderRadius.circular(67),
-          // ),
-          // height: 70,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 65,
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-              decoration: BoxDecoration(
-                color: Color(0xFF010101).withOpacity(0.50),
-                borderRadius: BorderRadius.circular(67),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+
+      // ── Mobile/Tablet BottomNav ────────────────────────
+      bottomNavigationBar: isDesktop
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(15),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    height: 65,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF010101).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(67),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: _navItems
+                          .map((item) => Flexible(
+                                child: _BottomNavItem(
+                                  item: item,
+                                  isSelected: _currentPage == item.index,
+                                  showBadge:
+                                      item.showBadge && typeLogin != 'null',
+                                  onTap: () => _onNavTap(item.index),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Flexible(
-                    flex: _currentPage == 0 ? 1 : 1,
-                    child: _bottomItem("assets/icons/home.png", 0,
-                        title: 'หนัาหลัก'),
-                  ),
-                  Flexible(
-                    flex: _currentPage == 1 ? 1 : 1,
-                    child: _bottomItem("assets/icons/message.png", 1,
-                        title: 'ข้อความ', showBadge: typeLogin != 'null' ? true : false),
-                  ),
-                  Flexible(
-                    flex: _currentPage == 2 ? 1 : 1,
-                    child: _bottomItem("assets/icons/logo-no-bg.png", 2,
-                        title: 'social', showBadge: typeLogin != 'null' ? true : false),
-                  ),
-                  Flexible(
-                    flex: _currentPage == 3 ? 1 : 1,
-                    child: _bottomItem("assets/icons/appointment.png", 3,
-                        title: 'นัดหมาย', showBadge: typeLogin != 'null' ? true : false),
-                  ),
-                  Flexible(
-                    flex: _currentPage == 4 ? 1 : 1,
-                    child: _bottomItem("assets/icons/profile.png", 4,
-                        title: 'โปรไฟล์'),
-                  )
-
-                  // _bottomItem(
-                  //   Icons.person,
-                  //   3,
-                  //   isImageUrl: true,
-                  //   title: 'โปรไฟล์',
-                  // ),
-                ],
-              ),
             ),
-          ),
-        ),
-        //   ),
-        // ),
-      ),
     );
   }
+}
 
-  Future<bool> confirmExit() {
-    DateTime now = DateTime.now();
-    if (currentBackPressTime == null ||
-        now.difference(currentBackPressTime!) > const Duration(seconds: 2)) {
-      currentBackPressTime = now;
-      Fluttertoast.showToast(
-        msg: 'กดอีกครั้งเพื่อออก',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
-      return Future.value(false);
-    }
-    return Future.value(true);
-  }
+// ── Mobile/Tablet bottom nav item ────────────────────────
+class _BottomNavItem extends StatelessWidget {
+  final NavItem item;
+  final bool isSelected;
+  final bool showBadge;
+  final VoidCallback onTap;
 
-  Widget _bottomItem(
-    String icon,
-    int index, {
-    bool isImageUrl = false,
-    required String title,
-    bool showBadge = false,
-  }) {
-    final isSelected = _currentPage == index;
-    // return GestureDetector(
-    //   onTap: () {
-    //     // if (index == 2) {
-    //     //   postTrackClick("แจ้งเตือน");
-    //     // }
-    //     setState(() {
-    //       _currentPage = index;
-    //     });
-    //     // _loadUserProfile();
-    //   },
-    //   // borderRadius: BorderRadius.circular(50),
-    //   child: AnimatedContainer(
-    //     duration: Duration(milliseconds: 500),
-    //     curve: Curves.linearToEaseOut,
-    //     padding: EdgeInsets.symmetric(horizontal: 0, vertical: 5),
-    //     child: Container(
-    //       height: double.infinity,
-    //       // padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-    //       decoration: BoxDecoration(
-    //         color: isSelected
-    //             ? Theme.of(context).primaryColor
-    //             : Colors.transparent,
-    //         borderRadius: BorderRadius.circular(45),
-    //         boxShadow: [
-    //           BoxShadow(
-    //             color: isSelected
-    //                 ? Colors.black.withOpacity(0.2)
-    //                 : Colors.transparent,
-    //             blurRadius: 20,
-    //             offset: Offset(0, 10),
-    //           ),
-    //         ],
-    //         // shape: BoxShape.circle,
-    //       ),
-    //       child: Row(
-    //         mainAxisAlignment: MainAxisAlignment.center,
-    //         crossAxisAlignment: CrossAxisAlignment.center,
-    //         children: [
-    //           Image.asset(
-    //             icon,
-    //             width: 24,
-    //             height: 24,
-    //             color: isSelected ? Colors.white : Color(0xFF666666),
-    //           ),
+  const _BottomNavItem({
+    required this.item,
+    required this.isSelected,
+    required this.showBadge,
+    required this.onTap,
+  });
 
-    //           isSelected
-    //               ? Row(
-    //                   children: [
-    //                     const SizedBox(
-    //                       width: 10,
-    //                     ),
-    //                     Text(
-    //                       title,
-    //                       style: TextStyle(
-    //                         fontSize: 14,
-    //                         color: isSelected
-    //                             ? Colors.white
-    //                             : const Color(0xFF666666),
-    //                       ),
-    //                     ),
-    //                   ],
-    //                 )
-    //               : const SizedBox()
-    //         ],
-    //       ),
-    //     ),
-    //   ),
-    // );
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => setState(() {
-        _currentPage = index;
-      }),
+      onTap: onTap,
       child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        duration: Duration(milliseconds: 250),
-        padding: index == 2 ? EdgeInsets.symmetric(horizontal: 14, vertical: 5) : EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: item.isLogo
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 5)
+            : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          // color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
           color: isSelected
-              ? Color.fromARGB(255, 248, 249, 253).withOpacity(0.9)
+              ? const Color(0xFFF8F9FD).withOpacity(0.9)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          // border: Border.all(
-          //   color: isSelected ? Color.fromARGB(255, 8, 93, 211) : Colors.transparent,
-          // ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? Color.fromARGB(255, 8, 93, 211).withOpacity(0.3)
+                  ? const Color(0xFF085DD3).withOpacity(0.3)
                   : Colors.transparent,
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Stack(
-              children: [
-                index == 2
-                    ? Image.asset(
-                        icon,
-                        color: isSelected
-                            ? Color.fromARGB(255, 8, 93, 211)
-                            : Colors.white70,
-                        width: 34,
-                        height: 34,
-                        // size: 26,
-                      )
-                    : Image.asset(
-                        icon,
-                        color: isSelected
-                            ? Color.fromARGB(255, 8, 93, 211)
-                            : Colors.white70,
-                        width: 22,
-                        height: 22,
-                        // size: 26,
-                      ),
-                if (showBadge)
-                  Positioned(
-                    top: -1,
-                    right: 2,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color.fromARGB(255, 247, 12, 12),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+            Image.asset(
+              item.icon,
+              width: item.isLogo ? 34 : 22,
+              height: item.isLogo ? 34 : 22,
+              color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
+            ),
+            if (showBadge)
+              Positioned(
+                top: -1,
+                right: 2,
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF70C0C),
+                    shape: BoxShape.circle,
                   ),
-              ],
-            ),
-            // isSelected
-            //     ? Row(
-            //         children: [
-            //           const SizedBox(
-            //             width: 10,
-            //           ),
-            //           Text(
-            //             title,
-            //             style: TextStyle(
-            //               fontSize: 14,
-            //               color: isSelected
-            //                   ? Color(0xFF085DD3)
-            //                   : const Color(0xFF666666),
-            //             ),
-            //           ),
-            //         ],
-            //       )
-            //     : const SizedBox()
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class GlassBottomBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-
-  const GlassBottomBar({
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _item(Icons.home_rounded, 0),
-                _item(Icons.search_rounded, 1),
-                _item(Icons.person_rounded, 2),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _item(IconData icon, int index) {
-    final selected = index == currentIndex;
-
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 250),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white.withOpacity(0.25) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Icon(
-          icon,
-          color: selected ? Colors.white : Colors.white70,
-          size: 26,
+          ],
         ),
       ),
     );

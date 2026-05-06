@@ -30,6 +30,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+
+// ใน build
+// final isUrgentCase = LawyerProfileStore.instance.isUrgentCaseEnabled;
 
 // ─── Palette & theme constants ───────────────────────────────────────
 const _kPrimary = Color(0xFF0262EC); // deep navy
@@ -57,7 +64,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
-  bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
+  // bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
   Timer? _urgentCaseTimer; // timer คอย monitor นัดหมาย
 
   List<dynamic> lawyerOnlineList = [
@@ -482,12 +489,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 // ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
   void _startUrgentCaseTimer() {
     _urgentCaseTimer?.cancel();
-    _urgentCaseTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+    _urgentCaseTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
       if (!mounted) return;
-      if (_isUrgentCaseEnabled && _hasConflictingAppointment()) {
-        // ปิดอัตโนมัติ
-        setState(() => _isUrgentCaseEnabled = false);
-        storage.write(key: 'urgentCaseEnabled', value: 'false');
+      if (LawyerProfileStore.instance.isUrgentCaseEnabled &&
+          _hasConflictingAppointment()) {
+        // setUrgentCase เรียก notifyListeners() เอง ไม่ต้อง setState
+        await LawyerProfileStore.instance.setUrgentCase(false);
 
         // แจ้งเตือน
         showDialog(
@@ -575,12 +582,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       }
     }
 
-    setState(() {
-      _isUrgentCaseEnabled = value;
-    });
+    // store จะเรียก notifyListeners() เอง → ListenableBuilder rebuild อัตโนมัติ
+    LawyerProfileStore.instance.setUrgentCase(value);
 
     // บันทึกสถานะลง persistent storage
-    storage.write(key: 'urgentCaseEnabled', value: value.toString());
+    // storage.write(key: 'urgentCaseEnabled', value: value.toString());
   }
 
   @override
@@ -618,13 +624,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final imgPro = await storage.read(key: 'imageUrlSocial');
     final namePro = await storage.read(key: 'name');
     final type = await storage.read(key: 'typeLogin');
-    final urgentCaseEnabled = await storage.read(key: 'urgentCaseEnabled');
+    // final urgentCaseEnabled = await storage.read(key: 'urgentCaseEnabled');
+
+    await LawyerProfileStore.instance.load();
+
     setState(() {
       userType = uType ?? '';
       name = namePro ?? '';
       imageUrl = imgPro ?? '';
       typeLogin = type.toString();
-      _isUrgentCaseEnabled = urgentCaseEnabled == 'true';
+      // _isUrgentCaseEnabled = urgentCaseEnabled == 'true';
     });
     // final value =
     //     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
@@ -651,21 +660,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               physics: const BouncingScrollPhysics(),
               // physics: const ClampingScrollPhysics(),
               slivers: [
-                // ── SliverAppBar with gradient ──────────────────────
-                HomeAppBar(
-                  name: name,
-                  imageUrl: imageUrl,
-                  userType: userType,
-                  typeLogin: typeLogin,
-                  isUrgentCaseEnabled: _isUrgentCaseEnabled,
-                ),
-                // SliverToBoxAdapter(child: _buildBody(size)),
+                // desktop ไม่แสดง SliverAppBar เพราะมี TopNav ใน menu.dart แล้ว
+                if (!ResponsiveLayout.isDesktop(context))
+                  ListenableBuilder(
+                    listenable: LawyerProfileStore.instance,
+                    builder: (_, __) => HomeAppBar(
+                      name: name,
+                      imageUrl: imageUrl,
+                      userType: userType,
+                      typeLogin: typeLogin,
+                      isUrgentCaseEnabled:
+                          LawyerProfileStore.instance.isUrgentCaseEnabled,
+                    ),
+                  ),
                 SliverToBoxAdapter(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: MediaQuery.of(context).size.height - 100,
                     ),
-                    child: _buildBody(size),
+                    // wrap ด้วย AppLayout จำกัดความกว้างบน desktop
+                    child: AppLayout(
+                      child: _buildBody(size),
+                    ),
                   ),
                 ),
               ],
@@ -695,11 +711,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           children: [
             const SizedBox(height: 20),
 
-            HomeActionCards(
-              typeLogin: typeLogin,
-              userType: userType,
-              isUrgentCaseEnabled: _isUrgentCaseEnabled,
-              onToggleUrgentCase: _toggleUrgentCase,
+            ListenableBuilder(
+              listenable: LawyerProfileStore.instance,
+              builder: (_, __) => HomeActionCards(
+                typeLogin: typeLogin,
+                userType: userType,
+                isUrgentCaseEnabled:
+                    LawyerProfileStore.instance.isUrgentCaseEnabled,
+                onToggleUrgentCase: _toggleUrgentCase,
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -716,7 +736,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 lawCategories: _lawCategories,
                 lawyers: lawyerOnlineList,
                 newLawyers: newLawyerOnlineList,
-                isGuest: typeLogin == 'null', 
+                isGuest: typeLogin == 'null',
               ),
 
             // ── Lawyer dashboard ─────────────────────────────────
