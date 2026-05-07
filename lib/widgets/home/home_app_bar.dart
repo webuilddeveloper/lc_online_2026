@@ -261,23 +261,23 @@ class _HomeAvatar extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(
-              width: 10,
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PageExam(),
-                  ),
-                );
-              },
-              child: const Icon(
-                Icons.visibility,
-                size: 20,
-              ),
-            ),
+            // const SizedBox(
+            //   width: 10,
+            // ),
+            // GestureDetector(
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (_) => PageExam(),
+            //       ),
+            //     );
+            //   },
+            //   child: const Icon(
+            //     Icons.visibility,
+            //     size: 20,
+            //   ),
+            // ),
 
             // Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
           ],
