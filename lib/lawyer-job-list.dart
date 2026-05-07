@@ -69,22 +69,10 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     }
   }
 
-  // _acceptJob — เปิด Navigator.pop กลับมา
-  void _acceptJob(String id) {
-    LawyerJobsStore.instance.acceptJob(context, id, onDone: () {
-      Navigator.pop(context); // pop หน้า detail
-      setState(() {});
-      _showSnackbar('รับงานสำเร็จแล้ว!', true);
-    });
-  }
-
-  // _rejectJob — เปิด Navigator.pop กลับมา
-  void _rejectJob(String id) {
-    LawyerJobsStore.instance.rejectJob(context, id, onDone: () {
-      Navigator.pop(context); // pop หน้า detail
-      setState(() {});
-      _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
-    });
+  // refresh list หลังจาก detail page pop กลับมา
+  void _onJobUpdated() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _showSnackbar(String msg, bool success) {
@@ -319,14 +307,11 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
           MaterialPageRoute(
             builder: (_) => LawyerJobDetailPage(
               job: job,
-              // _buildJobCard — แก้ onAccept และ onReject
-              onAccept:
-                  isPending ? () => _acceptJob(job['id'] as String) : null,
-              onReject:
-                  isPending ? () => _rejectJob(job['id'] as String) : null,
+              onAccept: isPending ? () {} : null,
+              onReject: isPending ? () {} : null,
             ),
           ),
-        );
+        ).then((_) => _onJobUpdated());
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -502,7 +487,21 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                   // Reject
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => _rejectJob(job['id'] as String),
+                      onTap: () {
+                        DialogService.showConfirmRejectJob(
+                          context,
+                          title: "ปฏิเสธคำขอ",
+                          message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+                          onConfirm: () {
+                            LawyerJobsStore.instance
+                                .rejectJob(job['id'] as String);
+                            if (mounted) {
+                              setState(() {});
+                              _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
+                            }
+                          },
+                        );
+                      },
                       child: Container(
                         height: 42,
                         decoration: BoxDecoration(
@@ -532,7 +531,21 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                   Expanded(
                     flex: 2,
                     child: GestureDetector(
-                      onTap: () => _acceptJob(job['id'] as String),
+                      onTap: () {
+                        DialogService.showConfirmAcceptJob(
+                          context,
+                          title: "รับงาน",
+                          message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+                          onConfirm: () {
+                            LawyerJobsStore.instance
+                                .acceptJob(job['id'] as String);
+                            if (mounted) {
+                              setState(() {});
+                              _showSnackbar('รับงานสำเร็จแล้ว!', true);
+                            }
+                          },
+                        );
+                      },
                       child: Container(
                         height: 42,
                         decoration: BoxDecoration(
@@ -1013,7 +1026,17 @@ class LawyerJobDetailPage extends StatelessWidget {
         // Reject
         Expanded(
           child: GestureDetector(
-            onTap: onReject,
+            onTap: () {
+              DialogService.showConfirmRejectJob(
+                context,
+                title: "ปฏิเสธคำขอ",
+                message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+                onConfirm: () {
+                  LawyerJobsStore.instance.rejectJob(job['id'] as String);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              );
+            },
             child: Container(
               height: 52,
               decoration: BoxDecoration(
@@ -1043,7 +1066,17 @@ class LawyerJobDetailPage extends StatelessWidget {
         Expanded(
           flex: 2,
           child: GestureDetector(
-            onTap: onAccept,
+            onTap: () {
+              DialogService.showConfirmAcceptJob(
+                context,
+                title: "รับงาน",
+                message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+                onConfirm: () {
+                  LawyerJobsStore.instance.acceptJob(job['id'] as String);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              );
+            },
             child: Container(
               height: 52,
               decoration: BoxDecoration(
@@ -1090,12 +1123,12 @@ class LawyerJobDetailPage extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => ChatPageLawyer(
-              jobId: job['id'], 
+              jobId: job['id'],
               model: {
                 'name': job['clientName'],
                 'avatar': job['clientAvatar'],
                 'active': true,
-                'caseSuccess': job['status'] == 'done', 
+                'caseSuccess': job['status'] == 'done',
                 'clientColor': job['clientColor'],
               },
             ),

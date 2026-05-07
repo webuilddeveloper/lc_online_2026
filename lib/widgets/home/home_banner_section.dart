@@ -2,6 +2,7 @@ import 'package:LawyerOnline/carousel_form.dart';
 import 'package:LawyerOnline/component/comming-soon.dart';
 import 'package:LawyerOnline/component/link_url_in.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Container(
-          height: 160,
+          height: RV.bannerHeight(context),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.grey.shade200,
@@ -71,7 +72,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
     return Column(
       children: [
         SizedBox(
-          height: 140,
+          height: RV.bannerHeight(context),
           child: CarouselSlider(
             options: CarouselOptions(
               viewportFraction: 0.9,
@@ -80,8 +81,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
               enlargeFactor: 0.32,
               autoPlay: true,
               autoPlayInterval: const Duration(seconds: 4),
-              onPageChanged: (index, _) =>
-                  setState(() => _current = index),
+              onPageChanged: (index, _) => setState(() => _current = index),
             ),
             items: widget.banners.map((item) {
               return GestureDetector(
@@ -93,8 +93,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
                       image: AssetImage(item['imageUrl']),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
-                        const Color.fromARGB(133, 55, 55, 55)
-                            .withOpacity(0.5),
+                        const Color.fromARGB(133, 55, 55, 55).withOpacity(0.5),
                         BlendMode.srcATop,
                       ),
                     ),

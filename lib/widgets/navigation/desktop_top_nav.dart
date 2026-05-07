@@ -148,7 +148,8 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
               PopupMenuButton<String>(
                 offset: const Offset(0, 50),
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 tooltip: "การแจ้งเตือน",
                 itemBuilder: (_) => [
                   PopupMenuItem(
@@ -366,62 +367,75 @@ class DesktopNavItem extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final bool showText = screenWidth >= 1250;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF0262EC).withOpacity(0.08)
-              : Colors.transparent,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset(
-                  item.icon,
-                  width: item.isLogo ? 30 : 22,
-                  height: item.isLogo ? 30 : 22,
-                  color: isSelected
-                      ? const Color(0xFF0262EC)
-                      : const Color(0xFF666666),
-                ),
-                if (showBadge)
-                  Positioned(
-                    top: 0,
-                    right: 2,
-                    child: Container(
-                      width: 10,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF70C0C),
-                        shape: BoxShape.circle,
+          splashColor: const Color(0xFF0262EC).withOpacity(0.1),
+          highlightColor: const Color(0xFF0262EC).withOpacity(0.06),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFF0262EC).withOpacity(0.08)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.asset(
+                        item.icon,
+                        width: item.isLogo ? 30 : 22,
+                        height: item.isLogo ? 30 : 22,
+                        color: isSelected
+                            ? const Color(0xFF0262EC)
+                            : const Color(0xFF666666),
+                      ),
+                      if (showBadge)
+                        Positioned(
+                          top: 0,
+                          right: 2,
+                          child: Container(
+                            width: 10,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF70C0C),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (showText) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w400,
+                        color: isSelected
+                            ? const Color(0xFF0262EC)
+                            : const Color(0xFF666666),
+                        height: 1.0,
                       ),
                     ),
-                  ),
-              ],
-            ),
-            if (showText) ...[
-              const SizedBox(width: 8),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                  color: isSelected
-                      ? const Color(0xFF0262EC)
-                      : const Color(0xFF666666),
-                  height: 1.0,
-                ),
+                  ],
+                ],
               ),
-            ],
-          ],
+            ),
+          ),
         ),
       ),
     );

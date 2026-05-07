@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/about-us.dart';
 import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
@@ -67,17 +68,22 @@ class _ProfilePageState extends State<ProfilePage> {
         backAction: () => goBack(),
         rightAction: () => {},
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        children: [
-          const SizedBox(
-            height: 20,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth:
+                ResponsiveLayout.isDesktop(context) ? 560 : double.infinity,
           ),
-          profileMenuCard(),
-          const SizedBox(
-            height: 20,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            children: [
+              const SizedBox(height: 20),
+              profileMenuCard(),
+              const SizedBox(height: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -135,7 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 10),
               menuItem(
-                title: 'บัญชีผู้ใช้งาน',
+                title: 'แก้ไขข้อมูลส่วนตัว',
                 onTap: () => {
                   Navigator.push(
                     context,

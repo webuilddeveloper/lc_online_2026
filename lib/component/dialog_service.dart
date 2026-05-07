@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 class DialogService {
   /// SUCCESS
@@ -117,65 +118,81 @@ class DialogService {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.help_outline,
-                  size: 60,
-                  color: Colors.orange,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: Color(0xFF0262EC), width: 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: RV.dialogMaxWidth(context),
+              minWidth: RV.dialogMinWidth(context),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.help_outline,
+                    size: 60,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            side: const BorderSide(
+                                color: Color(0xFF0262EC), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "ยกเลิก",
+                            style: TextStyle(
+                              color: Color(0xFF0262EC),
+                              fontSize: 16,
+                            ),
                           ),
                         ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "ยกเลิก",
-                          style: TextStyle(color: Color(0xFF0262EC)),
-                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0262EC),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            backgroundColor: const Color(0xFF0262EC),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (onConfirm != null) onConfirm();
+                          },
+                          child: const Text(
+                            "ยืนยัน",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (onConfirm != null) onConfirm();
-                        },
-                        child: const Text(
-                          "ยืนยัน",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ],
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -194,65 +211,81 @@ class DialogService {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  size: 60,
-                  color: Color.fromARGB(255, 3, 212, 14),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: Color(0xFF0262EC), width: 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: RV.dialogMaxWidth(context),
+              minWidth: RV.dialogMinWidth(context),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 60,
+                    color: Color.fromARGB(255, 3, 212, 14),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            side: const BorderSide(
+                                color: Color(0xFF0262EC), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "ยกเลิก",
+                            style: TextStyle(
+                              color: Color(0xFF0262EC),
+                              fontSize: 16,
+                            ),
                           ),
                         ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "ยกเลิก",
-                          style: TextStyle(color: Color(0xFF0262EC)),
-                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0262EC),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            backgroundColor: const Color(0xFF0262EC),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (onConfirm != null) onConfirm();
+                          },
+                          child: const Text(
+                            "ยืนยัน",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (onConfirm != null) onConfirm();
-                        },
-                        child: const Text(
-                          "ยืนยัน",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ],
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -260,7 +293,7 @@ class DialogService {
     );
   }
 
-   /// CONFIRM RejectJob
+  /// CONFIRM RejectJob
   static showConfirmRejectJob(BuildContext context,
       {String title = "ยืนยัน", String message = "", Function()? onConfirm}) {
     showDialog(
@@ -271,65 +304,81 @@ class DialogService {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.cancel_outlined,
-                  size: 60,
-                  color: Color.fromARGB(255, 212, 3, 3),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: Color(0xFF0262EC), width: 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: RV.dialogMaxWidth(context),
+              minWidth: RV.dialogMinWidth(context),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.cancel_outlined,
+                    size: 60,
+                    color: Color.fromARGB(255, 212, 3, 3),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            side: const BorderSide(
+                                color: Color(0xFF0262EC), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "ยกเลิก",
+                            style: TextStyle(
+                              color: Color(0xFF0262EC),
+                              fontSize: 16,
+                            ),
                           ),
                         ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "ยกเลิก",
-                          style: TextStyle(color: Color(0xFF0262EC)),
-                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0262EC),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            backgroundColor: const Color(0xFF0262EC),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (onConfirm != null) onConfirm();
+                          },
+                          child: const Text(
+                            "ยืนยัน",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (onConfirm != null) onConfirm();
-                        },
-                        child: const Text(
-                          "ยืนยัน",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ],
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -348,65 +397,84 @@ class DialogService {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.logout,
-                  size: 60,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: Color(0xFF0262EC), width: 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: RV.dialogMaxWidth(context),
+              minWidth: RV.dialogMinWidth(context),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.logout,
+                    size: 60,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            side: const BorderSide(
+                                color: Color(0xFF0262EC), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "ไม่",
+                            style: TextStyle(
+                              color: Color(0xFF0262EC),
+                              fontSize: 16,
+
+                              // fontWeight: FontWeight.w600
+                            ),
                           ),
                         ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "ไม่",
-                          style: TextStyle(color: Color(0xFF0262EC)),
-                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xD2FF0000),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            backgroundColor: const Color(0xD2FF0000),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            if (onConfirm != null) onConfirm();
+                          },
+                          child: const Text(
+                            "ออกจากระบบ",
+                            style: TextStyle(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 16,
+                              // fontWeight: FontWeight.w600
+                            ),
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (onConfirm != null) onConfirm();
-                        },
-                        child: const Text(
-                          "ออกจากระบบ",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ],
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -442,7 +510,11 @@ class DialogService {
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 30),
-        padding: const EdgeInsets.all(25),
+        constraints: BoxConstraints(
+          maxWidth: RV.dialogMaxWidth(context),
+          minWidth: RV.dialogMinWidth(context),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(25),
