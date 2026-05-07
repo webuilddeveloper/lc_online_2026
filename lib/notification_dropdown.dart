@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/notification-detail.dart';
+import 'package:LawyerOnline/notification_desktop_detail.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:flutter/material.dart';
 
@@ -73,7 +74,14 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => NotificationDetailPage(data: item),
+            builder: (context) {
+              final isDesktop = MediaQuery.of(context).size.width >= 1024;
+              if (isDesktop) {
+                return NotificationDesktopDetailPage(initialData: item);
+              } else {
+                return NotificationDetailPage(data: item);
+              }
+            },
           ),
         );
       },
@@ -216,7 +224,16 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
               Navigator.pop(context); // ปิด dropdown
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationPage()),
+                MaterialPageRoute(
+                  builder: (context) {
+                    final isDesktop = MediaQuery.of(context).size.width >= 1024;
+                    if (isDesktop) {
+                      return const NotificationDesktopDetailPage();
+                    } else {
+                      return const NotificationPage();
+                    }
+                  },
+                ),
               );
             },
             child: const Text("ดูทั้งหมด", style: TextStyle(fontWeight: FontWeight.bold)),
