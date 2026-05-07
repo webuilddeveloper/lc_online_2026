@@ -84,6 +84,7 @@ dependencies:
   firebase_messaging: ^15.0.0
   flutter_local_notifications: ^17.0.0  # แสดง notification แบบ custom
   cloud_firestore: ^5.6.12
+  audioplayers: ^6.4.0
 
 dev_dependencies:
   flutter_test:
