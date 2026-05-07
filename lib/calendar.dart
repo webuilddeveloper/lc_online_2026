@@ -3,12 +3,16 @@ import 'dart:collection';
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/shared/extension.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:LawyerOnline/models/lawyer/appointment_store.dart';
 
 // ─── Palette ──────────────────────────────────────────────────────────────
 const _kBg = Color(0xFFFFFFFF);
@@ -20,23 +24,64 @@ const _kSub = Color(0xFF6B7A99);
 
 // ─── Event colors pool ────────────────────────────────────────────────────
 const List<Color> _kEventColors = [
-  Color(0xFF4A8CFF), // blue
-  Color(0xFF34A853), // green
-  Color(0xFF9B59B6), // purple
-  Color(0xFFE67E22), // orange
-  Color(0xFF1ABC9C), // teal
-  Color(0xFFE74C3C), // red
+  Color(0xFF4A8CFF),
+  Color(0xFF34A853),
+  Color(0xFF9B59B6),
+  Color(0xFFE67E22),
+  Color(0xFF1ABC9C),
+  Color(0xFFE74C3C),
 ];
 
-// ─── Timeline event: สีน้ำเงินเดียว ─────────────────────────────────────
 const _kTimelineColor = Color(0xFF0262EC);
 
-// ─── Day event list: สีตามช่วงเวลา ──────────────────────────────────────
-// เช้า 08-11 → เขียว | บ่าย 12-17 → ส้ม | ค่ำ 18-21 → ฟ้า
+// ─── Thai locale data ─────────────────────────────────────────────────────
+const List<String> kThaiMonthsShort = [
+  '',
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
+];
+
+const List<String> kThaiMonthsFull = [
+  '',
+  'มกราคม',
+  'กุมภาพันธ์',
+  'มีนาคม',
+  'เมษายน',
+  'พฤษภาคม',
+  'มิถุนายน',
+  'กรกฎาคม',
+  'สิงหาคม',
+  'กันยายน',
+  'ตุลาคม',
+  'พฤศจิกายน',
+  'ธันวาคม',
+];
+
+const List<String> kThaiDaysFull = [
+  '',
+  'จันทร์',
+  'อังคาร',
+  'พุธ',
+  'พฤหัสบดี',
+  'ศุกร์',
+  'เสาร์',
+  'อาทิตย์',
+];
+
 Color _periodColor(int startHour) {
-  if (startHour >= 8 && startHour < 12) return const Color(0xFF34A853); // เขียว
-  if (startHour >= 12 && startHour < 18) return const Color(0xFFE67E22); // ส้ม
-  return const Color(0xFF4A8CFF); // ฟ้า
+  if (startHour >= 8 && startHour < 12) return const Color(0xFF34A853);
+  if (startHour >= 12 && startHour < 18) return const Color(0xFFE67E22);
+  return const Color(0xFF4A8CFF);
 }
 
 String _periodLabel(int startHour) {
@@ -56,56 +101,41 @@ class _CalendarPageState extends State<CalendarPage>
     with TickerProviderStateMixin {
   final storage = FlutterSecureStorage();
 
-  // ─── view mode: false = week strip, true = month calendar ─────────
   bool _showMonthCalendar = false;
-
-  // ─── all appointments view ────────────────────────────────────────
   bool _showAllView = false;
 
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
 
-  Map<DateTime, List<dynamic>> itemEvents = {};
+  // ── ดึง eventMap จาก AppointmentStore แทน hardcode ─────────
+  Map<DateTime, List<dynamic>> get itemEvents =>
+      AppointmentStore.instance.eventMap;
 
   AnimationController? _fadeCtrl;
   Animation<double>? _fadeAnim;
-
-  // ─── calendar panel animation ─────────────────────────────────────
   AnimationController? _calPanelCtrl;
 
-  // ─── Timeline scroll ──────────────────────────────────────────────
   final ScrollController _timelineScroll = ScrollController();
-
-  // ─── All-view scroll (เก็บ position ไว้เมื่อย้อนกลับ) ───────────
   final ScrollController _allViewScroll = ScrollController();
+
   static const double _hourHeight = 64.0;
   static const double _timeAxisWidth = 62.0;
-
-  // ─── Timeline range matching consultation-schedule ────────────────
-  static const int _startHour = 8; // 08:00
-  static const int _endHour = 21; // 21:00
-  static const int _totalHours = _endHour - _startHour + 1; // 14 slots
+  static const int _startHour = 8;
+  static const int _endHour = 21;
+  static const int _totalHours = _endHour - _startHour + 1;
 
   @override
   void initState() {
     super.initState();
-
     _fadeCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 450));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl!, curve: Curves.easeOut);
     _fadeCtrl!.forward();
-
     _calPanelCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
-
-    _loadEvents();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentHour());
-
-    // ─── restore _showAllView state ───────────────────────────────
     storage.read(key: 'calendarShowAllView').then((val) {
-      if (val == 'true' && mounted) {
-        setState(() => _showAllView = true);
-      }
+      if (val == 'true' && mounted) setState(() => _showAllView = true);
     });
   }
 
@@ -133,36 +163,27 @@ class _CalendarPageState extends State<CalendarPage>
   void _scrollAllViewToToday() {
     final sortedKeys = itemEvents.keys.toList()..sort();
     if (sortedKeys.isEmpty) return;
-
     final today = DateTime.now();
     final todayKey = DateTime(today.year, today.month, today.day);
-
-    // หา index ของวันปัจจุบัน หรือวันที่ใกล้ที่สุด
     int targetIndex = 0;
     bool hasToday = false;
-
     for (int i = 0; i < sortedKeys.length; i++) {
       if (isSameDay(sortedKeys[i], todayKey)) {
         targetIndex = i;
         hasToday = true;
         break;
       }
-      // วันในอนาคตที่ใกล้ที่สุด
       if (sortedKeys[i].isAfter(todayKey)) {
         targetIndex = i;
         break;
       }
-      // ถ้าผ่านหมดแล้วให้ชี้ไปอันสุดท้าย
       targetIndex = i;
     }
-
-    // ประมาณ offset ของแต่ละ item (date header ~72 + cards ~80 each)
-    double offset = 8.0; // padding top
+    double offset = 8.0;
     for (int i = 0; i < targetIndex; i++) {
       final evCount = itemEvents[sortedKeys[i]]?.length ?? 0;
-      offset += 72 + (evCount * 88) + 16; // header + cards + divider
+      offset += 72 + (evCount * 88) + 16;
     }
-
     if (_allViewScroll.hasClients) {
       _allViewScroll.animateTo(
         offset.clamp(0.0, _allViewScroll.position.maxScrollExtent),
@@ -170,23 +191,17 @@ class _CalendarPageState extends State<CalendarPage>
         curve: Curves.easeOut,
       );
     }
-
     if (!hasToday) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'วันนี้ไม่มีนัด',
-            style: GoogleFonts.prompt(fontSize: 13, color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFF0262EC),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('วันนี้ไม่มีนัด',
+            style: GoogleFonts.prompt(fontSize: 13, color: Colors.white)),
+        backgroundColor: _kPrimary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        duration: const Duration(seconds: 2),
+      ));
     }
   }
 
@@ -194,9 +209,6 @@ class _CalendarPageState extends State<CalendarPage>
     final closing = _showMonthCalendar;
     setState(() {
       _showMonthCalendar = !_showMonthCalendar;
-      // เมื่อปิด month calendar กลับมา week strip
-      // ให้ reset _focusedDay → _selectedDay เพื่อให้ week strip
-      // แสดงสัปดาห์ของวันที่เลือก ไม่ใช่เดือนที่เลื่อนค้างไว้
       if (closing) _focusedDay = _selectedDay;
     });
     if (_showMonthCalendar) {
@@ -206,113 +218,10 @@ class _CalendarPageState extends State<CalendarPage>
     }
   }
 
-  void _loadEvents() {
-    itemEvents = {
-      DateTime(2026, 4, 10): [
-        {
-          "code": "0",
-          "clientName": "อนงค์ ดำเนิน",
-          "caseType": "คดีมรดกทุกประเภท",
-          "subCaseType": "ฟ้องร้องมรดก",
-          "appointmentDate": "10/04/2026",
-          "appointmentTime": "09.00 - 10.00",
-          "startHour": 9,
-          "startMin": 0,
-          "durationMin": 60,
-          "title": "ขอฟ้องร้องมรดกพี่น้อง",
-          "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-          "paymentStatus": "1",
-          "colorIndex": 0,
-        },
-        {
-          "code": "1",
-          "clientName": "อนงค์ ดำเนิน",
-          "caseType": "คดีครอบครัว",
-          "subCaseType": "ฟ้องร้องการหย่าร้าง",
-          "appointmentDate": "10/04/2026",
-          "appointmentTime": "11.00 - 13.00",
-          "startHour": 11,
-          "startMin": 0,
-          "durationMin": 120,
-          "title": "ขอฟ้องร้องหย่าร้าง",
-          "details": "ต้องการฟ้องร้องหย่าร้างกับสามีคนปัจจุบัน",
-          "paymentStatus": "1",
-          "colorIndex": 2,
-        },
-      ],
-      DateTime(2026, 4, 20): [
-        {
-          "code": "0",
-          "clientName": "สมชาย ใจดี",
-          "caseType": "คดีมรดกทุกประเภท",
-          "subCaseType": "ฟ้องร้องมรดก",
-          "appointmentDate": "20/04/2026",
-          "appointmentTime": "10.00 - 11.30",
-          "startHour": 10,
-          "startMin": 0,
-          "durationMin": 90,
-          "title": "ขอฟ้องร้องมรดกพี่น้อง ครั้งที่ 2",
-          "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-          "paymentStatus": "2",
-          "colorIndex": 1,
-        },
-      ],
-      DateTime(2026, 4, 22): [
-        {
-          "code": "0",
-          "clientName": "วรรณา สุขสม",
-          "caseType": "คดีแรงงาน",
-          "subCaseType": "เรียกค่าชดเชย",
-          "appointmentDate": "22/04/2026",
-          "appointmentTime": "09.00 - 10.00",
-          "startHour": 9,
-          "startMin": 0,
-          "durationMin": 60,
-          "title": "คดีแรงงาน เรียกค่าชดเชย",
-          "details": "ถูกเลิกจ้างโดยไม่มีสาเหตุ ต้องการเรียกค่าชดเชย",
-          "paymentStatus": "1",
-          "colorIndex": 3,
-        },
-        {
-          "code": "1",
-          "clientName": "ประสิทธิ์ มั่งมี",
-          "caseType": "ธุรกิจและบริษัท",
-          "subCaseType": "ตรวจร่างสัญญา",
-          "appointmentDate": "22/04/2026",
-          "appointmentTime": "14.00 - 15.30",
-          "startHour": 14,
-          "startMin": 0,
-          "durationMin": 90,
-          "title": "ตรวจร่างสัญญาซื้อขายกิจการ",
-          "details": "ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท",
-          "paymentStatus": "2",
-          "colorIndex": 4,
-        },
-      ],
-      DateTime(2026, 4, 25): [
-        {
-          "code": "0",
-          "clientName": "อนงค์ ดำเนิน",
-          "caseType": "คดีมรดกทุกประเภท",
-          "subCaseType": "ฟ้องร้องมรดก",
-          "appointmentDate": "25/04/2026",
-          "appointmentTime": "13.00 - 14.00",
-          "startHour": 13,
-          "startMin": 0,
-          "durationMin": 60,
-          "title": "ขอฟ้องร้องมรดกพี่น้อง",
-          "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-          "paymentStatus": "2",
-          "colorIndex": 5,
-        },
-      ],
-    };
-    setState(() {});
-  }
+  // ── _loadEvents ถูกลบออกแล้ว ข้อมูลอยู่ที่ AppointmentStore ──
 
-  List<dynamic> _getEventsForDay(DateTime day) {
-    return itemEvents[DateTime(day.year, day.month, day.day)] ?? [];
-  }
+  List<dynamic> _getEventsForDay(DateTime day) =>
+      AppointmentStore.instance.getEventsForDay(day);
 
   int getHashCode(DateTime key) {
     return key.day * 1000000 + key.month * 10000 + key.year;
@@ -323,59 +232,547 @@ class _CalendarPageState extends State<CalendarPage>
   // ═══════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
       backgroundColor: _kBg,
-      appBar: _buildAppBar(),
-      // IndexedStack เก็บทั้ง 2 view ใน tree ตลอด
-      // → scroll position ไม่หายเมื่อสลับกลับมา
-      body: IndexedStack(
-        index: _showAllView ? 1 : 0,
-        children: [
-          // ── index 0: calendar view ─────────────────────────────
-          FadeTransition(
-            opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
-            child: Column(
-              children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  child: _showMonthCalendar
-                      ? _buildMonthCalendar()
-                      : _buildWeekStrip(),
-                ),
-                _buildToggleArrow(),
-                _buildDayEventList(),
-                Expanded(child: _buildTimeline()),
-              ],
-            ),
-          ),
+      // desktop → ไม่มี appBar ตรงนี้ เพราะ TopNav อยู่ใน menu.dart แล้ว
+      // mobile/tablet → appBar เดิม
+      appBar: isDesktop ? null : _buildAppBar(),
+      body: isDesktop ? _buildDesktopBody() : _buildMobileBody(),
+    );
+  }
 
-          // ── index 1: all appointments view ────────────────────
-          _buildAllAppointmentsView(),
+  // ══════════════════════════════════════════════════════════════════
+  //  DESKTOP BODY: Row → LEFT panel | RIGHT timeline
+  // ══════════════════════════════════════════════════════════════════
+  Widget _buildDesktopBody() {
+    final hPad = RV.pagePadding(context);
+
+    return FadeTransition(
+      opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── LEFT: calendar panel ─────────────────────────────
+            SizedBox(
+              width: 500,
+              child: Column(
+                children: [
+                  _buildDesktopCalendarHeader(),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _showAllView
+                        ? _buildAllAppointmentsViewDesktop()
+                        : _buildDesktopLeftPanel(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 24),
+
+            // ── RIGHT: day events + timeline ──────────────────────
+            Expanded(
+              child: Column(
+                children: [
+                  // ── header bar (month label + actions) ──────────
+                  _buildDesktopRightHeader(),
+                  const SizedBox(height: 12),
+                  // ── timeline ─────────────────────────────────────
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _kBg,
+                          border: Border.all(color: _kBorder),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: _buildTimeline(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Desktop: header ซ้าย (month label + toggle all view) ──────────
+  Widget _buildDesktopCalendarHeader() {
+    final monthLabel =
+        '${kThaiMonthsShort[_focusedDay.month]} ${_focusedDay.year + 543}';
+
+    return Row(
+      children: [
+        Text(
+          monthLabel,
+          style: GoogleFonts.prompt(
+            color: _kText,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const Spacer(),
+        _iconBtn(
+          _showAllView
+              ? Icons.calendar_today_rounded
+              : Icons.format_list_bulleted_rounded,
+          () {
+            final next = !_showAllView;
+            setState(() => _showAllView = next);
+            storage.write(key: 'calendarShowAllView', value: next.toString());
+          },
+          active: _showAllView,
+        ),
+        const SizedBox(width: 8),
+        _iconBtn(Icons.today_rounded, () {
+          if (_showAllView) {
+            _scrollAllViewToToday();
+          } else {
+            setState(() {
+              _selectedDay = DateTime.now();
+              _focusedDay = DateTime.now();
+            });
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _scrollToCurrentHour());
+          }
+        }),
+      ],
+    );
+  }
+
+  // ── Desktop: month label + date บน right panel ────────────────────
+  Widget _buildDesktopRightHeader() {
+    final isToday = isSameDay(_selectedDay, DateTime.now());
+    final dayLabel =
+        'วัน${kThaiDaysFull[_selectedDay.weekday]} ${_selectedDay.day} '
+        '${kThaiMonthsFull[_selectedDay.month]} ${_selectedDay.year + 543}';
+
+    final events = _getEventsForDay(_selectedDay);
+
+    return Row(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              dayLabel,
+              style: GoogleFonts.prompt(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isToday ? _kPrimary : _kText,
+              ),
+            ),
+            if (events.isNotEmpty)
+              Text(
+                '${events.length} นัดหมาย',
+                style: GoogleFonts.prompt(fontSize: 12, color: _kSub),
+              ),
+          ],
+        ),
+        const Spacer(),
+        // week nav
+        _iconBtn(Icons.chevron_left_rounded, () {
+          setState(() {
+            _selectedDay = _selectedDay.subtract(const Duration(days: 1));
+            _focusedDay = _selectedDay;
+          });
+        }),
+        const SizedBox(width: 6),
+        _iconBtn(Icons.chevron_right_rounded, () {
+          setState(() {
+            _selectedDay = _selectedDay.add(const Duration(days: 1));
+            _focusedDay = _selectedDay;
+          });
+        }),
+      ],
+    );
+  }
+
+  // ── Desktop LEFT panel: week strip + month calendar ────────────────
+  Widget _buildDesktopLeftPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _kBg,
+        border: Border.all(color: _kBorder),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // month calendar full (desktop ไม่ต้องซ่อน/แสดง toggle)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: _buildMonthCalendar(),
+          ),
+          const Divider(height: 1, color: _kBorder),
+          // day event list ของวันที่เลือก
+          _buildDayEventListDesktop(),
         ],
       ),
     );
   }
 
-  // ─── AppBar ───────────────────────────────────────────────────────
+  // ── Desktop: upcoming events mini list ใต้ calendar ──────────────
+  // ── Desktop: Day event list แนวตั้ง ────────────────────────────────
+  Widget _buildDayEventListDesktop() {
+    final events = _getEventsForDay(_selectedDay);
+    if (events.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'นัดหมายวันนี้ (${events.length} รายการ)',
+            style: GoogleFonts.prompt(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _kSub,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // grid 2 col
+          for (int i = 0; i < events.length; i += 2) ...[
+            if (i > 0) const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: _buildDayEventCardDesktop(events[i] as Map)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: i + 1 < events.length
+                      ? _buildDayEventCardDesktop(events[i + 1] as Map)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayEventCardDesktop(Map ev) {
+    final startHour = (ev['startHour'] as int? ?? 9);
+    final color = _periodColor(startHour);
+    final label = _periodLabel(startHour);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AppointmentDetailsLawyer(model: ev)),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ev['title'] ?? '',
+                    style: GoogleFonts.prompt(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(label,
+                            style: GoogleFonts.prompt(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: color)),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          ev['appointmentTime'] ?? '',
+                          style: GoogleFonts.prompt(fontSize: 10, color: _kSub),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Desktop: All appointments view (ใน LEFT panel) ────────────────
+  Widget _buildAllAppointmentsViewDesktop() {
+    final sortedEntries = itemEvents.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final totalEvents = sortedEntries.fold(0, (sum, e) => sum + e.value.length);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _kBg,
+        border: Border.all(color: _kBorder),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          // summary bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_month_rounded,
+                    color: _kPrimary, size: 16),
+                const SizedBox(width: 6),
+                Text('นัดหมายทั้งหมด',
+                    style: GoogleFonts.prompt(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _kText)),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _kPrimary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('$totalEvents รายการ',
+                      style: GoogleFonts.prompt(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _kPrimary)),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: _kBorder),
+          Expanded(
+            child: sortedEntries.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_busy_rounded,
+                            size: 40, color: _kBorder),
+                        const SizedBox(height: 8),
+                        Text('ไม่มีนัดหมาย',
+                            style:
+                                GoogleFonts.prompt(color: _kSub, fontSize: 13)),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _allViewScroll,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                    itemCount: sortedEntries.length,
+                    itemBuilder: (_, i) {
+                      final date = sortedEntries[i].key;
+                      final events = sortedEntries[i].value;
+                      final isToday = isSameDay(date, DateTime.now());
+                      final dayName = kThaiDaysFull[date.weekday];
+                      final dateLabel =
+                          '${date.day} ${kThaiMonthsFull[date.month]}';
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12, bottom: 6),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isToday ? _kPrimary : _kSurface,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text('${date.day}',
+                                      style: GoogleFonts.prompt(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: isToday ? Colors.white : _kText,
+                                      )),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('วัน$dayName',
+                                          style: GoogleFonts.prompt(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  isToday ? _kPrimary : _kSub)),
+                                      Text(dateLabel,
+                                          style: GoogleFonts.prompt(
+                                              fontSize: 10, color: _kSub)),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: _kSurface,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('${events.length} นัด',
+                                      style: GoogleFonts.prompt(
+                                          fontSize: 10, color: _kSub)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...events.map((entry) {
+                            final ev = entry as Map;
+                            final startHour = (ev['startHour'] as int? ?? 9);
+                            final color = _periodColor(startHour);
+                            return GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AppointmentDetailsLawyer(model: ev),
+                                ),
+                              ),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.06),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: color.withOpacity(0.25)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 3,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(ev['title'] ?? '',
+                                              style: GoogleFonts.prompt(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _kText),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis),
+                                          Text(ev['appointmentTime'] ?? '',
+                                              style: GoogleFonts.prompt(
+                                                  fontSize: 10, color: _kSub)),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(Icons.chevron_right_rounded,
+                                        color: _kBorder, size: 16),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          if (i < sortedEntries.length - 1)
+                            const Divider(height: 12, color: _kBorder),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  //  MOBILE BODY: เดิมทุกอย่าง ไม่เปลี่ยน
+  // ══════════════════════════════════════════════════════════════════
+  Widget _buildMobileBody() {
+    return IndexedStack(
+      index: _showAllView ? 1 : 0,
+      children: [
+        FadeTransition(
+          opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
+          child: Column(
+            children: [
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _showMonthCalendar
+                    ? _buildMonthCalendar()
+                    : _buildWeekStrip(),
+              ),
+              _buildToggleArrow(),
+              _buildDayEventList(),
+              Expanded(child: _buildTimeline()),
+            ],
+          ),
+        ),
+        _buildAllAppointmentsView(),
+      ],
+    );
+  }
+
+  // ─── AppBar (mobile only) ─────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
-    final thaiMonths = [
-      '',
-      'ม.ค.',
-      'ก.พ.',
-      'มี.ค.',
-      'เม.ย.',
-      'พ.ค.',
-      'มิ.ย.',
-      'ก.ค.',
-      'ส.ค.',
-      'ก.ย.',
-      'ต.ค.',
-      'พ.ย.',
-      'ธ.ค.'
-    ];
     final monthLabel =
-        '${thaiMonths[_focusedDay.month]} ${_focusedDay.year + 543}';
+        '${kThaiMonthsShort[_focusedDay.month]} ${_focusedDay.year + 543}';
 
     return AppBar(
       backgroundColor: _kBg,
@@ -388,19 +785,11 @@ class _CalendarPageState extends State<CalendarPage>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            // GestureDetector(
-            //   onTap: () => Navigator
-            //   child: const Icon(Icons.arrow_back_ios_new_rounded,
-            //       color: _kText, size: 20),
-            // ),
             const SizedBox(width: 12),
             Text(
               monthLabel,
               style: GoogleFonts.prompt(
-                color: _kText,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
+                  color: _kText, fontSize: 17, fontWeight: FontWeight.w600),
             ),
             const Spacer(),
             _iconBtn(
@@ -450,7 +839,7 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── Week Strip ───────────────────────────────────────────────────
+  // ─── Week Strip (mobile) ──────────────────────────────────────────
   Widget _buildWeekStrip() {
     final startOfWeek =
         _focusedDay.subtract(Duration(days: _focusedDay.weekday - 1));
@@ -478,14 +867,11 @@ class _CalendarPageState extends State<CalendarPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    thaiDays[i],
-                    style: GoogleFonts.prompt(
-                      fontSize: 11,
-                      color: isToday ? _kPrimary : _kSub,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text(thaiDays[i],
+                      style: GoogleFonts.prompt(
+                          fontSize: 11,
+                          color: isToday ? _kPrimary : _kSub,
+                          fontWeight: FontWeight.w500)),
                   const SizedBox(height: 4),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -499,18 +885,16 @@ class _CalendarPageState extends State<CalendarPage>
                           : null,
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      '${d.day}',
-                      style: GoogleFonts.prompt(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : isToday
-                                ? _kPrimary
-                                : _kText,
-                      ),
-                    ),
+                    child: Text('${d.day}',
+                        style: GoogleFonts.prompt(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : isToday
+                                  ? _kPrimary
+                                  : _kText,
+                        )),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -539,7 +923,7 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── Month Calendar (TableCalendar full) ──────────────────────────
+  // ─── Month Calendar ───────────────────────────────────────────────
   Widget _buildMonthCalendar() {
     return Container(
       color: _kBg,
@@ -557,7 +941,7 @@ class _CalendarPageState extends State<CalendarPage>
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
-            _focusedDay = selectedDay; // sync ให้ตรงกันเสมอ
+            _focusedDay = selectedDay;
           });
         },
         onPageChanged: (focusedDay) {
@@ -565,21 +949,12 @@ class _CalendarPageState extends State<CalendarPage>
         },
         headerStyle: HeaderStyle(
           formatButtonVisible: false,
-          leftChevronIcon: const Icon(
-            Icons.arrow_back_ios_rounded,
-            size: 14,
-            color: _kPrimary,
-          ),
-          rightChevronIcon: const Icon(
-            Icons.arrow_forward_ios_rounded,
-            size: 14,
-            color: _kPrimary,
-          ),
+          leftChevronIcon: const Icon(Icons.arrow_back_ios_rounded,
+              size: 14, color: _kPrimary),
+          rightChevronIcon: const Icon(Icons.arrow_forward_ios_rounded,
+              size: 14, color: _kPrimary),
           titleTextStyle: GoogleFonts.prompt(
-            color: _kText,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+              color: _kText, fontSize: 14, fontWeight: FontWeight.w600),
           titleCentered: true,
           headerPadding:
               const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -594,10 +969,8 @@ class _CalendarPageState extends State<CalendarPage>
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
           cellMargin: const EdgeInsets.all(4),
-          selectedDecoration: const BoxDecoration(
-            color: _kPrimary,
-            shape: BoxShape.circle,
-          ),
+          selectedDecoration:
+              const BoxDecoration(color: _kPrimary, shape: BoxShape.circle),
           selectedTextStyle: GoogleFonts.prompt(
               color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
           todayDecoration: BoxDecoration(
@@ -608,65 +981,47 @@ class _CalendarPageState extends State<CalendarPage>
           todayTextStyle: GoogleFonts.prompt(color: _kPrimary, fontSize: 13),
           defaultTextStyle: GoogleFonts.prompt(color: _kText, fontSize: 13),
           weekendTextStyle: GoogleFonts.prompt(color: _kText, fontSize: 13),
-          markerDecoration: const BoxDecoration(
-            color: _kPrimary,
-            shape: BoxShape.circle,
-          ),
+          markerDecoration:
+              const BoxDecoration(color: _kPrimary, shape: BoxShape.circle),
           markersMaxCount: 3,
           markerSize: 5,
           markerMargin: const EdgeInsets.symmetric(horizontal: 1),
         ),
-        // ─── custom builders ──────────────────────────────────────
         calendarBuilders: CalendarBuilders(
-          selectedBuilder: (context, date, _) {
-            return Container(
-              margin: const EdgeInsets.all(5),
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: _kPrimary,
-              ),
-              child: Text(
-                '${date.day}',
+          selectedBuilder: (context, date, _) => Container(
+            margin: const EdgeInsets.all(5),
+            alignment: Alignment.center,
+            decoration:
+                const BoxDecoration(shape: BoxShape.circle, color: _kPrimary),
+            child: Text('${date.day}',
                 style: GoogleFonts.prompt(
                     fontSize: 14,
                     color: Colors.white,
-                    fontWeight: FontWeight.w600),
-              ),
-            );
-          },
-          todayBuilder: (context, date, _) {
-            return Container(
-              margin: const EdgeInsets.all(5),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: _kPrimary, width: 1.5),
-              ),
-              child: Text(
-                '${date.day}',
+                    fontWeight: FontWeight.w600)),
+          ),
+          todayBuilder: (context, date, _) => Container(
+            margin: const EdgeInsets.all(5),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _kPrimary, width: 1.5),
+            ),
+            child: Text('${date.day}',
                 style: GoogleFonts.prompt(
                     fontSize: 14,
                     color: _kPrimary,
-                    fontWeight: FontWeight.w500),
-              ),
-            );
-          },
-          defaultBuilder: (context, date, _) {
-            return Container(
-              margin: const EdgeInsets.all(5),
-              alignment: Alignment.center,
-              child: Text(
-                '${date.day}',
-                style: GoogleFonts.prompt(fontSize: 14, color: _kText),
-              ),
-            );
-          },
+                    fontWeight: FontWeight.w500)),
+          ),
+          defaultBuilder: (context, date, _) => Container(
+            margin: const EdgeInsets.all(5),
+            alignment: Alignment.center,
+            child: Text('${date.day}',
+                style: GoogleFonts.prompt(fontSize: 14, color: _kText)),
+          ),
           markerBuilder: (context, day, events) {
             if (events.isEmpty) return const SizedBox.shrink();
             final isSelected = isSameDay(day, _selectedDay);
-            if (isSelected)
-              return const SizedBox.shrink(); // ซ่อนเมื่อ selected
+            if (isSelected) return const SizedBox.shrink();
             return Positioned(
               bottom: 4,
               child: Row(
@@ -678,9 +1033,7 @@ class _CalendarPageState extends State<CalendarPage>
                           height: 5,
                           margin: const EdgeInsets.symmetric(horizontal: 1),
                           decoration: const BoxDecoration(
-                            color: _kPrimary,
-                            shape: BoxShape.circle,
-                          ),
+                              color: _kPrimary, shape: BoxShape.circle),
                         ))
                     .toList(),
               ),
@@ -691,8 +1044,7 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── Toggle Arrow ─────────────────────────────────────────────────
-  //  ลูกศร ชี้ลง = week strip (default), ชี้ขึ้น = month calendar
+  // ─── Toggle Arrow (mobile only) ───────────────────────────────────
   Widget _buildToggleArrow() {
     return GestureDetector(
       onTap: _toggleCalendarPanel,
@@ -705,7 +1057,6 @@ class _CalendarPageState extends State<CalendarPage>
         child: AnimatedRotation(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          // ชี้ลง (0) = กดเพื่อเปิด month | ชี้ขึ้น (0.5 turn = 180°) = กดเพื่อปิด
           turns: _showMonthCalendar ? 0.5 : 0.0,
           child: Container(
             width: 40,
@@ -715,18 +1066,15 @@ class _CalendarPageState extends State<CalendarPage>
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: _kBorder, width: 1),
             ),
-            child: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: _kSub,
-            ),
+            child: const Icon(Icons.keyboard_arrow_down_rounded,
+                size: 18, color: _kSub),
           ),
         ),
       ),
     );
   }
 
-  // ─── Day Event List (shown above timeline) ────────────────────────
+  // ─── Day Event List (mobile horizontal scroll — เดิม) ─────────────
   Widget _buildDayEventList() {
     final events = _getEventsForDay(_selectedDay);
     if (events.isEmpty) return const SizedBox.shrink();
@@ -742,10 +1090,7 @@ class _CalendarPageState extends State<CalendarPage>
             child: Text(
               'นัดหมายวันนี้ (${events.length} รายการ)',
               style: GoogleFonts.prompt(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: _kSub,
-              ),
+                  fontSize: 11, fontWeight: FontWeight.w600, color: _kSub),
             ),
           ),
           Align(
@@ -783,60 +1128,45 @@ class _CalendarPageState extends State<CalendarPage>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // ── period indicator ──────────────────
                             Container(
                               width: 4,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: color,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
+                                  color: color,
+                                  borderRadius: BorderRadius.circular(4)),
                             ),
                             const SizedBox(width: 10),
-                            // ── text ─────────────────────────────
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  ev['title'] ?? '',
-                                  style: GoogleFonts.prompt(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: color,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                Text(ev['title'] ?? '',
+                                    style: GoogleFonts.prompt(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: color),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
                                 const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: color.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        label,
+                                Row(children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: color.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(label,
                                         style: GoogleFonts.prompt(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w600,
-                                          color: color,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      ev['appointmentTime'] ?? '',
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                            color: color)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(ev['appointmentTime'] ?? '',
                                       style: GoogleFonts.prompt(
-                                        fontSize: 10,
-                                        color: _kSub,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                          fontSize: 10, color: _kSub)),
+                                ]),
                               ],
                             ),
                           ],
@@ -853,7 +1183,7 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── Timeline ─────────────────────────────────────────────────────
+  // ─── Timeline (shared mobile + desktop) ───────────────────────────
   Widget _buildTimeline() {
     final events = _getEventsForDay(_selectedDay);
     final now = DateTime.now();
@@ -896,12 +1226,10 @@ class _CalendarPageState extends State<CalendarPage>
                 width: _timeAxisWidth,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8, right: 6),
-                  child: Text(
-                    label,
-                    style: GoogleFonts.prompt(
-                        fontSize: 10, color: _kSub, height: 1),
-                    textAlign: TextAlign.right,
-                  ),
+                  child: Text(label,
+                      style: GoogleFonts.prompt(
+                          fontSize: 10, color: _kSub, height: 1),
+                      textAlign: TextAlign.right),
                 ),
               ),
               Expanded(
@@ -921,7 +1249,6 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   Widget _buildNowLine(DateTime now) {
-    // offset relative to _startHour
     if (now.hour < _startHour || now.hour > _endHour)
       return const SizedBox.shrink();
     final topOffset =
@@ -934,16 +1261,11 @@ class _CalendarPageState extends State<CalendarPage>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF4444),
-              shape: BoxShape.circle,
-            ),
-          ),
-          Expanded(
-            child: Container(height: 2, color: const Color(0xFFFF4444)),
-          ),
+              width: 12,
+              height: 12,
+              decoration: const BoxDecoration(
+                  color: Color(0xFFFF4444), shape: BoxShape.circle)),
+          Expanded(child: Container(height: 2, color: const Color(0xFFFF4444))),
         ],
       ),
     );
@@ -953,15 +1275,10 @@ class _CalendarPageState extends State<CalendarPage>
     final startHour = (ev['startHour'] as int? ?? 9);
     final startMin = (ev['startMin'] as int? ?? 0);
     final durationMin = (ev['durationMin'] as int? ?? 60);
-
-    // ── สีน้ำเงินเดียวสำหรับ timeline ──────────────────────────────
     const color = _kTimelineColor;
-
-    // offset relative to _startHour so events align with the grid
     final topOffset =
         (startHour - _startHour) * _hourHeight + startMin * _hourHeight / 60;
     final blockHeight = (durationMin * _hourHeight / 60).clamp(28.0, 9999.0);
-
     final endTotalMin = startHour * 60 + startMin + durationMin;
     final timeLabel =
         '${startHour.toString().padLeft(2, '0')}:${startMin.toString().padLeft(2, '0')} – '
@@ -985,104 +1302,57 @@ class _CalendarPageState extends State<CalendarPage>
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border(
-                left: BorderSide(color: color, width: 3),
-              ),
+              border: const Border(left: BorderSide(color: color, width: 3)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  ev['title'] ?? '',
-                  style: GoogleFonts.prompt(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _kText,
-                    height: 1.2,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(ev['title'] ?? '',
+                    style: GoogleFonts.prompt(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _kText,
+                        height: 1.2),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
                 if (blockHeight > 28) ...[
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time_rounded, size: 10, color: color),
-                      const SizedBox(width: 3),
-                      Text(
-                        timeLabel,
+                  Row(children: [
+                    Icon(Icons.access_time_rounded, size: 10, color: color),
+                    const SizedBox(width: 3),
+                    Text(timeLabel,
                         style: GoogleFonts.prompt(
-                          fontSize: 10,
-                          color: color,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
+                            fontSize: 10, color: color, height: 1.2)),
+                  ]),
                 ],
                 if (ev['clientName'] != null) ...[
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.person_outline_rounded,
-                          size: 10, color: _kSub),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          ev['clientName'] ?? '',
+                  Row(children: [
+                    Icon(Icons.person_outline_rounded, size: 10, color: _kSub),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(ev['clientName'] ?? '',
                           style: GoogleFonts.prompt(
-                            fontSize: 10,
-                            color: _kSub,
-                            height: 1.2,
-                          ),
+                              fontSize: 10, color: _kSub, height: 1.2),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ]),
                 ],
               ],
             ),
           ),
-        ), // ClipRRect
+        ),
       ),
     );
   }
 
-  // ─── All Appointments Full View ──────────────────────────────────
+  // ─── All Appointments Full View (mobile) ──────────────────────────
   Widget _buildAllAppointmentsView() {
     final sortedEntries = itemEvents.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-
-    final thaiMonths = [
-      '',
-      'มกราคม',
-      'กุมภาพันธ์',
-      'มีนาคม',
-      'เมษายน',
-      'พฤษภาคม',
-      'มิถุนายน',
-      'กรกฎาคม',
-      'สิงหาคม',
-      'กันยายน',
-      'ตุลาคม',
-      'พฤศจิกายน',
-      'ธันวาคม',
-    ];
-    final thaiDaysFull = [
-      '',
-      'จันทร์',
-      'อังคาร',
-      'พุธ',
-      'พฤหัสบดี',
-      'ศุกร์',
-      'เสาร์',
-      'อาทิตย์',
-    ];
-
     final totalEvents = sortedEntries.fold(0, (sum, e) => sum + e.value.length);
 
     return Container(
@@ -1090,7 +1360,6 @@ class _CalendarPageState extends State<CalendarPage>
       color: _kBg,
       child: Column(
         children: [
-          // ── summary bar ─────────────────────────────────────────
           Container(
             color: _kSurface,
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -1099,14 +1368,11 @@ class _CalendarPageState extends State<CalendarPage>
                 const Icon(Icons.calendar_month_rounded,
                     color: _kPrimary, size: 18),
                 const SizedBox(width: 8),
-                Text(
-                  'นัดหมายทั้งหมด',
-                  style: GoogleFonts.prompt(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _kText,
-                  ),
-                ),
+                Text('นัดหมายทั้งหมด',
+                    style: GoogleFonts.prompt(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _kText)),
                 const Spacer(),
                 Container(
                   padding:
@@ -1115,20 +1381,16 @@ class _CalendarPageState extends State<CalendarPage>
                     color: _kPrimary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    '$totalEvents รายการ',
-                    style: GoogleFonts.prompt(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _kPrimary,
-                    ),
-                  ),
+                  child: Text('$totalEvents รายการ',
+                      style: GoogleFonts.prompt(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _kPrimary)),
                 ),
               ],
             ),
           ),
           const Divider(height: 1, color: _kBorder),
-          // ── list ────────────────────────────────────────────────
           Expanded(
             child: sortedEntries.isEmpty
                 ? Center(
@@ -1138,10 +1400,9 @@ class _CalendarPageState extends State<CalendarPage>
                         Icon(Icons.event_busy_rounded,
                             size: 52, color: _kBorder),
                         const SizedBox(height: 12),
-                        Text(
-                          'ไม่มีนัดหมาย',
-                          style: GoogleFonts.prompt(color: _kSub, fontSize: 14),
-                        ),
+                        Text('ไม่มีนัดหมาย',
+                            style:
+                                GoogleFonts.prompt(color: _kSub, fontSize: 14)),
                       ],
                     ),
                   )
@@ -1153,15 +1414,14 @@ class _CalendarPageState extends State<CalendarPage>
                     itemBuilder: (_, i) {
                       final date = sortedEntries[i].key;
                       final events = sortedEntries[i].value;
-                      final dayName = thaiDaysFull[date.weekday];
+                      final dayName = kThaiDaysFull[date.weekday];
                       final dateLabel =
-                          '${date.day} ${thaiMonths[date.month]} ${date.year + 543}';
+                          '${date.day} ${kThaiMonthsFull[date.month]} ${date.year + 543}';
                       final isToday = isSameDay(date, DateTime.now());
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── date header ──────────────────────
                           Padding(
                             padding: const EdgeInsets.only(top: 16, bottom: 8),
                             child: Row(
@@ -1174,34 +1434,26 @@ class _CalendarPageState extends State<CalendarPage>
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    '${date.day}',
-                                    style: GoogleFonts.prompt(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: isToday ? Colors.white : _kText,
-                                    ),
-                                  ),
+                                  child: Text('${date.day}',
+                                      style: GoogleFonts.prompt(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: isToday ? Colors.white : _kText,
+                                      )),
                                 ),
                                 const SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'วัน$dayName',
-                                      style: GoogleFonts.prompt(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isToday ? _kPrimary : _kSub,
-                                      ),
-                                    ),
-                                    Text(
-                                      dateLabel,
-                                      style: GoogleFonts.prompt(
-                                        fontSize: 11,
-                                        color: _kSub,
-                                      ),
-                                    ),
+                                    Text('วัน$dayName',
+                                        style: GoogleFonts.prompt(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color:
+                                                isToday ? _kPrimary : _kSub)),
+                                    Text(dateLabel,
+                                        style: GoogleFonts.prompt(
+                                            fontSize: 11, color: _kSub)),
                                   ],
                                 ),
                                 const Spacer(),
@@ -1212,33 +1464,25 @@ class _CalendarPageState extends State<CalendarPage>
                                     color: _kSurface,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Text(
-                                    '${events.length} นัด',
-                                    style: GoogleFonts.prompt(
-                                      fontSize: 11,
-                                      color: _kSub,
-                                    ),
-                                  ),
+                                  child: Text('${events.length} นัด',
+                                      style: GoogleFonts.prompt(
+                                          fontSize: 11, color: _kSub)),
                                 ),
                               ],
                             ),
                           ),
-                          // ── event cards ──────────────────────
                           ...events.map((entry) {
                             final ev = entry as Map;
                             final startHour = (ev['startHour'] as int? ?? 9);
                             final color = _periodColor(startHour);
-
                             return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        AppointmentDetailsLawyer(model: ev),
-                                  ),
-                                );
-                              },
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AppointmentDetailsLawyer(model: ev),
+                                ),
+                              ),
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(12),
@@ -1246,9 +1490,7 @@ class _CalendarPageState extends State<CalendarPage>
                                   color: color.withOpacity(0.06),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: color.withOpacity(0.25),
-                                    width: 1,
-                                  ),
+                                      color: color.withOpacity(0.25), width: 1),
                                 ),
                                 child: Row(
                                   children: [
@@ -1256,9 +1498,9 @@ class _CalendarPageState extends State<CalendarPage>
                                       width: 4,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: color,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
+                                          color: color,
+                                          borderRadius:
+                                              BorderRadius.circular(4)),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -1266,47 +1508,37 @@ class _CalendarPageState extends State<CalendarPage>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            ev['title'] ?? '',
-                                            style: GoogleFonts.prompt(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: _kText,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                          Text(ev['title'] ?? '',
+                                              style: GoogleFonts.prompt(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _kText),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis),
                                           const SizedBox(height: 3),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.access_time_rounded,
-                                                  size: 12, color: _kSub),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                ev['appointmentTime'] ?? '',
+                                          Row(children: [
+                                            Icon(Icons.access_time_rounded,
+                                                size: 12, color: _kSub),
+                                            const SizedBox(width: 4),
+                                            Text(ev['appointmentTime'] ?? '',
                                                 style: GoogleFonts.prompt(
-                                                  fontSize: 11,
-                                                  color: _kSub,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Icon(Icons.person_outline_rounded,
-                                                  size: 12, color: _kSub),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
+                                                    fontSize: 11,
+                                                    color: _kSub)),
+                                            const SizedBox(width: 8),
+                                            Icon(Icons.person_outline_rounded,
+                                                size: 12, color: _kSub),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
                                                   ev['clientName'] ?? '',
                                                   style: GoogleFonts.prompt(
-                                                    fontSize: 11,
-                                                    color: _kSub,
-                                                  ),
+                                                      fontSize: 11,
+                                                      color: _kSub),
                                                   maxLines: 1,
                                                   overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                                      TextOverflow.ellipsis),
+                                            ),
+                                          ]),
                                         ],
                                       ),
                                     ),

@@ -30,6 +30,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/lawyer/appointment_store.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -316,52 +317,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     },
   ];
 
-  List<dynamic> appointmentList = [
-    {
-      "code": "0",
-      "clientName": "อนงค์ ดำเนิน",
-      "caseType": "คดีมรดกทุกประเภท",
-      "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "28/04/2026",
-      "appointmentTime": "11.20 - 13.00",
-      "title": "ขอฟ้องร้องมรดกพี่น้อง",
-      "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1",
-    },
-    {
-      "code": "1",
-      "clientName": "อนงค์ ดำเนิน",
-      "caseType": "คดีมรดกทุกประเภท",
-      "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "29/04/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
-      "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1",
-    },
-    {
-      "code": "2",
-      "clientName": "อนงค์ ดำเนิน",
-      "caseType": "คดีมรดกทุกประเภท",
-      "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "29/04/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
-      "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1",
-    },
-    {
-      "code": "3",
-      "clientName": "อนงค์ ดำเนิน",
-      "caseType": "คดีมรดกทุกประเภท",
-      "subCaseType": "ฟ้องร้องมรดก",
-      "appointmentDate": "29/04/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "title": "ขอฟ้องร้องมรดกผู้ปกครอง",
-      "details": "ต้องการฟ้องร้องพี่น้องที่โกงเงินมรดก",
-      "paymentStatus": "1",
-    },
-  ];
+  // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
+  List<dynamic> get appointmentList => AppointmentStore.instance.list;
 
   List<dynamic> caseList = [
     {
@@ -442,49 +399,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String name = "";
   String typeLogin = "";
 
-// ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง
-  bool _hasConflictingAppointment() {
-    final now = DateTime.now();
-
-    for (var appt in appointmentList) {
-      String dateStr = appt['appointmentDate'] ?? '';
-      String timeStr = appt['appointmentTime'] ?? '';
-
-      if (dateStr.isEmpty || timeStr.isEmpty) continue;
-
-      List<String> dateParts = dateStr.split('/');
-      if (dateParts.length == 3) {
-        int day = int.parse(dateParts[0]);
-        int month = int.parse(dateParts[1]);
-        int year = int.parse(dateParts[2]);
-
-        // เช็คว่าเป็นนัดของวันนี้หรือไม่
-        if (now.year == year && now.month == month && now.day == day) {
-          List<String> timeParts = timeStr.split(' - ');
-          if (timeParts.length == 2) {
-            // ดึงเวลาเริ่มและเวลาจบของนัดหมาย
-            List<String> startParts = timeParts[0].split('.');
-            List<String> endParts = timeParts[1].split('.');
-
-            DateTime startTime = DateTime(year, month, day,
-                int.parse(startParts[0]), int.parse(startParts[1]));
-            DateTime endTime = DateTime(year, month, day,
-                int.parse(endParts[0]), int.parse(endParts[1]));
-
-            // เช็คว่านัดหมายกำลังจะเริ่มในอีก 60 นาที หรือกำลังดำเนินการอยู่ (ยังไม่หมดเวลา)
-            final minutesToStart = startTime.difference(now).inMinutes;
-            final minutesToEnd = endTime.difference(now).inMinutes;
-
-            // เงื่อนไข: เริ่มภายใน 60 นาที (<= 60) และยังไม่ถึงเวลาสิ้นสุดนัดหมาย (> 0)
-            if (minutesToStart <= 60 && minutesToEnd > 0) {
-              return true; // พบว่ามีคิวชน
-            }
-          }
-        }
-      }
-    }
-    return false; // ไม่มีคิวชน
-  }
+// ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง — delegate ไป AppointmentStore
+  bool _hasConflictingAppointment() =>
+      AppointmentStore.instance.hasConflictingAppointment();
 
 // ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
   void _startUrgentCaseTimer() {

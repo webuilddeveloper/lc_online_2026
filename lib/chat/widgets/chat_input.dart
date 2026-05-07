@@ -43,19 +43,7 @@ class _ChatInputState extends State<ChatInput> {
       return KeyEventResult.ignored;
     if (HardwareKeyboard.instance.isShiftPressed) return KeyEventResult.ignored;
 
-    final text = widget.controller.text;
-    final lineCount = '\n'.allMatches(text).length;
-
-    if (text.trim().isEmpty) {
-      if (lineCount >= 10) {
-        widget.controller.value = TextEditingValue(
-          text: '\n' * 10,
-          selection: const TextSelection.collapsed(offset: 10),
-        );
-        return KeyEventResult.handled;
-      }
-      return KeyEventResult.ignored;
-    }
+    if (widget.controller.text.trim().isEmpty) return KeyEventResult.ignored;
 
     _handleSend();
     return KeyEventResult.handled;
@@ -79,54 +67,58 @@ class _ChatInputState extends State<ChatInput> {
           right: 15,
           bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 15 : 25,
         ),
-        child: Focus(
-          onKeyEvent: _onKey,
-          child: TextField(
-            focusNode: _focusNode,
-            controller: widget.controller,
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.normal,
-              fontSize: 15,
-            ),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
-              hintText: 'พิมพ์ข้อความ...',
-              hintStyle: const TextStyle(color: Color(0xFF8593A8)),
-              suffixIcon: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 13, 15, 13),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset('assets/icons/input-gallery.png',
-                        width: 26, height: 26, fit: BoxFit.contain),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: widget.controller.text.trim().isNotEmpty
-                          ? _handleSend
-                          : null,
-                      child: Icon(Icons.send,
-                          size: 26,
-                          color: widget.controller.text.trim().isNotEmpty
-                              ? const Color(0xFF0262EC)
-                              : const Color(0xFFBDBDBD)),
-                    ),
-                  ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 9 * 24.0 + 20),
+          child: Focus(
+            onKeyEvent: _onKey,
+            child: TextField(
+              focusNode: _focusNode,
+              controller: widget.controller,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.normal,
+                fontSize: 15,
+              ),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
+                hintText: 'พิมพ์ข้อความ...',
+                hintStyle: const TextStyle(color: Color(0xFF8593A8)),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 13, 15, 13),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset('assets/icons/input-gallery.png',
+                          width: 26, height: 26, fit: BoxFit.contain),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: widget.controller.text.trim().isNotEmpty
+                            ? _handleSend
+                            : null,
+                        child: Icon(Icons.send,
+                            size: 26,
+                            color: widget.controller.text.trim().isNotEmpty
+                                ? const Color(0xFF0262EC)
+                                : const Color(0xFFBDBDBD)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Color(0xFF0262EC)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Color(0xFF0262EC)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(color: Color(0xFF0262EC)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(color: Color(0xFF0262EC)),
+                ),
               ),
             ),
           ),

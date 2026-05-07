@@ -8,19 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// ══════════════════════════════════════════════════════════
-//  ChatPageUser — หน้าแชทฝั่ง User
-//  - แชทกับทนาย
-//  - กดปุ่ม video call เพื่อเริ่ม HMS
-//  - กดปุ่มจบการปรึกษา → ไป ConsultStatusPage (rating)
-// ══════════════════════════════════════════════════════════
-
 class ChatPageUser extends StatefulWidget {
-  /// model ของทนาย ที่ user กำลังแชทด้วย
-  /// ต้องการ: name, imageUrl, active, caseSuccess, title/skills, scroll/rating
   final Map<String, dynamic> model;
+  final bool embeddedMode; // ← ใหม่: true = ซ่อน AppBar (desktop panel)
 
-  const ChatPageUser({super.key, required this.model});
+  const ChatPageUser({
+    super.key,
+    required this.model,
+    this.embeddedMode = false,
+  });
 
   @override
   State<ChatPageUser> createState() => _ChatPageUserState();
@@ -31,16 +27,10 @@ class _ChatPageUserState extends State<ChatPageUser> {
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
 
-  // ── ส่งข้อความ ────────────────────────────────────────
   void _sendMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
-
-    setState(() {
-      _messages.add(_ChatMessage(text: text, isMe: true));
-    });
-
-    // scroll ลงล่าง
+    setState(() => _messages.add(_ChatMessage(text: text, isMe: true)));
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -50,18 +40,13 @@ class _ChatPageUserState extends State<ChatPageUser> {
         );
       }
     });
-
-    // TODO: ส่งจริงผ่าน Firestore
-    // mock reply ชั่วคราว
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMessage(text: 'รับทราบครับ 👍', isMe: false));
-      });
+      setState(() =>
+          _messages.add(_ChatMessage(text: 'รับทราบครับ 👍', isMe: false)));
     });
   }
 
-  // ── จบการปรึกษา ────────────────────────────────────────
   void _endConsultation() {
     DialogService.showConfirm(
       context,
@@ -79,7 +64,6 @@ class _ChatPageUserState extends State<ChatPageUser> {
           'rating': widget.model['rating'] ?? widget.model['scroll'] ?? 0,
           'imageUrl': widget.model['imageUrl'] ?? '',
         };
-
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -96,7 +80,6 @@ class _ChatPageUserState extends State<ChatPageUser> {
     );
   }
 
-  // ── Video Call ─────────────────────────────────────────
   void _showReminderBeforeJoin() {
     DialogService.showConfirm(
       context,
@@ -106,10 +89,8 @@ class _ChatPageUserState extends State<ChatPageUser> {
         if (!Platform.isIOS) {
           await Permission.camera.request();
           await Permission.microphone.request();
-
           final camDenied = await Permission.camera.isPermanentlyDenied;
           final micDenied = await Permission.microphone.isPermanentlyDenied;
-
           if (camDenied || micDenied) {
             if (!mounted) return;
             DialogService.showConfirm(
@@ -122,7 +103,6 @@ class _ChatPageUserState extends State<ChatPageUser> {
             return;
           }
         }
-
         if (!mounted) return;
         final navigator = Navigator.of(context);
         Navigator.push(
@@ -134,8 +114,7 @@ class _ChatPageUserState extends State<ChatPageUser> {
                 Future.delayed(const Duration(milliseconds: 300), () {
                   navigator.pushAndRemoveUntil(
                     MaterialPageRoute(
-                      builder: (_) => ConsultStatusPage(currentStep: 4),
-                    ),
+                        builder: (_) => ConsultStatusPage(currentStep: 4)),
                     (route) => route.isFirst,
                   );
                 });
@@ -159,44 +138,53 @@ class _ChatPageUserState extends State<ChatPageUser> {
     final model = widget.model;
     final isActive = model['active'] as bool? ?? true;
     final caseSuccess = model['caseSuccess'] as bool? ?? false;
-    final imageUrl = (model['imageUrl'] as String? ?? '');
+    final imageUrl = model['imageUrl'] as String? ?? '';
+
+    // ── AppBar: ซ่อนเมื่อ embeddedMode (desktop panel มี header ของตัวเอง) ──
+    final chatAppBar = widget.embeddedMode
+        ? null
+        : appBarChat(
+            onBack: () => Navigator.pop(context),
+            avatarWidget: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: Image.asset(
+                imageUrl.isNotEmpty ? imageUrl : 'assets/icons/profile.png',
+                height: 44,
+                width: 44,
+                fit: BoxFit.cover,
+              ),
+            ),
+            name: model['name'] ?? '',
+            statusText:
+                caseSuccess ? null : (isActive ? 'Active Now' : 'Not Active'),
+            actions: !caseSuccess
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _iconBtn(
+                          icon: Icons.video_call_outlined,
+                          onTap: _showReminderBeforeJoin),
+                      const SizedBox(width: 8),
+                      _iconBtn(
+                        icon: Icons.task_alt_rounded,
+                        color: const Color(0xFF34C759),
+                        bgColor: const Color(0xFFF0FFF4),
+                        borderColor: const Color(0xFF34C759),
+                        onTap: _endConsultation,
+                      ),
+                    ],
+                  )
+                : null,
+          );
 
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
-      appBar: appBarChat(
-        onBack: () => Navigator.pop(context),
-        avatarWidget: ClipRRect(
-          borderRadius: BorderRadius.circular(100),
-          child: Image.asset(
-            imageUrl.isNotEmpty ? imageUrl : 'assets/icons/profile.png',
-            height: 44,
-            width: 44,
-            fit: BoxFit.cover,
-          ),
-        ),
-        name: model['name'] ?? '',
-        statusText:
-            caseSuccess ? null : (isActive ? 'Active Now' : 'Not Active'),
-        actions: !caseSuccess
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _iconBtn(
-                      icon: Icons.video_call_outlined,
-                      onTap: _showReminderBeforeJoin),
-                  const SizedBox(width: 8),
-                  _iconBtn(
-                      icon: Icons.task_alt_rounded,
-                      color: const Color(0xFF34C759),
-                      bgColor: const Color(0xFFF0FFF4),
-                      borderColor: const Color(0xFF34C759),
-                      onTap: _endConsultation),
-                ],
-              )
-            : null,
-      ),
+      appBar: chatAppBar as PreferredSizeWidget?,
       body: Column(
         children: [
+          // ── Desktop embedded header (แทน AppBar) ─────────────
+          if (widget.embeddedMode)
+            _buildEmbeddedHeader(model, isActive, caseSuccess, imageUrl),
           const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
@@ -213,13 +201,67 @@ class _ChatPageUserState extends State<ChatPageUser> {
           ),
           caseSuccess
               ? _buildEndedBanner()
-              : ChatInput(
-                  controller: _chatController,
-                  onSend: _sendMessage,
-                ),
+              : ChatInput(controller: _chatController, onSend: _sendMessage),
         ],
       ),
-      // bottomSheet:
+    );
+  }
+
+  // ── Header สำหรับ desktop panel (แทน AppBar) ──────────────
+  Widget _buildEmbeddedHeader(Map<String, dynamic> model, bool isActive,
+      bool caseSuccess, String imageUrl) {
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE4E8EF))),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: Image.asset(
+              imageUrl.isNotEmpty ? imageUrl : 'assets/icons/profile.png',
+              height: 44,
+              width: 44,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(model['name'] ?? '',
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                if (!caseSuccess)
+                  Text(isActive ? 'Active Now' : 'Not Active',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF8593A8))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (!caseSuccess) ...[
+            _iconBtn(
+                icon: Icons.video_call_outlined,
+                onTap: _showReminderBeforeJoin),
+            const SizedBox(width: 8),
+            _iconBtn(
+              icon: Icons.task_alt_rounded,
+              color: const Color(0xFF34C759),
+              bgColor: const Color(0xFFF0FFF4),
+              borderColor: const Color(0xFF34C759),
+              onTap: _endConsultation,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -250,43 +292,30 @@ class _ChatPageUserState extends State<ChatPageUser> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: 12,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
-      ),
+          top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_outline_rounded,
-                    size: 16, color: Color(0xFF8593A8)),
-                SizedBox(width: 6),
-                Text(
-                  'จบการสนทนาแล้ว',
-                  style: TextStyle(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(12)),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline_rounded,
+                size: 16, color: Color(0xFF8593A8)),
+            SizedBox(width: 6),
+            Text('จบการสนทนาแล้ว',
+                style: TextStyle(
                     fontSize: 13,
                     color: Color(0xFF8593A8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }

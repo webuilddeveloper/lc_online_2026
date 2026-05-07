@@ -3,20 +3,17 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/models/chat/chat_repository.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 
 /*
 =========================================
   Chat data ย้ายไปไว้ที่ lib/models/chat/chat_repository.dart
 
-  chat_repository.dart ทำหน้าที่เป็น Repository Pattern —
-  เป็นตัวกลางระหว่าง UI กับ data source
-
- 
+  Tablet/Desktop → 2-panel layout (list ซ้าย | chat ขวา) เหมือน FB Messenger
+  Mobile         → navigate แบบปกติ (push)
 =========================================
 */
-
 
 class MessagePage extends StatefulWidget {
   const MessagePage({super.key});
@@ -30,6 +27,9 @@ class _MessagePageState extends State<MessagePage> {
   List<Conversation> _conversations = [];
   bool _isLoading = true;
 
+  // ── Desktop: track conversation ที่ถูกเลือก ──────────────
+  Conversation? _selectedConv;
+
   @override
   void initState() {
     super.initState();
@@ -39,8 +39,6 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> _load() async {
     const storage = FlutterSecureStorage();
     final type = await storage.read(key: 'userType') ?? '';
-
-    // ✅ ดึงจาก repository — สลับ Mock/Firestore ได้ที่ chat_repository.dart
     final convs = await chatRepository.getConversations(type);
 
     if (!mounted) return;
@@ -48,11 +46,21 @@ class _MessagePageState extends State<MessagePage> {
       _userType = type;
       _conversations = convs;
       _isLoading = false;
+      // auto-select รายการแรกบน desktop
+      if (convs.isNotEmpty) _selectedConv = convs.first;
     });
   }
 
+  // ── build ──────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
+
+    if (!isMobile) {
+      return _buildDesktopLayout(context);
+    }
+
+    // Mobile — layout เดิม
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
@@ -70,65 +78,185 @@ class _MessagePageState extends State<MessagePage> {
               : Column(
                   children: [
                     const SizedBox(height: 20),
-                    Expanded(child: _buildList()),
+                    Expanded(child: _buildList(isDesktop: false)),
                   ],
                 ),
     );
   }
 
-  Widget _buildList() {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _conversations.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) =>
-          _conversationItem(_conversations[index]),
+  // ── Desktop 2-panel layout ─────────────────────────────
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEEF2F5),
+      body: Row(
+        children: [
+          // ── Panel ซ้าย: รายการสนทนา ──────────────────────
+          Container(
+            width: ResponsiveLayout.isTablet(context) ? 260 : 320,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFFFF),
+              border: Border(
+                right: BorderSide(color: Color(0xFFE4E8EF), width: 1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Container(
+                  height: 72,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  alignment: Alignment.centerLeft,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE4E8EF), width: 1),
+                    ),
+                  ),
+                  child: const Text(
+                    'กล่องข้อความ',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A2540),
+                    ),
+                  ),
+                ),
+
+                // List
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _conversations.isEmpty
+                          ? const Center(
+                              child: Text('ยังไม่มีการสนทนา',
+                                  style: TextStyle(color: Color(0xFF8593A8))))
+                          : _buildList(isDesktop: true),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Panel ขวา: หน้า chat ──────────────────────────
+          Expanded(
+            child: _selectedConv == null
+                ? const _EmptyChat()
+                : _buildChatPanel(_selectedConv!),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _conversationItem(Conversation conv) {
+  // ── Chat panel (desktop) ───────────────────────────────
+  Widget _buildChatPanel(Conversation conv) {
+    final model = _userType == 'lawyer'
+        ? {
+            'name': conv.name,
+            'avatar': conv.avatar,
+            'clientColor': conv.clientColor,
+            'active': !conv.caseSuccess,
+            'caseSuccess': conv.caseSuccess,
+          }
+        : {
+            'name': conv.name,
+            'imageUrl': conv.avatar,
+            'active': !conv.caseSuccess,
+            'caseSuccess': conv.caseSuccess,
+          };
+
+    // ใช้ ValueKey เพื่อ rebuild widget ใหม่เมื่อเปลี่ยน conversation
+    return _userType == 'lawyer'
+        ? ChatPageLawyer(
+            key: ValueKey(conv.id),
+            model: model,
+            jobId: conv.id,
+            embeddedMode: true, // ← ซ่อน AppBar ใน desktop panel
+          )
+        : ChatPageUser(
+            key: ValueKey(conv.id),
+            model: model,
+            embeddedMode: true, // ← ซ่อน AppBar ใน desktop panel
+          );
+  }
+
+  // ── Conversation list ──────────────────────────────────
+  Widget _buildList({required bool isDesktop}) {
+    return ListView.separated(
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 12 : 20,
+        vertical: isDesktop ? 12 : 0,
+      ),
+      itemCount: _conversations.length,
+      separatorBuilder: (_, __) => SizedBox(height: isDesktop ? 4 : 10),
+      itemBuilder: (context, index) =>
+          _conversationItem(_conversations[index], isDesktop: isDesktop),
+    );
+  }
+
+  Widget _conversationItem(Conversation conv, {required bool isDesktop}) {
+    final isSelected = isDesktop && _selectedConv?.id == conv.id;
+
+    void onTap() {
+      if (isDesktop) {
+        setState(() => _selectedConv = conv);
+      } else {
+        // Mobile/Tablet → push แบบเดิม
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _userType == 'lawyer'
+                ? ChatPageLawyer(
+                    model: {
+                      'name': conv.name,
+                      'avatar': conv.avatar,
+                      'clientColor': conv.clientColor,
+                      'active': !conv.caseSuccess,
+                      'caseSuccess': conv.caseSuccess,
+                    },
+                    jobId: conv.id,
+                  )
+                : ChatPageUser(
+                    model: {
+                      'name': conv.name,
+                      'imageUrl': conv.avatar,
+                      'active': !conv.caseSuccess,
+                      'caseSuccess': conv.caseSuccess,
+                    },
+                  ),
+          ),
+        ).then((_) => _load());
+      }
+    }
+
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => _userType == 'lawyer'
-              ? ChatPageLawyer(
-                  model: {
-                    'name': conv.name,
-                    'avatar': conv.avatar,
-                    'clientColor': conv.clientColor,
-                    'active': !conv.caseSuccess,
-                    'caseSuccess': conv.caseSuccess,
-                  },
-                  jobId: conv.id, // ✅ ส่ง jobId ให้ updateStatus ได้
-                )
-              : ChatPageUser(
-                  model: {
-                    'name': conv.name,
-                    'imageUrl': conv.avatar,
-                    'active': !conv.caseSuccess,
-                    'caseSuccess': conv.caseSuccess,
-                  },
-                ),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 12 : 15,
+          vertical: isDesktop ? 10 : 10,
         ),
-      ).then((_) => _load()), // ✅ reload หลังกลับมา เผื่อ status เปลี่ยน
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 251, 253, 255),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: isSelected
+              ? const Color(0xFFE8F0FE) // selected highlight
+              : isDesktop
+                  ? Colors.transparent
+                  : const Color.fromARGB(255, 251, 253, 255),
+          borderRadius: BorderRadius.circular(isDesktop ? 10 : 14),
+          boxShadow: isDesktop
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ── Avatar ─────────────────────────────────
+            // ── Avatar ───────────────────────────────────
             Stack(
               children: [
                 conv.avatarIsImage
@@ -159,7 +287,7 @@ class _MessagePageState extends State<MessagePage> {
                           ),
                         ),
                       ),
-                // ── online dot ───────────────────────
+                // online dot
                 if (!conv.caseSuccess)
                   Positioned(
                     right: 0,
@@ -176,9 +304,9 @@ class _MessagePageState extends State<MessagePage> {
                   ),
               ],
             ),
-            const SizedBox(width: 15),
+            const SizedBox(width: 12),
 
-            // ── ชื่อ + ข้อความล่าสุด ──────────────────
+            // ── ชื่อ + ข้อความล่าสุด ──────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,17 +314,24 @@ class _MessagePageState extends State<MessagePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        conv.name,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Expanded(
+                        child: Text(
+                          conv.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: conv.unreadCount > 0
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 4),
                       Text(
                         conv.lastChatDate,
                         style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF8593A8)),
+                            fontSize: 11, color: Color(0xFF8593A8)),
                       ),
                     ],
                   ),
@@ -204,32 +339,22 @@ class _MessagePageState extends State<MessagePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // ── "จบการสนทนา" ถ้า caseSuccess ──
-                      // conv.caseSuccess
-                          // ? const Text(
-                          //     'จบการสนทนาแล้ว',
-                          //     style: TextStyle(
-                          //         fontSize: 13,
-                          //         color: Color(0xFF8593A8),
-                          //         fontStyle: FontStyle.italic),
-                          //   )
-                          // :
-                           Expanded(
-                              child: Text(
-                                conv.lastChat,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: conv.unreadCount > 0
-                                      ? Colors.black
-                                      : const Color(0xFF8593A8),
-                                  fontWeight: conv.unreadCount > 0
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                      Expanded(
+                        child: Text(
+                          conv.lastChat,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: conv.unreadCount > 0
+                                ? Colors.black
+                                : const Color(0xFF8593A8),
+                            fontWeight: conv.unreadCount > 0
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       if (conv.unreadCount > 0)
                         Container(
                           width: 20,
@@ -257,238 +382,25 @@ class _MessagePageState extends State<MessagePage> {
   }
 }
 
-// import 'package:flutter/material.dart';
-// import 'package:LawyerOnline/component/appbar.dart';
-// import 'package:LawyerOnline/message-form.dart';
-// import 'package:LawyerOnline/chat/chat_page_user.dart';
-// import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
-// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// ── Empty state (ยังไม่เลือก conversation) ─────────────────
+class _EmptyChat extends StatelessWidget {
+  const _EmptyChat();
 
-// class MessagePage extends StatefulWidget {
-//   const MessagePage({super.key});
-
-//   @override
-//   State<MessagePage> createState() => _MessagePageState();
-// }
-
-// class _MessagePageState extends State<MessagePage> {
-//   String _userType = '';
-
-//   List<dynamic> lawyerOnlineList = [
-//     {
-//       "code": "0",
-//       "name": "ศักดิ์สิทธิ์ พิพากษ์",
-//       "imageUrl": "assets/images/lawyer-avatar-1.png",
-//       "active": true,
-//       "lastChat": "มีเอกสารที่เกี่ยวข้องมั้ยครับ",
-//       "lastChatDate": "14:28",
-//       "unreadCount": 1,
-//       "caseSuccess": false
-//     },
-//     {
-//       "code": "1",
-//       "name": "ธนากร นิติศักดิ์",
-//       "imageUrl": "assets/images/lawyer-avatar-2.png",
-//       "active": false,
-//       "lastChat": "ได้รับแล้วครับ",
-//       "lastChatDate": "yesterday",
-//       "unreadCount": 3,
-//       "caseSuccess": false
-//     },
-//     {
-//       "code": "2",
-//       "name": "อาริย์ ศิษย์กฎหมาย",
-//       "imageUrl": "assets/images/lawyer-avatar-4.png",
-//       "active": false,
-//       "lastChat": "ขอบคุณค่ะ",
-//       "lastChatDate": "yesterday",
-//       "unreadCount": 0,
-//       "caseSuccess": true
-//     },
-//     {
-//       "code": "3",
-//       "name": "Sachin K",
-//       "imageUrl": "assets/images/lawyer-avatar-5.png",
-//       "active": false,
-//       "lastChat": "Yeah, sure.",
-//       "lastChatDate": "07/18/2022",
-//       "unreadCount": 0,
-//       "caseSuccess": true
-//     },
-//   ];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _loadUserType();
-//   }
-
-//   Future<void> _loadUserType() async {
-//     const storage = FlutterSecureStorage();
-//     final type = await storage.read(key: 'userType') ?? '';
-//     setState(() => _userType = type);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFEEF2F5),
-//       appBar: appBar(
-//         title: "กล่องข้อความ",
-//         backBtn: false,
-//         rightBtn: false,
-//         rightAction: () => {},
-//       ),
-//       body: Container(
-//         child: Column(
-//           children: [
-//             const SizedBox(
-//               height: 20,
-//             ),
-//             Expanded(child: _buildLawyerOnline()),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   _buildLawyerOnline() {
-//     return ListView.separated(
-//       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-//       itemCount: lawyerOnlineList.length,
-//       itemBuilder: (context, index) =>
-//           _lawyerOnlineItem(lawyerOnlineList[index], onTap: () => {}),
-//       separatorBuilder: (BuildContext context, int index) => const SizedBox(
-//         height: 10,
-//       ),
-//     );
-//   }
-
-//   _lawyerOnlineItem(dynamic model, {Function? onTap}) {
-//     return GestureDetector(
-//       onTap: () {
-//         Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => _userType == 'lawyer'
-//                 ? ChatPageLawyer(model: model) //  lawyer
-//                 : ChatPageUser(model: model), // user
-//           ),
-//         );
-//       },
-//       child: Container(
-//         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-//         decoration: BoxDecoration(
-//             // color: Colors.white,
-//             borderRadius: BorderRadius.circular(6)),
-//         child: IntrinsicHeight(
-//           child: Row(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Stack(
-//                 children: [
-//                   ClipRRect(
-//                     borderRadius: BorderRadius.circular(100),
-//                     child: Image.asset(
-//                       model['imageUrl'] ?? '',
-//                       height: 48,
-//                       width: 48,
-//                       fit: BoxFit.cover,
-//                     ),
-//                   ),
-//                   model['active']
-//                       ? Positioned(
-//                           right: 0,
-//                           child: Container(
-//                             width: 12,
-//                             height: 12,
-//                             decoration: BoxDecoration(
-//                                 color: const Color(0xFF00CC5E),
-//                                 borderRadius: BorderRadius.circular(100)),
-//                             alignment: Alignment.center,
-//                           ),
-//                         )
-//                       : Container(),
-//                 ],
-//               ),
-//               const SizedBox(width: 15),
-//               Expanded(
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         Text(
-//                           model['name'] ?? '',
-//                           style: const TextStyle(
-//                             fontSize: 14,
-//                             fontWeight: FontWeight.w500,
-//                           ),
-//                           maxLines: 1,
-//                           overflow: TextOverflow.ellipsis,
-//                         ),
-//                         Text(
-//                           model['lastChatDate'] ?? '',
-//                           style: const TextStyle(
-//                             fontSize: 12,
-//                             color: Color(0xFF8593A8),
-//                           ),
-//                           maxLines: 1,
-//                           overflow: TextOverflow.ellipsis,
-//                         ),
-//                       ],
-//                     ),
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         Text(
-//                           model['lastChat'] ?? '',
-//                           style: TextStyle(
-//                               fontSize: 14,
-//                               color: model['unreadCount'] > 0
-//                                   ? Colors.black
-//                                   : Color(0xFF8593A8),
-//                               fontWeight: model['unreadCount'] > 0
-//                                   ? FontWeight.w600
-//                                   : FontWeight.w400),
-//                           maxLines: 1,
-//                           overflow: TextOverflow.ellipsis,
-//                         ),
-//                         model['unreadCount'] > 0
-//                             ? Container(
-//                                 width: 20,
-//                                 height: 20,
-//                                 decoration: BoxDecoration(
-//                                     color: const Color(0xFF0262EC),
-//                                     borderRadius: BorderRadius.circular(100)),
-//                                 alignment: Alignment.center,
-//                                 child: Text(
-//                                   model['unreadCount'].toString(),
-//                                   style: const TextStyle(
-//                                     fontSize: 12,
-//                                     color: Color(0xFFF6FBFF),
-//                                   ),
-//                                   maxLines: 1,
-//                                   overflow: TextOverflow.ellipsis,
-//                                 ),
-//                               )
-//                             : Container()
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   void goBack() async {
-//     Navigator.pop(context, false);
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.chat_bubble_outline_rounded,
+              size: 64, color: Color(0xFFD1D9E6)),
+          SizedBox(height: 16),
+          Text(
+            'เลือกการสนทนาเพื่อเริ่มแชท',
+            style: TextStyle(fontSize: 16, color: Color(0xFF8593A8)),
+          ),
+        ],
+      ),
+    );
+  }
+}

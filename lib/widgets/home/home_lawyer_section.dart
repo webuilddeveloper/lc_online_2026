@@ -4,8 +4,9 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
-import 'package:flutter/services.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 const _kPrimary = Color(0xFF0262EC);
 const _kAccent = Color(0xFF2F80ED);
@@ -14,8 +15,8 @@ const _kText = Color(0xFF0D1B2A);
 const _kSub = Color(0xFF6B7A99);
 
 // ─── Lawyer Dashboard ─────────────────────────────────────────────
-// รวม: appointment list, job request list + urgent job cards
-// StatelessWidget → rebuild เฉพาะเมื่อ props เปลี่ยนเท่านั้น
+// Mobile  → Column (เดิม ไม่เปลี่ยน)
+// Desktop → Row 2-column: LEFT=appointments, RIGHT=job requests
 class HomeLawyerSection extends StatelessWidget {
   final List<dynamic> appointments;
   final List<dynamic> jobRequests;
@@ -35,106 +36,137 @@ class HomeLawyerSection extends StatelessWidget {
       ...jobRequests.where((j) => j['status'] == 'pending'),
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Appointments ─────────────────────────────────────────
-        _sectionHeader(
-          context,
-          title: 'รายการนัดหมาย (${appointments.length})',
-          onMore: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
-        ),
-        if (appointments.isNotEmpty)
-          _buildAppointmentList(context)
-        else
-          _emptyState('ยังไม่มีนัดหมาย'),
-        const SizedBox(height: 20),
-
-        // ── Job Requests ─────────────────────────────────────────
-        _sectionHeader(
-          context,
-          title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
-          onMore: () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => LawyerJobListPage())),
-        ),
-        const SizedBox(height: 8),
-        if (activeJobs.isNotEmpty)
-          _buildJobRequestList(context, activeJobs)
-        else
-          _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
-        const SizedBox(height: 20),
-      ],
-    );
+    if (ResponsiveLayout.isDesktop(context)) {
+      return _buildDesktopLayout(context, activeJobs);
+    }
+    return _buildMobileLayout(context, activeJobs);
   }
 
-  // ── Section header ────────────────────────────────────────────────
-  Widget _sectionHeader(
-    BuildContext context, {
-    required String title,
-    VoidCallback? onMore,
-  }) {
+  // ══════════════════════════════════════════════════════════
+  //  DESKTOP: 2-column Row
+  // ══════════════════════════════════════════════════════════
+  Widget _buildDesktopLayout(BuildContext context, List<dynamic> activeJobs) {
+    final hPad = RV.pagePadding(context);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
+      padding: EdgeInsets.symmetric(horizontal: hPad),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.prompt(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: _kText,
+          // ── LEFT: รายการนัดหมาย (flex 3) ─────────────────
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionHeader(
+                  context,
+                  title: 'รายการนัดหมาย (${appointments.length})',
+                  onMore: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => MenuPage(pageIndex: 3))),
+                  padded: false, // padding จัดการโดย parent แล้ว
+                ),
+                const SizedBox(height: 8),
+                if (appointments.isNotEmpty)
+                  _buildAppointmentListDesktop(context)
+                else
+                  _emptyState('ยังไม่มีนัดหมาย'),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
-          const Spacer(),
-          if (onMore != null)
-            GestureDetector(
-              onTap: onMore,
-              child: Text(
-                'ดูทั้งหมด',
-                style: GoogleFonts.prompt(
-                  fontSize: 12,
-                  color: _kAccent,
-                  fontWeight: FontWeight.w500,
+
+          SizedBox(width: RV.cardGap(context) * 1.5),
+
+          // ── RIGHT: เคสด่วนจากลูกความ (flex 2) ────────────
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionHeader(
+                  context,
+                  title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
+                  onMore: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+                  padded: false,
                 ),
-              ),
+                const SizedBox(height: 8),
+                if (activeJobs.isNotEmpty)
+                  _buildJobRequestListDesktop(context, activeJobs)
+                else
+                  _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
+                const SizedBox(height: 20),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  // ── Appointment Cards (horizontal scroll) ─────────────────────────
-  Widget _buildAppointmentList(BuildContext context) {
-    return SizedBox(
-      height: 180,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 4, 48, 0),
-        itemCount: appointments.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (_, i) => _appointmentCard(
-          context,
-          appointments[i],
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AppointmentDetailsLawyer(model: appointments[i]),
+  // ── Desktop: Appointment cards — vertical list ─────────────────────
+  Widget _buildAppointmentListDesktop(BuildContext context) {
+    final gap = RV.cardGap(context);
+    // สร้าง Row ทีละคู่ — ไม่พึ่ง LayoutBuilder เพื่อหลีก unbounded width ใน IntrinsicHeight
+    final rows = <Widget>[];
+    for (int i = 0; i < appointments.length; i += 2) {
+      final left = appointments[i];
+      final right = i + 1 < appointments.length ? appointments[i + 1] : null;
+      rows.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _appointmentCardDesktop(
+                context,
+                left,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AppointmentDetailsLawyer(model: left),
+                  ),
+                ),
+              ),
             ),
-          ),
+            SizedBox(width: gap),
+            Expanded(
+              child: right != null
+                  ? _appointmentCardDesktop(
+                      context,
+                      right,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AppointmentDetailsLawyer(model: right),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
-      ),
+      );
+      if (i + 2 < appointments.length) rows.add(SizedBox(height: gap));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: rows,
     );
   }
 
-  Widget _appointmentCard(BuildContext context, Map model,
+  // ── Desktop appointment card: fullwidth แนวตั้ง ────────────────────
+  Widget _appointmentCardDesktop(BuildContext context, Map model,
       {VoidCallback? onTap}) {
     final isPaid = (model['paymentStatus'] ?? '') == '1';
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: (MediaQuery.of(context).size.width - 18 * 2 - 14) / 2,
-        padding: const EdgeInsets.all(14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
@@ -152,10 +184,9 @@ class HomeLawyerSection extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // ── Row 1: icon + name + badge ──────────────────────
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   width: 36,
@@ -165,8 +196,25 @@ class HomeLawyerSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.event_rounded,
-                      color: Colors.white, size: 20),
+                      color: Color.fromARGB(255, 255, 255, 255), size: 30),
                 ),
+                const SizedBox(width: 10),
+                const Icon(Icons.person_rounded,
+                    size: 16, color: Color.fromARGB(255, 255, 255, 255)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    model['clientName'] ?? '',
+                    style: GoogleFonts.prompt(
+                        color: const Color.fromARGB(255, 255, 255, 255),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // badge — fixed width ไม่ overflow
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -186,66 +234,297 @@ class HomeLawyerSection extends StatelessWidget {
                 ),
               ],
             ),
-            Row(children: [
-              const Icon(Icons.person_rounded, size: 11, color: Colors.white60),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  model['clientName'] ?? '',
-                  style: GoogleFonts.prompt(
-                      color: Colors.white60,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 6),
+            // ── Row 2: title ─────────────────────────────────────
+            Text(model['title'] ?? '',
+                style: GoogleFonts.prompt(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            Text(model['subCaseType'] ?? '',
+                style: GoogleFonts.prompt(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 6),
+            // ── Row 3: date + time inline ─────────────────────────
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded,
+                    size: 10, color: Colors.white70),
+                const SizedBox(width: 4),
+                Text(model['appointmentDate'] ?? '',
+                    style: GoogleFonts.prompt(
+                        fontSize: 11, color: Colors.white70)),
+                const SizedBox(width: 10),
+                const Icon(Icons.access_time_rounded,
+                    size: 10, color: Colors.white70),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(model['appointmentTime'] ?? '',
+                      style: GoogleFonts.prompt(
+                          fontSize: 11, color: Colors.white70),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ),
-              ),
-            ]),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(model['subCaseType'] ?? '',
-                    style: GoogleFonts.prompt(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                Text(model['title'] ?? '',
-                    style: GoogleFonts.prompt(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  const Icon(Icons.calendar_today_rounded,
-                      size: 10, color: Colors.white70),
-                  const SizedBox(width: 4),
-                  Text(model['appointmentDate'] ?? '',
-                      style: GoogleFonts.prompt(
-                          fontSize: 12, color: Colors.white70)),
-                ]),
-                const SizedBox(height: 2),
-                Row(children: [
-                  const Icon(Icons.access_time_rounded,
-                      size: 10, color: Colors.white70),
-                  const SizedBox(width: 4),
-                  Text(model['appointmentTime'] ?? '',
-                      style: GoogleFonts.prompt(
-                          fontSize: 12,
-                          color: const Color.fromARGB(179, 255, 255, 255))),
-                ]),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── Desktop: Job request list (vertical, ไม่ต้อง padding ซ้ำ) ──────
+  Widget _buildJobRequestListDesktop(BuildContext context, List<dynamic> jobs) {
+    return Column(
+      children: [
+        for (int i = 0; i < jobs.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _urgentJobCard(context, jobs[i]),
+        ],
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  MOBILE: Column เดิม ไม่เปลี่ยน
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMobileLayout(BuildContext context, List<dynamic> activeJobs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Appointments ─────────────────────────────────────────
+        _sectionHeader(
+          context,
+          title: 'รายการนัดหมาย (${appointments.length})',
+          onMore: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
+        ),
+        if (appointments.isNotEmpty)
+          _buildAppointmentListMobile(context)
+        else
+          _emptyState('ยังไม่มีนัดหมาย'),
+        const SizedBox(height: 20),
+
+        // ── Job Requests ─────────────────────────────────────────
+        _sectionHeader(
+          context,
+          title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
+          onMore: () => Navigator.push(
+              context, MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+        ),
+        const SizedBox(height: 8),
+        if (activeJobs.isNotEmpty)
+          _buildJobRequestListMobile(context, activeJobs)
+        else
+          _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // ── Section header ────────────────────────────────────────────────
+  // padded: true  → มี horizontal padding 18 (mobile default)
+  // padded: false → ไม่มี padding (desktop จัดการ padding จาก parent)
+  Widget _sectionHeader(
+    BuildContext context, {
+    required String title,
+    VoidCallback? onMore,
+    bool padded = true,
+  }) {
+    final content = Row(
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.prompt(
+            fontSize: RV.titleSize(context) - 1,
+            fontWeight: FontWeight.w700,
+            color: _kText,
+          ),
+        ),
+        const Spacer(),
+        if (onMore != null)
+          GestureDetector(
+            onTap: onMore,
+            child: Text(
+              'ดูทั้งหมด',
+              style: GoogleFonts.prompt(
+                fontSize: 12,
+                color: _kAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    if (!padded) return content;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
+      child: content,
+    );
+  }
+
+  // ── Mobile: Appointment Cards (horizontal scroll — เดิม) ──────────
+  Widget _buildAppointmentListMobile(BuildContext context) {
+    return SizedBox(
+      height: 180,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 4, 48, 0),
+        itemCount: appointments.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (_, i) => _appointmentCardMobile(
+          context,
+          appointments[i],
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AppointmentDetailsLawyer(model: appointments[i]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Mobile appointment card (เดิม — ไม่เปลี่ยน) ──────────────────
+  Widget _appointmentCardMobile(BuildContext context, Map model,
+      {VoidCallback? onTap}) {
+    final isPaid = (model['paymentStatus'] ?? '') == '1';
+
+    // ใช้ LayoutBuilder เพื่อให้ width ถูกต้อง ไม่พึ่ง size.width โดยตรง
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        // fallback: ถ้า constraints ไม่มีข้อมูล ใช้ screen width
+        final screenW = MediaQuery.of(context).size.width;
+        final cardW = (screenW - 18 * 2 - 14) / 2;
+
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: cardW,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: _kAccent.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.event_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isPaid
+                            ? Colors.white.withOpacity(0.25)
+                            : Colors.orange.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                        style: GoogleFonts.prompt(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(children: [
+                  const Icon(Icons.person_rounded,
+                      size: 11, color: Colors.white60),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      model['clientName'] ?? '',
+                      style: GoogleFonts.prompt(
+                          color: Colors.white60,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ]),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(model['subCaseType'] ?? '',
+                        style: GoogleFonts.prompt(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    Text(model['title'] ?? '',
+                        style: GoogleFonts.prompt(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(model['appointmentDate'] ?? '',
+                          style: GoogleFonts.prompt(
+                              fontSize: 12, color: Colors.white70)),
+                    ]),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      const Icon(Icons.access_time_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(model['appointmentTime'] ?? '',
+                          style: GoogleFonts.prompt(
+                              fontSize: 12,
+                              color: const Color.fromARGB(179, 255, 255, 255))),
+                    ]),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -261,8 +540,8 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
-  // ── Job Request Cards (vertical) ──────────────────────────────────
-  Widget _buildJobRequestList(BuildContext context, List<dynamic> jobs) {
+  // ── Mobile: Job Request Cards (vertical — เดิม) ───────────────────
+  Widget _buildJobRequestListMobile(BuildContext context, List<dynamic> jobs) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
       child: Column(
@@ -276,6 +555,7 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
+  // ── Urgent job card (shared — ไม่เปลี่ยน UI เลย) ─────────────────
   Widget _urgentJobCard(BuildContext context, Map<String, dynamic> job) {
     final status = job['status'] as String;
     final barColors = _statusBarColors(status);
@@ -514,7 +794,7 @@ class HomeLawyerSection extends StatelessWidget {
   }
 }
 
-// ─── Status helpers ───────────────────────────────────────────────
+// ─── Status helpers (เดิม ไม่เปลี่ยน) ────────────────────────────────
 List<Color> _statusBarColors(String status) {
   switch (status) {
     case 'accepted':
