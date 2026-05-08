@@ -49,8 +49,9 @@ const _kText = Color(0xFF0D1B2A);
 const _kSub = Color(0xFF6B7A99);
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key, this.userType});
+  const HomePage({Key? key, this.userType, this.onProfileTap});
   final String? userType;
+  final VoidCallback? onProfileTap;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -588,6 +589,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       typeLogin: typeLogin,
                       isUrgentCaseEnabled:
                           LawyerProfileStore.instance.isUrgentCaseEnabled,
+                      onProfileTap:
+                          typeLogin != 'null' ? widget.onProfileTap : null,
                     ),
                   ),
                 SliverToBoxAdapter(

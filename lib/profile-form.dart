@@ -95,7 +95,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "ข้อมูลส่วนตัว",
+        title: "แก้ไขข้อมูลส่วนตัว",
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,

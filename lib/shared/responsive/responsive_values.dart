@@ -88,10 +88,23 @@ class RV {
 
   // ── Banner ────────────────────────────────────────────
   static double bannerHeight(BuildContext context) {
-    if (ResponsiveLayout.isDesktop(context)) return 200;
-    if (ResponsiveLayout.isTablet(context)) return 170;
+    if (ResponsiveLayout.isDesktop(context)) return 300;
+    if (ResponsiveLayout.isTablet(context)) return 260;
     return 140;
   }
+
+// ── Dialog ────────────────────────────────────────────
+  static double dialogMaxWidth(BuildContext context) {
+    if (ResponsiveLayout.isDesktop(context)) return 500;
+    if (ResponsiveLayout.isTablet(context)) return 420;
+    return double.infinity;
+  }
+
+  static double dialogMinWidth(BuildContext context) {
+  if (ResponsiveLayout.isDesktop(context)) return 400;
+  if (ResponsiveLayout.isTablet(context)) return 360;
+  return 320; // mobile — บังคับกว้างขึ้น
+}
 
   // ── Helper: แสดง TopBar หรือ BottomNav ───────────────
   static bool showTopNav(BuildContext context) =>

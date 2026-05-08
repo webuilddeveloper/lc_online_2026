@@ -91,7 +91,7 @@ class _MenuPageState extends State<MenuPage> {
       typeLogin = type.toString();
 
       pages = [
-        HomePage(),
+        HomePage(onProfileTap: () => _onNavTap(4)),
         typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false),
         CommunityPage(),
         typeLogin != 'null'

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
 
@@ -31,10 +32,11 @@ class CommunityUser {
 class PostComment {
   final String id;
   final CommunityUser author;
-  final String content;
+  String content;
   final DateTime createdAt;
   int likes;
   bool isLiked;
+  final List<PostComment> replies;
 
   PostComment({
     required this.id,
@@ -43,13 +45,14 @@ class PostComment {
     required this.createdAt,
     this.likes = 0,
     this.isLiked = false,
-  });
+    List<PostComment>? replies,
+  }) : replies = replies ?? [];
 }
 
 class CommunityPost {
   final String id;
   final CommunityUser author;
-  final String content;
+  String content;
   final String category;
   final DateTime createdAt;
   final List<String> imagePaths;
@@ -76,9 +79,9 @@ class CommunityPost {
   }) : comments = comments ?? [];
 }
 
-// ─── Current User (Mock) ───────────────────────────────────────────────────────
+// ─── Current User (loaded from profile) ────────────────────────────────────────
 
-const CommunityUser currentUser = CommunityUser(
+CommunityUser currentUser = CommunityUser(
   id: 'me',
   name: 'คุณ (ผู้ใช้งาน)',
   avatarUrl: '',
@@ -836,6 +839,49 @@ class _CommunityPageState extends State<CommunityPage> {
   String typeLogin = "";
   final storage = FlutterSecureStorage();
 
+  int _selectedCategoryIndex = 0;
+  int _selectedTabIndex = 0;
+
+  final List<String> _categories = [
+    'ทั้งหมด',
+    'คดีอาญา',
+    'แพ่ง',
+    'แรงงาน',
+    'อสังหาริมทรัพย์',
+    'ครอบครัว',
+  ];
+  final List<String> _tabs = ['ยอดนิยม', 'มาใหม่', 'บันทึกไว้'];
+
+  // ── Filtered & sorted posts ──────────────────────────────
+  List<CommunityPost> get _filteredPosts {
+    // "บันทึกไว้" — show ALL bookmarked, ignore category
+    if (_selectedTabIndex == 2) {
+      final result = _posts.where((p) => p.isBookmarked).toList();
+      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return result;
+    }
+
+    // 1) Filter by category
+    List<CommunityPost> result;
+    if (_selectedCategoryIndex == 0) {
+      result = List.from(_posts);
+    } else {
+      final selectedCategory = _categories[_selectedCategoryIndex];
+      result = _posts
+          .where((p) => p.category == selectedCategory)
+          .toList();
+    }
+
+    // 2) Sort by tab
+    if (_selectedTabIndex == 0) {
+      result.sort((a, b) => b.likes.compareTo(a.likes));
+    } else {
+      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+
+    return result;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -845,9 +891,27 @@ class _CommunityPageState extends State<CommunityPage> {
 
   void callRead() async {
     final type = await storage.read(key: 'typeLogin');
+    final nameProfile = await storage.read(key: 'name');
+    final imageProfile = await storage.read(key: 'imageUrlSocial');
+    final userType = await storage.read(key: 'userType');
 
     setState(() {
       typeLogin = type.toString();
+
+      // อัปเดต currentUser จากโปรไฟล์ที่ล็อกอิน
+      if (type != null && type != 'null') {
+        currentUser = CommunityUser(
+          id: 'me',
+          name: (nameProfile != null && nameProfile != 'null')
+              ? nameProfile
+              : 'คุณ (ผู้ใช้งาน)',
+          avatarUrl: (imageProfile != null && imageProfile != 'null')
+              ? imageProfile
+              : '',
+          role: userType == 'lawyer' ? UserRole.lawyer : UserRole.client,
+          isVerified: userType == 'lawyer',
+        );
+      }
     });
   }
 
@@ -879,89 +943,244 @@ class _CommunityPageState extends State<CommunityPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = ResponsiveLayout.isMobile(context);
+    final bool isTablet = ResponsiveLayout.isTablet(context);
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+
+    // Responsive max width
+    final double maxWidth = isDesktop ? 800 : (isTablet ? 680 : double.infinity);
+    // Responsive horizontal padding
+    final double hPadding = isDesktop ? 0 : (isTablet ? 24 : 16);
+    // Responsive top spacing
+    final double topSpacing = isMobile ? 12 : 24;
+
     return Scaffold(
-      // backgroundColor: const Color(0xFFF5F4F0),
-      backgroundColor: Colors.white,
+      backgroundColor: isMobile ? Colors.white : const Color(0xFFF8F9FA),
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(),
-            // _buildSearchBar(),
-            Expanded(child: _buildPostsList()),
-          ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
+              child: Column(
+                children: [
+                  SizedBox(height: topSpacing),
+                  // ── Header ──
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Column(
+                      children: [
+                        Text(
+                          'ชุมชนกฎหมาย',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Community Legal Hub',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF9E9E9E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildCategories(isMobile: isMobile),
+                  SizedBox(height: isMobile ? 12 : 24),
+                  if (!isMobile) ...[
+                    _buildCreatePostCard(isMobile: false),
+                    const SizedBox(height: 24),
+                  ],
+                  _buildTabs(),
+                  SizedBox(height: isMobile ? 8 : 16),
+                  Expanded(child: _buildPostsList()),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
-      floatingActionButton: _buildFAB(),
+      floatingActionButton: isMobile ? _buildFAB() : null,
     );
   }
 
-  Widget _buildHeader() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Stack(
+  // ── Mobile FAB ──────────────────────────────────────────
+  Widget _buildFAB() {
+    return GestureDetector(
+      onTap: () {
+        if (typeLogin != 'null') {
+          _openPostForm();
+        } else {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => LoginPage(isBack: true)));
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 80),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0xFF5E4BFF), Color(0xFF3D2DB5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5E4BFF).withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
+  // ── Categories chips ────────────────────────────────────
+  Widget _buildCategories({required bool isMobile}) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _categories.asMap().entries.map((entry) {
+          int idx = entry.key;
+          String text = entry.value;
+          bool isSelected = idx == _selectedCategoryIndex;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategoryIndex = idx),
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 6),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 14 : 20,
+                vertical: isMobile ? 8 : 10,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF5E4BFF) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF5E4BFF)
+                      : Colors.grey.shade300,
+                ),
+              ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: isMobile ? 13 : 14,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ── Create post card ────────────────────────────────────
+  Widget _buildCreatePostCard({required bool isMobile}) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 14 : 20,
+        vertical: isMobile ? 12 : 16,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
         children: [
-          // Container(
-          //   width: 40,
-          //   height: 40,
-          //   decoration: BoxDecoration(
-          //       color: Colors.white,
-          //       borderRadius: BorderRadius.circular(12),
-          //       boxShadow: [
-          //         BoxShadow(
-          //             color: Colors.black.withOpacity(0.06),
-          //             blurRadius: 8,
-          //             offset: const Offset(0, 2))
-          //       ]),
-          //   child: const Icon(Icons.arrow_back_ios_new_rounded,
-          //       size: 16, color: Color(0xFF1A1A2E)),
-          // ),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'ชุมชนกฎหมาย',
+          CircleAvatar(
+            backgroundColor: Colors.grey.shade200,
+            radius: isMobile ? 18 : 20,
+            child: Icon(Icons.person,
+                color: Colors.grey.shade500, size: isMobile ? 20 : 24),
+          ),
+          SizedBox(width: isMobile ? 10 : 16),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (typeLogin != 'null') {
+                  _openPostForm();
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage(isBack: true)),
+                  );
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 12 : 16,
+                  vertical: isMobile ? 10 : 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'มีคำถามกฎหมาย หรืออยากแชร์อะไรไหม?',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: Colors.grey.shade500,
+                    fontSize: isMobile ? 13 : 14,
                   ),
                 ),
-                Text(
-                  'Community Legal Hub',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9E9E9E),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          // Positioned(
-          //   right: 0,
-          //   top: 0,
-          //   child: Container(
-          //     width: 40,
-          //     height: 40,
-          //     decoration: BoxDecoration(
-          //       color: Colors.white,
-          //       borderRadius: BorderRadius.circular(12),
-          //       // boxShadow: [
-          //       //   BoxShadow(
-          //       //     color: Colors.black.withOpacity(0.06),
-          //       //     blurRadius: 8,
-          //       //     offset: const Offset(0, 2),
-          //       //   )
-          //       // ],
-          //     ),
-          //     child: const Icon(
-          //       Icons.edit_square,
-          //       size: 20,
-          //       // color: Color(0xFF1A1A2E),
-          //     ),
-          //   ),
-          // ),
         ],
+      ),
+    );
+  }
+
+  // ── Tabs (ยอดนิยม / มาใหม่) ───────────────────────────
+  Widget _buildTabs() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Row(
+        children: _tabs.asMap().entries.map((entry) {
+          int idx = entry.key;
+          String text = entry.value;
+          bool isSelected = idx == _selectedTabIndex;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedTabIndex = idx),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isSelected
+                        ? const Color(0xFF5E4BFF)
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: isSelected
+                      ? const Color(0xFF5E4BFF)
+                      : Colors.grey.shade600,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -1005,60 +1224,52 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Widget _buildPostsList() {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 140),
-      itemCount: _posts.length,
-      itemBuilder: (context, index) => PostCard(
-        post: _posts[index],
-        onLike: () => _toggleLike(_posts[index].id),
-        onBookmark: () => _toggleBookmark(_posts[index].id),
-        typeLogin: typeLogin,
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PostDetailScreen(post: _posts[index]),
+    final bool isMobile = ResponsiveLayout.isMobile(context);
+    final posts = _filteredPosts;
+    return posts.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                    _selectedTabIndex == 2
+                        ? Icons.bookmark_outline_rounded
+                        : Icons.article_outlined,
+                    size: 48,
+                    color: Colors.grey.shade300),
+                const SizedBox(height: 12),
+                Text(
+                  _selectedTabIndex == 2
+                      ? 'ยังไม่มีโพสต์ที่บันทึกไว้'
+                      : 'ยังไม่มีโพสต์ในหมวดหมู่นี้',
+                  style: TextStyle(
+                      fontSize: 14, color: Colors.grey.shade400),
+                ),
+              ],
             ),
+          )
+        : ListView.separated(
+            padding: EdgeInsets.fromLTRB(0, 4, 0, isMobile ? 140 : 40),
+            itemCount: posts.length,
+            itemBuilder: (context, index) => PostCard(
+              post: posts[index],
+              onLike: () => _toggleLike(posts[index].id),
+              onBookmark: () => _toggleBookmark(posts[index].id),
+              typeLogin: typeLogin,
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PostDetailScreen(post: posts[index]),
+                  ),
+                );
+                setState(() {});
+              },
+            ),
+            separatorBuilder: (context, index) => isMobile
+                ? Divider(height: 1, color: Colors.grey.shade100)
+                : const SizedBox(height: 16),
           );
-          setState(() {});
-        },
-      ),
-      separatorBuilder: (context, index) =>
-          Divider(height: 1, color: Colors.grey.shade100),
-    );
-  }
-
-  Widget _buildFAB() {
-    return GestureDetector(
-      onTap: () {
-        if (typeLogin != 'null') {
-          _openPostForm;
-        } else {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => LoginPage(isBack: true)));
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        margin: const EdgeInsets.only(bottom: 80),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-              colors: [Color(0xFF2D2D5E), Color(0xFF1A1A2E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
-          // borderRadius: BorderRadius.circular(16),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF1A1A2E).withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
-      ),
-    );
   }
 }
 
@@ -1142,10 +1353,12 @@ class _PostCardState extends State<PostCard>
         .where((c) => c.author.role == UserRole.lawyer)
         .toList();
 
+    bool isDesktop = ResponsiveLayout.isDesktop(context);
+
     return GestureDetector(
       onTap: () {
         if (widget.typeLogin != 'null') {
-          widget.onTap;
+          widget.onTap();
         } else {
           Navigator.push(context,
               MaterialPageRoute(builder: (_) => LoginPage(isBack: true)));
@@ -1153,16 +1366,17 @@ class _PostCardState extends State<PostCard>
       },
       child: Container(
         padding: const EdgeInsets.fromLTRB(15, 16, 16, 0),
-        // margin: const EdgeInsets.only(bottom: 12),
+        margin: isDesktop ? const EdgeInsets.symmetric(horizontal: 2) : EdgeInsets.zero,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          // boxShadow: [
-          //   BoxShadow(
-          //       color: Colors.black.withOpacity(0.05),
-          //       blurRadius: 12,
-          //       offset: const Offset(0, 3))
-          // ],
+          border: isDesktop ? Border.all(color: Colors.grey.shade200) : null,
+          boxShadow: isDesktop ? [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4))
+          ] : [],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1336,7 +1550,7 @@ class _PostCardState extends State<PostCard>
                           color: const Color(0xFF9E9E9E),
                           onTap: () {
                             if (widget.typeLogin != 'null') {
-                              widget.onTap;
+                              widget.onTap();
                             } else {
                               Navigator.push(
                                 context,
@@ -1515,6 +1729,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   late List<PostComment> _comments;
   bool _isSending = false;
 
+  // ── Reply / Edit state ──────────────────────────────────
+  PostComment? _replyTarget;
+  PostComment? _editingComment;
+
   @override
   void initState() {
     super.initState();
@@ -1535,27 +1753,116 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return '${d.inDays} วันที่แล้ว';
   }
 
+  // ── Send comment (or reply or save edit) ────────────────
   void _sendComment() {
     final text = _commentCtrl.text.trim();
     if (text.isEmpty) return;
 
     setState(() => _isSending = true);
     Future.delayed(const Duration(milliseconds: 300), () {
+      // Editing existing comment
+      if (_editingComment != null) {
+        setState(() {
+          _editingComment!.content = text;
+          _editingComment = null;
+          _isSending = false;
+        });
+        _commentCtrl.clear();
+        _focusNode.unfocus();
+        HapticFeedback.lightImpact();
+        return;
+      }
+
       final newComment = PostComment(
         id: 'c_${DateTime.now().millisecondsSinceEpoch}',
         author: currentUser,
         content: text,
         createdAt: DateTime.now(),
       );
+
       setState(() {
-        _comments.add(newComment);
-        widget.post.comments.add(newComment);
+        if (_replyTarget != null) {
+          // Add as a reply to the target comment
+          _replyTarget!.replies.add(newComment);
+          _replyTarget = null;
+        } else {
+          // Add as a top-level comment
+          _comments.add(newComment);
+          widget.post.comments.add(newComment);
+        }
         _isSending = false;
       });
       _commentCtrl.clear();
       _focusNode.unfocus();
       HapticFeedback.lightImpact();
     });
+  }
+
+  void _startReply(PostComment target) {
+    setState(() {
+      _replyTarget = target;
+      _editingComment = null;
+    });
+    _commentCtrl.clear();
+    _focusNode.requestFocus();
+  }
+
+  void _startEditComment(PostComment c) {
+    setState(() {
+      _editingComment = c;
+      _replyTarget = null;
+    });
+    _commentCtrl.text = c.content;
+    _focusNode.requestFocus();
+  }
+
+  void _cancelReplyOrEdit() {
+    setState(() {
+      _replyTarget = null;
+      _editingComment = null;
+    });
+    _commentCtrl.clear();
+    _focusNode.unfocus();
+  }
+
+  // ── Edit Post ───────────────────────────────────────────
+  void _editPost() {
+    final ctrl = TextEditingController(text: widget.post.content);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('แก้ไขโพสต์',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 6,
+          decoration: InputDecoration(
+            hintText: 'เนื้อหาโพสต์...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('ยกเลิก', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5E4BFF),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              if (ctrl.text.trim().isNotEmpty) {
+                setState(() => widget.post.content = ctrl.text.trim());
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1661,15 +1968,29 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         Row(children: [
           _avatar(widget.post.author, 38),
           const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(widget.post.author.name,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E))),
-            Text(_formatTime(widget.post.createdAt),
-                style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
-          ]),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(widget.post.author.name,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E))),
+              Text(_formatTime(widget.post.createdAt),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
+            ]),
+          ),
+          if (widget.post.author.id == currentUser.id)
+            GestureDetector(
+              onTap: _editPost,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F4F0),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF5E4BFF)),
+              ),
+            ),
         ]),
         const SizedBox(height: 14),
         // Text(
@@ -1709,188 +2030,264 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  Widget _buildCommentCard(PostComment c) {
+  Widget _buildCommentCard(PostComment c, {bool isReply = false}) {
     final isLawyer = c.author.role == UserRole.lawyer;
     final isMe = c.author.id == currentUser.id;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isMe
-            ? const Color(0xFFFFF8E1)
-            : (isLawyer ? const Color(0xFFF0F7FF) : Colors.white),
-        borderRadius: BorderRadius.circular(16),
-        border: isMe
-            ? Border.all(color: const Color(0xFFFFE082))
-            : (isLawyer ? Border.all(color: const Color(0xFFBBDEFB)) : null),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          _avatar(c.author, 36),
-          const SizedBox(width: 10),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Row(children: [
-                  Flexible(
-                      child: Text(
-                    isMe ? 'คุณ' : c.author.name,
+    return Padding(
+      padding: EdgeInsets.only(left: isReply ? 32 : 0),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isMe
+              ? const Color(0xFFFFF8E1)
+              : (isLawyer ? const Color(0xFFF0F7FF) : Colors.white),
+          borderRadius: BorderRadius.circular(16),
+          border: isMe
+              ? Border.all(color: const Color(0xFFFFE082))
+              : (isLawyer ? Border.all(color: const Color(0xFFBBDEFB)) : null),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            _avatar(c.author, 36),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Row(children: [
+                    Flexible(
+                        child: Text(
+                      isMe ? 'คุณ' : c.author.name,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isMe
+                              ? const Color(0xFFF57F17)
+                              : (isLawyer
+                                  ? const Color(0xFF1565C0)
+                                  : const Color(0xFF1A1A2E))),
+                    )),
+                    if (isLawyer) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0),
+                            borderRadius: BorderRadius.circular(6)),
+                        child: Text(c.author.specialty ?? 'ทนายความ',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                    if (isMe) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF57F17),
+                            borderRadius: BorderRadius.circular(6)),
+                        child: const Text('คุณ',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ]),
+                  Text(_formatTime(c.createdAt),
+                      style: const TextStyle(
+                          fontSize: 10, color: Color(0xFF9E9E9E))),
+                ])),
+          ]),
+          const SizedBox(height: 10),
+          Text(c.content,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: isLawyer
+                      ? const Color(0xFF37474F)
+                      : const Color(0xFF616161),
+                  height: 1.6)),
+          const SizedBox(height: 10),
+          Row(children: [
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  c.isLiked ? c.likes-- : c.likes++;
+                  c.isLiked = !c.isLiked;
+                });
+                HapticFeedback.lightImpact();
+              },
+              child: Row(children: [
+                Icon(
+                    c.isLiked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_outline_rounded,
+                    size: 15,
+                    color: c.isLiked
+                        ? const Color(0xFFE53935)
+                        : Colors.grey.shade400),
+                const SizedBox(width: 4),
+                Text('${c.likes}',
                     style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: isMe
-                            ? const Color(0xFFF57F17)
-                            : (isLawyer
-                                ? const Color(0xFF1565C0)
-                                : const Color(0xFF1A1A2E))),
-                  )),
-                  if (isLawyer) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: const Color(0xFF1565C0),
-                          borderRadius: BorderRadius.circular(6)),
-                      child: Text(c.author.specialty ?? 'ทนายความ',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                  if (isMe) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: const Color(0xFFF57F17),
-                          borderRadius: BorderRadius.circular(6)),
-                      child: const Text('คุณ',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ]),
-                Text(_formatTime(c.createdAt),
-                    style: const TextStyle(
-                        fontSize: 10, color: Color(0xFF9E9E9E))),
-              ])),
-        ]),
-        const SizedBox(height: 10),
-        Text(c.content,
-            style: TextStyle(
-                fontSize: 13,
-                color: isLawyer
-                    ? const Color(0xFF37474F)
-                    : const Color(0xFF616161),
-                height: 1.6)),
-        const SizedBox(height: 10),
-        Row(children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                c.isLiked ? c.likes-- : c.likes++;
-                c.isLiked = !c.isLiked;
-              });
-              HapticFeedback.lightImpact();
-            },
-            child: Row(children: [
-              Icon(
-                  c.isLiked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_outline_rounded,
-                  size: 15,
-                  color: c.isLiked
-                      ? const Color(0xFFE53935)
-                      : Colors.grey.shade400),
-              const SizedBox(width: 4),
-              Text('${c.likes}',
+                        fontSize: 12,
+                        color: c.isLiked
+                            ? const Color(0xFFE53935)
+                            : Colors.grey.shade400)),
+              ]),
+            ),
+            const SizedBox(width: 16),
+            GestureDetector(
+              onTap: () => _startReply(c),
+              child: Text('ตอบกลับ',
                   style: TextStyle(
                       fontSize: 12,
-                      color: c.isLiked
-                          ? const Color(0xFFE53935)
-                          : Colors.grey.shade400)),
-            ]),
-          ),
-          const SizedBox(width: 16),
-          Text('ตอบกลับ',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500)),
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.w500)),
+            ),
+            if (isMe) ...[
+              const SizedBox(width: 16),
+              GestureDetector(
+                onTap: () => _startEditComment(c),
+                child: const Text('แก้ไข',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF5E4BFF),
+                        fontWeight: FontWeight.w500)),
+              ),
+            ],
+          ]),
+          // ── Nested replies ──
+          if (c.replies.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...c.replies.map((r) => _buildCommentCard(r, isReply: true)),
+          ],
         ]),
-      ]),
+      ),
     );
   }
 
   Widget _buildCommentInput() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-          16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [
-        BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -3))
-      ]),
-      child: Row(children: [
-        _avatar(currentUser, 34),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-                color: const Color(0xFFF5F4F0),
-                borderRadius: BorderRadius.circular(14)),
-            child: TextField(
-              controller: _commentCtrl,
-              focusNode: _focusNode,
-              decoration: const InputDecoration.collapsed(
-                hintText: 'แสดงความคิดเห็นหรือตอบคำถาม...',
-                hintStyle: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+    final hasContext = _replyTarget != null || _editingComment != null;
+    String hintText = 'แสดงความคิดเห็นหรือตอบคำถาม...';
+    if (_replyTarget != null) {
+      hintText = 'ตอบกลับ ${_replyTarget!.author.name}...';
+    } else if (_editingComment != null) {
+      hintText = 'แก้ไขความคิดเห็น...';
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ── Context banner (reply / edit) ──
+        if (hasContext)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: _editingComment != null
+                ? const Color(0xFFF3F0FF)
+                : const Color(0xFFF0F7FF),
+            child: Row(children: [
+              Icon(
+                _editingComment != null ? Icons.edit_outlined : Icons.reply_rounded,
+                size: 16,
+                color: _editingComment != null
+                    ? const Color(0xFF5E4BFF)
+                    : const Color(0xFF1565C0),
               ),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendComment(),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _editingComment != null
+                      ? 'กำลังแก้ไขความคิดเห็น'
+                      : 'ตอบกลับ ${_replyTarget!.author.name}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _editingComment != null
+                        ? const Color(0xFF5E4BFF)
+                        : const Color(0xFF1565C0),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _cancelReplyOrEdit,
+                child: Icon(Icons.close, size: 18, color: Colors.grey.shade500),
+              ),
+            ]),
           ),
-        ),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: _sendComment,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFF2D2D5E), Color(0xFF1A1A2E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(14),
+        // ── Input row ──
+        Container(
+          padding: EdgeInsets.fromLTRB(
+              16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+          decoration: BoxDecoration(color: Colors.white, boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, -3))
+          ]),
+          child: Row(children: [
+            _avatar(currentUser, 34),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF5F4F0),
+                    borderRadius: BorderRadius.circular(14)),
+                child: TextField(
+                  controller: _commentCtrl,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration.collapsed(
+                    hintText: hintText,
+                    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendComment(),
+                ),
+              ),
             ),
-            child: _isSending
-                ? const Center(
-                    child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2)))
-                : const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-          ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: _sendComment,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFF2D2D5E), Color(0xFF1A1A2E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: _isSending
+                    ? const Center(
+                        child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2)))
+                    : Icon(
+                        _editingComment != null ? Icons.check_rounded : Icons.send_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+              ),
+            ),
+          ]),
         ),
-      ]),
+      ],
     );
   }
 
@@ -2093,10 +2490,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _submitPost() async {
-    if (_titleCtrl.text.trim().isEmpty) {
-      _showError('กรุณาใส่หัวข้อคำถาม');
-      return;
-    }
     if (_contentCtrl.text.trim().isEmpty) {
       _showError('กรุณาใส่รายละเอียด');
       return;
@@ -2132,7 +2525,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   bool get _canPost =>
-      _titleCtrl.text.trim().isNotEmpty &&
       _contentCtrl.text.trim().isNotEmpty &&
       _selectedCategory != null;
 
@@ -2210,15 +2602,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: Row(children: [
               _avatarWidget(currentUser, 40),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('คุณ (ผู้ใช้งาน)',
-                        style: TextStyle(
+                    Text(currentUser.name,
+                        style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1A1A2E))),
-                    Text('โพสต์ต่อสาธารณะ',
+                    const Text('โพสต์ต่อสาธารณะ',
                         style:
                             TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
                   ]),

@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:LawyerOnline/component/dialog_service.dart';
 
 // ══════════════════════════════════════════════════════════
 //  LawyerJobsStore — Single source of truth สำหรับ job requests
@@ -101,29 +99,13 @@ class LawyerJobsStore {
     if (job.isNotEmpty) job['status'] = newStatus;
   }
 
-  void acceptJob(BuildContext context, String id, {VoidCallback? onDone}) {
+  void acceptJob(String id) {
     HapticFeedback.mediumImpact();
-    DialogService.showConfirmAcceptJob(
-      context,
-      title: "รับงาน",
-      message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
-      onConfirm: () {
-        updateStatus(id, 'accepted');
-        onDone?.call();
-      },
-    );
+    updateStatus(id, 'accepted');
   }
 
-  void rejectJob(BuildContext context, String id, {VoidCallback? onDone}) {
+  void rejectJob(String id) {
     HapticFeedback.lightImpact();
-    DialogService.showConfirmRejectJob(
-      context,
-      title: "ปฏิเสธคำขอ",
-      message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
-      onConfirm: () {
-        updateStatus(id, 'rejected');
-        onDone?.call();
-      },
-    );
+    updateStatus(id, 'rejected');
   }
 }

@@ -16,6 +16,7 @@ class HomeAppBar extends StatelessWidget {
   final String userType;
   final String typeLogin;
   final bool isUrgentCaseEnabled;
+  final VoidCallback? onProfileTap;
 
   const HomeAppBar({
     super.key,
@@ -24,6 +25,7 @@ class HomeAppBar extends StatelessWidget {
     required this.userType,
     required this.typeLogin,
     required this.isUrgentCaseEnabled,
+    this.onProfileTap,
   });
 
   @override
@@ -84,6 +86,7 @@ class HomeAppBar extends StatelessWidget {
                       typeLogin: typeLogin,
                       userType: userType,
                       isUrgentCaseEnabled: isUrgentCaseEnabled,
+                      onProfileTap: onProfileTap,
                     ),
                     const SizedBox(width: 12),
                     // ── ชื่อ + badge (เฉพาะ logged in) ──────────
@@ -113,76 +116,102 @@ class HomeAppBar extends StatelessWidget {
                     // ── ปุ่มขวาสุด: bell (login) | ปุ่มเข้าสู่ระบบ (guest) ──
                     if (typeLogin != 'null')
                       // ── Bell ───────────────────────────────────
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => NotificationPage()),
-                        ),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1565C0).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF1565C0).withOpacity(0.2),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => NotificationPage()),
                             ),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Image.asset(
-                                'assets/icons/bell-2.png',
-                                width: 25,
-                                height: 25,
-                                color: const Color(0xFF1565C0),
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 9,
-                                child: Container(
-                                  width: 9,
-                                  height: 9,
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromARGB(255, 247, 12, 12),
-                                    shape: BoxShape.circle,
-                                  ),
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor:
+                                const Color(0xFF1565C0).withOpacity(0.15),
+                            highlightColor:
+                                const Color(0xFF1565C0).withOpacity(0.08),
+                            child: Ink(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFF1565C0).withOpacity(0.2),
                                 ),
                               ),
-                            ],
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/icons/bell-2.png',
+                                    width: 25,
+                                    height: 25,
+                                    color: const Color(0xFF1565C0),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 9,
+                                    child: Container(
+                                      width: 9,
+                                      height: 9,
+                                      decoration: const BoxDecoration(
+                                        color: Color.fromARGB(255, 247, 12, 12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       )
                     else
                       // ── ปุ่มเข้าสู่ระบบ (guest) ────────────────
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LoginPage(isBack: true),
-                          ),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0262EC),
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    const Color(0xFF0262EC).withOpacity(0.35),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
+                          child: InkWell(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LoginPage(isBack: true),
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            'เข้าสู่ระบบ',
-                            style: GoogleFonts.prompt(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                            splashColor: Colors.white.withOpacity(0.2),
+                            highlightColor: Colors.white.withOpacity(0.1),
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0262EC),
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF0262EC)
+                                        .withOpacity(0.35),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 20),
+                                child: Text(
+                                  'เข้าสู่ระบบ',
+                                  style: GoogleFonts.prompt(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -204,104 +233,114 @@ class _HomeAvatar extends StatelessWidget {
   final String typeLogin;
   final String userType;
   final bool isUrgentCaseEnabled;
+  final VoidCallback? onProfileTap;
 
   const _HomeAvatar({
     required this.imageUrl,
     required this.typeLogin,
     required this.userType,
     required this.isUrgentCaseEnabled,
+    this.onProfileTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isOnline = userType == 'lawyer' && isUrgentCaseEnabled;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Row(
+    return MouseRegion(
+      cursor: onProfileTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onProfileTap,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isOnline
-                      ? const Color(0xFF059669)
-                      : _kPrimary.withOpacity(1),
-                  width: isOnline ? 2.5 : 1,
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isOnline
+                          ? const Color(0xFF059669)
+                          : _kPrimary.withOpacity(1),
+                      width: isOnline ? 2.5 : 1,
+                    ),
+                    boxShadow: isOnline
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF059669).withOpacity(0.4),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: ClipOval(
+                        child: imageUrl.isNotEmpty
+                            ? typeLogin == 'social'
+                                ? Image.network(imageUrl, fit: BoxFit.cover)
+                                : Image.asset(imageUrl, fit: BoxFit.cover)
+                            : Padding(
+                                padding: const EdgeInsets.all(3.0),
+                                child: Image.asset('assets/icons/profile.png',
+                                    fit: BoxFit.cover),
+                              ),
+                      ),
+                    ),
+                  ),
                 ),
-                boxShadow: isOnline
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF059669).withOpacity(0.4),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        )
-                      ]
-                    : [],
-              ),
-              child: Center(
-                child: SizedBox(
-                  width: 42,
-                  height: 42,
-                  child: ClipOval(
-                    child: imageUrl.isNotEmpty
-                        ? typeLogin == 'social'
-                            ? Image.network(imageUrl, fit: BoxFit.cover)
-                            : Image.asset(imageUrl, fit: BoxFit.cover)
-                        : Padding(
-                            padding: const EdgeInsets.all(3.0),
-                            child: Image.asset('assets/icons/profile.png',
-                                fit: BoxFit.cover),
-                          ),
+                // const SizedBox(
+                //   width: 10,
+                // ),
+                // GestureDetector(
+                //   onTap: () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (_) => PageExam(),
+                //       ),
+                //     );
+                //   },
+                //   child: const Icon(
+                //     Icons.visibility,
+                //     size: 20,
+                //   ),
+                // ),
+
+                // Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
+              ],
+            ),
+            if (isOnline)
+              Positioned(
+                bottom: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF059669),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  child: const Icon(
+                    Icons.balance_rounded,
+                    color: Colors.white,
+                    size: 14,
                   ),
                 ),
               ),
-            ),
-            // const SizedBox(
-            //   width: 10,
-            // ),
-            // GestureDetector(
-            //   onTap: () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(
-            //         builder: (_) => PageExam(),
-            //       ),
-            //     );
-            //   },
-            //   child: const Icon(
-            //     Icons.visibility,
-            //     size: 20,
-            //   ),
-            // ),
-
-            // Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
           ],
-        ),
-        if (isOnline)
-          Positioned(
-            bottom: -4,
-            right: -4,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: const Color(0xFF059669),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: const Icon(
-                Icons.balance_rounded,
-                color: Colors.white,
-                size: 14,
-              ),
-            ),
-          ),
-      ],
-    );
+        ), // Stack
+      ), // GestureDetector
+    ); // MouseRegion
   }
 }
 

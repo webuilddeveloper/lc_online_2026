@@ -162,121 +162,134 @@ class HomeLawyerSection extends StatelessWidget {
   Widget _appointmentCardDesktop(BuildContext context, Map model,
       {VoidCallback? onTap}) {
     final isPaid = (model['paymentStatus'] ?? '') == '1';
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: _kAccent.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Row 1: icon + name + badge ──────────────────────
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.event_rounded,
-                      color: Color.fromARGB(255, 255, 255, 255), size: 30),
-                ),
-                const SizedBox(width: 10),
-                const Icon(Icons.person_rounded,
-                    size: 16, color: Color.fromARGB(255, 255, 255, 255)),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    model['clientName'] ?? '',
-                    style: GoogleFonts.prompt(
-                        color: const Color.fromARGB(255, 255, 255, 255),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // badge — fixed width ไม่ overflow
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isPaid
-                        ? Colors.white.withOpacity(0.25)
-                        : Colors.orange.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
-                    style: GoogleFonts.prompt(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600),
-                  ),
+          splashColor: Colors.white.withOpacity(0.15),
+          highlightColor: Colors.white.withOpacity(0.08),
+          child: Ink(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: _kAccent.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            // ── Row 2: title ─────────────────────────────────────
-            Text(model['title'] ?? '',
-                style: GoogleFonts.prompt(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            Text(model['subCaseType'] ?? '',
-                style: GoogleFonts.prompt(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 6),
-            // ── Row 3: date + time inline ─────────────────────────
-            Row(
-              children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 10, color: Colors.white70),
-                const SizedBox(width: 4),
-                Text(model['appointmentDate'] ?? '',
-                    style: GoogleFonts.prompt(
-                        fontSize: 11, color: Colors.white70)),
-                const SizedBox(width: 10),
-                const Icon(Icons.access_time_rounded,
-                    size: 10, color: Colors.white70),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(model['appointmentTime'] ?? '',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Row 1: icon + name + badge ──────────────────────
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.event_rounded,
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            size: 30),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.person_rounded,
+                          size: 16, color: Color.fromARGB(255, 255, 255, 255)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          model['clientName'] ?? '',
+                          style: GoogleFonts.prompt(
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // badge — fixed width ไม่ overflow
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isPaid
+                              ? Colors.white.withOpacity(0.25)
+                              : Colors.orange.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                          style: GoogleFonts.prompt(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // ── Row 2: title ─────────────────────────────────────
+                  Text(model['title'] ?? '',
                       style: GoogleFonts.prompt(
-                          fontSize: 11, color: Colors.white70),
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+                  Text(model['subCaseType'] ?? '',
+                      style: GoogleFonts.prompt(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 6),
+                  // ── Row 3: date + time inline ─────────────────────────
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(model['appointmentDate'] ?? '',
+                          style: GoogleFonts.prompt(
+                              fontSize: 11, color: Colors.white70)),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.access_time_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(model['appointmentTime'] ?? '',
+                            style: GoogleFonts.prompt(
+                                fontSize: 11, color: Colors.white70),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
+                ],
+              ), // Column
+            ), // Padding
+          ), // Ink
+        ), // InkWell
+      ), // Material
+    ); // MouseRegion
   }
 
   // ── Desktop: Job request list (vertical, ไม่ต้อง padding ซ้ำ) ──────
@@ -349,14 +362,17 @@ class HomeLawyerSection extends StatelessWidget {
         ),
         const Spacer(),
         if (onMore != null)
-          GestureDetector(
-            onTap: onMore,
-            child: Text(
-              'ดูทั้งหมด',
-              style: GoogleFonts.prompt(
-                fontSize: 12,
-                color: _kAccent,
-                fontWeight: FontWeight.w500,
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: onMore,
+              child: Text(
+                'ดูทั้งหมด',
+                style: GoogleFonts.prompt(
+                  fontSize: 12,
+                  color: _kAccent,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -406,121 +422,134 @@ class HomeLawyerSection extends StatelessWidget {
         final screenW = MediaQuery.of(context).size.width;
         final cardW = (screenW - 18 * 2 - 14) / 2;
 
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: cardW,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              onTap: onTap,
               borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: _kAccent.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.event_rounded,
-                          color: Colors.white, size: 20),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: isPaid
-                            ? Colors.white.withOpacity(0.25)
-                            : Colors.orange.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
-                        style: GoogleFonts.prompt(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(children: [
-                  const Icon(Icons.person_rounded,
-                      size: 11, color: Colors.white60),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      model['clientName'] ?? '',
-                      style: GoogleFonts.prompt(
-                          color: Colors.white60,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              splashColor: Colors.white.withOpacity(0.15),
+              highlightColor: Colors.white.withOpacity(0.08),
+              child: Ink(
+                width: cardW,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ]),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(model['subCaseType'] ?? '',
-                        style: GoogleFonts.prompt(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    Text(model['title'] ?? '',
-                        style: GoogleFonts.prompt(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _kAccent.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.calendar_today_rounded,
-                          size: 10, color: Colors.white70),
-                      const SizedBox(width: 4),
-                      Text(model['appointmentDate'] ?? '',
-                          style: GoogleFonts.prompt(
-                              fontSize: 12, color: Colors.white70)),
-                    ]),
-                    const SizedBox(height: 2),
-                    Row(children: [
-                      const Icon(Icons.access_time_rounded,
-                          size: 10, color: Colors.white70),
-                      const SizedBox(width: 4),
-                      Text(model['appointmentTime'] ?? '',
-                          style: GoogleFonts.prompt(
-                              fontSize: 12,
-                              color: const Color.fromARGB(179, 255, 255, 255))),
-                    ]),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.event_rounded,
+                                color: Colors.white, size: 20),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isPaid
+                                  ? Colors.white.withOpacity(0.25)
+                                  : Colors.orange.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                              style: GoogleFonts.prompt(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(children: [
+                        const Icon(Icons.person_rounded,
+                            size: 11, color: Colors.white60),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            model['clientName'] ?? '',
+                            style: GoogleFonts.prompt(
+                                color: Colors.white60,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ]),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(model['subCaseType'] ?? '',
+                              style: GoogleFonts.prompt(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                          Text(model['title'] ?? '',
+                              style: GoogleFonts.prompt(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            const Icon(Icons.calendar_today_rounded,
+                                size: 10, color: Colors.white70),
+                            const SizedBox(width: 4),
+                            Text(model['appointmentDate'] ?? '',
+                                style: GoogleFonts.prompt(
+                                    fontSize: 12, color: Colors.white70)),
+                          ]),
+                          const SizedBox(height: 2),
+                          Row(children: [
+                            const Icon(Icons.access_time_rounded,
+                                size: 10, color: Colors.white70),
+                            const SizedBox(width: 4),
+                            Text(model['appointmentTime'] ?? '',
+                                style: GoogleFonts.prompt(
+                                    fontSize: 12,
+                                    color: const Color.fromARGB(
+                                        179, 255, 255, 255))),
+                          ]),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -562,235 +591,261 @@ class HomeLawyerSection extends StatelessWidget {
     final badge = _statusBadge(status);
     final isAccepted = status == 'accepted';
 
-    return GestureDetector(
-      onTap: () {
-        final isPending = status == 'pending';
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => LawyerJobDetailPage(
-              job: job,
-              onAccept: isPending
-                  ? () => LawyerJobsStore.instance.acceptJob(
-                        context,
-                        job['id'],
-                        onDone: () {
-                          Navigator.pop(context);
-                          onJobStatusChanged?.call(job['id'], 'accepted');
-                        },
-                      )
-                  : null,
-              onReject: isPending
-                  ? () => LawyerJobsStore.instance.rejectJob(
-                        context,
-                        job['id'],
-                        onDone: () {
-                          Navigator.pop(context);
-                          onJobStatusChanged?.call(job['id'], 'rejected');
-                        },
-                      )
-                  : null,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // ── color bar ───────────────────────────────────────
-              Container(
-                width: 8,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: barColors,
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () {
+            final isPending = status == 'pending';
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (detailCtx) => LawyerJobDetailPage(
+                  job: job,
+                  onAccept: isPending
+                      ? () {
+                          DialogService.showConfirmAcceptJob(
+                            detailCtx,
+                            title: "รับงาน",
+                            message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+                            onConfirm: () {
+                              LawyerJobsStore.instance
+                                  .acceptJob(job['id'] as String);
+                              if (detailCtx.mounted) {
+                                Navigator.pop(detailCtx);
+                                onJobStatusChanged?.call(job['id'], 'accepted');
+                              }
+                            },
+                          );
+                        }
+                      : null,
+                  onReject: isPending
+                      ? () {
+                          DialogService.showConfirmRejectJob(
+                            detailCtx,
+                            title: "ปฏิเสธคำขอ",
+                            message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+                            onConfirm: () {
+                              LawyerJobsStore.instance
+                                  .rejectJob(job['id'] as String);
+                              if (detailCtx.mounted) {
+                                Navigator.pop(detailCtx);
+                                onJobStatusChanged?.call(job['id'], 'rejected');
+                              }
+                            },
+                          );
+                        }
+                      : null,
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── header ──────────────────────────────────
-                      Row(children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Color(job['clientColor']),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              job['clientAvatar'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(job['clientName'],
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A2340),
-                                  )),
-                              const SizedBox(height: 2),
-                              Row(children: [
-                                Icon(Icons.access_time,
-                                    size: 12, color: Colors.grey[400]),
-                                const SizedBox(width: 4),
-                                Text(job['requestedAt'],
-                                    style: TextStyle(
-                                        fontSize: 11, color: Colors.grey[500])),
-                              ]),
-                            ],
-                          ),
-                        ),
-                        badge,
-                      ]),
-                      const SizedBox(height: 14),
-                      // ── topic badge ─────────────────────────────
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _kPrimary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.gavel_rounded,
-                                size: 12, color: _kPrimary),
-                            const SizedBox(width: 5),
-                            Text(job['topic'],
-                                style: const TextStyle(
-                                  color: _kPrimary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                )),
-                          ],
-                        ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          splashColor: const Color(0xFF0262EC).withOpacity(0.08),
+          highlightColor: const Color(0xFF0262EC).withOpacity(0.04),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // ── color bar ───────────────────────────────────────
+                  Container(
+                    width: 8,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: barColors,
                       ),
-                      const SizedBox(height: 10),
-                      // ── subtopic + details btn ──────────────────
-                      Row(children: [
-                        Expanded(
-                          child: Text(job['subTopic'],
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A2340),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _kPrimary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('ดูรายละเอียด',
-                                  style: TextStyle(
-                                    color: _kPrimary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  )),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_ios,
-                                  size: 10, color: _kPrimary),
-                            ],
-                          ),
-                        ),
-                      ]),
-                      // ── appointment box (accepted only) ─────────
-                      if (isAccepted &&
-                          (job['date'] as String? ?? '').isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _kPrimary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border:
-                                Border.all(color: _kPrimary.withOpacity(0.2)),
-                          ),
-                          child: Row(children: [
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── header ──────────────────────────────────
+                          Row(children: [
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
-                                color: _kPrimary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Color(job['clientColor']),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.calendar_today,
-                                  size: 16, color: _kPrimary),
+                              child: Center(
+                                child: Text(
+                                  job['clientAvatar'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '${job['date']} • ${job['time']}',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A2340),
-                                    ),
-                                  ),
+                                  Text(job['clientName'],
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1A2340),
+                                      )),
                                   const SizedBox(height: 2),
-                                  Text('อยู่ในช่วงเวลาให้คำปรึกษา',
+                                  Row(children: [
+                                    Icon(Icons.access_time,
+                                        size: 12, color: Colors.grey[400]),
+                                    const SizedBox(width: 4),
+                                    Text(job['requestedAt'],
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[500])),
+                                  ]),
+                                ],
+                              ),
+                            ),
+                            badge,
+                          ]),
+                          const SizedBox(height: 14),
+                          // ── topic badge ─────────────────────────────
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _kPrimary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.gavel_rounded,
+                                    size: 12, color: _kPrimary),
+                                const SizedBox(width: 5),
+                                Text(job['topic'],
+                                    style: const TextStyle(
+                                      color: _kPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    )),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // ── subtopic + details btn ──────────────────
+                          Row(children: [
+                            Expanded(
+                              child: Text(job['subTopic'],
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1A2340),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _kPrimary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('ดูรายละเอียด',
                                       style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[800])),
+                                        color: _kPrimary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward_ios,
+                                      size: 10, color: _kPrimary),
                                 ],
                               ),
                             ),
                           ]),
-                        ),
-                      ],
-                    ],
+                          // ── appointment box (accepted only) ─────────
+                          if (isAccepted &&
+                              (job['date'] as String? ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _kPrimary.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: _kPrimary.withOpacity(0.2)),
+                              ),
+                              child: Row(children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: _kPrimary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.calendar_today,
+                                      size: 16, color: _kPrimary),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${job['date']} • ${job['time']}',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1A2340),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text('อยู่ในช่วงเวลาให้คำปรึกษา',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[800])),
+                                    ],
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+                ],
+              ), // Row
+            ), // IntrinsicHeight
+          ), // Ink
+        ), // InkWell
+      ), // Material
+    ); // MouseRegion
   }
 }
 
