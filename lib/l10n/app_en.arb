@@ -1,0 +1,44 @@
+{
+  "@@locale": "en",
+  "appTitle": "Lawyer Online",
+  "community": "Community",
+  "communitySubtitle": "Community Legal Hub",
+  "postQuestion": "Ask a question",
+  "searchHint": "Search legal issues...",
+  "search": "Search",
+  "settings": "Settings",
+  "language": "Language",
+  "selectLanguage": "Select Language",
+  "notifications": "Notifications",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "earlier": "Earlier",
+  "commentsAndAnswers": "Comments and answers",
+  "commentHint": "Write a comment or answer...",
+  "noComments": "No comments yet\nBe the first to answer!",
+  "post": "Post",
+  "labor": "Labor",
+  "property": "Property",
+  "family": "Family",
+  "criminal": "Criminal",
+  "civil": "Civil",
+  "other": "Other",
+  "minutesAgo": "{count} minutes ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "hoursAgo": "{count} hours ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "daysAgo": "{count} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
+}
