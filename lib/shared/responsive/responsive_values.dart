@@ -81,8 +81,8 @@ class RV {
 
   // ── AppBar ────────────────────────────────────────────
   static double appBarHeight(BuildContext context) {
-    if (ResponsiveLayout.isDesktop(context)) return 72;
-    if (ResponsiveLayout.isTablet(context)) return 72;
+    if (ResponsiveLayout.isDesktop(context)) return 110;
+    if (ResponsiveLayout.isTablet(context)) return 110;
     return 80;
   }
 
@@ -101,10 +101,10 @@ class RV {
   }
 
   static double dialogMinWidth(BuildContext context) {
-  if (ResponsiveLayout.isDesktop(context)) return 400;
-  if (ResponsiveLayout.isTablet(context)) return 360;
-  return 320; // mobile — บังคับกว้างขึ้น
-}
+    if (ResponsiveLayout.isDesktop(context)) return 400;
+    if (ResponsiveLayout.isTablet(context)) return 360;
+    return 320; // mobile — บังคับกว้างขึ้น
+  }
 
   // ── Helper: แสดง TopBar หรือ BottomNav ───────────────
   static bool showTopNav(BuildContext context) =>
