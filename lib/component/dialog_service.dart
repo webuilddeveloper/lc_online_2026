@@ -107,6 +107,99 @@ class DialogService {
     );
   }
 
+  /// CONFIRM DELETE ACCOUNT
+  static showConfirmDeleteAccount(BuildContext context, {required Function onConfirm}) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: RV.dialogMaxWidth(context),
+              minWidth: RV.dialogMinWidth(context),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 60,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "ยืนยันการลบบัญชี",
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "คุณต้องการลบบัญชีของคุณอย่างถาวรใช่หรือไม่?",
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            side: const BorderSide(
+                                color: Color(0xFF0262EC), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "ไม่",
+                            style: TextStyle(
+                              color: Color(0xFF0262EC),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 55),
+                            backgroundColor: const Color(0xD2FF0000),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            onConfirm();
+                          },
+                          child: const Text(
+                            "ลบบัญชี",
+                            style: TextStyle(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// CONFIRM
   static showConfirm(BuildContext context,
       {String title = "ยืนยัน", String message = "", Function()? onConfirm}) {

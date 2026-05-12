@@ -4,6 +4,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/menu.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key});
@@ -20,6 +21,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   String name = "";
   String imageUrl = "";
   String typeLogin = "";
+  String email = "";
 
   @override
   void initState() {
@@ -32,11 +34,13 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
     var nameProfile = await storage.read(key: 'name');
     var type = await storage.read(key: 'typeLogin');
+    var emailProfile = await storage.read(key: 'email');
 
     setState(() {
       name = nameProfile ?? "";
       imageUrl = imageProfile ?? "";
       typeLogin = type ?? "";
+      email = emailProfile ?? "";
     });
   }
 
@@ -275,7 +279,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     elevation: 10,
                     shadowColor: Colors.black.withOpacity(0.3),
                   ),
-                  onPressed: selectedReason != null ? _showConfirmModal : null,
+                  onPressed: selectedReason != null ? () {
+                    DialogService.showConfirmDeleteAccount(
+                      context,
+                      onConfirm: () => _processDelete(),
+                    );
+                  } : null,
                   child: const Text(
                     "ลบ",
                     style: TextStyle(
@@ -293,167 +302,22 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     );
   }
 
-  void _showConfirmModal() {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFFF9E6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFDF0A0A),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                "?",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "คุณแน่ใจหรือไม่?",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "คุณต้องการลบบัญชีของคุณอย่างถาวรใช่หรือไม่",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "การยืนยันลบบัญชีจะส่งผลให้ข้อมูลทั้งหมดหายไป (ข้อมูลส่วนตัว, การเป็นสมาชิก, และอื่นๆ)",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontStyle: FontStyle.italic,
-                          color: Color(0xFF9CA3AF),
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.pop(context);
-                            _processDelete();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFDF0A0A),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(32),
-                              ),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                "ลบ",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: const Center(
-                              child: Text(
-                                "เก็บบัญชีไว้",
-                                style: TextStyle(
-                                  color: Color(0xFF3B82F6),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _processDelete() async {
     // 1. แสดง Loading
     DialogService.showLoading(context);
 
     try {
-      // 2. เตรียมข้อมูลส่ง API
-      String reason = "";
+      // เตรียมข้อมูลส่ง API
+      String reasonCancel = "";
       if (selectedReason != null) {
-        reason = selectedReason == 4 ? otherReasonController.text : reasons[selectedReason!];
+        reasonCancel = selectedReason == 4 ? otherReasonController.text : reasons[selectedReason!];
       }
       
-      // TODO: ใส่โค้ดเรียก API ลบบัญชีที่นี่
-      // ตัวอย่าง: var response = await apiProvider.deleteAccount(reason: reason);
-      
-      // จำลองการดีเลย์ของ API 2 วินาที (ลบออกเมื่อต่อ API จริง)
-      await Future.delayed(const Duration(seconds: 2));
+      // เรียก API ลบบัญชี โดยส่ง reasonCancel
+      await AuthService.deleteAccount(
+        email: email,
+        reasonCancel: reasonCancel,
+      );
 
       // 3. ปิดหน้าต่าง Loading
       Navigator.pop(context);
