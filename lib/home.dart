@@ -662,14 +662,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // ── Lawyer dashboard ─────────────────────────────────
             if (typeLogin != 'null' && userType == 'lawyer')
-              HomeLawyerSection(
-                appointments: appointmentList,
-                jobRequests: LawyerJobsStore.instance.jobs,
-                onJobStatusChanged: (id, newStatus) {
-                  setState(() {
+              ListenableBuilder(
+                listenable: LawyerJobsStore.instance,
+                builder: (_, __) => HomeLawyerSection(
+                  appointments: appointmentList,
+                  jobRequests: LawyerJobsStore.instance.jobs,
+                  onJobStatusChanged: (id, newStatus) {
                     LawyerJobsStore.instance.updateStatus(id, newStatus);
-                  });
-                },
+                  },
+                ),
               ),
 
             const SizedBox(height: 16),

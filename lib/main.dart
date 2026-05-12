@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
       locale: context.locale,
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
-      title: 'Lawyer Online',
+      title: 'LC Online',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.

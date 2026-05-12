@@ -1,11 +1,12 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 // ══════════════════════════════════════════════════════════
 //  LawyerJobsStore — Single source of truth สำหรับ job requests
 //  ทุกหน้าที่ต้องการข้อมูลให้ import ไฟล์นี้
 // ══════════════════════════════════════════════════════════
 
-class LawyerJobsStore {
+class LawyerJobsStore extends ChangeNotifier {
   // Singleton
   LawyerJobsStore._();
   static final LawyerJobsStore instance = LawyerJobsStore._();
@@ -93,10 +94,13 @@ class LawyerJobsStore {
     },
   ];
 
-  // อัปเดต status — ทุกหน้าที่ถือ reference เดียวกันจะเห็นการเปลี่ยนแปลงทันที
+  // อัปเดต status — notifyListeners() ทำให้ทุก ListenableBuilder rebuild อัตโนมัติ
   void updateStatus(String id, String newStatus) {
     final job = jobs.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isNotEmpty) job['status'] = newStatus;
+    if (job.isNotEmpty) {
+      job['status'] = newStatus;
+      notifyListeners();
+    }
   }
 
   void acceptJob(String id) {

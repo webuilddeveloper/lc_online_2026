@@ -93,7 +93,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
       color: Colors.white,
       padding: EdgeInsets.symmetric(
         horizontal: RV.pagePadding(context),
-        vertical: 18,
+        vertical: 12,
       ),
       child: SafeArea(
         bottom: false,
@@ -111,7 +111,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'LawyerOnline',
+                  'LC Online',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -385,50 +385,67 @@ class DesktopNavItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 6),
+              margin: EdgeInsets.symmetric(horizontal: showText ? 6 : 12),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Stack(
-                    alignment: Alignment.center,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        item.icon,
-                        width: item.isLogo ? 30 : 22,
-                        height: item.isLogo ? 30 : 22,
-                        color: isSelected
-                            ? const Color(0xFF0262EC)
-                            : const Color(0xFF666666),
-                      ),
-                      if (showBadge)
-                        Positioned(
-                          top: 0,
-                          right: 2,
-                          child: Container(
-                            width: 10,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF70C0C),
-                              shape: BoxShape.circle,
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Image.asset(
+                            item.icon,
+                            width: item.isLogo ? 36 : 28,
+                            height: item.isLogo ? 36 : 28,
+                            color: isSelected
+                                ? const Color(0xFF0262EC)
+                                : const Color(0xFF666666),
+                          ),
+                          if (showBadge)
+                            Positioned(
+                              top: 0,
+                              right: 2,
+                              child: Container(
+                                width: 10,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF70C0C),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
+                        ],
+                      ),
+                      if (showText) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w400,
+                            color: isSelected
+                                ? const Color(0xFF0262EC)
+                                : const Color(0xFF666666),
+                            height: 1.0,
                           ),
                         ),
+                      ],
                     ],
                   ),
-                  if (showText) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w400,
-                        color: isSelected
-                            ? const Color(0xFF0262EC)
-                            : const Color(0xFF666666),
-                        height: 1.0,
+                  if (!showText) ...[
+                    const SizedBox(height: 4),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      width: isSelected ? 5 : 0,
+                      height: isSelected ? 5 : 0,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0262EC),
+                        shape: BoxShape.circle,
                       ),
                     ),
                   ],
