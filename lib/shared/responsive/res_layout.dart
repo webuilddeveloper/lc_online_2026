@@ -11,7 +11,7 @@ class ResponsiveLayout extends StatelessWidget {
     required this.desktopBody,
   });
 
-  // กำหนด Breakpoints
+  //กำหนด Breakpoints 
   static bool isMobile(BuildContext context) =>
       MediaQuery.of(context).size.width < 600;
 
