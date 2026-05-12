@@ -4,6 +4,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/register_page.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/shared/apple_firebase.dart';
 import 'package:LawyerOnline/shared/line.dart';
 import 'package:LawyerOnline/shared/notification-service.dart';
@@ -660,83 +661,41 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     setState(() {
       isLoading = true;
     });
-    if (usernameController.text == "lawyer" &&
-        passwordController.text == "lawyer") {
-      await storage.write(key: 'userType', value: 'lawyer');
-      await storage.write(
-        key: 'name',
-        value: 'ศักดิ์สิทธิ์ พิพากษ์',
-      );
-      await storage.write(
-        key: 'imageUrlSocial',
-        value: 'assets/images/lawyer-avatar-1.png',
-      );
-      await storage.write(
-        key: 'typeLogin',
-        value: 'local',
+
+    try {
+      final user = await AuthService.login(
+        usernameController.text.trim(),
+        passwordController.text,
+        'guest',
       );
 
-      // await NotificationService.saveFcmToken(
-      //   await FirebaseMessaging.instance.getToken() ?? '',
-      // );
+      await storage.write(key: 'userType', value: user.userType);
+      await storage.write(key: 'name', value: user.fullName);
+      await storage.write(
+        key: 'imageUrlSocial',
+        value: user.imageUrl.isNotEmpty
+            ? user.imageUrl
+            : 'assets/images/profile-avatar.jpg',
+      );
+      await storage.write(key: 'typeLogin', value: 'api');
+      await storage.write(key: 'email', value: user.email);
+      await storage.write(key: 'phone', value: user.phone);
+      await storage.write(key: 'code', value: user.code);
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => MenuPage(userType: "lawyer"),
+          builder: (_) => MenuPage(userType: user.userType),
         ),
       );
-    } else if (usernameController.text == "user" &&
-        passwordController.text == "user") {
-      await storage.write(key: 'userType', value: 'user');
-      await storage.write(
-        key: 'name',
-        value: 'ออกแบบ ทดลอง',
-      );
-      await storage.write(
-        key: 'imageUrlSocial',
-        value: 'assets/images/profile-avatar.jpg',
-      );
-      await storage.write(
-        key: 'typeLogin',
-        value: 'local',
-      );
-
-      // await NotificationService.saveFcmToken(
-      //   await FirebaseMessaging.instance.getToken() ?? '',
-      // );
-
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MenuPage(userType: "user"),
-        ),
-      );
-    } else {
-      // AwesomeDialog(
-      //   context: context,
-      //   dialogType: DialogType.warning,
-      //   title: "ไม่พบผู้ใช้",
-      //   desc: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
-      //   btnOkOnPress: () {},
-      // ).show();
+    } catch (error) {
       setState(() {
         isLoading = false;
       });
       DialogService.showError(
         context,
-        title: "ไม่พบผู้ใช้",
-        message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
-        // onClose: () {
-        //   // Navigator.pop(context);
-        //   // final navigator = Navigator.of(context);
-        //   Navigator.of(context).pushAndRemoveUntil(
-        //     MaterialPageRoute(
-        //       builder: (context) => MenuPage(),
-        //     ),
-        //     (Route<dynamic> route) => route.isFirst,
-        //   );
-        // },
+        title: 'ไม่สามารถเข้าสู่ระบบได้',
+        message: error.toString(),
       );
     }
   }
