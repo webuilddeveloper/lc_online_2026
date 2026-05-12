@@ -180,17 +180,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 },
               ),
-              menuItem(
-                title: 'deleteAccount'.tr(),
-                onTap: () => {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DeleteAccountPage(),
-                    ),
-                  ),
-                },
-              ),
+              // menuItem(
+              //   title: 'deleteAccount'.tr(),
+              //   onTap: () => {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) => DeleteAccountPage(),
+              //       ),
+              //     ),
+              //   },
+              // ),
 
               userType == "user"
                   ? Column(
@@ -331,6 +331,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AboutUsPage(),
+                    ),
+                  ),
+                },
+              ),
+              menuItem(
+                title: 'deleteAccount'.tr(),
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DeleteAccountPage(),
                     ),
                   ),
                 },
