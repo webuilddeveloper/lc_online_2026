@@ -1,5 +1,4 @@
 {
-  "@@locale": "en",
   "appTitle": "Lawyer Online",
   "community": "Community",
   "communitySubtitle": "Community Legal Hub",
@@ -10,35 +9,35 @@
   "language": "Language",
   "selectLanguage": "Select Language",
   "notifications": "Notifications",
+  "aboutUs": "About Us",
   "today": "Today",
   "yesterday": "Yesterday",
   "earlier": "Earlier",
+  "incomingCall": "Incoming call",
   "commentsAndAnswers": "Comments and answers",
   "commentHint": "Write a comment or answer...",
-  "noComments": "No comments yet\nBe the first to answer!",
+  "noComments": "No comments yet Be the first to answer!",
   "post": "Post",
+  "public": "Public",
+  "tipTitle": "Tips for faster answers",
+  "tipBody": "Include: what happened, when, amount, and evidence available.",
   "labor": "Labor",
   "property": "Property",
   "family": "Family",
   "criminal": "Criminal",
   "civil": "Civil",
   "other": "Other",
-  "minutesAgo": "{count} minutes ago",
-  "@minutesAgo": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
+  "time": {
+    "minutesAgo": "{} minutes ago",
+    "hoursAgo": "{} hours ago",
+    "daysAgo": "{} days ago"
   },
-  "hoursAgo": "{count} hours ago",
-  "@hoursAgo": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "daysAgo": "{count} days ago",
-  "@daysAgo": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  }
+  "yourActivity": "Your Activities",
+  "likes": "Likes",
+  "myAccount": "My Account",
+  "editInformation": "Edit Information",
+  "changePassword": "Change Password",
+  "logout": "Logout",
+  "profile": "Profile",
+  "register": "Register"
 }

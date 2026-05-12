@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/shared/notification-service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,15 +22,22 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   if (!kIsWeb) {
-    await NotificationService.init();
-    
+    // await NotificationService.init();
+
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     await [Permission.camera, Permission.microphone].request();
+
+    try {
+      await NotificationService.init();
+    } catch (e) {
+      debugPrint('Notification init error: $e');
+      // แอปยังทำงานต่อได้ปกติ
+    }
 
     // await LineSDK.instance.setup('2009412792');
     LineSDK.instance.setup('2009412792').then((_) {
@@ -40,7 +48,18 @@ void main() async {
 
   await initializeDateFormatting('th', null);
 
-  runApp(const MyApp());
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('th'),
+        Locale('en'),
+      ],
+      path: 'assets/translations', // ← ตรงกับ pubspec.yaml
+      fallbackLocale: const Locale('th'),
+      startLocale: const Locale('th'), // default ภาษาไทย
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -50,6 +69,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: context.localizationDelegates,
       title: 'Lawyer Online',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

@@ -35,6 +35,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // ใน build
 // final isUrgentCase = LawyerProfileStore.instance.isUrgentCaseEnabled;

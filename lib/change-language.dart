@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class ChangeLanguagePage extends StatefulWidget {
@@ -128,6 +129,13 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // selectedLanguage = context.locale.languageCode;
+    print(context.locale.languageCode);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
@@ -190,7 +198,8 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
             //   ),
             // )
             GestureDetector(
-              onTap: () => {
+              onTap: () async {
+                await context.setLocale(Locale(selectedLanguage!));
                 DialogService.showSuccess(
                   context,
                   title: "เปลี่ยนภาษาสำเร็จ",
@@ -198,7 +207,7 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
                   onClose: () {
                     Navigator.pop(context);
                   },
-                ),
+                );
               },
               child: Container(
                 width: double.infinity,

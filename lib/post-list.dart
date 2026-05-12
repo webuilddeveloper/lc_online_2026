@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:easy_localization/easy_localization.dart';
+
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
 
@@ -967,13 +970,13 @@ class _CommunityPageState extends State<CommunityPage> {
                 children: [
                   SizedBox(height: topSpacing),
                   // ── Header ──
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Column(
                       children: [
                         Text(
-                          'ชุมชนกฎหมาย',
-                          style: TextStyle(
+                          'community'.tr(),
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1A1A2E),
@@ -1869,33 +1872,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F4F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        // leading: GestureDetector(
-        //   onTap: () => Navigator.pop(context),
-        //   child: Container(
-        //     margin: const EdgeInsets.all(8),
-        //     decoration: BoxDecoration(
-        //         color: const Color(0xFFF5F4F0),
-        //         borderRadius: BorderRadius.circular(10)),
-        //     child: const Icon(Icons.arrow_back_ios_new_rounded,
-        //         size: 16, color: Color(0xFF1A1A2E)),
-        //   ),
-        // ),
-        title: const Text('กระทู้ปัญหา',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E))),
-        centerTitle: true,
-        // actions: [
-        //   Padding(
-        //       padding: const EdgeInsets.only(right: 16),
-        //       child: Icon(Icons.ios_share_rounded,
-        //           size: 20, color: Colors.grey.shade600))
-        // ],
+      appBar: appBarCustom(
+        title: "กระทู้ปัญหา",
+        backBtn: true,
+        isRightWidget: false,
+        backAction: () => goBack(),
+        
       ),
       body: Column(children: [
         Expanded(
@@ -2345,6 +2327,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           style: TextStyle(
               fontSize: 12, color: color, fontWeight: FontWeight.w500))
     ]);
+  }
+
+  void goBack() async {
+    Navigator.pop(context, false);
   }
 }
 

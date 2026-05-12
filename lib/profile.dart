@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/page_exam.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/about-us.dart';
 import 'package:LawyerOnline/change-language.dart';
@@ -15,6 +16,7 @@ import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/post-list.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.userType, this.name, this.imageUrl});
@@ -62,7 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "โปรไฟล์",
+        title: "profile".tr(),
         backBtn: false,
         rightBtn: false,
         backAction: () => goBack(),
@@ -129,11 +131,11 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
 
               const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
                 child: Text(
-                  'บัญชีของฉัน',
-                  style: TextStyle(
+                  'myAccount'.tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -141,7 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 10),
               menuItem(
-                title: 'แก้ไขข้อมูลส่วนตัว',
+                title: 'editInformation'.tr(),
                 onTap: () => {
                   Navigator.push(
                     context,
@@ -152,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
               menuItem(
-                title: 'เปลี่ยนรหัสผ่าน',
+                title: 'changePassword'.tr(),
                 onTap: () => {
                   Navigator.push(
                     context,
@@ -164,27 +166,28 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
 
               userType == "user"
-                  ? const Column(
+                  ? Column(
                       children: [
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Padding(
                           padding:
-                              EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                              const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
                           child: Text(
-                            'กิจกรรมของคุณ',
-                            style: TextStyle(
+                            'yourActivity'.tr(),
+                            style: const TextStyle(
                               fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                       ],
                     )
                   : Container(),
 
               userType != "lawyer"
                   ? menuItem(
-                      title: 'การถูกใจ',
+                      title: 'likes'.tr(),
                       onTap: () => {
                         Navigator.push(
                           context,
@@ -246,11 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   : Container(),
               const SizedBox(height: 20),
 
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
                 child: Text(
-                  'ตั้งค่า',
-                  style: TextStyle(
+                  'settings'.tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -272,7 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   : Container(),
 
               menuItem(
-                  title: 'ตั้งค่าการแจ้งเตือน',
+                  title: 'notifications'.tr(),
                   onTap: () => {
                         Navigator.push(
                           context,
@@ -283,17 +286,19 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       }),
               menuItem(
-                  title: 'เปลี่ยนภาษา /  Language',
-                  onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChangeLanguagePage(),
-                          ),
-                        ),
-                      }),
+                title: 'เปลี่ยนภาษา /  Language',
+                onTap: () => {
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (context) => const ChangeLanguagePage(),
+                  //   ),
+                  // ),
+                  showLanguagePicker(context)
+                },
+              ),
               menuItem(
-                title: 'เกี่ยวกับเรา',
+                title: 'aboutUs'.tr(),
                 onTap: () => {
                   Navigator.push(
                     context,
@@ -319,18 +324,18 @@ class _ProfilePageState extends State<ProfilePage> {
                             width: 1,
                             color: const Color(0xFFDF0A0A),
                           )),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.logout,
                             size: 16,
                             color: Color(0xFFDF0A0A),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
-                            "ออกจากระบบ",
-                            style: TextStyle(
+                            "logout".tr(),
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFFDF0A0A),

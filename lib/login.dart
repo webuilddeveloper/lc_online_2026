@@ -3,6 +3,7 @@ import 'package:LawyerOnline/component/comming-soon.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
+import 'package:LawyerOnline/register_page.dart';
 import 'package:LawyerOnline/shared/apple_firebase.dart';
 import 'package:LawyerOnline/shared/line.dart';
 import 'package:LawyerOnline/shared/notification-service.dart';
@@ -219,6 +220,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 //   },
                                 // ),
                                 // const Text("Remember me"),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const RegisterPage(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("สมัครสมาชิก"),
+                                ),
                                 const Spacer(),
                                 TextButton(
                                   onPressed: () {
@@ -663,9 +676,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         value: 'local',
       );
 
-      await NotificationService.saveFcmToken(
-        await FirebaseMessaging.instance.getToken() ?? '',
-      );
+      // await NotificationService.saveFcmToken(
+      //   await FirebaseMessaging.instance.getToken() ?? '',
+      // );
 
       Navigator.pushReplacement(
         context,
@@ -689,9 +702,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         value: 'local',
       );
 
-      await NotificationService.saveFcmToken(
-        await FirebaseMessaging.instance.getToken() ?? '',
-      );
+      // await NotificationService.saveFcmToken(
+      //   await FirebaseMessaging.instance.getToken() ?? '',
+      // );
 
       await Navigator.pushReplacement(
         context,
