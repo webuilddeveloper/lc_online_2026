@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -140,11 +141,32 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    final fullName = _nameCtrl.text.trim();
+    final parts = fullName.split(RegExp(r'\s+'));
+    final firstName = parts.isNotEmpty ? parts.first : '';
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    final userType = _userType == 'lawyer' ? 'lawyer' : 'user';
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isLoading = false);
-    if (!mounted) return;
-    _showSuccess();
+    try {
+      await AuthService.register(
+        firstName: firstName,
+        lastName: lastName,
+        userType: userType,
+        phone: _phoneCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+        confirmPassword: _confirmCtrl.text,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showSuccess();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError(error.toString());
+    }
   }
 
   void _showError(String msg) {
@@ -180,7 +202,6 @@ class _RegisterPageState extends State<RegisterPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
               Navigator.pop(context);
             },
             child: const Text('เริ่มต้นใช้งาน', style: TextStyle(color: _blue)),

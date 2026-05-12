@@ -6,6 +6,7 @@ import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/notification_dropdown.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -80,6 +81,8 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
   @override
   Widget build(BuildContext context) {
     final isUrgentCaseEnabled = LawyerProfileStore.instance.isUrgentCaseEnabled;
+    final isPro =
+        LawyerProfileStore.instance.isPro && widget.userType == 'lawyer';
 
     final currentIndex = widget.currentIndex;
     final onTap = widget.onTap;
@@ -221,6 +224,10 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                       fontWeight: FontWeight.w600),
                 ),
               ),
+              if (isPro) ...[
+                const SizedBox(width: 8),
+                const ProBadge(fontSize: 10),
+              ],
               const SizedBox(width: 12),
 
               // ── Avatar + วงเขียว ──────────────────────
@@ -286,7 +293,7 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   children: [
                     Container(
                       width: 40,
-                      height: 60,
+                      height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(

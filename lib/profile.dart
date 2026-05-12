@@ -5,18 +5,18 @@ import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
 import 'package:LawyerOnline/delete-account.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
-import 'package:LawyerOnline/lawyer-appointment-history.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
+import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
-import 'package:LawyerOnline/login.dart';
-import 'package:LawyerOnline/post-list.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -38,11 +38,23 @@ class _ProfilePageState extends State<ProfilePage> {
   String imageUrl = '';
   String typeLogin = "";
 
+  bool get _isPro => LawyerProfileStore.instance.isPro && userType == 'lawyer';
+
   @override
   void initState() {
-    // canPop = false;
-    callRead();
     super.initState();
+    callRead();
+    LawyerProfileStore.instance.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  void _onStoreChanged() {
+    if (mounted) setState(() {});
   }
 
   callRead() async {
@@ -127,7 +139,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Color(0xFF0262EC),
                     ),
                   ),
-                  // s
+                  if (_isPro) ...[
+                    const SizedBox(width: 6),
+                    const ProBadge(fontSize: 10),
+                  ],
                 ],
               ),
 
@@ -368,47 +383,10 @@ class _ProfilePageState extends State<ProfilePage> {
         // AVATAR ลอยครึ่งการ์ด
         Positioned(
           top: 0,
-          child: Stack(
-            // clipBehavior: Clip.none,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: typeLogin == 'local'
-                    ? Image.asset(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: 100,
-                        height: 100,
-                      )
-                    : Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: 100,
-                        height: 100,
-                      ),
-              ),
-
-              // // ปุ่มกล้อง
-              // Positioned(
-              //   bottom: -3,
-              //   right: -3,
-              //   child: Container(
-              //       width: 36,
-              //       height: 36,
-              //       decoration: BoxDecoration(
-              //         color: const Color(0xFF0262EC),
-              //         shape: BoxShape.circle,
-              //         border: Border.all(color: Colors.white, width: 3),
-              //       ),
-              //       child: Padding(
-              //         padding: const EdgeInsets.all(5.5),
-              //         child: Image.asset(
-              //           "assets/icons/camera.png",
-              //           width: 17,
-              //         ),
-              //       )),
-              // )
-            ],
+          child: ProfileAvatar(
+            imageUrl: imageUrl,
+            typeLogin: typeLogin,
+            size: 100,
           ),
         ),
       ],
