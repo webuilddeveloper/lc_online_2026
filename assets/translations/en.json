@@ -39,5 +39,6 @@
   "changePassword": "Change Password",
   "logout": "Logout",
   "profile": "Profile",
-  "register": "Register"
+ "register": "Register",
+  "deleteAccount": "Delete Account"
 }

@@ -3,6 +3,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/about-us.dart';
 import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
+import 'package:LawyerOnline/delete-account.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
 import 'package:LawyerOnline/lawyer-appointment-history.dart';
 import 'package:LawyerOnline/menu.dart';
@@ -160,6 +161,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ChangePasswordPage(),
+                    ),
+                  ),
+                },
+              ),
+              menuItem(
+                title: 'deleteAccount'.tr(),
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DeleteAccountPage(),
                     ),
                   ),
                 },

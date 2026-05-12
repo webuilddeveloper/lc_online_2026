@@ -39,5 +39,6 @@
   "changePassword": "เปลี่ยนรหัสผ่าน",
   "logout": "ออกจากระบบ",
   "profile": "โปรไฟล์",
-  "register": "สมัครสมาชิก"
+  "register": "สมัครสมาชิก",
+  "deleteAccount": "ลบบัญชีผู้ใช้"
 }
