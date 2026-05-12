@@ -1,16 +1,14 @@
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/notification.dart';
-import 'package:LawyerOnline/page_exam.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-const _kPrimary = Color(0xFF0262EC);
-const _kGold = Color(0xFFF5A623);
 
 // ─── Home SliverAppBar ────────────────────────────────────────────
 // รับ props ทั้งหมด ไม่มี state ของตัวเอง
 // → rebuild เฉพาะเมื่อ name / imageUrl / userType / isUrgentCaseEnabled เปลี่ยน
-class HomeAppBar extends StatelessWidget {
+class HomeAppBar extends StatefulWidget {
   final String name;
   final String imageUrl;
   final String userType;
@@ -27,6 +25,27 @@ class HomeAppBar extends StatelessWidget {
     required this.isUrgentCaseEnabled,
     this.onProfileTap,
   });
+
+  @override
+  State<HomeAppBar> createState() => _HomeAppBarState();
+}
+
+class _HomeAppBarState extends State<HomeAppBar> {
+  @override
+  void initState() {
+    super.initState();
+    LawyerProfileStore.instance.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  void _onStoreChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,23 +100,22 @@ class HomeAppBar extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _HomeAvatar(
-                      imageUrl: imageUrl,
-                      typeLogin: typeLogin,
-                      userType: userType,
-                      isUrgentCaseEnabled: isUrgentCaseEnabled,
-                      onProfileTap: onProfileTap,
+                    ProfileAvatar(
+                      imageUrl: widget.imageUrl,
+                      typeLogin: widget.typeLogin,
+                      isOnline: widget.userType == 'lawyer' && widget.isUrgentCaseEnabled,
+                      onProfileTap: widget.onProfileTap,
                     ),
                     const SizedBox(width: 12),
                     // ── ชื่อ + badge (เฉพาะ logged in) ──────────
                     Expanded(
-                      child: typeLogin != 'null'
+                      child: widget.typeLogin != 'null'
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  name.isNotEmpty ? name : 'ผู้ใช้งาน',
+                                  widget.name.isNotEmpty ? widget.name : 'ผู้ใช้งาน',
                                   style: GoogleFonts.prompt(
                                     color: Colors.black,
                                     fontSize: 17,
@@ -107,14 +125,17 @@ class HomeAppBar extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
-                                _HomeMemberBadge(userType: userType),
+                                ProfileMemberBadge(
+                                  userType: widget.userType,
+                                  isPro: LawyerProfileStore.instance.isPro && widget.userType == 'lawyer',
+                                ),
                               ],
                             )
                           : const SizedBox.shrink(),
                     ),
 
                     // ── ปุ่มขวาสุด: bell (login) | ปุ่มเข้าสู่ระบบ (guest) ──
-                    if (typeLogin != 'null')
+                    if (widget.typeLogin != 'null')
                       // ── Bell ───────────────────────────────────
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
@@ -227,150 +248,6 @@ class HomeAppBar extends StatelessWidget {
   }
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────
-class _HomeAvatar extends StatelessWidget {
-  final String imageUrl;
-  final String typeLogin;
-  final String userType;
-  final bool isUrgentCaseEnabled;
-  final VoidCallback? onProfileTap;
-
-  const _HomeAvatar({
-    required this.imageUrl,
-    required this.typeLogin,
-    required this.userType,
-    required this.isUrgentCaseEnabled,
-    this.onProfileTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isOnline = userType == 'lawyer' && isUrgentCaseEnabled;
-
-    return MouseRegion(
-      cursor: onProfileTap != null
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.basic,
-      child: GestureDetector(
-        onTap: onProfileTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isOnline
-                          ? const Color(0xFF059669)
-                          : _kPrimary.withOpacity(1),
-                      width: isOnline ? 2.5 : 1,
-                    ),
-                    boxShadow: isOnline
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF059669).withOpacity(0.4),
-                              blurRadius: 6,
-                              spreadRadius: 1,
-                            )
-                          ]
-                        : [],
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 42,
-                      height: 42,
-                      child: ClipOval(
-                        child: imageUrl.isNotEmpty
-                            ? typeLogin == 'social'
-                                ? Image.network(imageUrl, fit: BoxFit.cover)
-                                : Image.asset(imageUrl, fit: BoxFit.cover)
-                            : Padding(
-                                padding: const EdgeInsets.all(3.0),
-                                child: Image.asset('assets/icons/profile.png',
-                                    fit: BoxFit.cover),
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-                // const SizedBox(
-                //   width: 10,
-                // ),
-                // GestureDetector(
-                //   onTap: () {
-                //     // Navigator.push(
-                //     //   context,
-                //     //   MaterialPageRoute(
-                //     //     builder: (_) => PageExam(),
-                //     //   ),
-                //     // );
-                //     showLanguagePicker(context);
-                //   },
-                //   child: const Icon(
-                //     Icons.visibility,
-                //     size: 20,
-                //   ),
-                // ),
-
-                // Image.asset('assets/icons/profile.png', fit: BoxFit.cover),
-              ],
-            ),
-            if (isOnline)
-              Positioned(
-                bottom: -4,
-                right: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF059669),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: const Icon(
-                    Icons.balance_rounded,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ),
-          ],
-        ), // Stack
-      ), // GestureDetector
-    ); // MouseRegion
-  }
-}
-
-// ─── Member Badge ─────────────────────────────────────────────────
-class _HomeMemberBadge extends StatelessWidget {
-  final String userType;
-  const _HomeMemberBadge({required this.userType});
-
-  @override
-  Widget build(BuildContext context) {
-    final label = userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _kGold),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.prompt(
-          color: _kGold,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
 
 // ─── AppBar Overlay Painter ───────────────────────────────────────
 class AppBarOverlayPainter extends CustomPainter {

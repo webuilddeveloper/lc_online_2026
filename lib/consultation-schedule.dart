@@ -1,10 +1,11 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert'; // เพิ่มสำหรับ JSON encode/decode
+import 'dart:convert';
 
 class ConsultationSchedule extends StatefulWidget {
   ConsultationSchedule({Key? key, this.model});
@@ -30,33 +31,48 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   // ช่วงเวลา - แบ่งเป็น 3 ช่วง
   List<String> selectedTimeSlots = [];
 
-  // ราคา default และสถานะ Pro
-  bool isLawyerPro = false;
+  // ราคา default — isPro ดึงจาก store โดยตรง (real-time)
+  bool get isLawyerPro => LawyerProfileStore.instance.isPro;
   final double defaultPrice = 500.0;
 
   // สถานะการโหลดข้อมูล
   bool _isLoading = true;
 
+  bool _prevIsPro = false;
+
   @override
   void initState() {
     super.initState();
+    _prevIsPro = LawyerProfileStore.instance.isPro;
+    LawyerProfileStore.instance.addListener(_onStoreChanged);
     _initializeData();
+  }
+
+  void _onStoreChanged() {
+    if (!mounted) return;
+    final nowIsPro = LawyerProfileStore.instance.isPro;
+    // Pro → Free: รีเซ็ตราคากลับ default และล้าง storage
+    if (_prevIsPro && !nowIsPro) {
+      costPerHrController.text = defaultPrice.toStringAsFixed(0);
+      storage.write(
+          key: 'schedule_pricePerHour', value: defaultPrice.toStringAsFixed(0));
+    }
+    _prevIsPro = nowIsPro;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    costPerHrController.dispose();
+    super.dispose();
   }
 
   // โหลดข้อมูลทั้งหมดตอนเริ่มต้น
   Future<void> _initializeData() async {
-    await _checkLawyerProStatus();
     await _loadSavedSchedule();
     setState(() {
       _isLoading = false;
-    });
-  }
-
-  // เช็คสถานะ Lawyer Pro
-  Future<void> _checkLawyerProStatus() async {
-    final proStatus = await storage.read(key: 'isLawyerPro');
-    setState(() {
-      isLawyerPro = proStatus == 'true';
     });
   }
 
@@ -85,12 +101,11 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           }
         }
 
-        // โหลดราคา
-        if (savedPrice != null && savedPrice.isNotEmpty) {
-          costPerHrController.text = savedPrice;
-        } else if (!isLawyerPro) {
-          // ถ้าไม่มีค่าบันทึกและไม่ใช่ Pro ให้ใช้ราคา default
+        // โหลดราคา — ถ้าไม่ใช่ Pro ใช้ default เสมอ ไม่ว่า storage จะมีค่าอะไรค้างอยู่
+        if (!isLawyerPro) {
           costPerHrController.text = defaultPrice.toStringAsFixed(0);
+        } else if (savedPrice != null && savedPrice.isNotEmpty) {
+          costPerHrController.text = savedPrice;
         }
       });
 
@@ -152,8 +167,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 221, 238, 255),
                       borderRadius: BorderRadius.circular(18),
-                      border:
-                          Border.all(width: 1, color: const Color.fromARGB(255, 166, 191, 238)),
+                      border: Border.all(
+                          width: 1,
+                          color: const Color.fromARGB(255, 166, 191, 238)),
                     ),
                     child: const Text(
                       "ล้างค่าทั้งหมด",
@@ -194,7 +210,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
               ),
             ],
           ),
-           const SizedBox(height: 20),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -733,11 +749,5 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
 
   void goBack() async {
     Navigator.pop(context, false);
-  }
-
-  @override
-  void dispose() {
-    costPerHrController.dispose();
-    super.dispose();
   }
 }
