@@ -336,7 +336,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
               menuItem(
-                title: 'deleteAccount'.tr(),
+                title: 'ลบบัญชีผู้ใช้'.tr(),
                 onTap: () => {
                   Navigator.push(
                     context,
