@@ -22,6 +22,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   String imageUrl = "";
   String typeLogin = "";
   String email = "";
+  String code = "";
 
   @override
   void initState() {
@@ -35,12 +36,14 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     var nameProfile = await storage.read(key: 'name');
     var type = await storage.read(key: 'typeLogin');
     var emailProfile = await storage.read(key: 'email');
+    var codeProfile = await storage.read(key: 'code');
 
     setState(() {
       name = nameProfile ?? "";
       imageUrl = imageProfile ?? "";
       typeLogin = type ?? "";
       email = emailProfile ?? "";
+      code = codeProfile ?? "";
     });
   }
 
@@ -323,10 +326,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         reasonCancel = selectedReason == 4 ? otherReasonController.text : reasons[selectedReason!];
       }
       
-      // เรียก API ลบบัญชี โดยส่ง reasonCancel
-      await AuthService.deleteAccount(
+      // เรียก API ยกเลิกบัญชี โดยส่ง email, code, และ reesonCancel
+      await AuthService.cancelAccount(
         email: email,
-        reasonCancel: reasonCancel,
+        code: code,
+        reesonCancel: reasonCancel,
       );
 
       // 3. ปิดหน้าต่าง Loading

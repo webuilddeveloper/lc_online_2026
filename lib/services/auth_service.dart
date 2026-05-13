@@ -8,7 +8,7 @@ class AuthService {
       'https://b7d2-125-25-100-59.ngrok-free.app';
   static const String _loginUrl = '$_baseUrl/m/register/login';
   static const String _registerUrl = '$_baseUrl/m/register/create';
-  static const String _deleteUrl = '$_baseUrl/m/register/delete';
+  static const String _cancelUrl = '$_baseUrl/m/register/cancel';
 
   static const Map<String, String> _headers = {
     'Accept': 'application/json',
@@ -119,27 +119,29 @@ class AuthService {
     }
   }
 
-  static Future<void> deleteAccount({
+  static Future<void> cancelAccount({
     required String email,
-    required String reasonCancel,
+    required String code,
+    required String reesonCancel,
   }) async {
     try {
       final body = json.encode({
         'email': email,
-        'reasonCancel': reasonCancel,
+        'code': code,
+        'reesonCancel': reesonCancel,
       });
 
-      debugPrint('[AuthService.deleteAccount] url=$_deleteUrl');
-      debugPrint('[AuthService.deleteAccount] body=$body');
+      debugPrint('[AuthService.cancelAccount] url=$_cancelUrl');
+      debugPrint('[AuthService.cancelAccount] body=$body');
 
       final response = await http.post(
-        Uri.parse(_deleteUrl),
+        Uri.parse(_cancelUrl),
         body: body,
         headers: _headers,
       );
 
       debugPrint(
-          '[AuthService.deleteAccount] status=${response.statusCode} body=${response.body}');
+          '[AuthService.cancelAccount] status=${response.statusCode} body=${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('Server error ${response.statusCode}');
@@ -147,12 +149,12 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
-        throw Exception(data['message']?.toString() ?? 'Delete account failed');
+        throw Exception(data['message']?.toString() ?? 'Cancel account failed');
       }
 
-      debugPrint('[AuthService.deleteAccount] success for email=$email');
+      debugPrint('[AuthService.cancelAccount] success for email=$email');
     } catch (e) {
-      debugPrint('[AuthService.deleteAccount] error: $e');
+      debugPrint('[AuthService.cancelAccount] error: $e');
       rethrow;
     }
   }
