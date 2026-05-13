@@ -2,6 +2,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ChangeLanguagePage extends StatefulWidget {
   const ChangeLanguagePage({Key? key}) : super(key: key);
@@ -9,6 +10,8 @@ class ChangeLanguagePage extends StatefulWidget {
   @override
   State<ChangeLanguagePage> createState() => _ChangeLanguagePageState();
 }
+
+final _storage = FlutterSecureStorage();
 
 class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
   String selectedLanguage = "th";
@@ -131,8 +134,7 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
   @override
   void initState() {
     super.initState();
-    // selectedLanguage = context.locale.languageCode;
-    print(context.locale.languageCode);
+    selectedLanguage = context.locale.languageCode;
   }
 
   @override
@@ -199,7 +201,8 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
             // )
             GestureDetector(
               onTap: () async {
-                await context.setLocale(Locale(selectedLanguage!));
+                await context.setLocale(Locale(selectedLanguage));
+                await _storage.write(key: 'appLanguage', value: selectedLanguage);
                 DialogService.showSuccess(
                   context,
                   title: "เปลี่ยนภาษาสำเร็จ",

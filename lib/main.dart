@@ -2,6 +2,7 @@ import 'package:LawyerOnline/shared/notification-service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,8 +19,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // ไม่ต้องทำอะไรเพิ่มถ้า notification payload ครบ
 }
 
+final _secureStorage = FlutterSecureStorage();
+
+Future<Locale> _loadSavedLocale() async {
+  final localeCode = await _secureStorage.read(key: 'appLanguage');
+  if (localeCode != null && localeCode.isNotEmpty) {
+    return Locale(localeCode);
+  }
+  return const Locale('th');
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -47,6 +59,7 @@ void main() async {
   }
 
   await initializeDateFormatting('th', null);
+  final startLocale = await _loadSavedLocale();
 
   runApp(
     EasyLocalization(
@@ -56,7 +69,9 @@ void main() async {
       ],
       path: 'assets/translations', // ← ตรงกับ pubspec.yaml
       fallbackLocale: const Locale('th'),
-      startLocale: const Locale('th'), // default ภาษาไทย
+      startLocale: startLocale,
+      saveLocale: true,
+      useOnlyLangCode: true,
       child: const MyApp(),
     ),
   );

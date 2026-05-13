@@ -11,7 +11,8 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -38,7 +39,6 @@ class _MenuPageState extends State<MenuPage> {
   int _currentPage = 0;
   DateTime? currentBackPressTime;
 
-  final storage = FlutterSecureStorage();
   String userType = '';
   String name = '';
   String imageUrl = '';
@@ -71,6 +71,25 @@ class _MenuPageState extends State<MenuPage> {
     super.initState();
     callRead();
     Future.delayed(Duration.zero, requestPermissions);
+    // listen store — rebuild ทันทีเมื่อ profile เปลี่ยน (เช่น หลัง updateProfile)
+    UserProfileStore.instance.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    UserProfileStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  void _onStoreChanged() {
+    if (!mounted) return;
+    final store = UserProfileStore.instance;
+    setState(() {
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
+      userType = store.userType.isNotEmpty ? store.userType : userType;
+    });
   }
 
   Future<void> requestPermissions() async {
@@ -79,16 +98,17 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   Future<void> callRead() async {
-    final uType = await storage.read(key: 'userType');
-    final imageProfile = await storage.read(key: 'imageUrlSocial');
-    final nameProfile = await storage.read(key: 'name');
-    final type = await storage.read(key: 'typeLogin');
+    await UserProfileStore.instance.load();
+    await LawyerProfileStore.instance.load();
 
+    final store = UserProfileStore.instance;
     setState(() {
-      userType = widget.userType ?? uType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
-      typeLogin = type.toString();
+      userType = widget.userType?.isNotEmpty == true
+          ? widget.userType!
+          : store.userType;
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
 
       pages = [
         HomePage(onProfileTap: () => _onNavTap(4)),

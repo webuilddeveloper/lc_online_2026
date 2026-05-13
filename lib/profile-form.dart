@@ -1,10 +1,11 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/services/auth_service.dart'; // EmailDuplicateException อยู่ในไฟล์นี้
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
@@ -15,9 +16,24 @@ class ProfileFormPage extends StatefulWidget {
 
 class _ProfileFormPageState extends State<ProfileFormPage>
     with SingleTickerProviderStateMixin {
-  final TextEditingController nameController = TextEditingController();
+  // ── controllers ──────────────────────────────────────────────────────
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+
+  // ── scroll ───────────────────────────────────────────────────────────
+  final ScrollController _scrollCtrl = ScrollController();
+  final GlobalKey _firstNameKey = GlobalKey();
+  final GlobalKey _lastNameKey = GlobalKey();
+  final GlobalKey _phoneKey = GlobalKey();
+  final GlobalKey _emailKey = GlobalKey();
+
+  // ── inline error state ───────────────────────────────────────────────
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _phoneError;
+  String? _emailError;
 
   bool isLoading = false;
 
@@ -25,69 +41,74 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   late Animation<double> _scaleAnimation;
   File? profileImage;
   final ImagePicker picker = ImagePicker();
-  final storage = FlutterSecureStorage();
 
-  String userType = "";
-  String name = "";
-  String imageUrl = '';
-  String typeLogin = "";
+  static const Color _blue = Color(0xFF0262EC);
+  static const Color _border = Color(0xFFECEDF0);
+  static const Color _errorColor = Color(0xFFD32F2F);
+
+  // ── อ่านค่าจาก UserProfileStore โดยตรง ────────────────────────────
+  String get _userType => UserProfileStore.instance.userType;
+  String get _typeLogin => UserProfileStore.instance.typeLogin;
+  String get _code => UserProfileStore.instance.code;
+  String get _storedImageUrl => UserProfileStore.instance.imageUrl;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 400));
-
     _scaleAnimation =
         CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
-    callRead();
+    _loadFromStore();
   }
 
   @override
   void dispose() {
+    _scrollCtrl.dispose();
     _controller.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
     super.dispose();
   }
 
-  /// Email Validation
-  bool isEmailValid(String email) {
-    return RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
+  // ── โหลดค่าจาก UserProfileStore ────────────────────────────────────
+  void _loadFromStore() {
+    final store = UserProfileStore.instance;
+    firstNameController.text = store.firstName;
+    lastNameController.text = store.lastName;
+    phoneController.text = store.phone;
+    emailController.text = store.email;
   }
 
-  /// Phone Validation
-  bool isPhoneValid(String phone) {
-    return phone.length >= 9;
+  // ── validation helpers ───────────────────────────────────────────────
+  bool _isEmailValid(String email) =>
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+
+  // เบอร์ต้องครบ 10 หลักพอดี เหมือน register
+  bool _isPhoneValid(String phone) =>
+      phone.replaceAll(RegExp(r'\D'), '').length == 10;
+
+  // ── scroll to key ────────────────────────────────────────────────────
+  void _scrollToKey(GlobalKey key) {
+    final ctx = key.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.3,
+    );
   }
 
-  Future pickImage() async {
+  Future<void> pickImage() async {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
     if (image != null) {
       setState(() {
         profileImage = File(image.path);
       });
     }
-  }
-
-  callRead() async {
-    var userType = await storage.read(key: 'userType');
-    var imageProfile = await storage.read(key: 'imageUrlSocial');
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
-    var phone = await storage.read(key: 'phone');
-    var email = await storage.read(key: 'email');
-    setState(() {
-      this.userType = userType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
-      typeLogin = type.toString();
-      nameController.text = name;
-      phoneController.text = phone ?? '';
-      emailController.text = email ?? '';
-    });
   }
 
   @override
@@ -97,10 +118,11 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       appBar: appBarCustom(
         title: "แก้ไขข้อมูลส่วนตัว",
         backBtn: true,
-        backAction: () => goBack(),
+        backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
       body: ListView(
+        controller: _scrollCtrl,
         padding: const EdgeInsets.fromLTRB(15, 20, 15, 100),
         children: [
           Container(
@@ -126,40 +148,24 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                     children: [
                       CircleAvatar(
                         radius: 45,
-                        backgroundColor: const Color(0xFF0262EC),
-                        backgroundImage:
-                            (typeLogin == 'local' && profileImage == null)
-                                ? AssetImage(imageUrl)
-                                : profileImage != null
-                                    ? FileImage(profileImage!)
-                                    : NetworkImage(imageUrl),
-                        child: imageUrl != ''
-                            ? null
-                            : profileImage == null
-                                ? const Icon(Icons.person,
-                                    size: 45, color: Colors.white)
-                                : null,
+                        backgroundColor: _blue,
+                        backgroundImage: profileImage != null
+                            ? FileImage(profileImage!) as ImageProvider
+                            : _storedImageUrl.isEmpty
+                                ? null
+                                : _typeLogin == 'local'
+                                    ? AssetImage(_storedImageUrl)
+                                        as ImageProvider
+                                    : NetworkImage(_storedImageUrl),
+                        child: _storedImageUrl.isEmpty && profileImage == null
+                            ? const Icon(Icons.person,
+                                size: 45, color: Colors.white)
+                            : null,
                       ),
-                      // ClipRRect(
-                      //   borderRadius: BorderRadius.circular(100),
-                      //   child: typeLogin == 'local'
-                      //       ? Image.asset(
-                      //           imageUrl,
-                      //           fit: BoxFit.cover,
-                      //           width: 100,
-                      //           height: 100,
-                      //         )
-                      //       : Image.network(
-                      //           imageUrl,
-                      //           fit: BoxFit.cover,
-                      //           width: 100,
-                      //           height: 100,
-                      //         ),
-                      // ),
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
-                          color: Color(0xFF0262EC),
+                          color: _blue,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -173,34 +179,49 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 ),
 
                 const SizedBox(height: 25),
-                textField(
-                  title: "ชื่อ - นามสกุล",
-                  controller: nameController,
+
+                _textField(
+                  fieldKey: _firstNameKey,
+                  title: "ชื่อ *",
+                  controller: firstNameController,
                   icon: Icons.person_outline,
+                  errorText: _firstNameError,
+                  onChanged: (_) => setState(() => _firstNameError = null),
                 ),
-
                 const SizedBox(height: 15),
-
-                textField(
-                  title: "เบอร์โทรศัพท์",
+                _textField(
+                  fieldKey: _lastNameKey,
+                  title: "นามสกุล *",
+                  controller: lastNameController,
+                  icon: Icons.person_outline,
+                  errorText: _lastNameError,
+                  onChanged: (_) => setState(() => _lastNameError = null),
+                ),
+                const SizedBox(height: 15),
+                _textField(
+                  fieldKey: _phoneKey,
+                  title: "เบอร์โทรศัพท์ * (10 หลัก)",
                   controller: phoneController,
                   icon: Icons.phone_outlined,
                   maxLength: 10,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  errorText: _phoneError,
+                  onChanged: (_) => setState(() => _phoneError = null),
                 ),
-
                 const SizedBox(height: 15),
-
-                textField(
-                  title: "อีเมล",
+                _textField(
+                  fieldKey: _emailKey,
+                  title: "อีเมล *",
                   controller: emailController,
                   icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  onChanged: (_) => setState(() => _emailError = null),
                 ),
 
                 const SizedBox(height: 25),
-
-                saveButton(),
+                _saveButton(),
               ],
             ),
           )
@@ -209,23 +230,27 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     );
   }
 
-  /// TEXT FIELD
-  Widget textField({
+  // ── TEXT FIELD ──────────────────────────────────────────────────────
+  Widget _textField({
+    required GlobalKey fieldKey,
     required String title,
     required TextEditingController controller,
     required IconData icon,
     int? maxLength,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
+      key: fieldKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF0262EC),
+            color: _blue,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -235,99 +260,72 @@ class _ProfileFormPageState extends State<ProfileFormPage>
           maxLength: maxLength,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
+          onChanged: onChanged,
           decoration: InputDecoration(
             counterText: '',
-            prefixIcon: Icon(icon, color: Colors.grey),
+            prefixIcon: Icon(
+              icon,
+              color: errorText != null ? _errorColor : Colors.grey,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFECEDF0)),
+              borderSide:
+                  BorderSide(color: errorText != null ? _errorColor : _border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFECEDF0)),
+              borderSide:
+                  BorderSide(color: errorText != null ? _errorColor : _border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF0262EC)),
+              borderSide: BorderSide(
+                color: errorText != null ? _errorColor : _blue,
+                width: 1.5,
+              ),
             ),
-            fillColor: const Color(0xFFFAFAFA),
+            fillColor: errorText != null
+                ? _errorColor.withOpacity(0.04)
+                : const Color(0xFFFAFAFA),
             filled: true,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  size: 13, color: _errorColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  errorText,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: _errorColor,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
 
-  /// SAVE BUTTON
-  Widget saveButton() {
+  // ── SAVE BUTTON ─────────────────────────────────────────────────────
+  Widget _saveButton() {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        // ต้องกรอกอย่างน้อย 1 ช่อง
-        if (nameController.text.isEmpty &&
-            phoneController.text.isEmpty &&
-            emailController.text.isEmpty) {
-          DialogService.showError(
-            context,
-            title: "กรุณากรอกข้อมูลอย่างน้อย 1 ช่อง",
-            message: "",
-          );
-          return;
-        }
-
-        // validate เฉพาะช่องที่กรอก
-        if (phoneController.text.isNotEmpty &&
-            !isPhoneValid(phoneController.text)) {
-          DialogService.showError(
-            context,
-            title: "เบอร์โทรไม่ถูกต้อง",
-            message: "",
-          );
-          return;
-        }
-
-        if (emailController.text.isNotEmpty &&
-            !isEmailValid(emailController.text)) {
-          DialogService.showError(
-            context,
-            title: "อีเมลไม่ถูกต้อง",
-            message: "",
-          );
-          return;
-        }
-
-        setState(() {
-          isLoading = true;
-        });
-
-        await Future.delayed(const Duration(seconds: 1));
-
-        setState(() {
-          isLoading = false;
-        });
-
-        DialogService.showSuccess(
-          context,
-          title: "บันทึกข้อมูลแล้ว",
-          message: "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว",
-          onClose: () {
-            Navigator.pop(context);
-          },
-        );
-      },
+      onTap: isLoading ? null : _onSave,
       child: Container(
         height: 50,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: Color(0xFF0262EC),
-          // gradient: const LinearGradient(
-          //   colors: [
-          //     Color(0xFF0262EC),
-          //     Color(0xFF4DA3FF),
-          //   ],
-          // ),
+          color: _blue,
         ),
         child: Center(
           child: isLoading
@@ -344,28 +342,118 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     );
   }
 
-  void showError(String msg) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text("แจ้งเตือน"),
-          content: Text(msg),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("ตกลง"),
-            )
-          ],
-        );
-      },
-    );
-  }
+  // ── SAVE LOGIC ──────────────────────────────────────────────────────
+  Future<void> _onSave() async {
+    final firstName = firstNameController.text.trim();
+    final lastName = lastNameController.text.trim();
+    final phone = phoneController.text.trim();
+    final email = emailController.text.trim();
+    final userType = _userType;
 
-  void goBack() {
-    Navigator.pop(context);
+    // ── ล้าง error ทั้งหมดก่อน validate ──────────────────────────────
+    setState(() {
+      _firstNameError = null;
+      _lastNameError = null;
+      _phoneError = null;
+      _emailError = null;
+    });
+
+    // ── validate ทุก field พร้อมกัน เก็บ key แรกที่ error ──────────
+    GlobalKey? firstErrorKey;
+
+    if (firstName.isEmpty) {
+      _firstNameError = 'กรุณากรอกชื่อ';
+      firstErrorKey ??= _firstNameKey;
+    }
+
+    if (lastName.isEmpty) {
+      _lastNameError = 'กรุณากรอกนามสกุล';
+      firstErrorKey ??= _lastNameKey;
+    }
+
+    if (phone.isEmpty) {
+      _phoneError = 'กรุณากรอกเบอร์โทรศัพท์';
+      firstErrorKey ??= _phoneKey;
+    } else if (!_isPhoneValid(phone)) {
+      _phoneError = 'เบอร์โทรศัพท์ต้องมี 10 หลัก';
+      firstErrorKey ??= _phoneKey;
+    }
+
+    if (email.isEmpty) {
+      _emailError = 'กรุณากรอกอีเมล';
+      firstErrorKey ??= _emailKey;
+    } else if (!_isEmailValid(email)) {
+      _emailError = 'รูปแบบอีเมลไม่ถูกต้อง';
+      firstErrorKey ??= _emailKey;
+    }
+
+    // ── ถ้ามี error → setState แล้ว scroll ไป field แรก ─────────────
+    if (firstErrorKey != null) {
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(firstErrorKey!);
+      });
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await AuthService.updateProfile(
+        code: _code,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        imageUrl: _storedImageUrl,
+        userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
+      );
+
+      // ── อัปเดต store → persist + broadcast ให้ทุก widget ทราบทันที ──
+      await UserProfileStore.instance.updateFromProfile(
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        email: email,
+        userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
+      );
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      DialogService.showSuccess(
+        context,
+        title: "บันทึกข้อมูลแล้ว",
+        message: "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว",
+        onClose: () => Navigator.pop(context),
+      );
+    } on EmailDuplicateException {
+      // ── AuthService ตรวจ server message แล้วส่ง EmailDuplicateException มา ──
+      // จับ type ได้แน่นอน ไม่ต้อง guess keyword อีกต่อไป
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_emailKey);
+      });
+    } on PhoneDuplicateException {
+      // ── AuthService ตรวจ server message แล้วส่ง PhoneDuplicateException มา ──
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_phoneKey);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      DialogService.showError(context,
+          title: "เกิดข้อผิดพลาด", message: errorMsg);
+    }
   }
 }

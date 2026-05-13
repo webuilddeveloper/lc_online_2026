@@ -9,6 +9,10 @@ class AuthService {
   static const String _loginUrl = '$_baseUrl/m/register/login';
   static const String _registerUrl = '$_baseUrl/m/register/create';
   static const String _cancelUrl = '$_baseUrl/m/register/cancel';
+  static const String _changePasswordUrl = '$_baseUrl/m/register/change';
+  static const String _updateProfileUrl = '$_baseUrl/m/register/update';
+
+  static const Duration _timeout = Duration(seconds: 15);
 
   static const Map<String, String> _headers = {
     'Accept': 'application/json',
@@ -34,6 +38,9 @@ class AuthService {
         Uri.parse(_loginUrl),
         body: body,
         headers: _headers,
+      ).timeout(
+        _timeout,
+        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -92,6 +99,9 @@ class AuthService {
         Uri.parse(_registerUrl),
         body: body,
         headers: _headers,
+      ).timeout(
+        _timeout,
+        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -103,7 +113,32 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
-        throw Exception(data['message']?.toString() ?? 'Registration failed');
+        final message = data['message']?.toString() ?? 'Registration failed';
+
+        debugPrint('[AuthService.register] server message: $message');
+
+        final msg = message.toLowerCase();
+        final isEmailDuplicate = msg.contains('email') ||
+            msg.contains('อีเมล') ||
+            msg.contains('already') ||
+            msg.contains('exist') ||
+            msg.contains('duplicate') ||
+            msg.contains('ซ้ำ') ||
+            msg.contains('มีผู้ใช้') ||
+            msg.contains('ถูกใช้');
+        final isPhoneDuplicate = msg.contains('phone') ||
+            msg.contains('เบอร์') ||
+            msg.contains('โทร') ||
+            msg.contains('mobile');
+
+        if (isEmailDuplicate) {
+          throw EmailDuplicateException(message);
+        }
+        if (isPhoneDuplicate) {
+          throw PhoneDuplicateException(message);
+        }
+
+        throw Exception(message);
       }
 
       final objectData = data['objectData'];
@@ -138,6 +173,9 @@ class AuthService {
         Uri.parse(_cancelUrl),
         body: body,
         headers: _headers,
+      ).timeout(
+        _timeout,
+        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -158,4 +196,141 @@ class AuthService {
       rethrow;
     }
   }
+
+  static Future<void> changePassword({
+    required String code,
+    required String password,
+    required String newPassword,
+  }) async {
+    try {
+      final body = json.encode({
+        'code': code,
+        'password': password,
+        'newPassword': newPassword,
+      });
+
+      debugPrint('[AuthService.changePassword] url=$_changePasswordUrl');
+      debugPrint('[AuthService.changePassword] body=$body');
+
+      final response = await http.post(
+        Uri.parse(_changePasswordUrl),
+        body: body,
+        headers: _headers,
+      ).timeout(
+        _timeout,
+        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
+      );
+
+      debugPrint(
+          '[AuthService.changePassword] status=${response.statusCode} body=${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Server error ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      if (data['status'] != 'S') {
+        throw Exception(data['message']?.toString() ?? 'Change password failed');
+      }
+
+      debugPrint('[AuthService.changePassword] success for code=$code');
+    } catch (e) {
+      debugPrint('[AuthService.changePassword] error: $e');
+      rethrow;
+    }
+  }
+
+  // ── updateProfile ──────────────────────────────────────────────────────────
+  // throw EmailDuplicateException เมื่อ server แจ้งว่า email ซ้ำ
+  // ทำให้ profile-form ไม่ต้อง guess keyword จาก message string
+  static Future<void> updateProfile({
+    required String code,
+    required String email,
+    required String firstName,
+    String lastName = '',
+    String phone = '',
+    String imageUrl = '',
+    String userType = '',
+  }) async {
+    try {
+      final body = json.encode({
+        'code': code,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'imageUrl': imageUrl,
+        'userType': userType,
+      });
+
+      debugPrint('[AuthService.updateProfile] url=$_updateProfileUrl');
+      debugPrint('[AuthService.updateProfile] body=$body');
+
+      final response = await http.post(
+        Uri.parse(_updateProfileUrl),
+        body: body,
+        headers: _headers,
+      ).timeout(
+        _timeout,
+        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
+      );
+
+      debugPrint(
+          '[AuthService.updateProfile] status=${response.statusCode} body=${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Server error ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      if (data['status'] != 'S') {
+        final message = data['message']?.toString() ?? 'Update profile failed';
+
+        debugPrint('[AuthService.updateProfile] server message: $message');
+
+        final msg = message.toLowerCase();
+        final isEmailDuplicate = msg.contains('email') ||
+            msg.contains('อีเมล') ||
+            msg.contains('already') ||
+            msg.contains('exist') ||
+            msg.contains('duplicate') ||
+            msg.contains('ซ้ำ') ||
+            msg.contains('มีผู้ใช้') ||
+            msg.contains('ถูกใช้');
+        final isPhoneDuplicate = msg.contains('phone') ||
+            msg.contains('เบอร์') ||
+            msg.contains('โทร') ||
+            msg.contains('mobile');
+
+        if (isEmailDuplicate) {
+          throw EmailDuplicateException(message);
+        }
+        if (isPhoneDuplicate) {
+          throw PhoneDuplicateException(message);
+        }
+
+        throw Exception(message);
+      }
+
+      debugPrint('[AuthService.updateProfile] success for code=$code');
+    } catch (e) {
+      debugPrint('[AuthService.updateProfile] error: $e');
+      rethrow;
+    }
+  }
+}
+
+// ── Custom Exceptions ─────────────────────────────────────────────────────────
+class EmailDuplicateException implements Exception {
+  final String message;
+  const EmailDuplicateException(this.message);
+  @override
+  String toString() => message;
+}
+
+class PhoneDuplicateException implements Exception {
+  final String message;
+  const PhoneDuplicateException(this.message);
+  @override
+  String toString() => message;
 }

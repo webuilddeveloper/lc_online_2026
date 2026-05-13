@@ -23,6 +23,7 @@ import 'dart:async';
 // import 'package:LawyerOnline/shared/api_provider.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
 // import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -35,6 +36,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart'; // ← UserProfileStore
 import 'package:easy_localization/easy_localization.dart';
 
 // ใน build
@@ -396,6 +398,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   ];
 
   final storage = FlutterSecureStorage();
+  // ── profile fields — sync จาก UserProfileStore ──────────────────────
   String userType = "";
   String imageUrl = "";
   String name = "";
@@ -515,6 +518,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     callRead();
+    // ← listen UserProfileStore เพื่อ rebuild ทันทีที่ profile เปลี่ยน
+    UserProfileStore.instance.addListener(_onProfileChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
       _fadeCtrl.forward();
@@ -524,41 +529,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    UserProfileStore.instance.removeListener(_onProfileChanged); // ←
     _urgentCaseTimer?.cancel();
     _fadeCtrl.dispose();
     super.dispose();
   }
 
+  // ── callback เมื่อ UserProfileStore เปลี่ยน ──────────────────────────
+  void _onProfileChanged() {
+    if (!mounted) return;
+    final store = UserProfileStore.instance;
+    setState(() {
+      name = store.name;
+      imageUrl = store.imageUrl;
+      userType = store.userType;
+      typeLogin = store.typeLogin;
+    });
+  }
+
   Future<void> requestPermissions() async {
+    if (kIsWeb) return; // permission_handler ไม่รองรับ Web
     await [
       Permission.camera,
       Permission.microphone,
       Permission.photos,
-      Permission.location
+      Permission.location,
     ].request();
   }
 
   callRead() async {
-    final uType = await storage.read(key: 'userType');
-    final imgPro = await storage.read(key: 'imageUrlSocial');
-    final namePro = await storage.read(key: 'name');
-    final type = await storage.read(key: 'typeLogin');
-    // final urgentCaseEnabled = await storage.read(key: 'urgentCaseEnabled');
-
+    // โหลด UserProfileStore (ครั้งแรกเท่านั้น — subsequent calls return immediately)
+    await UserProfileStore.instance.load();
     await LawyerProfileStore.instance.load();
 
+    final store = UserProfileStore.instance;
     setState(() {
-      userType = uType ?? '';
-      name = namePro ?? '';
-      imageUrl = imgPro ?? '';
-      typeLogin = type.toString();
-      // _isUrgentCaseEnabled = urgentCaseEnabled == 'true';
+      userType = store.userType;
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
     });
-    // final value =
-    //     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
-    // setState(() {
-    //   mockBannerList = value;
-    // });
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -582,16 +592,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 // desktop ไม่แสดง SliverAppBar เพราะมี TopNav ใน menu.dart แล้ว
                 if (!ResponsiveLayout.isDesktop(context))
                   ListenableBuilder(
-                    listenable: LawyerProfileStore.instance,
+                    // listen ทั้งสอง store: profile data + lawyer urgent-case
+                    listenable: Listenable.merge([
+                      UserProfileStore.instance,
+                      LawyerProfileStore.instance,
+                    ]),
                     builder: (_, __) => HomeAppBar(
-                      name: name,
-                      imageUrl: imageUrl,
-                      userType: userType,
-                      typeLogin: typeLogin,
+                      name: UserProfileStore.instance.name,
+                      imageUrl: UserProfileStore.instance.imageUrl,
+                      userType: UserProfileStore.instance.userType,
+                      typeLogin: UserProfileStore.instance.typeLogin,
                       isUrgentCaseEnabled:
                           LawyerProfileStore.instance.isUrgentCaseEnabled,
                       onProfileTap:
-                          typeLogin != 'null' ? widget.onProfileTap : null,
+                          UserProfileStore.instance.typeLogin != 'null'
+                              ? widget.onProfileTap
+                              : null,
                     ),
                   ),
                 SliverToBoxAdapter(

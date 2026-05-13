@@ -11,6 +11,8 @@ import 'package:LawyerOnline/shared/notification-service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/user_model.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 class LoginPage extends StatefulWidget {
   final bool isBack;
@@ -141,9 +143,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               width: 120,
                               height: 120,
                             ),
-                  
+
                             // const SizedBox(height: 12),
-                  
+
                             const Text(
                               'หมอความออนไลน์',
                               style: TextStyle(
@@ -154,7 +156,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                  
+
                             const SizedBox(height: 15),
                             // const Text(
                             //   "เข้าสู่ระบบ",
@@ -164,24 +166,23 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             //     fontWeight: FontWeight.bold,
                             //   ),
                             // ),
-                  
+
                             // const SizedBox(height: 10),
-                  
+
                             /// Username
                             TextField(
                               controller: usernameController,
                               decoration: InputDecoration(
-                                prefixIcon:
-                                    const Icon(Icons.person_outline),
+                                prefixIcon: const Icon(Icons.person_outline),
                                 labelText: "ชื่อผู้ใช้",
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                             ),
-                  
+
                             const SizedBox(height: 15),
-                  
+
                             /// Password
                             TextField(
                               controller: passwordController,
@@ -206,8 +207,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                  
+
                             const SizedBox(height: 5),
+
                             /// Remember
                             Row(
                               children: [
@@ -248,9 +250,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 )
                               ],
                             ),
-                  
+
                             const SizedBox(height: 20),
-                  
+
                             /// 🔹 Login Button
                             SizedBox(
                               height: 50,
@@ -291,9 +293,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                  
+
                             const SizedBox(height: 20),
-                  
+
                             SizedBox(
                               height: 50,
                               child: ElevatedButton(
@@ -319,8 +321,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 child: Container(
                                   decoration: const BoxDecoration(
                                     color: Color(0xFF040651),
-                                    borderRadius: BorderRadius.all(
-                                        Radius.circular(14)),
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(14)),
                                   ),
                                   child: Center(
                                     child: Row(
@@ -349,34 +351,36 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        widget.isBack ? Positioned(
-                          top: 0,
-                          left: 0,
-                          child: GestureDetector(
-                            onTap: () => goBack(),
-                            child: Container(
-                              // width: 0,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFAFAFA),
-                                // borderRadius: BorderRadius.circular(22),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  width: 1,
-                                  color: const Color(0xFFDBDBDB),
+                        widget.isBack
+                            ? Positioned(
+                                top: 0,
+                                left: 0,
+                                child: GestureDetector(
+                                  onTap: () => goBack(),
+                                  child: Container(
+                                    // width: 0,
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFAFAFA),
+                                      // borderRadius: BorderRadius.circular(22),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        width: 1,
+                                        color: const Color(0xFFDBDBDB),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.arrow_back_ios_new,
+                                      size: 15,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 15,
-                              ),
-                            ),
-                          ),
-                        ) : const SizedBox(),
+                              )
+                            : const SizedBox(),
                       ],
                     ),
                   ),
@@ -567,37 +571,39 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           "lineID": obj.userProfile!.userId
         };
 
-        await storage.write(
-          key: 'categorySocial',
-          value: 'Line',
-        );
-
-        await storage.write(
-          key: 'userType',
-          value: 'user',
-        );
-
-        await storage.write(
-          key: 'imageUrlSocial',
-          value: (obj.userProfile!.pictureUrl != '')
-              ? obj.userProfile!.pictureUrl
-              : '',
-        );
-
-        await storage.write(
-          key: 'name',
-          value: '${model['firstName']} ${model['lastName']}',
-        );
-
-        await storage.write(
-          key: 'typeLogin',
-          value: 'social',
-        );
-
         await NotificationService.saveFcmToken(
           await FirebaseMessaging.instance.getToken() ?? '',
         );
 
+        // ── setUser → persist + broadcast ──
+        await UserProfileStore.instance.setUser(
+          UserModel(
+            code: obj.userProfile!.userId,
+            userType: 'user',
+            firstName: obj.userProfile!.displayName ?? '',
+            lastName: '',
+            email: userEmail.toString(),
+            phone: '',
+            imageUrl: (obj.userProfile!.pictureUrl != null &&
+                    obj.userProfile!.pictureUrl!.isNotEmpty)
+                ? obj.userProfile!.pictureUrl!
+                : '',
+            category: 'Line',
+            isActive: true,
+            status: '',
+            prefixName: '',
+            facebookID: '',
+            googleID: '',
+            lineID: obj.userProfile!.userId,
+            line: '',
+            sex: '',
+            address: '',
+            idcard: '',
+          ),
+          typeLogin: 'social',
+        );
+
+        if (!mounted) return;
         // ปิด Loading
         Navigator.pop(context);
 
@@ -669,19 +675,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         'guest',
       );
 
-      await storage.write(key: 'userType', value: user.userType);
-      await storage.write(key: 'name', value: user.fullName);
-      await storage.write(
-        key: 'imageUrlSocial',
-        value: user.imageUrl.isNotEmpty
-            ? user.imageUrl
-            : 'assets/images/profile-avatar.jpg',
-      );
-      await storage.write(key: 'typeLogin', value: 'api');
-      await storage.write(key: 'email', value: user.email);
-      await storage.write(key: 'phone', value: user.phone);
-      await storage.write(key: 'code', value: user.code);
+      // ── setUser → persist ทุก field + broadcast ให้ทุก widget ทราบทันที ──
+      // ถ้า imageUrl ว่างใช้ default avatar แทน
+      final userWithAvatar = user.imageUrl.isNotEmpty
+          ? user
+          : user.copyWith(imageUrl: 'assets/images/profile-avatar.jpg');
 
+      await UserProfileStore.instance.setUser(
+        userWithAvatar,
+        typeLogin: 'local',
+      );
+
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -703,5 +708,4 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void goBack() async {
     Navigator.pop(context, false);
   }
-
 }

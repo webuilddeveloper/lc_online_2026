@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,11 +36,13 @@ class _HomeAppBarState extends State<HomeAppBar> {
   void initState() {
     super.initState();
     LawyerProfileStore.instance.addListener(_onStoreChanged);
+    UserProfileStore.instance.addListener(_onStoreChanged); // ← listen profile store
   }
 
   @override
   void dispose() {
     LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    UserProfileStore.instance.removeListener(_onStoreChanged); // ← cleanup
     super.dispose();
   }
 
@@ -101,21 +104,23 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     ProfileAvatar(
-                      imageUrl: widget.imageUrl,
-                      typeLogin: widget.typeLogin,
-                      isOnline: widget.userType == 'lawyer' && widget.isUrgentCaseEnabled,
+                      imageUrl: UserProfileStore.instance.imageUrl,
+                      typeLogin: UserProfileStore.instance.typeLogin,
+                      isOnline: UserProfileStore.instance.userType == 'lawyer' && widget.isUrgentCaseEnabled,
                       onProfileTap: widget.onProfileTap,
                     ),
                     const SizedBox(width: 12),
                     // ── ชื่อ + badge (เฉพาะ logged in) ──────────
                     Expanded(
-                      child: widget.typeLogin != 'null'
+                      child: UserProfileStore.instance.typeLogin != 'null'
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  widget.name.isNotEmpty ? widget.name : 'ผู้ใช้งาน',
+                                  UserProfileStore.instance.name.isNotEmpty
+                                      ? UserProfileStore.instance.name
+                                      : 'ผู้ใช้งาน',
                                   style: GoogleFonts.prompt(
                                     color: Colors.black,
                                     fontSize: 17,
@@ -126,8 +131,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 ),
                                 const SizedBox(height: 2),
                                 ProfileMemberBadge(
-                                  userType: widget.userType,
-                                  isPro: LawyerProfileStore.instance.isPro && widget.userType == 'lawyer',
+                                  userType: UserProfileStore.instance.userType,
+                                  isPro: LawyerProfileStore.instance.isPro && UserProfileStore.instance.userType == 'lawyer',
                                 ),
                               ],
                             )
@@ -135,7 +140,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                     ),
 
                     // ── ปุ่มขวาสุด: bell (login) | ปุ่มเข้าสู่ระบบ (guest) ──
-                    if (widget.typeLogin != 'null')
+                    if (UserProfileStore.instance.typeLogin != 'null')
                       // ── Bell ───────────────────────────────────
                       MouseRegion(
                         cursor: SystemMouseCursors.click,

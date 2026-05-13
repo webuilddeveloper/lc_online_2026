@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // รายการภาษาที่รองรับ
 const _langs = [
@@ -8,6 +9,8 @@ const _langs = [
 ];
 
 // เรียกจากที่ไหนก็ได้
+final _storage = FlutterSecureStorage();
+
 void showLanguagePicker(BuildContext context) {
   showModalBottomSheet(
     context: context,
@@ -53,6 +56,7 @@ class _LanguagePicker extends StatelessWidget {
                 onTap: () async {
                   // เปลี่ยนภาษา — easy_localization บันทึกให้อัตโนมัติ
                   await context.setLocale(Locale(lang['code']!));
+                  await _storage.write(key: 'appLanguage', value: lang['code']);
                   if (context.mounted) Navigator.pop(context);
                 },
                 child: AnimatedContainer(

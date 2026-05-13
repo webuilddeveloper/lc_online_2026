@@ -2,9 +2,11 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key});
@@ -16,35 +18,17 @@ class DeleteAccountPage extends StatefulWidget {
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   int? selectedReason;
   final TextEditingController otherReasonController = TextEditingController();
-  final storage = const FlutterSecureStorage();
 
-  String name = "";
-  String imageUrl = "";
-  String typeLogin = "";
-  String email = "";
-  String code = "";
+  // อ่านจาก UserProfileStore โดยตรง ไม่ต้องใช้ storage
+  String get name => UserProfileStore.instance.name;
+  String get imageUrl => UserProfileStore.instance.imageUrl;
+  String get typeLogin => UserProfileStore.instance.typeLogin;
+  String get email => UserProfileStore.instance.email;
+  String get code => UserProfileStore.instance.code;
 
   @override
   void initState() {
-    callRead();
     super.initState();
-  }
-
-  callRead() async {
-    var imageProfile =
-        await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
-    var emailProfile = await storage.read(key: 'email');
-    var codeProfile = await storage.read(key: 'code');
-
-    setState(() {
-      name = nameProfile ?? "";
-      imageUrl = imageProfile ?? "";
-      typeLogin = type ?? "";
-      email = emailProfile ?? "";
-      code = codeProfile ?? "";
-    });
   }
 
   final List<String> reasons = [
@@ -343,7 +327,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         message: "ระบบกำลังพาท่านกลับสู่หน้าหลัก...",
         onClose: () async {
           // เคลียร์ข้อมูลการเข้าสู่ระบบทั้งหมด
-          await storage.deleteAll();
+          await UserProfileStore.instance.resetAndClear();
+          await LawyerProfileStore.instance.reset();
           
           // ปิด Popup
           Navigator.pop(context);

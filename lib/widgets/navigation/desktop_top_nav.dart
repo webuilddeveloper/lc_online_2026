@@ -7,8 +7,9 @@ import 'package:LawyerOnline/notification_dropdown.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 
 // ══════════════════════════════════════════════════════════
 //  NavItem — model สำหรับ nav item แต่ละตัว
@@ -245,8 +246,9 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                       title: "ยืนยันการออกจากระบบ",
                       message: "คุณต้องการออกจากระบบหรือไม่?",
                       onConfirm: () async {
-                        const storage = FlutterSecureStorage();
-                        await storage.deleteAll();
+
+                        await UserProfileStore.instance.resetAndClear();
+                        await LawyerProfileStore.instance.reset();
                         if (context.mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => MenuPage()),

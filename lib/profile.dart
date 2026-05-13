@@ -11,11 +11,11 @@ import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -31,45 +31,35 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final storage = FlutterSecureStorage();
-
-  String userType = "";
-  String name = "";
-  String imageUrl = '';
-  String typeLogin = "";
-
-  bool get _isPro => LawyerProfileStore.instance.isPro && userType == 'lawyer';
-
-  @override
-  void initState() {
-    super.initState();
-    callRead();
-    LawyerProfileStore.instance.addListener(_onStoreChanged);
-  }
-
-  @override
-  void dispose() {
-    LawyerProfileStore.instance.removeListener(_onStoreChanged);
-    super.dispose();
-  }
+  // ── อ่านจาก store โดยตรงผ่าน getter — ไม่เก็บ local state อีกต่อไป ──
+  String get _userType => UserProfileStore.instance.userType.isNotEmpty
+      ? UserProfileStore.instance.userType
+      : (widget.userType ?? '');
+  String get _name => UserProfileStore.instance.name;
+  String get _imageUrl => UserProfileStore.instance.imageUrl;
+  String get _typeLogin => UserProfileStore.instance.typeLogin;
+  bool get _isPro => LawyerProfileStore.instance.isPro && _userType == 'lawyer';
 
   void _onStoreChanged() {
     if (mounted) setState(() {});
   }
 
-  callRead() async {
-    var userType = await storage.read(key: 'userType');
-    var imageProfile =
-        await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
-
-    setState(() {
-      this.userType = widget.userType ?? userType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
-      typeLogin = type.toString();
+  @override
+  void initState() {
+    super.initState();
+    // load() เป็น idempotent — ถ้า home โหลดแล้วจะ return ทันที
+    UserProfileStore.instance.load().then((_) {
+      if (mounted) setState(() {});
     });
+    UserProfileStore.instance.addListener(_onStoreChanged);
+    LawyerProfileStore.instance.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    UserProfileStore.instance.removeListener(_onStoreChanged);
+    LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   @override
@@ -105,7 +95,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget profileMenuCard() {
     return Stack(
-      // clipBehavior: Clip.antiAlias,
       alignment: Alignment.topCenter,
       children: [
         // CARD
@@ -132,8 +121,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    name,
-                    style: TextStyle(
+                    _name.isNotEmpty ? _name : 'ผู้ใช้งาน',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF0262EC),
@@ -161,39 +150,27 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               menuItem(
                 title: 'editInformation'.tr(),
-                onTap: () => {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProfileFormPage(),
                     ),
-                  ),
+                  );
+                  // store จะ notifyListeners() อัตโนมัติหลัง save
                 },
               ),
               menuItem(
                 title: 'changePassword'.tr(),
-                onTap: () => {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChangePasswordPage(),
-                    ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChangePasswordPage(),
                   ),
-                },
+                ),
               ),
-              // menuItem(
-              //   title: 'deleteAccount'.tr(),
-              //   onTap: () => {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (context) => DeleteAccountPage(),
-              //       ),
-              //     ),
-              //   },
-              // ),
 
-              userType == "user"
+              _userType == "user"
                   ? Column(
                       children: [
                         const SizedBox(height: 20),
@@ -211,61 +188,31 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 10),
                       ],
                     )
-                  : Container(),
+                  : const SizedBox.shrink(),
 
-              userType != "lawyer"
+              _userType != "lawyer"
                   ? menuItem(
                       title: 'likes'.tr(),
-                      onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FavoriteLawyersPage(),
-                          ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FavoriteLawyersPage(),
                         ),
-                      },
+                      ),
                     )
-                  : Container(),
+                  : const SizedBox.shrink(),
 
-              // userType != "lawyer"
-              //     ? menuItem(
-              //         title: 'โพสต์ของฉัน',
-              //         onTap: () => {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => PostList(),
-              //             ),
-              //           ),
-              //         },
-              //       )
-              //     : Container(),
-              // menuItem(
-              //     title: 'ประวัตินัดหมาย',
-              //     onTap: () => {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) =>
-              //                   LawyerAppointmentHistoryPage(),
-              //             ),
-              //           ),
-              //         }),
-
-              userType == "lawyer"
+              _userType == "lawyer"
                   ? menuItem(
                       title: 'อัปเกรด Lawyer Pro',
-                      onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SubscribePage(),
-                          ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SubscribePage(),
                         ),
-                      },
+                      ),
                       titleStyle: const TextStyle(
                         fontSize: 12,
-                        // fontWeight: FontWeight.w700,
                         color: Color(0xFF1F2937),
                       ),
                       trailing: const Icon(
@@ -274,9 +221,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: Color(0xFFF5A623),
                       ),
                     )
-                  : Container(),
-              const SizedBox(height: 20),
+                  : const SizedBox.shrink(),
 
+              const SizedBox(height: 20),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
@@ -289,70 +236,57 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
-              userType != "user"
+
+              _userType != "user"
                   ? menuItem(
                       title: 'ตั้งค่าวันที่สามารถจองให้คำปรึกษา',
-                      onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ConsultationSchedule(),
-                          ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ConsultationSchedule(),
                         ),
-                      },
+                      ),
                     )
-                  : Container(),
+                  : const SizedBox.shrink(),
 
               menuItem(
-                  title: 'notifications'.tr(),
-                  onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const NotificationSettingPage(),
-                          ),
-                        ),
-                      }),
+                title: 'notifications'.tr(),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationSettingPage(),
+                  ),
+                ),
+              ),
               menuItem(
-                title: 'เปลี่ยนภาษา /  Language',
-                onTap: () => {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) => const ChangeLanguagePage(),
-                  //   ),
-                  // ),
-                  showLanguagePicker(context)
-                },
+                title: 'changelanguage'.tr(),
+                onTap: () => showLanguagePicker(context),
               ),
               menuItem(
                 title: 'aboutUs'.tr(),
-                onTap: () => {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AboutUsPage(),
-                    ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AboutUsPage(),
                   ),
-                },
+                ),
               ),
               menuItem(
-                title: 'ลบบัญชีผู้ใช้'.tr(),
+                title: 'deleteAccount'.tr(),
                 titleStyle: const TextStyle(
                   fontSize: 12,
                   color: Colors.red,
                 ),
-                onTap: () => {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DeleteAccountPage(),
-                    ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteAccountPage(),
                   ),
-                },
+                ),
               ),
               const SizedBox(height: 20),
+
+              // ── Logout button ────────────────────────────────────
               GestureDetector(
                 onTap: () => _confirmLogout(),
                 child: Row(
@@ -384,7 +318,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               fontWeight: FontWeight.w600,
                               color: Color(0xFFDF0A0A),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
@@ -397,12 +330,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
 
-        // AVATAR ลอยครึ่งการ์ด
+        // AVATAR ลอยครึ่งการ์ด — อ่านจาก store โดยตรง
         Positioned(
           top: 0,
           child: ProfileAvatar(
-            imageUrl: imageUrl,
-            typeLogin: typeLogin,
+            imageUrl: _imageUrl,
+            typeLogin: _typeLogin,
             size: 100,
           ),
         ),
@@ -410,7 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  menuItem({
+  Widget menuItem({
     required String title,
     Function? onTap,
     TextStyle? titleStyle,
@@ -430,10 +363,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Expanded(
                     child: Text(
                       title,
-                      style: titleStyle ??
-                          const TextStyle(
-                            fontSize: 12,
-                          ),
+                      style: titleStyle ?? const TextStyle(fontSize: 12),
                     ),
                   ),
                   if (trailing != null) ...[
@@ -448,37 +378,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            const Divider(
-              color: Color(0xFFD9D9D9),
-            )
+            const Divider(color: Color(0xFFD9D9D9)),
           ],
         ),
       ),
     );
   }
 
-  void goBack() async {
-    Navigator.pop(context, false);
-  }
+  void goBack() => Navigator.pop(context, false);
 
   void _confirmLogout() {
     DialogService.showConfirmLogout(
       context,
       title: "ยืนยันการออกจากระบบ",
       message: "คุณต้องการออกจากระบบหรือไม่?",
-
-      // confirmText: "ใช่, ออกจากระบบ",
-      // cancelText: "ไม่, ยกเลิก",
       onConfirm: () => logout(),
     );
   }
 
-  logout() async {
-    storage.deleteAll();
+  Future<void> logout() async {
+    // reset store + ลบ storage ให้หมด
+    await UserProfileStore.instance.resetAndClear();
+    await LawyerProfileStore.instance.reset();
+
+    if (!mounted) return;
     await Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => MenuPage(),
-      ),
+      MaterialPageRoute(builder: (context) => MenuPage()),
       (Route<dynamic> route) => false,
     );
   }

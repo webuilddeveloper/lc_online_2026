@@ -2,6 +2,8 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -17,6 +19,21 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   bool hidePassword = true;
   bool hideConfirmPassword = true;
+  final storage = const FlutterSecureStorage();
+  String code = "";
+
+  @override
+  void initState() {
+    super.initState();
+    callRead();
+  }
+
+  callRead() async {
+    var codeValue = await storage.read(key: 'code');
+    setState(() {
+      code = codeValue ?? "";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +154,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
           elevation: 2,
         ),
-        onPressed: () {
+        onPressed: () async {
           if (passwordController.text.isEmpty ||
               confirmPasswordController.text.isEmpty) {
             showDialog(
@@ -161,14 +178,28 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             return;
           }
 
-          DialogService.showSuccess(
-            context,
-            title: "เปลี่ยนรหัสผ่านสำเร็จ",
-            message: "ระบบได้บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว",
-            onClose: () {
-              Navigator.pop(context);
-            },
-          );
+          try {
+            await AuthService.changePassword(
+              code: code,
+              password: passwordController.text,
+              newPassword: confirmPasswordController.text,
+            );
+
+            DialogService.showSuccess(
+              context,
+              title: "เปลี่ยนรหัสผ่านสำเร็จ",
+              message: "ระบบได้บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว",
+              onClose: () {
+                Navigator.pop(context);
+              },
+            );
+          } catch (e) {
+            DialogService.showError(
+              context,
+              title: "เกิดข้อผิดพลาด",
+              message: "ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง",
+            );
+          }
         },
         child: const Text(
           "เปลี่ยนรหัสผ่าน",

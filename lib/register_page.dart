@@ -246,28 +246,32 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showSuccess();
+    } on EmailDuplicateException {
+      // ── AuthService ตรวจ server message แล้ว throw EmailDuplicateException ────
+      // จับ type ได้แน่นอน ไม่ต้อง parse string ที่อาจดักพลาด
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_emailKey);
+      });
+    } on PhoneDuplicateException {
+      // ── AuthService ตรวจ server message แล้ว throw PhoneDuplicateException ────
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_phoneKey);
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
       final raw = error.toString().toLowerCase();
-
-      if (raw.contains('already in use') ||
-          raw.contains('email') && raw.contains('exist')) {
-        setState(() => _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น');
-        // scroll ไปช่องอีเมลด้วย
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToKey(_emailKey);
-        });
-        return;
-      } else if (raw.contains('phone') &&
-          (raw.contains('exist') || raw.contains('use'))) {
-        setState(() => _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToKey(_phoneKey);
-        });
-        return;
-      }
 
       String friendlyMsg;
       if (raw.contains('network') ||
