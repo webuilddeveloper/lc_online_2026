@@ -57,7 +57,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: appBarCustom(
-        title: "",
+        title: "ลบบัญชี",
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,
@@ -70,20 +70,30 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 children: [
-                  const Text(
-                    "ลบบัญชี",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
+                  // const Text(
+                  //   "ลบบัญชี",
+                  //   style: TextStyle(
+                  //     fontSize: 32,
+                  //     fontWeight: FontWeight.w600,
+                  //     color: Color(0xFFE61313),
+                  //   ),
+                  // ),
                   const SizedBox(height: 8),
                   const Text(
                     "หากคุณต้องการลบบัญชี กรุณาแจ้งให้เราทราบถึงเหตุผล เพื่อที่เราจะได้นำไปปรับปรุงบริการให้ดียิ่งขึ้น",
                     style: TextStyle(
                       fontSize: 14,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF6B7280),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "*กรณีกู้คืนบัญชี: หากคุณลบบัญชีโดยไม่ได้ตั้งใจ หรือเปลี่ยนใจ คุณสามารถติดต่อฝ่ายบริการลูกค้าเพื่อขอความช่วยเหลือในการกู้คืนบัญชีของคุณได้ภายใน 30 วันหลังจากวันที่ลบบัญชี",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color.fromARGB(255, 243, 186, 28),
                       height: 1.5,
                     ),
                   ),
@@ -286,7 +296,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     );
                   } : null,
                   child: const Text(
-                    "ลบ",
+                    "ลบบัญชี",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

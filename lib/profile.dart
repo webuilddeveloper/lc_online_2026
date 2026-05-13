@@ -148,7 +148,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
                 child: Text(
                   'myAccount'.tr(),
                   style: const TextStyle(
@@ -197,8 +198,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         const SizedBox(height: 20),
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 7, horizontal: 20),
                           child: Text(
                             'yourActivity'.tr(),
                             style: const TextStyle(
@@ -277,7 +278,8 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 20),
 
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 7, horizontal: 20),
                 child: Text(
                   'settings'.tr(),
                   style: const TextStyle(
@@ -337,6 +339,10 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               menuItem(
                 title: 'ลบบัญชีผู้ใช้'.tr(),
+                titleStyle: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.red,
+                ),
                 onTap: () => {
                   Navigator.push(
                     context,
