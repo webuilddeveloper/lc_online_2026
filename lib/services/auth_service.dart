@@ -159,13 +159,20 @@ class AuthService {
     required String email,
     required String code,
     required String reesonCancel,
+    String? password,
   }) async {
     try {
-      final body = json.encode({
+      final Map<String, dynamic> bodyMap = {
         'email': email,
         'code': code,
         'reesonCancel': reesonCancel,
-      });
+      };
+
+      if (password != null && password.isNotEmpty) {
+        bodyMap['password'] = password;
+      }
+
+      final body = json.encode(bodyMap);
 
       debugPrint('[AuthService.cancelAccount] url=$_cancelUrl');
       debugPrint('[AuthService.cancelAccount] body=$body');

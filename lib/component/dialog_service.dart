@@ -108,93 +108,144 @@ class DialogService {
   }
 
   /// CONFIRM DELETE ACCOUNT
-  static showConfirmDeleteAccount(BuildContext context, {required Function onConfirm}) {
+  static showConfirmDeleteAccount(BuildContext context, {required Function(String) onConfirm}) {
+    final TextEditingController passwordController = TextEditingController();
+    bool obscureText = true;
+    String? errorMsg;
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: RV.dialogMaxWidth(context),
-              minWidth: RV.dialogMinWidth(context),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.delete_outline_rounded,
-                    size: 60,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "ยืนยันการลบบัญชี",
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "คุณต้องการลบบัญชีของคุณอย่างถาวรใช่หรือไม่?",
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: RV.dialogMaxWidth(context),
+                  minWidth: RV.dialogMinWidth(context),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 55),
-                            side: const BorderSide(
-                                color: Color(0xFF0262EC), width: 1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
+                      const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 60,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "ยืนยันการลบบัญชี",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "กรุณากรอกรหัสผ่านของคุณเพื่อยืนยันการลบบัญชีอย่างถาวร",
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: obscureText,
+                        onChanged: (val) {
+                          if (errorMsg != null) setState(() => errorMsg = null);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'รหัสผ่าน',
+                          errorText: errorMsg,
+                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                          suffixIcon: IconButton(
+                            icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                obscureText = !obscureText;
+                              });
+                            },
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: errorMsg != null ? Colors.red : const Color(0xFF0262EC),
+                              width: 1.5,
                             ),
                           ),
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "ไม่",
-                            style: TextStyle(
-                              color: Color(0xFF0262EC),
-                              fontSize: 16,
-                            ),
-                          ),
+                          fillColor: errorMsg != null ? Colors.red.withOpacity(0.04) : const Color(0xFFFAFAFA),
+                          filled: true,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(0, 55),
-                            backgroundColor: const Color(0xD2FF0000),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                            onConfirm();
-                          },
-                          child: const Text(
-                            "ลบบัญชี",
-                            style: TextStyle(
-                              color: Color(0xFFFFFFFF),
-                              fontSize: 16,
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 55),
+                                side: const BorderSide(
+                                    color: Color(0xFF0262EC), width: 1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                "ยกเลิก",
+                                style: TextStyle(
+                                  color: Color(0xFF0262EC),
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(0, 55),
+                                backgroundColor: const Color(0xD2FF0000),
+                              ),
+                              onPressed: () {
+                                if (passwordController.text.trim().isEmpty) {
+                                  setState(() => errorMsg = "กรุณากรอกรหัสผ่าน");
+                                  return;
+                                }
+                                Navigator.pop(context);
+                                onConfirm(passwordController.text.trim());
+                              },
+                              child: const Text(
+                                "ลบบัญชี",
+                                style: TextStyle(
+                                  color: Color(0xFFFFFFFF),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
                       )
                     ],
-                  )
-                ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }
         );
       },
     );
@@ -575,151 +626,6 @@ class DialogService {
     );
   }
 
-  /// PASSWORD CONFIRMATION
-  static Future<String?> showPasswordDialog(BuildContext context, {
-    String title = "ยืนยันรหัสผ่าน",
-    String message = "กรุณากรอกรหัสผ่านของคุณเพื่อยืนยันการเปลี่ยนแปลง",
-  }) async {
-    final TextEditingController passwordController = TextEditingController();
-    bool obscureText = true;
-    String? errorMsg;
-
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              insetPadding: const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: RV.dialogMaxWidth(context),
-                  minWidth: RV.dialogMinWidth(context),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.lock_outline,
-                        size: 60,
-                        color: Color(0xFF0262EC),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        title,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscureText,
-                        onChanged: (val) {
-                          if (errorMsg != null) setState(() => errorMsg = null);
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'รหัสผ่าน',
-                          errorText: errorMsg,
-                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                            onPressed: () {
-                              setState(() {
-                                obscureText = !obscureText;
-                              });
-                            },
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: errorMsg != null ? Colors.red : const Color(0xFF0262EC),
-                              width: 1.5,
-                            ),
-                          ),
-                          fillColor: errorMsg != null ? Colors.red.withOpacity(0.04) : const Color(0xFFFAFAFA),
-                          filled: true,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 50),
-                                side: const BorderSide(color: Color(0xFF0262EC), width: 1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                              ),
-                              onPressed: () => Navigator.pop(context, null),
-                              child: const Text(
-                                "ยกเลิก",
-                                style: TextStyle(
-                                  color: Color(0xFF0262EC),
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(0, 50),
-                                backgroundColor: const Color(0xFF0262EC),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                              ),
-                              onPressed: () {
-                                if (passwordController.text.trim().isEmpty) {
-                                  setState(() => errorMsg = "กรุณากรอกรหัสผ่าน");
-                                  return;
-                                }
-                                Navigator.pop(context, passwordController.text.trim());
-                              },
-                              child: const Text(
-                                "ยืนยัน",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          )
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-        );
-      },
-    );
-  }
 
   /// LOADING
   static showLoading(BuildContext context) {

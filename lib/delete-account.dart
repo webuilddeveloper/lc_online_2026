@@ -294,7 +294,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                       ? () {
                           DialogService.showConfirmDeleteAccount(
                             context,
-                            onConfirm: () => _processDelete(),
+                            onConfirm: (password) => _processDelete(password),
                           );
                         }
                       : null,
@@ -315,7 +315,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     );
   }
 
-  void _processDelete() async {
+  void _processDelete(String password) async {
     // 1. แสดง Loading
     DialogService.showLoading(context);
 
@@ -333,6 +333,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         email: email,
         code: code,
         reesonCancel: reasonCancel,
+        password: password,
       );
 
       // 3. ปิดหน้าต่าง Loading

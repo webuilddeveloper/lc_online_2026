@@ -420,19 +420,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       return;
     }
 
-    String? passwordInput;
-    final bool isEmailChanged = email != UserProfileStore.instance.email;
-    final bool isPhoneChanged = phone != UserProfileStore.instance.phone;
-
-    // ถ้ามีการเปลี่ยนอีเมลหรือเบอร์ และเป็นการล็อกอินแบบ local ให้ถามรหัสผ่าน
-    if (_typeLogin == 'local' && (isEmailChanged || isPhoneChanged)) {
-      passwordInput = await DialogService.showPasswordDialog(context);
-      if (passwordInput == null || passwordInput.isEmpty) {
-        // User cancelled or didn't input password
-        return;
-      }
-    }
-
     setState(() => isLoading = true);
 
     try {
@@ -444,7 +431,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         phone: phone,
         imageUrl: _storedImageUrl,
         userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
-        password: passwordInput,
       );
 
       // ── อัปเดต store → persist + broadcast ให้ทุก widget ทราบทันที ──
