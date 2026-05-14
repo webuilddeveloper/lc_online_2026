@@ -7,6 +7,7 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────
 int _statusToStep(String status) => status == '4' ? 4 : 3;
@@ -67,20 +68,20 @@ class HomeUserSection extends StatelessWidget {
         // ── Case Status ──────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'สถานะเคสของคุณ',
+          title: 'caseStatus'.tr(),
           onMore: () =>
               _guardedNavigate(context, CaseStatusAllPage(caseList: cases)),
         ),
         if (cases.isNotEmpty)
           _buildCaseStatusList(context)
         else
-          _emptyState('ยังไม่มีเคสของคุณ'),
+          _emptyState('noCases'.tr()),
         const SizedBox(height: 20),
 
         // ── Law Categories ───────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'ประเด็นหัวข้อกฎหมาย',
+          title: 'lawCategories'.tr(),
           onMore: () => _guardedNavigate(context, LawTypeAllPage()),
         ),
         const SizedBox(height: 8),
@@ -90,25 +91,25 @@ class HomeUserSection extends StatelessWidget {
         // ── Lawyers For You ──────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'หมอความสำหรับคุณ',
+          title: 'lawyersForYou'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
         if (lawyers.isNotEmpty)
           _buildLawyerList(context, lawyers)
         else
-          _emptyState('ยังไม่มีหมอความสำหรับคุณ'),
+          _emptyState('noLawyers'.tr()),
         const SizedBox(height: 20),
 
         // ── New Lawyers ──────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'หมอความมาแรง',
+          title: 'trendingLawyers'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
         if (newLawyers.isNotEmpty)
           _buildLawyerList(context, newLawyers)
         else
-          _emptyState('ยังไม่มีหมอความมาแรง'),
+          _emptyState('noTrendingLawyers'.tr()),
         const SizedBox(height: 20),
       ],
     );
@@ -137,7 +138,7 @@ class HomeUserSection extends StatelessWidget {
             GestureDetector(
               onTap: onMore,
               child: Text(
-                'ดูทั้งหมด',
+                'viewAll'.tr(),
                 style: GoogleFonts.prompt(
                   fontSize: 12,
                   color: _kAccent,
@@ -405,7 +406,9 @@ class HomeUserSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isFree ? 'ฟรี' : '฿${model['cost']}${model['costUnit']}',
+                      isFree
+                          ? 'free'.tr()
+                          : '฿${model['cost']}${model['costUnit']}',
                       style: GoogleFonts.prompt(
                         color: Colors.white,
                         fontSize: 9,

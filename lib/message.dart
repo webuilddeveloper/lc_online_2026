@@ -4,7 +4,7 @@ import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/models/chat/chat_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 /*
 =========================================
@@ -37,8 +37,10 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   Future<void> _load() async {
-    const storage = FlutterSecureStorage();
-    final type = await storage.read(key: 'userType') ?? '';
+    // ใช้ UserProfileStore แทน FlutterSecureStorage โดยตรง
+    // เพราะมี _SafeStorage wrapper ป้องกัน OperationError บน Web แล้ว
+    await UserProfileStore.instance.load();
+    final type = UserProfileStore.instance.userType;
     final convs = await chatRepository.getConversations(type);
 
     if (!mounted) return;

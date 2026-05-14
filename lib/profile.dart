@@ -169,17 +169,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 },
               ),
-              // menuItem(
-              //   title: 'deleteAccount'.tr(),
-              //   onTap: () => {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (context) => DeleteAccountPage(),
-              //       ),
-              //     ),
-              //   },
-              // ),
 
               userType == "user"
                   ? Column(
@@ -242,7 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               userType == "lawyer"
                   ? menuItem(
-                      title: 'อัปเกรด Lawyer Pro',
+                      title: 'upgradetolawyerpro'.tr(),
                       onTap: () => {
                         Navigator.push(
                           context,
@@ -279,7 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               userType != "user"
                   ? menuItem(
-                      title: 'ตั้งค่าวันที่สามารถจองให้คำปรึกษา',
+                      title: 'ConsultationSchedule'.tr(),
                       onTap: () => {
                         Navigator.push(
                           context,
@@ -303,7 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       }),
               menuItem(
-                title: 'เปลี่ยนภาษา /  Language',
+                title: 'changelanguage'.tr(),
                 onTap: () => {
                   // Navigator.push(
                   //   context,

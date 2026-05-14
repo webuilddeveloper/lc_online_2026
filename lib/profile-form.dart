@@ -83,21 +83,8 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   }
 
   // ── validation helpers ───────────────────────────────────────────────
-  bool _isEmailValid(String email) {
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) return false;
-    
-    // เช็คค่ายอีเมลที่อนุญาต (สามารถเพิ่ม/ลดได้ตามต้องการ)
-    final validDomains = [
-      'gmail.com',
-      'hotmail.com',
-      'outlook.com',
-      'yahoo.com',
-      'icloud.com',
-      'live.com',
-    ];
-    final domain = email.split('@').last.toLowerCase();
-    return validDomains.contains(domain);
-  }
+  bool _isEmailValid(String email) =>
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim());
 
   // เบอร์ต้องครบ 10 หลักพอดี เหมือน register
   bool _isPhoneValid(String phone) =>
@@ -451,23 +438,20 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         message: "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว",
         onClose: () => Navigator.pop(context),
       );
-    } on EmailDuplicateException catch (e) {
-      // ── AuthService ตรวจ server message แล้วส่ง EmailDuplicateException มา ──
-      // จับ type ได้แน่นอน ไม่ต้อง guess keyword อีกต่อไป
+    } on EmailDuplicateException {
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _emailError = e.message;
+        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_emailKey);
       });
-    } on PhoneDuplicateException catch (e) {
-      // ── AuthService ตรวจ server message แล้วส่ง PhoneDuplicateException มา ──
+    } on PhoneDuplicateException {
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _phoneError = e.message;
+        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_phoneKey);
@@ -477,7 +461,8 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       setState(() {
         isLoading = false;
       });
-      DialogService.showError(context, title: "รหัสผ่านไม่ถูกต้อง", message: e.message);
+      DialogService.showError(context,
+          title: "รหัสผ่านไม่ถูกต้อง", message: e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);

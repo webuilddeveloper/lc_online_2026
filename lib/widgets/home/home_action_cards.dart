@@ -5,6 +5,7 @@ import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 const _kCard = Colors.white;
 const _kAccent = Color(0xFF2F80ED);
@@ -56,8 +57,8 @@ class HomeActionCards extends StatelessWidget {
     return Row(children: [
       Expanded(
         child: _actionCard(
-          title: 'เปิดเคส',
-          subtitle: 'ให้ทนายรับงาน',
+          title: 'openCase'.tr(),
+          subtitle: 'openCaseSub'.tr(),
           iconAssets: 'assets/icons/open-case.png',
           gradientColors: [_kCard, _kCard],
           titleColor: const Color(0xFF1565C0),
@@ -69,8 +70,8 @@ class HomeActionCards extends StatelessWidget {
       const SizedBox(width: 14),
       Expanded(
         child: _actionCard(
-          title: 'นัดหมาย',
-          subtitle: 'จองเวลาปรึกษา',
+          title: 'bookConsult'.tr(),
+          subtitle: 'bookConsultSub'.tr(),
           iconAssets: 'assets/icons/appointment-lawyer.png',
           gradientColors: [
             const Color(0xFF1565C0),
@@ -116,7 +117,7 @@ class HomeActionCards extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              'รับเคสด่วน',
+                              'urgentCaseSwitch'.tr(),
                               style: GoogleFonts.prompt(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -137,8 +138,8 @@ class HomeActionCards extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         isUrgentCaseEnabled
-                            ? 'พร้อมให้คำปรึกษาเคสด่วน'
-                            : 'ปิดรับเคสด่วน',
+                            ? 'urgentCaseOn'.tr()
+                            : 'urgentCaseOff'.tr(),
                         style: GoogleFonts.prompt(
                           fontSize: 12,
                           color: isUrgentCaseEnabled
@@ -197,7 +198,7 @@ class HomeActionCards extends StatelessWidget {
                                 const Spacer(),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'ดูงานเคสด่วน',
+                                  'viewUrgentJobs'.tr(),
                                   style: GoogleFonts.prompt(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -205,7 +206,7 @@ class HomeActionCards extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'ลูกความต้องการคำปรึกษาด่วน',
+                                  'viewUrgentJobsSub'.tr(),
                                   style: GoogleFonts.prompt(
                                     fontSize: 11,
                                     color: Colors.white70,
@@ -228,8 +229,8 @@ class HomeActionCards extends StatelessWidget {
 
         // ── ตั้งค่าวันและเวลา ────────────────────────────────────
         _actionCard(
-          title: 'ตั้งค่าวันและเวลาที่สามารถนัดปรึกษาได้',
-          subtitle: 'กำหนดวันและเวลาที่สามารถจองขอคำปรึกษาได้',
+          title: 'ConsultationSchedule'.tr(),
+          subtitle: 'subtitleConsultationSchedule'.tr(),
           icon: Icons.date_range_rounded,
           gradientColors: [_kCard, _kCard],
           titleColor: const Color(0xFF1565C0),

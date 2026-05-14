@@ -5,6 +5,7 @@ import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // ─── Home SliverAppBar ────────────────────────────────────────────
 // รับ props ทั้งหมด ไม่มี state ของตัวเอง
@@ -120,7 +121,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 Text(
                                   UserProfileStore.instance.name.isNotEmpty
                                       ? UserProfileStore.instance.name
-                                      : 'ผู้ใช้งาน',
+                                      : 'defaultUser'.tr(),
                                   style: GoogleFonts.prompt(
                                     color: Colors.black,
                                     fontSize: 17,
@@ -230,7 +231,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 10, horizontal: 20),
                                 child: Text(
-                                  'เข้าสู่ระบบ',
+                                  'login'.tr(),
                                   style: GoogleFonts.prompt(
                                     color: Colors.white,
                                     fontSize: 16,

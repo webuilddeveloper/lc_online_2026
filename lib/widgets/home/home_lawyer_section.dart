@@ -7,6 +7,7 @@ import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 const _kPrimary = Color(0xFF0262EC);
 const _kAccent = Color(0xFF2F80ED);
@@ -61,18 +62,18 @@ class HomeLawyerSection extends StatelessWidget {
               children: [
                 _sectionHeader(
                   context,
-                  title: 'รายการนัดหมาย (${appointments.length})',
+                  title: '${'appointmentList'.tr()} (${appointments.length})',
                   onMore: () => Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (_) => MenuPage(pageIndex: 3))),
-                  padded: false, // padding จัดการโดย parent แล้ว
+                  padded: false,
                 ),
                 const SizedBox(height: 8),
                 if (appointments.isNotEmpty)
                   _buildAppointmentListDesktop(context)
                 else
-                  _emptyState('ยังไม่มีนัดหมาย'),
+                  _emptyState('noAppointments'.tr()),
                 const SizedBox(height: 20),
               ],
             ),
@@ -88,7 +89,7 @@ class HomeLawyerSection extends StatelessWidget {
               children: [
                 _sectionHeader(
                   context,
-                  title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
+                  title: '${'urgentCases'.tr()} (${activeJobs.length})',
                   onMore: () => Navigator.push(context,
                       MaterialPageRoute(builder: (_) => LawyerJobListPage())),
                   padded: false,
@@ -97,7 +98,7 @@ class HomeLawyerSection extends StatelessWidget {
                 if (activeJobs.isNotEmpty)
                   _buildJobRequestListDesktop(context, activeJobs)
                 else
-                  _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
+                  _emptyState('noUrgentCases'.tr()),
                 const SizedBox(height: 20),
               ],
             ),
@@ -235,7 +236,7 @@ class HomeLawyerSection extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                          isPaid ? 'paid'.tr() : 'awaitingPayment'.tr(),
                           style: GoogleFonts.prompt(
                               color: Colors.white,
                               fontSize: 9,
@@ -314,20 +315,20 @@ class HomeLawyerSection extends StatelessWidget {
         // ── Appointments ─────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'รายการนัดหมาย (${appointments.length})',
+          title: '${'appointmentList'.tr()} (${appointments.length})',
           onMore: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
         ),
         if (appointments.isNotEmpty)
           _buildAppointmentListMobile(context)
         else
-          _emptyState('ยังไม่มีนัดหมาย'),
+          _emptyState('noAppointments'.tr()),
         const SizedBox(height: 20),
 
         // ── Job Requests ─────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'เคสด่วนจากลูกความ (${activeJobs.length})',
+          title: '${'urgentCases'.tr()} (${activeJobs.length})',
           onMore: () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => LawyerJobListPage())),
         ),
@@ -335,7 +336,7 @@ class HomeLawyerSection extends StatelessWidget {
         if (activeJobs.isNotEmpty)
           _buildJobRequestListMobile(context, activeJobs)
         else
-          _emptyState('ยังไม่มีเคสด่วนขณะนี้'),
+          _emptyState('noUrgentCases'.tr()),
         const SizedBox(height: 20),
       ],
     );
@@ -367,7 +368,7 @@ class HomeLawyerSection extends StatelessWidget {
             child: GestureDetector(
               onTap: onMore,
               child: Text(
-                'ดูทั้งหมด',
+                'viewAll'.tr(),
                 style: GoogleFonts.prompt(
                   fontSize: 12,
                   color: _kAccent,
@@ -478,7 +479,7 @@ class HomeLawyerSection extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              isPaid ? 'ยืนยันแล้ว' : 'รอชำระ',
+                              isPaid ? 'paid'.tr() : 'awaitingPayment'.tr(),
                               style: GoogleFonts.prompt(
                                   color: Colors.white,
                                   fontSize: 9,
@@ -608,8 +609,8 @@ class HomeLawyerSection extends StatelessWidget {
                       ? () {
                           DialogService.showConfirmAcceptJob(
                             detailCtx,
-                            title: "รับงาน",
-                            message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+                            title: "acceptJob".tr(),
+                            message: "acceptJobConfirm".tr(),
                             onConfirm: () {
                               LawyerJobsStore.instance
                                   .acceptJob(job['id'] as String);
@@ -625,8 +626,8 @@ class HomeLawyerSection extends StatelessWidget {
                       ? () {
                           DialogService.showConfirmRejectJob(
                             detailCtx,
-                            title: "ปฏิเสธคำขอ",
-                            message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+                            title: "rejectJob".tr(),
+                            message: "rejectJobConfirm".tr(),
                             onConfirm: () {
                               LawyerJobsStore.instance
                                   .rejectJob(job['id'] as String);
@@ -772,17 +773,17 @@ class HomeLawyerSection extends StatelessWidget {
                                 color: _kPrimary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('ดูรายละเอียด',
-                                      style: TextStyle(
+                                  Text('viewDetails'.tr(),
+                                      style: const TextStyle(
                                         color: _kPrimary,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
                                       )),
-                                  SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward_ios,
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.arrow_forward_ios,
                                       size: 10, color: _kPrimary),
                                 ],
                               ),
@@ -825,7 +826,7 @@ class HomeLawyerSection extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text('อยู่ในช่วงเวลาให้คำปรึกษา',
+                                      Text('consultingPeriod'.tr(),
                                           style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey[800])),
@@ -866,13 +867,13 @@ Widget _statusBadge(String status) {
     'accepted' => {
         'colors': [const Color(0xFF0262EC), const Color(0xFF0099FF)],
         'icon': Icons.check_circle,
-        'label': 'รับแล้ว',
+        'labelKey': 'accepted',
         'shadow': const Color(0xFF0262EC),
       },
     'pending' => {
         'colors': [const Color(0xFFD97706), const Color(0xFFF59E0B)],
         'icon': Icons.hourglass_top,
-        'label': 'รอตอบรับ',
+        'labelKey': 'pending',
         'shadow': const Color(0xFFD97706),
       },
     _ => null,
@@ -898,7 +899,7 @@ Widget _statusBadge(String status) {
       children: [
         Icon(config['icon'] as IconData, size: 14, color: Colors.white),
         const SizedBox(width: 4),
-        Text(config['label'],
+        Text((config['labelKey'] as String).tr(),
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
