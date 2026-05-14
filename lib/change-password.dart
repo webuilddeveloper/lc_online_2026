@@ -3,6 +3,7 @@ import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -70,7 +71,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "เปลี่ยนรหัสผ่าน",
+        title: 'changePasswordTitle'.tr(),
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,
@@ -96,8 +97,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               children: [
                 const SizedBox(height: 10),
                 passwordField(
-                  title: "รหัสผ่านเดิม",
-                  hint: "กรุณากรอกรหัสผ่านเดิม",
+                  title: 'oldPassword'.tr(),
+                  hint: 'oldPasswordHint'.tr(),
                   controller: oldPasswordController,
                   hide: hideOldPassword,
                   toggle: () {
@@ -108,8 +109,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 const SizedBox(height: 20),
                 passwordField(
-                  title: "รหัสผ่านใหม่",
-                  hint: "กรุณากรอกรหัสผ่านใหม่",
+                  title: 'newPassword'.tr(),
+                  hint: 'newPasswordHint'.tr(),
                   controller: passwordController,
                   hide: hidePassword,
                   borderColor: _getBorderColor(isNewPassword: true),
@@ -121,8 +122,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ),
                 const SizedBox(height: 20),
                 passwordField(
-                  title: "ยืนยันรหัสผ่านใหม่",
-                  hint: "กรุณากรอกยืนยันรหัสผ่านใหม่",
+                  title: 'confirmNewPassword'.tr(),
+                  hint: 'confirmNewPasswordHint'.tr(),
                   controller: confirmPasswordController,
                   hide: hideConfirmPassword,
                   borderColor: _getBorderColor(isNewPassword: false),
@@ -135,15 +136,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                 // ข้อความแจ้งสถานะ
                 if (_isPasswordMatch)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          "รหัสผ่านตรงกัน",
-                          style: TextStyle(
+                          'passwordMatch'.tr(),
+                          style: const TextStyle(
                             color: Color(0xFF22C55E),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -153,15 +154,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     ),
                   ),
                 if (_isPasswordMismatch)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.error, color: Color(0xFFEF4444), size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.error, color: Color(0xFFEF4444), size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          "รหัสผ่านไม่ตรงกัน",
-                          style: TextStyle(
+                          'passwordMismatch'.tr(),
+                          style: const TextStyle(
                             color: Color(0xFFEF4444),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -183,9 +184,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   /// กำหนดสีกรอบตามสถานะ
   Color? _getBorderColor({required bool isNewPassword}) {
-    if (!_isNewPasswordFilled || !_isConfirmFilled) return null; // ยังกรอกไม่ครบ → สีปกติ
-    if (_isPasswordMatch) return const Color(0xFF22C55E); // ตรงกัน → สีเขียว
-    return const Color(0xFFEF4444); // ไม่ตรง → สีแดง
+    if (!_isNewPasswordFilled || !_isConfirmFilled) return null;
+    if (_isPasswordMatch) return const Color(0xFF22C55E);
+    return const Color(0xFFEF4444);
   }
 
   Widget passwordField({
@@ -263,7 +264,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ),
         onPressed: _isFormValid ? () => _processChangePassword() : null,
         child: Text(
-          "เปลี่ยนรหัสผ่าน",
+          'changePasswordButton'.tr(),
           style: TextStyle(
             color: _isFormValid ? Colors.white : Colors.grey[500],
             fontSize: 16,
@@ -276,7 +277,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   /// เรียก API เปลี่ยนรหัสผ่าน
   void _processChangePassword() async {
-    // แสดง Loading
     DialogService.showLoading(context);
 
     try {
@@ -286,35 +286,31 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         newPassword: passwordController.text,
       );
 
-      // ปิด Loading
       Navigator.pop(context);
 
-      // แสดงข้อความสำเร็จ
       DialogService.showSuccess(
         context,
-        title: "เปลี่ยนรหัสผ่านสำเร็จ",
-        message: "ระบบได้บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว",
+        title: 'changePasswordSuccessTitle'.tr(),
+        message: 'changePasswordSuccessMessage'.tr(),
         onClose: () {
           Navigator.pop(context);
         },
       );
     } catch (e) {
-      // ปิด Loading
       Navigator.pop(context);
 
-      // ตรวจสอบว่าเป็น error "รหัสผ่านไม่ถูกต้อง" หรือไม่
       final errorMsg = e.toString();
       if (errorMsg.contains('รหัสผ่านไม่ถูกต้อง')) {
         DialogService.showError(
           context,
-          title: "รหัสผ่านเดิมไม่ถูกต้อง",
-          message: "กรุณาลองใหม่",
+          title: 'oldPasswordWrongTitle'.tr(),
+          message: 'oldPasswordWrongMessage'.tr(),
         );
       } else {
         DialogService.showError(
           context,
-          title: "เกิดข้อผิดพลาด",
-          message: "ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง",
+          title: 'errorTitle'.tr(),
+          message: 'changePasswordErrorMessage'.tr(),
         );
       }
     }

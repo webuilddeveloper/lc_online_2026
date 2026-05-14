@@ -4,8 +4,9 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
-import 'package:LawyerOnline/services/auth_service.dart'; // EmailDuplicateException อยู่ในไฟล์นี้
+import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
@@ -46,7 +47,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   static const Color _border = Color(0xFFECEDF0);
   static const Color _errorColor = Color(0xFFD32F2F);
 
-  // ── อ่านค่าจาก UserProfileStore โดยตรง ────────────────────────────
   String get _userType => UserProfileStore.instance.userType;
   String get _typeLogin => UserProfileStore.instance.typeLogin;
   String get _code => UserProfileStore.instance.code;
@@ -73,7 +73,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     super.dispose();
   }
 
-  // ── โหลดค่าจาก UserProfileStore ────────────────────────────────────
   void _loadFromStore() {
     final store = UserProfileStore.instance;
     firstNameController.text = store.firstName;
@@ -82,11 +81,9 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     emailController.text = store.email;
   }
 
-  // ── validation helpers ───────────────────────────────────────────────
   bool _isEmailValid(String email) =>
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.trim());
 
-  // เบอร์ต้องครบ 10 หลักพอดี เหมือน register
   bool _isPhoneValid(String phone) =>
       phone.replaceAll(RegExp(r'\D'), '').length == 10;
 
@@ -99,7 +96,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         profileImage != null;
   }
 
-  // ── scroll to key ────────────────────────────────────────────────────
   void _scrollToKey(GlobalKey key) {
     final ctx = key.currentContext;
     if (ctx == null) return;
@@ -125,7 +121,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "แก้ไขข้อมูลส่วนตัว",
+        title: 'editInfoTitle'.tr(),
         backBtn: true,
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
@@ -191,7 +187,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
                 _textField(
                   fieldKey: _firstNameKey,
-                  title: "ชื่อ *",
+                  title: 'firstName'.tr(),
                   controller: firstNameController,
                   icon: Icons.person_outline,
                   errorText: _firstNameError,
@@ -200,7 +196,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 const SizedBox(height: 15),
                 _textField(
                   fieldKey: _lastNameKey,
-                  title: "นามสกุล *",
+                  title: 'lastName'.tr(),
                   controller: lastNameController,
                   icon: Icons.person_outline,
                   errorText: _lastNameError,
@@ -209,7 +205,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 const SizedBox(height: 15),
                 _textField(
                   fieldKey: _phoneKey,
-                  title: "เบอร์โทรศัพท์ * (10 หลัก)",
+                  title: 'phone'.tr(),
                   controller: phoneController,
                   icon: Icons.phone_outlined,
                   maxLength: 10,
@@ -221,7 +217,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 const SizedBox(height: 15),
                 _textField(
                   fieldKey: _emailKey,
-                  title: "อีเมล *",
+                  title: 'email'.tr(),
                   controller: emailController,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
@@ -341,9 +337,9 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         child: Center(
           child: isLoading
               ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  "บันทึกข้อมูล",
-                  style: TextStyle(
+              : Text(
+                  'saveButton'.tr(),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16),
@@ -361,7 +357,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     final email = emailController.text.trim();
     final userType = _userType;
 
-    // ── ล้าง error ทั้งหมดก่อน validate ──────────────────────────────
     setState(() {
       _firstNameError = null;
       _lastNameError = null;
@@ -369,36 +364,34 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       _emailError = null;
     });
 
-    // ── validate ทุก field พร้อมกัน เก็บ key แรกที่ error ──────────
     GlobalKey? firstErrorKey;
 
     if (firstName.isEmpty) {
-      _firstNameError = 'กรุณากรอกชื่อ';
+      _firstNameError = 'firstNameRequired'.tr();
       firstErrorKey ??= _firstNameKey;
     }
 
     if (lastName.isEmpty) {
-      _lastNameError = 'กรุณากรอกนามสกุล';
+      _lastNameError = 'lastNameRequired'.tr();
       firstErrorKey ??= _lastNameKey;
     }
 
     if (phone.isEmpty) {
-      _phoneError = 'กรุณากรอกเบอร์โทรศัพท์';
+      _phoneError = 'phoneRequired'.tr();
       firstErrorKey ??= _phoneKey;
     } else if (!_isPhoneValid(phone)) {
-      _phoneError = 'เบอร์โทรศัพท์ต้องมี 10 หลัก';
+      _phoneError = 'phoneInvalid'.tr();
       firstErrorKey ??= _phoneKey;
     }
 
     if (email.isEmpty) {
-      _emailError = 'กรุณากรอกอีเมล';
+      _emailError = 'emailRequired'.tr();
       firstErrorKey ??= _emailKey;
     } else if (!_isEmailValid(email)) {
-      _emailError = 'รูปแบบอีเมลไม่ถูกต้อง';
+      _emailError = 'emailInvalid'.tr();
       firstErrorKey ??= _emailKey;
     }
 
-    // ── ถ้ามี error → setState แล้ว scroll ไป field แรก ─────────────
     if (firstErrorKey != null) {
       setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -417,16 +410,15 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         lastName: lastName,
         phone: phone,
         imageUrl: _storedImageUrl,
-        userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
+        userType: userType,
       );
 
-      // ── อัปเดต store → persist + broadcast ให้ทุก widget ทราบทันที ──
       await UserProfileStore.instance.updateFromProfile(
         firstName: firstName,
         lastName: lastName,
         phone: phone,
         email: email,
-        userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
+        userType: userType,
       );
 
       if (!mounted) return;
@@ -434,15 +426,15 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
       DialogService.showSuccess(
         context,
-        title: "บันทึกข้อมูลแล้ว",
-        message: "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว",
+        title: 'saveSuccessTitle'.tr(),
+        message: 'saveSuccessMessage'.tr(),
         onClose: () => Navigator.pop(context),
       );
     } on EmailDuplicateException {
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+        _emailError = 'emailDuplicate'.tr();
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_emailKey);
@@ -451,7 +443,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
+        _phoneError = 'phoneDuplicate'.tr();
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_phoneKey);
@@ -462,13 +454,13 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         isLoading = false;
       });
       DialogService.showError(context,
-          title: "รหัสผ่านไม่ถูกต้อง", message: e.message);
+          title: 'errorTitle'.tr(), message: e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
       final errorMsg = e.toString().replaceFirst('Exception: ', '');
       DialogService.showError(context,
-          title: "เกิดข้อผิดพลาด", message: errorMsg);
+          title: 'errorTitle'.tr(), message: errorMsg);
     }
   }
 }

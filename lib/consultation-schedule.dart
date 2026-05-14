@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 
 class ConsultationSchedule extends StatefulWidget {
   ConsultationSchedule({Key? key, this.model});
@@ -20,24 +21,16 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   final storage = FlutterSecureStorage();
   final TextEditingController costPerHrController = TextEditingController();
 
-  // วันนัดหมาย
-  List<Map<String, String>> postCategoryList = [
-    {"code": "0", "title": "ทุกวัน"},
-    {"code": "1", "title": "วันธรรมดา"},
-    {"code": "2", "title": "สุดสัปดาห์"},
-  ];
+  // วันนัดหมาย — title โหลดตอน build เพื่อให้ .tr() ทำงานได้ใน context
   String? selectedCategory = "0";
 
-  // ช่วงเวลา - แบ่งเป็น 3 ช่วง
+  // ช่วงเวลา
   List<String> selectedTimeSlots = [];
 
-  // ราคา default — isPro ดึงจาก store โดยตรง (real-time)
   bool get isLawyerPro => LawyerProfileStore.instance.isPro;
   final double defaultPrice = 500.0;
 
-  // สถานะการโหลดข้อมูล
   bool _isLoading = true;
-
   bool _prevIsPro = false;
 
   @override
@@ -51,7 +44,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   void _onStoreChanged() {
     if (!mounted) return;
     final nowIsPro = LawyerProfileStore.instance.isPro;
-    // Pro → Free: รีเซ็ตราคากลับ default และล้าง storage
     if (_prevIsPro && !nowIsPro) {
       costPerHrController.text = defaultPrice.toStringAsFixed(0);
       storage.write(
@@ -68,7 +60,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     super.dispose();
   }
 
-  // โหลดข้อมูลทั้งหมดตอนเริ่มต้น
   Future<void> _initializeData() async {
     await _loadSavedSchedule();
     setState(() {
@@ -76,21 +67,17 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     });
   }
 
-  // โหลดข้อมูลที่บันทึกไว้
   Future<void> _loadSavedSchedule() async {
     try {
-      // อ่านข้อมูลจาก storage
       final savedDayType = await storage.read(key: 'schedule_dayType');
       final savedTimeSlots = await storage.read(key: 'schedule_timeSlots');
       final savedPrice = await storage.read(key: 'schedule_pricePerHour');
 
       setState(() {
-        // โหลดวันที่เลือก
         if (savedDayType != null) {
           selectedCategory = savedDayType;
         }
 
-        // โหลดช่วงเวลาที่เลือก
         if (savedTimeSlots != null && savedTimeSlots.isNotEmpty) {
           try {
             final List<dynamic> timeSlotsList = jsonDecode(savedTimeSlots);
@@ -101,7 +88,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           }
         }
 
-        // โหลดราคา — ถ้าไม่ใช่ Pro ใช้ default เสมอ ไม่ว่า storage จะมีค่าอะไรค้างอยู่
         if (!isLawyerPro) {
           costPerHrController.text = defaultPrice.toStringAsFixed(0);
         } else if (savedPrice != null && savedPrice.isNotEmpty) {
@@ -113,7 +99,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           'โหลดข้อมูลสำเร็จ - Day: $selectedCategory, TimeSlots: $selectedTimeSlots, Price: ${costPerHrController.text}');
     } catch (e) {
       print('Error loading saved schedule: $e');
-      // ถ้า error ให้ใช้ค่า default
       if (!isLawyerPro) {
         costPerHrController.text = defaultPrice.toStringAsFixed(0);
       }
@@ -122,12 +107,18 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
 
   @override
   Widget build(BuildContext context) {
-    // แสดง loading ระหว่างโหลดข้อมูล
+    // วันนัดหมาย — สร้างในเมธอด build เพื่อให้ .tr() อยู่ใน context
+    final List<Map<String, String>> postCategoryList = [
+      {"code": "0", "title": 'dayEvery'.tr()},
+      {"code": "1", "title": 'dayWeekday'.tr()},
+      {"code": "2", "title": 'dayWeekend'.tr()},
+    ];
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFEEF2F5),
         appBar: appBar(
-          title: "ตั้งค่าเวลาให้คำปรึกษา",
+          title: 'scheduleLoadingTitle'.tr(),
           backBtn: true,
           rightBtn: false,
           backAction: () => goBack(),
@@ -144,7 +135,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "ตั้งค่าวันและเวลาที่สามารถนัดปรึกษาได้",
+        title: 'scheduleTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -154,7 +145,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
         children: [
           const SizedBox(height: 30),
-          _appointmentDetailsCard(),
+          _appointmentDetailsCard(postCategoryList),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -171,9 +162,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                           width: 1,
                           color: const Color.fromARGB(255, 166, 191, 238)),
                     ),
-                    child: const Text(
-                      "ล้างค่าทั้งหมด",
-                      style: TextStyle(
+                    child: Text(
+                      'clearAll'.tr(),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF0262EC),
@@ -196,9 +187,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                       border:
                           Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
-                    child: const Text(
-                      "บันทึก",
-                      style: TextStyle(
+                    child: Text(
+                      'save'.tr(),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -216,24 +207,17 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     );
   }
 
-  Widget _appointmentDetailsCard() {
+  Widget _appointmentDetailsCard(List<Map<String, String>> postCategoryList) {
     return Container(
       decoration: const BoxDecoration(),
       child: Column(
         children: [
           const SizedBox(height: 10),
-
-          // วันนัดหมายปรึกษา
-          _selectCategory(title: 'วันนัดหมายปรึกษา', list: postCategoryList),
-
+          _selectCategory(
+              title: 'appointmentDay'.tr(), list: postCategoryList),
           const SizedBox(height: 30),
-
-          // ช่วงเวลา - แบ่งเป็น 3 ช่วง
           _buildTimeSlotSection(),
-
           const SizedBox(height: 30),
-
-          // ราคาต่อชั่วโมง
           _buildPriceSection(),
         ],
       ),
@@ -308,9 +292,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'เลือกช่วงเวลาที่ว่าง',
-          style: TextStyle(
+        Text(
+          'selectTimeSlot'.tr(),
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Color(0xFF0262EC),
@@ -318,28 +302,25 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         ),
         const SizedBox(height: 16),
 
-        // ช่วงเช้า (08:00 - 11:00)
         _buildTimePeriod(
-          title: 'ช่วงเช้า',
-          subtitle: '08:00 - 11:00 น.',
+          title: 'timeMorning'.tr(),
+          subtitle: 'timeMorningRange'.tr(),
           timeSlots: ['08:00', '09:00', '10:00', '11:00'],
         ),
 
         const SizedBox(height: 16),
 
-        // ช่วงบ่าย (12:00 - 17:00)
         _buildTimePeriod(
-          title: 'ช่วงบ่าย',
-          subtitle: '13:00 - 17:00 น.',
+          title: 'timeAfternoon'.tr(),
+          subtitle: 'timeAfternoonRange'.tr(),
           timeSlots: ['13:00', '14:00', '15:00', '16:00', '17:00'],
         ),
 
         const SizedBox(height: 16),
 
-        // ช่วงเย็น (18:00 - 21:00)
         _buildTimePeriod(
-          title: 'ช่วงเย็น',
-          subtitle: '18:00 - 21:00 น.',
+          title: 'timeEvening'.tr(),
+          subtitle: 'timeEveningRange'.tr(),
           timeSlots: ['18:00', '19:00', '20:00', '21:00'],
         ),
       ],
@@ -405,7 +386,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                     ),
                   ),
                   child: Text(
-                    allSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด',
+                    allSelected ? 'deselectAll'.tr() : 'selectAll'.tr(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -459,7 +440,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     );
   }
 
-  // เลือก/ยกเลิกช่วงเวลา
   void _toggleTimeSlot(String time) {
     setState(() {
       if (selectedTimeSlots.contains(time)) {
@@ -467,24 +447,19 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       } else {
         selectedTimeSlots.add(time);
       }
-      // เรียงเวลาใหม่
       selectedTimeSlots.sort();
     });
   }
 
-  // เช็คว่าเลือกทั้งหมดในช่วงนั้นหรือไม่
   bool _isAllSelectedInPeriod(List<String> timeSlots) {
     return timeSlots.every((time) => selectedTimeSlots.contains(time));
   }
 
-  // เลือก/ยกเลิกทั้งช่วง
   void _toggleAllInPeriod(List<String> timeSlots) {
     setState(() {
       if (_isAllSelectedInPeriod(timeSlots)) {
-        // ยกเลิกทั้งหมด
         selectedTimeSlots.removeWhere((time) => timeSlots.contains(time));
       } else {
-        // เลือกทั้งหมด
         for (var time in timeSlots) {
           if (!selectedTimeSlots.contains(time)) {
             selectedTimeSlots.add(time);
@@ -505,41 +480,23 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       children: [
         Row(
           children: [
-            const Text(
-              'ราคาต่อชั่วโมง',
-              style: TextStyle(
+            Text(
+              'pricePerHour'.tr(),
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF0262EC),
               ),
             ),
             const SizedBox(width: 8),
-            if (!isLawyerPro)
-              Container(
-                  // padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  // decoration: BoxDecoration(
-                  //   color: const Color(0xFFFFF4E6),
-                  //   borderRadius: BorderRadius.circular(6),
-                  //   border: Border.all(color: const Color(0xFFFFB020)),
-                  // ),
-                  // child: const Text(
-                  //   'Default',
-                  //   style: TextStyle(
-                  //     fontSize: 10,
-                  //     fontWeight: FontWeight.w700,
-                  //     color: Color(0xFFFFB020),
-                  //   ),
-                  // ),
-                  ),
+            if (!isLawyerPro) Container(),
           ],
         ),
         const SizedBox(height: 8),
 
-        // ถ้าไม่ใช่ Lawyer Pro แสดงข้อความแจ้ง
-
         TextField(
           controller: costPerHrController,
-          enabled: isLawyerPro, // ถ้าไม่ใช่ Pro ก็แก้ไม่ได้
+          enabled: isLawyerPro,
           keyboardType: TextInputType.number,
           style: GoogleFonts.prompt(
             fontSize: 16,
@@ -547,7 +504,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
             color: isLawyerPro ? Colors.black : Colors.grey,
           ),
           decoration: InputDecoration(
-            hintText: "บาท/ชั่วโมง",
+            hintText: 'priceHint'.tr(),
             hintStyle: TextStyle(
               color: Colors.grey[400],
               fontSize: 14,
@@ -556,7 +513,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
               Icons.payments_outlined,
               color: isLawyerPro ? const Color(0xFF0262EC) : Colors.grey,
             ),
-            suffixText: 'บาท',
+            suffixText: 'priceSuffix'.tr(),
             suffixStyle: TextStyle(
               color: Colors.grey[600],
               fontSize: 14,
@@ -603,7 +560,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'อัปเกรดเป็น Lawyer Pro เพื่อตั้งราคาเองได้',
+                    'upgradePriceNote'.tr(),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[800],
@@ -617,9 +574,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                       builder: (_) => SubscribePage(),
                     ),
                   ),
-                  child: const Text(
-                    'อัปเกรด',
-                    style: TextStyle(
+                  child: Text(
+                    'upgradeLink'.tr(),
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0262EC),
@@ -629,7 +586,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
               ],
             ),
           ),
-          // const SizedBox(height: ),
         ],
       ],
     );
@@ -650,21 +606,19 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       }
     });
 
-    // ล้างข้อมูลใน storage ด้วย
     await _clearStorageData();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ล้างข้อมูลเรียบร้อยแล้ว'),
-          backgroundColor: Color(0xFF0262EC),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text('clearSuccessMessage'.tr()),
+          backgroundColor: const Color(0xFF0262EC),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
   }
 
-  // ล้างข้อมูลใน storage
   Future<void> _clearStorageData() async {
     try {
       await storage.delete(key: 'schedule_dayType');
@@ -677,12 +631,11 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   }
 
   void _saveSchedule() async {
-    // Validation
     if (selectedTimeSlots.isEmpty) {
       DialogService.showError(
         context,
-        title: "กรุณาเลือกช่วงเวลา",
-        message: "โปรดเลือกอย่างน้อย 1 ช่วงเวลาที่ว่าง",
+        title: 'selectTimeSlot'.tr(),
+        message: 'selectTimeSlotError'.tr(),
       );
       return;
     }
@@ -690,17 +643,15 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     if (costPerHrController.text.isEmpty) {
       DialogService.showError(
         context,
-        title: "กรุณากรอกราคา",
-        message: "โปรดระบุราคาต่อชั่วโมง",
+        title: 'pricePerHour'.tr(),
+        message: 'selectPriceError'.tr(),
       );
       return;
     }
 
     try {
-      // ล้างค่าเก่าก่อนบันทึกค่าใหม่ เพื่อป้องกันค่าค้างค้า
       await _clearStorageData();
 
-      // บันทึกข้อมูลใหม่ลง storage
       await storage.write(key: 'schedule_dayType', value: selectedCategory);
       await storage.write(
         key: 'schedule_timeSlots',
@@ -711,10 +662,9 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         value: costPerHrController.text,
       );
 
-      // สร้างข้อมูลสำหรับส่ง API (ถ้ามี)
       final scheduleData = {
-        'dayType': selectedCategory, // 0=ทุกวัน, 1=วันธรรมดา, 2=สุดสัปดาห์
-        'timeSlots': selectedTimeSlots, // ["08:00", "09:00", "14:00", ...]
+        'dayType': selectedCategory,
+        'timeSlots': selectedTimeSlots,
         'pricePerHour': double.parse(costPerHrController.text),
         'isProPrice': isLawyerPro,
       };
@@ -724,24 +674,22 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       // TODO: ส่งข้อมูลไป API ตรงนี้
       // await _sendToAPI(scheduleData);
 
-      // แสดง dialog สำเร็จ
       if (mounted) {
         DialogService.showSuccess(
           context,
-          title: "บันทึกข้อมูลแล้ว",
-          message: "ระบบได้บันทึกตารางเวลาของคุณเรียบร้อยแล้ว",
+          title: 'scheduleSuccessTitle'.tr(),
+          message: 'scheduleSuccessMessage'.tr(),
           onClose: () {
             Navigator.pop(context);
           },
         );
       }
     } catch (e) {
-      // print('Error saving schedule: $e');
       if (mounted) {
         DialogService.showError(
           context,
-          title: "เกิดข้อผิดพลาด",
-          message: "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+          title: 'errorTitle'.tr(),
+          message: 'scheduleErrorMessage'.tr(),
         );
       }
     }

@@ -42,7 +42,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // ฟังการเปลี่ยนแปลงจากทั้ง 2 store
     LawyerProfileStore.instance.addListener(_onStoreChanged);
     UserProfileStore.instance.addListener(_onStoreChanged);
   }
@@ -57,8 +56,6 @@ class _ProfilePageState extends State<ProfilePage> {
   void _onStoreChanged() {
     if (mounted) setState(() {});
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +90,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget profileMenuCard() {
     return Stack(
-      // clipBehavior: Clip.antiAlias,
       alignment: Alignment.topCenter,
       children: [
         // CARD
@@ -121,7 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Text(
                     name,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF0262EC),
@@ -204,31 +200,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     )
                   : Container(),
 
-              // userType != "lawyer"
-              //     ? menuItem(
-              //         title: 'โพสต์ของฉัน',
-              //         onTap: () => {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => PostList(),
-              //             ),
-              //           ),
-              //         },
-              //       )
-              //     : Container(),
-              // menuItem(
-              //     title: 'ประวัตินัดหมาย',
-              //     onTap: () => {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) =>
-              //                   LawyerAppointmentHistoryPage(),
-              //             ),
-              //           ),
-              //         }),
-
               userType == "lawyer"
                   ? menuItem(
                       title: 'upgradetolawyerpro'.tr(),
@@ -242,7 +213,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       titleStyle: const TextStyle(
                         fontSize: 12,
-                        // fontWeight: FontWeight.w700,
                         color: Color(0xFF1F2937),
                       ),
                       trailing: const Icon(
@@ -294,12 +264,6 @@ class _ProfilePageState extends State<ProfilePage> {
               menuItem(
                 title: 'changelanguage'.tr(),
                 onTap: () => {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) => const ChangeLanguagePage(),
-                  //   ),
-                  // ),
                   showLanguagePicker(context)
                 },
               ),
@@ -441,11 +405,8 @@ class _ProfilePageState extends State<ProfilePage> {
   void _confirmLogout() {
     DialogService.showConfirmLogout(
       context,
-      title: "ยืนยันการออกจากระบบ",
-      message: "คุณต้องการออกจากระบบหรือไม่?",
-
-      // confirmText: "ใช่, ออกจากระบบ",
-      // cancelText: "ไม่, ยกเลิก",
+      title: 'confirmLogoutTitle'.tr(),
+      message: 'confirmLogoutMessage'.tr(),
       onConfirm: () => logout(),
     );
   }
