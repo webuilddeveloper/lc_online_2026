@@ -83,12 +83,34 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   }
 
   // ── validation helpers ───────────────────────────────────────────────
-  bool _isEmailValid(String email) =>
-      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+  bool _isEmailValid(String email) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) return false;
+    
+    // เช็คค่ายอีเมลที่อนุญาต (สามารถเพิ่ม/ลดได้ตามต้องการ)
+    final validDomains = [
+      'gmail.com',
+      'hotmail.com',
+      'outlook.com',
+      'yahoo.com',
+      'icloud.com',
+      'live.com',
+    ];
+    final domain = email.split('@').last.toLowerCase();
+    return validDomains.contains(domain);
+  }
 
   // เบอร์ต้องครบ 10 หลักพอดี เหมือน register
   bool _isPhoneValid(String phone) =>
       phone.replaceAll(RegExp(r'\D'), '').length == 10;
+
+  bool get _hasChanges {
+    final store = UserProfileStore.instance;
+    return firstNameController.text.trim() != store.firstName ||
+        lastNameController.text.trim() != store.lastName ||
+        phoneController.text.trim() != store.phone ||
+        emailController.text.trim() != store.email ||
+        profileImage != null;
+  }
 
   // ── scroll to key ────────────────────────────────────────────────────
   void _scrollToKey(GlobalKey key) {
@@ -318,14 +340,16 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
   // ── SAVE BUTTON ─────────────────────────────────────────────────────
   Widget _saveButton() {
+    final canSave = _hasChanges && !isLoading;
+
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: isLoading ? null : _onSave,
+      onTap: canSave ? _onSave : null,
       child: Container(
         height: 50,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: _blue,
+          color: canSave ? _blue : Colors.grey.shade400,
         ),
         child: Center(
           child: isLoading
@@ -396,6 +420,19 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       return;
     }
 
+    String? passwordInput;
+    final bool isEmailChanged = email != UserProfileStore.instance.email;
+    final bool isPhoneChanged = phone != UserProfileStore.instance.phone;
+
+    // ถ้ามีการเปลี่ยนอีเมลหรือเบอร์ และเป็นการล็อกอินแบบ local ให้ถามรหัสผ่าน
+    if (_typeLogin == 'local' && (isEmailChanged || isPhoneChanged)) {
+      passwordInput = await DialogService.showPasswordDialog(context);
+      if (passwordInput == null || passwordInput.isEmpty) {
+        // User cancelled or didn't input password
+        return;
+      }
+    }
+
     setState(() => isLoading = true);
 
     try {
@@ -407,6 +444,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         phone: phone,
         imageUrl: _storedImageUrl,
         userType: userType, // ✅ ส่ง userType เดิมไปด้วยเสมอ
+        password: passwordInput,
       );
 
       // ── อัปเดต store → persist + broadcast ให้ทุก widget ทราบทันที ──
@@ -427,27 +465,33 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         message: "ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว",
         onClose: () => Navigator.pop(context),
       );
-    } on EmailDuplicateException {
+    } on EmailDuplicateException catch (e) {
       // ── AuthService ตรวจ server message แล้วส่ง EmailDuplicateException มา ──
       // จับ type ได้แน่นอน ไม่ต้อง guess keyword อีกต่อไป
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+        _emailError = e.message;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_emailKey);
       });
-    } on PhoneDuplicateException {
+    } on PhoneDuplicateException catch (e) {
       // ── AuthService ตรวจ server message แล้วส่ง PhoneDuplicateException มา ──
       if (!mounted) return;
       setState(() {
         isLoading = false;
-        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
+        _phoneError = e.message;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_phoneKey);
       });
+    } on PasswordIncorrectException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      DialogService.showError(context, title: "รหัสผ่านไม่ถูกต้อง", message: e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);

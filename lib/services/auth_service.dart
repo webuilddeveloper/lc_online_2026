@@ -3,16 +3,37 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:LawyerOnline/models/user_model.dart';
 
+/// อีเมลซ้ำ — server ส่งกลับมา
+class EmailDuplicateException implements Exception {
+  final String message;
+  EmailDuplicateException([this.message = 'Email already exists']);
+  @override
+  String toString() => message;
+}
+
+/// เบอร์โทรซ้ำ — server ส่งกลับมา
+class PhoneDuplicateException implements Exception {
+  final String message;
+  PhoneDuplicateException([this.message = 'Phone already exists']);
+  @override
+  String toString() => message;
+}
+
+/// รหัสผ่านไม่ถูกต้อง — server ส่งกลับมา
+class PasswordIncorrectException implements Exception {
+  final String message;
+  PasswordIncorrectException([this.message = 'Password incorrect']);
+  @override
+  String toString() => message;
+}
+
 class AuthService {
-  static const String _baseUrl =
-      'https://b7d2-125-25-100-59.ngrok-free.app';
+  static const String _baseUrl = 'https://b7d2-125-25-100-59.ngrok-free.app';
   static const String _loginUrl = '$_baseUrl/m/register/login';
   static const String _registerUrl = '$_baseUrl/m/register/create';
   static const String _cancelUrl = '$_baseUrl/m/register/cancel';
   static const String _changePasswordUrl = '$_baseUrl/m/register/change';
   static const String _updateProfileUrl = '$_baseUrl/m/register/update';
-
-  static const Duration _timeout = Duration(seconds: 15);
 
   static const Map<String, String> _headers = {
     'Accept': 'application/json',
@@ -38,9 +59,6 @@ class AuthService {
         Uri.parse(_loginUrl),
         body: body,
         headers: _headers,
-      ).timeout(
-        _timeout,
-        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -99,9 +117,6 @@ class AuthService {
         Uri.parse(_registerUrl),
         body: body,
         headers: _headers,
-      ).timeout(
-        _timeout,
-        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -113,32 +128,14 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
-        final message = data['message']?.toString() ?? 'Registration failed';
-
-        debugPrint('[AuthService.register] server message: $message');
-
-        final msg = message.toLowerCase();
-        final isEmailDuplicate = msg.contains('email') ||
-            msg.contains('อีเมล') ||
-            msg.contains('already') ||
-            msg.contains('exist') ||
-            msg.contains('duplicate') ||
-            msg.contains('ซ้ำ') ||
-            msg.contains('มีผู้ใช้') ||
-            msg.contains('ถูกใช้');
-        final isPhoneDuplicate = msg.contains('phone') ||
-            msg.contains('เบอร์') ||
-            msg.contains('โทร') ||
-            msg.contains('mobile');
-
-        if (isEmailDuplicate) {
-          throw EmailDuplicateException(message);
+        final rawMsg = data['message']?.toString() ?? '';
+        final msg = rawMsg.toLowerCase();
+        if (msg.contains('email')) {
+          throw EmailDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
+        } else if (msg.contains('phone') || msg.contains('เบอร์')) {
+          throw PhoneDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
         }
-        if (isPhoneDuplicate) {
-          throw PhoneDuplicateException(message);
-        }
-
-        throw Exception(message);
+        throw Exception(rawMsg.isNotEmpty ? rawMsg : 'Registration failed');
       }
 
       final objectData = data['objectData'];
@@ -148,6 +145,10 @@ class AuthService {
 
       debugPrint('[AuthService.register] success for email=$email');
       return UserModel.fromJson(objectData);
+    } on EmailDuplicateException {
+      rethrow;
+    } on PhoneDuplicateException {
+      rethrow;
     } catch (e) {
       debugPrint('[AuthService.register] error: $e');
       rethrow;
@@ -173,9 +174,6 @@ class AuthService {
         Uri.parse(_cancelUrl),
         body: body,
         headers: _headers,
-      ).timeout(
-        _timeout,
-        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -197,6 +195,7 @@ class AuthService {
     }
   }
 
+  /// เปลี่ยนรหัสผ่าน
   static Future<void> changePassword({
     required String code,
     required String password,
@@ -216,9 +215,6 @@ class AuthService {
         Uri.parse(_changePasswordUrl),
         body: body,
         headers: _headers,
-      ).timeout(
-        _timeout,
-        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -230,7 +226,8 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
-        throw Exception(data['message']?.toString() ?? 'Change password failed');
+        throw Exception(
+            data['message']?.toString() ?? 'Change password failed');
       }
 
       debugPrint('[AuthService.changePassword] success for code=$code');
@@ -239,21 +236,19 @@ class AuthService {
       rethrow;
     }
   }
-
-  // ── updateProfile ──────────────────────────────────────────────────────────
-  // throw EmailDuplicateException เมื่อ server แจ้งว่า email ซ้ำ
-  // ทำให้ profile-form ไม่ต้อง guess keyword จาก message string
+  /// อัปเดตโปรไฟล์
   static Future<void> updateProfile({
     required String code,
     required String email,
     required String firstName,
-    String lastName = '',
-    String phone = '',
+    required String lastName,
+    required String phone,
     String imageUrl = '',
-    String userType = '',
+    String userType = 'user',
+    String? password,
   }) async {
     try {
-      final body = json.encode({
+      final Map<String, dynamic> bodyMap = {
         'code': code,
         'email': email,
         'firstName': firstName,
@@ -261,7 +256,11 @@ class AuthService {
         'phone': phone,
         'imageUrl': imageUrl,
         'userType': userType,
-      });
+      };
+      if (password != null && password.isNotEmpty) {
+        bodyMap['password'] = password;
+      }
+      final body = json.encode(bodyMap);
 
       debugPrint('[AuthService.updateProfile] url=$_updateProfileUrl');
       debugPrint('[AuthService.updateProfile] body=$body');
@@ -270,9 +269,6 @@ class AuthService {
         Uri.parse(_updateProfileUrl),
         body: body,
         headers: _headers,
-      ).timeout(
-        _timeout,
-        onTimeout: () => throw Exception('หมดเวลาเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'),
       );
 
       debugPrint(
@@ -284,53 +280,28 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
-        final message = data['message']?.toString() ?? 'Update profile failed';
-
-        debugPrint('[AuthService.updateProfile] server message: $message');
-
-        final msg = message.toLowerCase();
-        final isEmailDuplicate = msg.contains('email') ||
-            msg.contains('อีเมล') ||
-            msg.contains('already') ||
-            msg.contains('exist') ||
-            msg.contains('duplicate') ||
-            msg.contains('ซ้ำ') ||
-            msg.contains('มีผู้ใช้') ||
-            msg.contains('ถูกใช้');
-        final isPhoneDuplicate = msg.contains('phone') ||
-            msg.contains('เบอร์') ||
-            msg.contains('โทร') ||
-            msg.contains('mobile');
-
-        if (isEmailDuplicate) {
-          throw EmailDuplicateException(message);
+        final rawMsg = data['message']?.toString() ?? '';
+        final msg = rawMsg.toLowerCase();
+        if (msg.contains('email')) {
+          throw EmailDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
+        } else if (msg.contains('phone') || msg.contains('เบอร์')) {
+          throw PhoneDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
+        } else if (msg.contains('password') || msg.contains('รหัสผ่าน')) {
+          throw PasswordIncorrectException(rawMsg.isNotEmpty ? rawMsg : 'รหัสผ่านไม่ถูกต้อง');
         }
-        if (isPhoneDuplicate) {
-          throw PhoneDuplicateException(message);
-        }
-
-        throw Exception(message);
+        throw Exception(rawMsg.isNotEmpty ? rawMsg : 'Update profile failed');
       }
 
       debugPrint('[AuthService.updateProfile] success for code=$code');
+    } on EmailDuplicateException {
+      rethrow;
+    } on PhoneDuplicateException {
+      rethrow;
+    } on PasswordIncorrectException {
+      rethrow;
     } catch (e) {
       debugPrint('[AuthService.updateProfile] error: $e');
       rethrow;
     }
   }
-}
-
-// ── Custom Exceptions ─────────────────────────────────────────────────────────
-class EmailDuplicateException implements Exception {
-  final String message;
-  const EmailDuplicateException(this.message);
-  @override
-  String toString() => message;
-}
-
-class PhoneDuplicateException implements Exception {
-  final String message;
-  const PhoneDuplicateException(this.message);
-  @override
-  String toString() => message;
 }
