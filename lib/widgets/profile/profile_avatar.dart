@@ -60,7 +60,7 @@ class ProfileAvatar extends StatelessWidget {
                   height: innerSize,
                   child: ClipOval(
                     child: imageUrl.isNotEmpty
-                        ? typeLogin == 'social'
+                        ? (imageUrl.startsWith('http') || imageUrl.startsWith('https'))
                             ? Image.network(imageUrl, fit: BoxFit.cover)
                             : Image.asset(imageUrl, fit: BoxFit.cover)
                         : Padding(

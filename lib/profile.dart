@@ -15,6 +15,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -31,25 +32,25 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final storage = FlutterSecureStorage();
-
-  String userType = "";
-  String name = "";
-  String imageUrl = '';
-  String typeLogin = "";
+  String get userType => UserProfileStore.instance.userType;
+  String get name => UserProfileStore.instance.name;
+  String get imageUrl => UserProfileStore.instance.imageUrl;
+  String get typeLogin => UserProfileStore.instance.typeLogin;
 
   bool get _isPro => LawyerProfileStore.instance.isPro && userType == 'lawyer';
 
   @override
   void initState() {
     super.initState();
-    callRead();
+    // ฟังการเปลี่ยนแปลงจากทั้ง 2 store
     LawyerProfileStore.instance.addListener(_onStoreChanged);
+    UserProfileStore.instance.addListener(_onStoreChanged);
   }
 
   @override
   void dispose() {
     LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    UserProfileStore.instance.removeListener(_onStoreChanged);
     super.dispose();
   }
 
@@ -57,20 +58,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) setState(() {});
   }
 
-  callRead() async {
-    var userType = await storage.read(key: 'userType');
-    var imageProfile =
-        await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
 
-    setState(() {
-      this.userType = widget.userType ?? userType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
-      typeLogin = type.toString();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +462,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   logout() async {
-    storage.deleteAll();
+    await UserProfileStore.instance.resetAndClear();
+    if (!mounted) return;
     await Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => MenuPage(),

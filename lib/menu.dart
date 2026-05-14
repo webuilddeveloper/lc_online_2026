@@ -109,20 +109,29 @@ class _MenuPageState extends State<MenuPage> {
       name = store.name;
       imageUrl = store.imageUrl;
       typeLogin = store.typeLogin;
-
-      pages = [
-        HomePage(onProfileTap: () => _onNavTap(4)),
-        typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false),
-        CommunityPage(),
-        typeLogin != 'null'
-            ? userType == 'user'
-                ? AppointmentListPage()
-                : CalendarPage()
-            : LoginPage(isBack: false),
-        typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false),
-      ];
       _currentPage = widget.pageIndex ?? 0;
     });
+  }
+
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0:
+        return HomePage(onProfileTap: () => _onNavTap(4));
+      case 1:
+        return typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false);
+      case 2:
+        return CommunityPage();
+      case 3:
+        return typeLogin != 'null'
+            ? userType == 'lawyer'
+                ? CalendarPage()
+                : AppointmentListPage()
+            : LoginPage(isBack: false);
+      case 4:
+        return typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false);
+      default:
+        return HomePage(onProfileTap: () => _onNavTap(4));
+    }
   }
 
   void _onNavTap(int index) => setState(() => _currentPage = index);
@@ -185,7 +194,7 @@ class _MenuPageState extends State<MenuPage> {
             ),
             child: KeyedSubtree(
               key: ValueKey<int>(_currentPage),
-              child: pages.isNotEmpty ? pages[_currentPage] : const SizedBox(),
+              child: _getPage(_currentPage),
             ),
           ),
         ),
