@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 
@@ -8,60 +9,43 @@ class PrivacyPolicyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
-
       appBar: appBarCustom(
         title: "นโยบายความเป็นส่วนตัว",
         backBtn: true,
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-
       body: ListView(
         padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
         children: [
-
           Container(
             padding: const EdgeInsets.all(20),
             decoration: cardStyle(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
+                title("privacy_policy.section_1_title".tr()),
+                content("privacy_policy.section_1_content".tr()),
 
-                title("1. การเก็บข้อมูล"),
-                content(
-                    "แอปพลิเคชัน Lawyer Online อาจเก็บข้อมูลส่วนบุคคล "
-                    "เช่น ชื่อ อีเมล เบอร์โทรศัพท์ เพื่อใช้ในการให้บริการ"),
+                title("privacy_policy.section_2_title".tr()),
+                content("privacy_policy.section_2_content".tr()),
 
-                title("2. การใช้ข้อมูล"),
-                content(
-                    "ข้อมูลที่เก็บจะถูกใช้เพื่อพัฒนาการให้บริการ "
-                    "และปรับปรุงประสบการณ์ของผู้ใช้งาน"),
+                title("privacy_policy.section_3_title".tr()),
+                content("privacy_policy.section_3_content".tr()),
 
-                title("3. การเปิดเผยข้อมูล"),
-                content(
-                    "บริษัทจะไม่เปิดเผยข้อมูลส่วนบุคคลของผู้ใช้งาน "
-                    "ให้บุคคลที่สาม เว้นแต่ได้รับความยินยอม"),
+                title("privacy_policy.section_4_title".tr()),
+                content("privacy_policy.section_4_content".tr()),
 
-                title("4. ความปลอดภัยของข้อมูล"),
-                content(
-                    "เรามีมาตรการป้องกันข้อมูล เพื่อป้องกันการเข้าถึง "
-                    "หรือใช้งานโดยไม่ได้รับอนุญาต"),
-
-                title("5. สิทธิของผู้ใช้งาน"),
-                content(
-                    "ผู้ใช้งานสามารถขอแก้ไข หรือลบข้อมูลส่วนบุคคล "
-                    "ได้ตามสิทธิที่กฎหมายกำหนด"),
-
+                title("privacy_policy.section_5_title".tr()),
+                content("privacy_policy.section_5_content".tr()),
               ],
             ),
           ),
-
           const SizedBox(height: 30),
-
-          const Center(
+          Center(
             child: Text(
-              "อัปเดตล่าสุด: 2026",
-              style: TextStyle(
+              "update_2026".tr(),
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 12,
               ),

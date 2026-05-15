@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/lawyer-online-details.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 
@@ -41,7 +42,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: "ทนายที่ถูกใจ",
+        title: "favoriteLawyers".tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -192,8 +193,8 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                       const SizedBox(width: 5),
                       Text(
                         model['status'] == 'online'
-                            ? "ออนไลน์"
-                            : "ออฟไลน์",
+                            ? "online".tr()
+                            : "offline".tr(),
                         style: const TextStyle(fontSize: 12),
                       )
                     ],

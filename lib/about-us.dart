@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/privacy-policy.dart';
 import 'package:LawyerOnline/terms.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 
@@ -11,7 +12,7 @@ class AboutUsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "เกี่ยวกับเรา",
+        title: "aboutUs".tr(),
         backBtn: true,
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
@@ -52,9 +53,9 @@ class AboutUsPage extends StatelessWidget {
 
                 const SizedBox(height: 15),
 
-                const Text(
-                  "Lawyer Online",
-                  style: TextStyle(
+                Text(
+                  "appTitle".tr(),
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -62,22 +63,19 @@ class AboutUsPage extends StatelessWidget {
 
                 const SizedBox(height: 5),
 
-                const Text(
-                  "Version 1.0.0",
-                  style: TextStyle(
+                Text(
+                  "version".tr(),
+                  style: const TextStyle(
                     color: Colors.grey,
                   ),
                 ),
 
                 const SizedBox(height: 20),
 
-                const Text(
-                  "แอปพลิเคชันสำหรับให้คำปรึกษากฎหมายออนไลน์ "
-                  "ช่วยให้ผู้ใช้งานสามารถติดต่อทนายความ นัดหมาย "
-                  "และขอคำปรึกษาด้านกฎหมายได้สะดวก รวดเร็ว "
-                  "ทุกที่ทุกเวลา",
+                Text(
+                  "appDescription".tr(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     height: 1.6,
                     color: Colors.black87,
@@ -150,7 +148,7 @@ class AboutUsPage extends StatelessWidget {
               children: [
                 menuItem(
                   icon: Icons.privacy_tip_outlined,
-                  title: "นโยบายความเป็นส่วนตัว",
+                  title: "privacyPolicy".tr(),
                   value: "",
                   onTap: () => {
                           Navigator.push(
@@ -164,7 +162,7 @@ class AboutUsPage extends StatelessWidget {
                 const Divider(),
                 menuItem(
                     icon: Icons.description_outlined,
-                    title: "เงื่อนไขการใช้งาน",
+                    title: "terms".tr(),
                     value: "",
                     onTap: () => {
                           Navigator.push(

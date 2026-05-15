@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 
@@ -8,56 +9,35 @@ class TermsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
-
       appBar: appBarCustom(
-        title: "เงื่อนไขการใช้งาน",
+        title: "terms".tr(),
         backBtn: true,
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-
       body: ListView(
         padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
         children: [
-
           Container(
             padding: const EdgeInsets.all(20),
             decoration: cardStyle(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-
-                title("1. การยอมรับเงื่อนไข"),
-                content(
-                    "การเข้าใช้งานแอปพลิเคชัน Lawyer Online ถือว่าผู้ใช้งานยอมรับ "
-                    "เงื่อนไขและข้อตกลงทั้งหมดที่ระบุไว้ในเอกสารนี้"),
-
-                title("2. การใช้งานบริการ"),
-                content(
-                    "ผู้ใช้งานสามารถใช้บริการเพื่อขอคำปรึกษาด้านกฎหมาย "
-                    "นัดหมายทนายความ และรับข้อมูลทางกฎหมายผ่านระบบ"),
-
-                title("3. ความรับผิดชอบของผู้ใช้งาน"),
-                content(
-                    "ผู้ใช้งานต้องให้ข้อมูลที่ถูกต้อง และไม่ใช้ระบบในทางที่ผิด "
-                    "หรือผิดกฎหมาย"),
-
-                title("4. ข้อจำกัดความรับผิด"),
-                content(
-                    "ทีมพัฒนาไม่รับผิดชอบต่อความเสียหายที่เกิดจากการใช้ข้อมูล "
-                    "หรือคำปรึกษาที่ได้รับผ่านแอปพลิเคชัน"),
-
-                title("5. การเปลี่ยนแปลงเงื่อนไข"),
-                content(
-                    "บริษัทขอสงวนสิทธิ์ในการแก้ไขเงื่อนไขการใช้งาน "
-                    "โดยไม่ต้องแจ้งให้ทราบล่วงหน้า"),
-
+              children: [
+                title("terms_of_service.section_1_title".tr()),
+                content("terms_of_service.section_1_content".tr()),
+                title("terms_of_service.section_2_title".tr()),
+                content("terms_of_service.section_2_content".tr()),
+                title("terms_of_service.section_3_title".tr()),
+                content("terms_of_service.section_3_content".tr()),
+                title("terms_of_service.section_4_title".tr()),
+                content("terms_of_service.section_4_content".tr()),
+                title("terms_of_service.section_5_title".tr()),
+                content("terms_of_service.section_5_content".tr()),
               ],
             ),
           ),
-
           const SizedBox(height: 30),
-
           const Center(
             child: Text(
               "อัปเดตล่าสุด: 2026",

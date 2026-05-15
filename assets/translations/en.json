@@ -1,6 +1,5 @@
 {
   "appTitle": "Lawyer Online",
-
   "community": "Community",
   "communitySubtitle": "Community Legal Hub",
   "postQuestion": "Ask a question",
@@ -19,7 +18,6 @@
   "commentHint": "Write a comment or answer...",
   "noComments": "No comments yet. Be the first to answer!",
   "post": "Post",
-
   "caseStatus": "Your Case Status",
   "noCases": "No cases yet",
   "lawCategories": "Legal Topics",
@@ -42,7 +40,6 @@
   "viewUrgentJobsSub": "Clients need urgent advice",
   "consultingPeriod": "Within consultation period",
   "free": "Free",
-
   "accepted": "Accepted",
   "pending": "Pending",
   "paid": "Confirmed",
@@ -51,7 +48,6 @@
   "acceptJobConfirm": "Are you sure you want to accept this request?",
   "rejectJob": "Reject",
   "rejectJobConfirm": "Are you sure you want to reject this request?",
-
   "today": "Today",
   "yesterday": "Yesterday",
   "earlier": "Earlier",
@@ -61,7 +57,6 @@
     "hoursAgo": "{} hours ago",
     "daysAgo": "{} days ago"
   },
-
   "profile": "Profile",
   "myAccount": "My Account",
   "yourActivity": "Your Activities",
@@ -72,7 +67,6 @@
   "deleteAccount": "Delete Account",
   "confirmLogoutTitle": "Confirm Logout",
   "confirmLogoutMessage": "Are you sure you want to log out?",
-
   "editInfoTitle": "Edit Personal Information",
   "firstName": "First Name *",
   "lastName": "Last Name *",
@@ -90,7 +84,6 @@
   "saveSuccessTitle": "Information Saved",
   "saveSuccessMessage": "Your information has been saved successfully",
   "errorTitle": "Error",
-
   "changePasswordTitle": "Change Password",
   "oldPassword": "Current Password",
   "oldPasswordHint": "Enter your current password",
@@ -106,7 +99,6 @@
   "oldPasswordWrongTitle": "Incorrect Current Password",
   "oldPasswordWrongMessage": "Please try again",
   "changePasswordErrorMessage": "Unable to change password. Please try again",
-
   "ConsultationSchedule": "Manage Consultation Availability",
   "subtitleConsultationSchedule": "Set the days and times you are available for consultations",
   "scheduleLoadingTitle": "Set Consultation Time",
@@ -137,7 +129,6 @@
   "scheduleSuccessTitle": "Schedule Saved",
   "scheduleSuccessMessage": "Your consultation schedule has been saved successfully",
   "scheduleErrorMessage": "Unable to save schedule. Please try again",
-
   "settings": "Settings",
   "notifications": "Notifications",
   "changelanguage": "Change language",
@@ -145,11 +136,153 @@
   "selectLanguage": "Select Language",
   "upgradetolawyerpro": "Upgrade to Lawyer Pro",
   "aboutUs": "About Us",
-
   "register": "Register",
   "login": "Login",
   "defaultUser": "User",
-
   "viewAll": "View All",
-  "viewDetails": "View Details"
+  "viewDetails": "View Details",
+  "saveSuccess": "Saved Successfully",
+  "notificationSettingsMessage": "Notification settings have been saved successfully",
+  "ok": "Ok",
+  "notificationSettingsTitle": "Notification Settings",
+  "enableNotification": "Enable Notifications",
+  "enableAllNotificationDesc": "Turn on or off all notifications",
+  "message": "Message",
+  "messageDesc": "Notify me when there is a new message",
+  "appointment": "Appointment",
+  "appointmentDesc": "Notify me when there is a new appointment",
+  "system": "System",
+  "systemDesc": "Notify me when there is a new system notification",
+  "sound": "Sound",
+  "soundDesc": "Enable sound when there is a new notification",
+  "vibration": "Vibration",
+  "vibrationDesc": "Enable vibration when there is a new notification",
+  "appDescription": "An application for online legal consultation that helps users connect with lawyers, schedule appointments, and seek legal advice conveniently and quickly, anywhere, anytime.",
+  "privacyPolicy": "Privacy Policy",
+  "terms": "Terms of Service",
+  "version": "Version 1.0.0",
+  "deleteAccountTitle": "Delete Account",
+  "deleteAccountSub": "If you would like to delete your account, please let us know the reason so that we can improve our service.",
+  "deleteAccountWarning": "*Account Recovery: If you have deleted your account by mistake or changed your mind, you can contact customer support to request assistance in recovering your account within 30 days after the account deletion date.",
+  "loading": "Loading...",
+  "enter_reason": "Please enter a reason...",
+  "deleteAccountSuccessTitle": "Account Deleted",
+  "deleteAccountSuccessMessage": "Your account has been deleted successfully",
+  "deleteAccountErrorTitle": "Error",
+  "deleteAccountErrorMessage": "Unable to delete account. Please try again",
+  "reasons": {
+    "reason1": "Wrong email address when registering",
+    "reason2": "My account information is incorrect",
+    "reason3": "I want to change email address",
+    "reason4": "I want to change password",
+    "reason5": "Other"
+  },
+  "favoriteLawyers": "Favorite Lawyers",
+  "online": "Online",
+  "offline": "Offline",
+  "privacy_policy": {
+    "section_1_title": "1. Data Collection",
+    "section_1_content": "Lawyer Online may collect personal data such as name, email, phone number to provide services",
+    "section_2_title": "2. Use of Data",
+    "section_2_content": "Collected data will be used to improve services and user experience",
+    "section_3_title": "3. Disclosure of Data",
+    "section_3_content": "We will not disclose personal data to third parties without consent",
+    "section_4_title": "4. Data Security",
+    "section_4_content": "We have security measures to prevent unauthorized access or use",
+    "section_5_title": "5. User Rights",
+    "section_5_content": "Users can request to edit or delete personal data according to legal rights"
+  },
+  "update_2026": "Updated: 2026",
+  "terms_of_service": {
+    "section_1_title": "1. Acceptance of Terms",
+    "section_1_content": "By accessing the Lawyer Online application, users agree to all terms and conditions specified in this document.",
+    "section_2_title": "2. Use of Services",
+    "section_2_content": "Users can use the service to seek legal advice, schedule lawyer appointments, and receive legal information through the system.",
+    "section_3_title": "3. User Responsibility",
+    "section_3_content": "Users must provide accurate information and not misuse the system or use it for illegal purposes.",
+    "section_4_title": "4. Limitation of Liability",
+    "section_4_content": "The development team is not responsible for any damages resulting from the use of information or advice received through the application.",
+    "section_5_title": "5. Changes to Terms",
+    "section_5_content": "The company reserves the right to modify the terms of use without prior notice."
+  },
+  "myAppointment": "My Appointment",
+  "status": {
+    "waiting": "Waiting",
+    "confirmed": "Confirmed",
+    "consulting": "Consulting",
+    "completed": "Completed"
+  },
+  "found": "Found",
+  "items": "Items",
+  "tabs": {
+    "all": "All",
+    "pending": "Pending",
+    "active": "Active",
+    "done": "Done"
+  },
+  "searchLawyer": "Search Lawyer",
+  "waitingForLawyer": "Waiting for Lawyer to accept your case",
+  "cancelCase": "Cancel Case",
+  "cancel": "Cancel",
+  "dialog": {
+    "cancel_confirm": "Do you want to cancel case #{}?",
+    "cancel_reason_title": "Reason for cancellation",
+    "success": "Success",
+    "cancel_success_message": "The appointment has been successfully cancelled. The refund will be processed to your registered bank account."
+  },
+  "confirm": "Confirm",
+  "form": {
+    "reason": "Enter your comment",
+    "reasonHint": "Please enter a reason..."
+  },
+  "no_appointments": "No appointments",
+  "no_matching_appointments": "No matching appointments",
+  "clear_filters": "Clear filters",
+  "appointment_empty_list": "Your appointment will appear here",
+  "sort_by": "Sort by",
+  "sort": {
+    "date_desc": "Newest first",
+    "date_asc": "Oldest first",
+    "name_asc": "Lawyer name A–Z"
+  },
+  "rating": "rating",
+  "category": {
+    "all": "All",
+    "criminal": "Criminal Law",
+    "civil": "Civil Law",
+    "labor": "Labor Law",
+    "real_estate": "Real Estate",
+    "family": "Family Law"
+  },
+  "home_tabs": {
+    "popular": "Popular",
+    "newest": "Newest",
+    "saved": "Saved"
+  },
+  "postQuestionHint": "Have a legal question or want to share something?",
+  "noSavedPosts": "No saved posts yet",
+  "noPostsInCategory": "No posts in this category yet",
+  "postDetailTitle": "Legal Thread",
+  "editPost": "Edit Post",
+  "postContentHint": "Post content...",
+  "lawyerBadge": "⚖️ Lawyer",
+  "you": "You",
+  "reply": "Reply",
+  "edit": "Edit",
+  "editingComment": "Editing comment",
+  "replyingTo": "Replying to {}",
+  "addImages": "Add Images",
+  "gallery": "Gallery",
+  "camera": "Camera",
+  "enterDetails": "Please enter details",
+  "selectCategory": "Please select a category",
+  "newQuestion": "Ask a New Question",
+  "postPublicly": "Post publicly",
+  "problemCategory": "Problem Category *",
+  "details": "Details *",
+  "attachmentImages": "Attachment Images",
+  "addImage": "Add Image",
+  "tapToAddImages": "Tap to add images (up to 4)",
+  "describeProblemHint": "Describe your problem in detail, such as what happened, when, and what evidence you have...",
+  "me": "Me"
 }

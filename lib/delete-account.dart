@@ -32,11 +32,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   }
 
   final List<String> reasons = [
-    'ไม่ได้ใช้งานแพลตฟอร์มแล้ว',
-    'พบแอปอื่นที่น่าสนใจกว่า',
-    'กังวลเรื่องความเป็นส่วนตัว',
-    'กังวลเรื่องความปลอดภัย',
-    'อื่นๆ',
+    'reasons.reason1'.tr(),
+    'reasons.reason2'.tr(),
+    'reasons.reason3'.tr(),
+    'reasons.reason4'.tr(),
+    'reasons.reason5'.tr(),
   ];
 
   @override
@@ -44,7 +44,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: appBarCustom(
-        title: "ลบบัญชี",
+        title: "deleteAccountTitle".tr(),
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,
@@ -67,8 +67,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   //   ),
                   // ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "หากคุณต้องการลบบัญชี กรุณาแจ้งให้เราทราบถึงเหตุผล เพื่อที่เราจะได้นำไปปรับปรุงบริการให้ดียิ่งขึ้น",
+                   Text(
+                    "deleteAccountSub".tr(),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -77,8 +77,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    "*กรณีกู้คืนบัญชี: หากคุณลบบัญชีโดยไม่ได้ตั้งใจ หรือเปลี่ยนใจ คุณสามารถติดต่อฝ่ายบริการลูกค้าเพื่อขอความช่วยเหลือในการกู้คืนบัญชีของคุณได้ภายใน 30 วันหลังจากวันที่ลบบัญชี",
+                   Text(
+                    "deleteAccountWarning".tr(),
                     style: TextStyle(
                       fontSize: 14,
                       color: Color.fromARGB(255, 243, 186, 28),
@@ -141,7 +141,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              name.isEmpty ? "กำลังโหลด..." : name,
+                              name.isEmpty ? "loading".tr() : name,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -229,7 +229,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                             maxLength: 150,
                             maxLines: 4,
                             decoration: InputDecoration(
-                              hintText: "กรุณาระบุรายละเอียดเพิ่มเติม...",
+                              hintText: "enter_reason".tr(),
                               hintStyle: const TextStyle(
                                   color: Color(0xFF9CA3AF), fontSize: 14),
                               filled: true,
@@ -298,9 +298,9 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                           );
                         }
                       : null,
-                  child: const Text(
-                    "ลบบัญชี",
-                    style: TextStyle(
+                  child: Text(
+                    "deleteAccount".tr(),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -342,8 +342,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       // 4. แสดงข้อความสำเร็จ
       DialogService.showSuccess(
         context,
-        title: "ลบบัญชีสำเร็จแล้ว",
-        message: "ระบบกำลังพาท่านกลับสู่หน้าหลัก...",
+        title: "deleteAccountSuccessTitle".tr(),
+        message: "deleteAccountSuccessMessage".tr(),
         onClose: () async {
           // เคลียร์ข้อมูลการเข้าสู่ระบบทั้งหมด
           await UserProfileStore.instance.resetAndClear();
@@ -368,8 +368,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       // แสดงข้อความผิดพลาด
       DialogService.showError(
         context,
-        title: "เกิดข้อผิดพลาด",
-        message: "ไม่สามารถลบบัญชีได้ กรุณาลองใหม่อีกครั้ง",
+        title: "deleteAccountErrorTitle".tr(),
+        message: "deleteAccountErrorMessage".tr(),
       );
     }
   }
