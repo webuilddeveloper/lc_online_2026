@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -297,12 +298,15 @@ class _AppointmentListPageState extends State<AppointmentListPage>
   //  Status helpers
   // ════════════════════════════════════════════════════════
 
-  String _statusLabel(int s) => const [
-        'รอทนายรับเคส',
-        'ยืนยันแล้ว',
-        'กำลังปรึกษา',
-        'เสร็จสิ้น',
-      ][s.clamp(0, 3)];
+  String _statusLabel(int s) {
+    return [
+      'status.waiting',
+      'status.confirmed',
+      'status.consulting',
+      'status.completed',
+    ][s.clamp(0, 3)]
+        .tr(); 
+  }
 
   Color _statusColor(int s) => const [
         Color(0xFFEA580C),
@@ -333,7 +337,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: appBar(
-          title: 'นัดหมายของฉัน',
+          title: 'myAppointment'.tr(),
           backBtn: false,
           rightBtn: false,
           backAction: () => goBack(),
@@ -416,10 +420,10 @@ class _AppointmentListPageState extends State<AppointmentListPage>
 
   Widget _buildTabBar() {
     final tabs = [
-      {'key': 'all', 'label': 'ทั้งหมด'},
-      {'key': 'pending', 'label': 'รอรับเคส'},
-      {'key': 'active', 'label': 'ดำเนินการ'},
-      {'key': 'done', 'label': 'เสร็จสิ้น'},
+      {'key': 'all', 'label': 'tabs.all'},
+      {'key': 'pending', 'label': 'tabs.pending'},
+      {'key': 'active', 'label': 'tabs.active'},
+      {'key': 'done', 'label': 'tabs.done'},
     ];
 
     return Container(
@@ -467,7 +471,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      t['label']!,
+                      t['label']!.tr(),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight:
@@ -548,7 +552,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
               onChanged: (v) => _updateFilter(f.copyWith(search: v)),
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'ค้นหาทนาย...',
+                hintText: 'searchLawyer'.tr(),
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
                 prefixIcon: Icon(Icons.search_rounded,
                     color: Colors.grey[400], size: 17),
@@ -605,9 +609,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
 
   Widget _buildActiveFilterChips(_TabFilter f) {
     final sortLabels = {
-      'date_desc': 'วันที่ล่าสุด',
-      'date_asc': 'วันที่เก่าสุด',
-      'name_asc': 'ชื่อ ก-ฮ',
+      'date_desc': 'dateDesc'.tr(),
+      'date_asc': 'dateAsc'.tr(),
+      'name_asc': 'nameAsc'.tr(),
     };
 
     return Container(
@@ -638,7 +642,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             _updateFilter(_TabFilter());
           },
           child: Text(
-            'ล้างทั้งหมด',
+            'clear_filter'.tr(),
             style: TextStyle(
                 fontSize: 11,
                 color: const Color(0xFF0262EC).withOpacity(0.8),
@@ -757,8 +761,8 @@ class _AppointmentListPageState extends State<AppointmentListPage>
               child: Row(children: [
                 _blinkingDot(const Color(0xFFEA580C)),
                 const SizedBox(width: 7),
-                const Text('กำลังรอทนายความรับเคสของคุณ',
-                    style: TextStyle(
+                Text('waitingForLawyer'.tr(),
+                    style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFFEA580C))),
@@ -888,11 +892,13 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                       const Icon(Icons.star_rounded,
                           color: Color(0xFFFFC107), size: 13),
                       const SizedBox(width: 4),
-                      Text('${item['rating']} คะแนน',
-                          style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFD97706))),
+                      Text(
+                        '${item['rating']} ${'rating'.tr()}',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFD97706)),
+                      ),
                     ]),
                   ),
                   const SizedBox(width: 8),
@@ -925,14 +931,14 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                         border: Border.all(
                             color: const Color(0xFFEA580C).withOpacity(0.25)),
                       ),
-                      child: const Row(
+                      child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.close_rounded,
+                            const Icon(Icons.close_rounded,
                                 size: 14, color: Color(0xFFEA580C)),
-                            SizedBox(width: 6),
-                            Text('ยกเลิกเคส',
-                                style: TextStyle(
+                            const SizedBox(width: 6),
+                            Text('cancelCase'.tr(),
+                                style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Color(0xFFEA580C))),
@@ -956,14 +962,14 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                               offset: const Offset(0, 3))
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.visibility_outlined,
+                            const Icon(Icons.visibility_outlined,
                                 size: 14, color: Colors.white),
-                            SizedBox(width: 6),
-                            Text('ดูรายละเอียด',
-                                style: TextStyle(
+                            const SizedBox(width: 6),
+                            Text('viewDetails'.tr(),
+                                style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white)),
@@ -1012,14 +1018,14 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 color: Color(0xFFEA580C), size: 18),
           ),
           const SizedBox(width: 10),
-          const Text('ยกเลิกเคส',
-              style: TextStyle(
+          Text('cancelCase'.tr(),
+              style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1A2340))),
         ]),
         content: Text(
-          'ต้องการยกเลิกเคส #$id ใช่หรือไม่?',
+          'dialog.cancel_confirm'.tr(args: [id.toString()]),
           style: const TextStyle(
               fontSize: 13, color: Color(0xFF64748B), height: 1.6),
         ),
@@ -1034,9 +1040,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                   decoration: BoxDecoration(
                       color: const Color(0xFFF2F6FF),
                       borderRadius: BorderRadius.circular(12)),
-                  child: const Center(
-                    child: Text('ยกเลิก',
-                        style: TextStyle(
+                  child: Center(
+                    child: Text('cancel'.tr(),
+                        style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF64748B))),
@@ -1063,9 +1069,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                           offset: const Offset(0, 3))
                     ],
                   ),
-                  child: const Center(
-                    child: Text('ยืนยัน',
-                        style: TextStyle(
+                  child: Center(
+                    child: Text('confirm'.tr(),
+                        style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Colors.white)),
@@ -1102,23 +1108,23 @@ class _AppointmentListPageState extends State<AppointmentListPage>
           _modalSetState = setModalState;
           return _dialogLayout(
             context,
-            title: 'เหตุผลในการยกเลิก',
+            title: 'dialog.cancel_reason_title'.tr(),
             setModalState: setModalState,
             commentController: commentController,
             onPressed: () {
               goBack();
               DialogService.showAutoClose(
                 context,
-                title: "สำเร็จ",
+                title: "dialog.success".tr(),
                 seconds: 3,
                 isBtn: false,
-                message:
-                    "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้",
+                message: "dialog.cancel_success_message".tr(),
                 onClose: () {
                   // navigator.pop();
                   setState(() {
                     _appointments.removeWhere((a) => a['id'] == id);
                   });
+                  if (onClose != null) onClose();
                 },
               );
             },
@@ -1172,7 +1178,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: 'กรอกความคิดเห็น...',
+                  hintText: 'form.reason'.tr(),
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   filled: true,
                   fillColor: const Color(0xFFEEF2F5),
@@ -1214,9 +1220,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                           Navigator.pop(context, false);
                         },
                         // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
-                        child: const Text(
-                          'ยกเลิก',
-                          style: TextStyle(
+                        child: Text(
+                          'cancel'.tr(),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1230,8 +1236,8 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: commentController!.text.isNotEmpty
-                              ? Color(0xFF0262EC)
-                              : Color(0xFFEEF2F5),
+                              ? const Color(0xFF0262EC)
+                              : const Color(0xFFEEF2F5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -1240,9 +1246,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                             ? onPressed
                             : null,
                         // ✅ ถ้ามี countdownBadge ให้แสดงข้างๆ ปุ่ม
-                        child: const Text(
-                          'ตกลง',
-                          style: TextStyle(
+                        child: Text(
+                          'confirm'.tr(),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1297,7 +1303,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
           ),
           const SizedBox(height: 14),
           Text(
-            hasFilter ? 'ไม่พบรายการที่ตรงกัน' : 'ไม่มีรายการนัดหมาย',
+            hasFilter ? 'no_matching_appointments'.tr() : 'no_appointment'.tr(),
             style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 15,
@@ -1310,13 +1316,13 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 _searchControllers[_activeTab]!.clear();
                 _updateFilter(_TabFilter());
               },
-              child: Text('ล้างฟิลเตอร์',
+              child: Text('clear_filter'.tr(),
                   style: TextStyle(
                       fontSize: 12,
                       color: const Color(0xFF0262EC).withOpacity(0.8))),
             )
           else
-            Text('การนัดหมายของคุณจะปรากฏที่นี่',
+            Text('appointment_empty_list'.tr(),
                 style: TextStyle(color: Colors.grey[400], fontSize: 12)),
         ]),
       );
@@ -1339,9 +1345,9 @@ class _SortSheet extends StatelessWidget {
   static const _kPrimary = Color(0xFF0262EC);
 
   static const _options = [
-    ('date_desc', Icons.arrow_downward_rounded, 'วันที่ล่าสุดก่อน'),
-    ('date_asc', Icons.arrow_upward_rounded, 'วันที่เก่าสุดก่อน'),
-    ('name_asc', Icons.sort_by_alpha_rounded, 'ชื่อทนาย ก–ฮ'),
+    ('date_desc', Icons.arrow_downward_rounded, 'sort.date_desc'),
+    ('date_asc', Icons.arrow_upward_rounded, 'sort.date_asc'),
+    ('name_asc', Icons.sort_by_alpha_rounded, 'sort.name_asc'),
   ];
 
   @override
@@ -1366,8 +1372,8 @@ class _SortSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
             child: Row(children: [
-              const Text('เรียงตาม',
-                  style: TextStyle(
+              Text('sort_by'.tr(),
+                  style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF1A2340))),

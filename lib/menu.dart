@@ -10,6 +10,7 @@ import 'package:LawyerOnline/profile.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
@@ -45,25 +46,25 @@ class _MenuPageState extends State<MenuPage> {
   String typeLogin = '';
 
   // ── Nav items config ───────────────────────────────────
-  final List<NavItem> _navItems = const [
-    NavItem(icon: 'assets/icons/home.png', label: 'หน้าหลัก', index: 0),
+  List<NavItem> get _navItems => [
+    NavItem(icon: 'assets/icons/home.png', label: 'navHome'.tr(), index: 0),
     NavItem(
         icon: 'assets/icons/message.png',
-        label: 'แชท',
+        label: 'navChat'.tr(),
         index: 1,
         showBadge: true),
     NavItem(
         icon: 'assets/icons/logo-no-bg.png',
-        label: 'ชุมชน',
+        label: 'navCommunity'.tr(),
         index: 2,
         isLogo: true,
         showBadge: true),
     NavItem(
         icon: 'assets/icons/appointment.png',
-        label: 'นัดหมาย',
+        label: 'navAppointment'.tr(),
         index: 3,
         showBadge: true),
-    NavItem(icon: 'assets/icons/profile.png', label: 'โปรไฟล์', index: 4),
+    NavItem(icon: 'assets/icons/profile.png', label: 'navProfile'.tr(), index: 4),
   ];
 
   @override

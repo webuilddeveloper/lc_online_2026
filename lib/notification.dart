@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/notification-detail.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -240,7 +241,7 @@ class _NotificationPageState extends State<NotificationPage> {
       // ),
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "การแจ้งเตือน",
+        title: "notifications".tr(),
         backBtn: true,
         isRightWidget: true,
         backAction: () => goBack(),
@@ -275,9 +276,9 @@ class _NotificationPageState extends State<NotificationPage> {
         onRefresh: refresh,
         child: ListView(
           children: [
-            buildSection("วันนี้", "today"),
-            buildSection("เมื่อวาน", "yesterday"),
-            buildSection("ก่อนหน้านี้", "old"),
+            buildSection("timeline.today".tr(), "today"),
+            buildSection("timeline.yesterday".tr(), "yesterday"),
+            buildSection("timeline.earlier".tr(), "earlier"),
             const SizedBox(height: 20)
           ],
         ),
@@ -335,13 +336,12 @@ class _NotificationPageState extends State<NotificationPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("คำแนะนำก่อนเข้าห้อง"),
-        content: const Text(
-            "📌 กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now"),
+        title: Text("notification.pre_consultation_instruction".tr()),
+        content: Text("notification.pre_consultation_instruction_message".tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("ยกเลิก"),
+            child: Text("cancel".tr()),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -357,19 +357,18 @@ class _NotificationPageState extends State<NotificationPage> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("ต้องเปิดการเข้าถึงใน Settings"),
-                    content: const Text(
-                        "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน"),
+                    title: Text("permission.title".tr()),
+                    content: Text("permission.content".tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("ยกเลิก"),
+                        child: Text("cancel".tr()),
                       ),
                       TextButton(
                         onPressed: () {
                           openAppSettings(); // เปิดหน้า Settings
                         },
-                        child: const Text("เปิดการตั้งค่า"),
+                        child: Text("permission.open_settings".tr()),
                       ),
                     ],
                   ),
@@ -394,20 +393,20 @@ class _NotificationPageState extends State<NotificationPage> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("การอนุญาตถูกปฏิเสธ"),
-                    content: const Text(
-                        "กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟนเพื่อใช้งานวิดีโอคอล"),
+                    title: Text("notification.permission_denied_title".tr()),
+                    content:
+                        Text("notification.permission_denied_content".tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("ตกลง"),
+                        child: Text("confirm".tr()),
                       ),
                     ],
                   ),
                 );
               }
             },
-            child: const Text("เข้าใช้งาน"),
+            child: Text("notification.join_now".tr()),
           ),
         ],
       ),
@@ -434,6 +433,7 @@ class _IncomingCallOverlay extends StatefulWidget {
   @override
   State<_IncomingCallOverlay> createState() => _IncomingCallOverlayState();
 }
+
 class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
@@ -522,9 +522,9 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "สายเรียกเข้า",
-                          style: TextStyle(
+                        Text(
+                          "notification.incoming_call".tr(),
+                          style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.w400,
                               fontSize: 12),
@@ -545,8 +545,8 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFAFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                          width: 1, color: const Color(0xFFDBDBDB)),
+                      border:
+                          Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
                     child: IconButton(
                       icon: Icon(Icons.call_end, color: Colors.red.shade600),
@@ -560,12 +560,12 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFAFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                          width: 1, color: const Color(0xFFDBDBDB)),
+                      border:
+                          Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.call,
-                          color: Colors.greenAccent.shade700),
+                      icon:
+                          Icon(Icons.call, color: Colors.greenAccent.shade700),
                       onPressed: widget.onAccept,
                     ),
                   ),

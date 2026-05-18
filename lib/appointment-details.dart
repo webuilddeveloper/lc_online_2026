@@ -2,6 +2,7 @@ import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
@@ -46,11 +47,11 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   // ── Status config ────────────────────────────────────────
   static const _statusLabels = [
-    'ส่งคำขอ',
-    'รอยืนยัน',
-    'ยืนยันแล้ว',
-    'กำลังปรึกษา',
-    'เสร็จสิ้น'
+    'status.requested',
+    'status.waitingForConfirm',
+    'status.confirmed',
+    'status.consulting',
+    'status.completed'
   ];
   static const _statusColors = [
     Color(0xFF94A3B8),
@@ -68,12 +69,11 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   ];
 
   static const _steps = [
-    ('ส่งคำขอนัดหมาย', 'ระบบรับคำขอแล้ว'),
-    ('รอการยืนยัน', 'ทนายตรวจสอบตารางเวลา'),
-    ('ยืนยันแล้ว', 'นัดหมายได้รับการยืนยัน'),
-    
-    ('กำลังปรึกษา', 'การปรึกษากำลังดำเนินอยู่'),
-    ('เสร็จสิ้น', 'การปรึกษาเสร็จสมบูรณ์'),
+    ('steps.requested.title', 'steps.requested.desc'),
+    ('steps.pending.title', 'steps.pending.desc'),
+    ('steps.confirmed.title', 'steps.confirmed.desc'),
+    ('steps.consulting.title', 'steps.consulting.desc'),
+    ('steps.completed.title', 'steps.completed.desc'),
   ];
 
   @override
@@ -268,7 +268,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             ),
 
             // Content
-            const Positioned(
+             Positioned(
               left: 20,
               right: 20,
               bottom: 50,
@@ -316,8 +316,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   // ),
                   // SizedBox(height: 10),
                   Text(
-                    'ข้อมูลการนัดหมาย',
-                    style: TextStyle(
+                    'appointmentInfo.title'.tr(),
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -371,14 +371,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               offset: const Offset(0, 0),
             ),
           ],
-          borderRadius: BorderRadius.only(
+          borderRadius:const BorderRadius.only(
             bottomLeft: Radius.circular(32),
             bottomRight: Radius.circular(32),
           ),
         ),
         child: Container(
           height: 70,
-          padding: EdgeInsets.symmetric(horizontal: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 15),
           // decoration: BoxDecoration(
           //   borderRadius: BorderRadius.only(
           //     bottomLeft: Radius.circular(32),
@@ -402,7 +402,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   duration: const Duration(milliseconds: 200),
                   child: Center(
                     child: Text(
-                      'ข้อมูลการนัดหมาย',
+                      'appointmentInfo.title'.tr(),
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -464,14 +464,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   Widget _buildDateTimeRow() {
     return Row(children: [
-      _pill(Icons.calendar_today_rounded, 'วันนัด',
+      _pill(Icons.calendar_today_rounded, 'appointmentInfo.appointmentDate'.tr(),
           appointmentModel['date'] as String, _blue),
       const SizedBox(width: 10),
-      _pill(Icons.schedule_rounded, 'เวลา', appointmentModel['time'] as String,
+      _pill(Icons.schedule_rounded, 'appointmentInfo.appointmentTime'.tr(), appointmentModel['time'] as String,
           _green),
       const SizedBox(width: 10),
-      _pill(
-          Icons.videocam_rounded, 'รูปแบบ', 'วิดีโอ', const Color(0xFF8B5CF6)),
+      _pill(Icons.videocam_rounded, 'appointmentInfo.serviceType'.tr(),
+          'appointmentInfo.videoCall'.tr(), const Color(0xFF8B5CF6)),
     ]);
   }
 
@@ -682,15 +682,15 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitle(Icons.info_outline_rounded, 'ข้อมูลการนัดหมาย'),
+          _cardTitle(Icons.info_outline_rounded, 'appointmentInfo.title'.tr()),
           const SizedBox(height: 14),
-          _infoRow('หัวข้อ', appointmentModel['topic'] as String),
+          _infoRow('appointmentInfo.topic'.tr(), appointmentModel['topic'] as String),
           _divider(),
-          _infoRow('ประเด็น', appointmentModel['subTopic'] as String),
+          _infoRow('appointmentInfo.subTopic'.tr(), appointmentModel['subTopic'] as String),
           _divider(),
-          _infoRow('ประเภท', 'วิดีโอคอล'),
+          _infoRow('appointmentInfo.serviceType'.tr(), 'appointmentInfo.videoCall'.tr()),
           _divider(),
-          _infoRow('รหัสนัด', '# ${appointmentModel['id']}', accent: true),
+          _infoRow('appointmentInfo.appointmentCode'.tr(), '# ${appointmentModel['id']}', accent: true),
         ],
       ),
     );
@@ -730,7 +730,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitle(Icons.route_rounded, 'ขั้นตอน'),
+          _cardTitle(Icons.route_rounded, 'appointmentInfo.appointmentTimeline'.tr()),
           const SizedBox(height: 20),
 
           // Horizontal stepper
@@ -875,7 +875,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text('ปัจจุบัน',
+                child: Text('appointmentInfo.currentStep'.tr(),
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -889,7 +889,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   }
 
   String _shortLabel(int i) {
-    const s = ['ส่งคำขอ', 'รอยืนยัน', 'ยืนยัน', 'ปรึกษา', 'สำเร็จ'];
+    final s = ['appointmentInfo.requested'.tr(), 'appointmentInfo.pending'.tr(), 'appointmentInfo.confirmed'.tr(), 'appointmentInfo.consulting'.tr(), 'appointmentInfo.completed'.tr()];
     return s[i];
   }
 
@@ -901,7 +901,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     final r = (appointmentModel['rating'] as num).toDouble();
     return _cardWrap(
       child: Column(children: [
-        _cardTitle(Icons.star_outline_rounded, 'คะแนนที่ให้'),
+        _cardTitle(Icons.star_outline_rounded, 'appointmentInfo.rating'.tr()),
         const SizedBox(height: 16),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(r.toStringAsFixed(1),
@@ -929,10 +929,10 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             const SizedBox(height: 5),
             Text(
               r >= 4.5
-                  ? '😊  ดีเยี่ยม'
+                  ? 'appointmentInfo.Excellent'.tr()
                   : r >= 3.5
-                      ? '🙂  ดี'
-                      : '😐  พอใช้',
+                      ? 'appointmentInfo.Good'.tr()
+                      : 'appointmentInfo.Normal'.tr(),
               style: const TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w700, color: _ink),
             ),
@@ -951,7 +951,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitle(Icons.sticky_note_2_outlined, 'บันทึก'),
+          _cardTitle(Icons.sticky_note_2_outlined, 'save'.tr()),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(14),
@@ -962,11 +962,9 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 left: BorderSide(color: _blue.withOpacity(0.5), width: 3),
               ),
             ),
-            child: const Text(
-              'กรุณาเตรียมเอกสารที่เกี่ยวข้อง และเข้าห้องสนทนาก่อนเวลานัด 5 นาที\n'
-              'หากมีข้อสงสัยเพิ่มเติม สามารถติดต่อผ่านแชทได้ตลอดเวลา',
-              style: TextStyle(fontSize: 13, color: _slate, height: 1.65),
-            ),
+            child: Text("appointmentInfo.preparation_guide".tr(),
+                style: const TextStyle(
+                    fontSize: 13, color: _slate, height: 1.65)),
           ),
         ],
       ),
@@ -997,7 +995,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               children: [
                 Expanded(
                   child: _ctaBtn(
-                    label: 'นัดหมายใหม่',
+                    label: 'appointmentInfo.newAppointment'.tr(),
                     icon: Icons.add_rounded,
                     color: _blue,
                     filled: false,
@@ -1024,7 +1022,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 Expanded(
                   child: appointmentModel['rating'] == null
                       ? _ctaBtn(
-                          label: 'ให้คะแนน',
+                          label: 'appointmentInfo.rateAppointment'.tr(),
                           icon: Icons.star_rounded,
                           color: _amber,
                           filled: true,
@@ -1034,7 +1032,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                           },
                         )
                       : _ctaBtn(
-                          label: 'กลับหน้าหลัก',
+                          label: 'returns.returnHome'.tr(),
                           icon: Icons.home,
                           color: Theme.of(context).primaryColor,
                           filled: true,
@@ -1076,10 +1074,10 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.video_call_rounded,
+                            const Icon(Icons.video_call_rounded,
                                 color: Colors.white, size: 20),
                             const SizedBox(width: 8),
-                            Text('เข้าสู่ห้องปรึกษา',
+                            Text('call_room.consultingRoom'.tr(),
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
@@ -1103,8 +1101,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                           color: Color(0xFFFFEBEE),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Text('ยกเลิกนัดหมาย',
-                            style: TextStyle(
+                        child: Text('appointmentInfo.cancelAppointment'.tr(),
+                            style: const TextStyle(
                                 color: Color(0xFFC62828),
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13)),
@@ -1238,13 +1236,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 const Icon(Icons.warning_amber_rounded, color: _red, size: 20),
           ),
           const SizedBox(width: 12),
-          const Text('ยกเลิกนัดหมาย',
-              style: TextStyle(
+          Text('appointmentInfo.cancelAppointmentTitle'.tr(),
+              style: const TextStyle(
                   fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
         ]),
-        content: const Text(
-          'คุณต้องการยกเลิกการนัดหมายนี้ใช่หรือไม่?\nการกระทำนี้ไม่สามารถย้อนกลับได้',
-          style: TextStyle(fontSize: 13, color: _slate, height: 1.6),
+        content: Text(
+          'appointmentInfo.cancelAppointment'.tr(),
+          style: const TextStyle(fontSize: 13, color: _slate, height: 1.6),
         ),
         actions: [
           Row(children: [
@@ -1255,9 +1253,9 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   padding: const EdgeInsets.symmetric(vertical: 13),
                   decoration: BoxDecoration(
                       color: _surface, borderRadius: BorderRadius.circular(14)),
-                  child: const Center(
-                    child: Text('ยกเลิก',
-                        style: TextStyle(
+                  child: Center(
+                    child: Text('cancel'.tr(),
+                        style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: _slate)),
@@ -1272,9 +1270,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   Navigator.pop(context);
                   DialogService.showSuccess(
                     context,
-                    title: "สำเร็จ",
-                    message:
-                        "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้",
+                    title: "status.completed".tr(),
+                    message: "message_cancel_appointment.success".tr(),
                     onClose: () {
                       Navigator.pop(context);
                     },
@@ -1293,9 +1290,9 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       )
                     ],
                   ),
-                  child: const Center(
-                    child: Text('ยืนยัน',
-                        style: TextStyle(
+                  child: Center(
+                    child: Text('confirm'.tr(),
+                        style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white)),
@@ -1331,9 +1328,9 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                     color: const Color(0xFFE2E8F4),
                     borderRadius: BorderRadius.circular(2)),
               ),
-              _menuTile(Icons.share_rounded, 'แชร์นัดหมาย', _blue),
-              _menuTile(Icons.picture_as_pdf_rounded, 'ดาวน์โหลด PDF', _green),
-              _menuTile(Icons.flag_outlined, 'รายงานปัญหา', _amber),
+              _menuTile(Icons.share_rounded, 'appointmentInfo.shareAppointment'.tr(), _blue),
+              _menuTile(Icons.picture_as_pdf_rounded, 'appointmentInfo.downloadPDF'.tr(), _green),
+              _menuTile(Icons.flag_outlined, 'appointmentInfo.reportIssue'.tr(), _amber),
               const SizedBox(height: 8),
             ]),
           ),
@@ -1432,13 +1429,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('ให้คะแนนทนาย',
-                  style: TextStyle(
+              Text('appointmentInfo.rateLawyer'.tr(),
+                  style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1A2340))),
               const SizedBox(height: 4),
-              Text('ความคิดเห็นของคุณมีคุณค่ามาก',
+              Text('appointmentInfo.comment'.tr(),
                   style: TextStyle(fontSize: 13, color: Colors.grey[400])),
               const SizedBox(height: 20),
               RatingBar.builder(
@@ -1475,7 +1472,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: 'กรอกความคิดเห็น...',
+                  hintText: 'form.reason'.tr(),
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   filled: true,
                   fillColor: const Color(0xFFEEF2F5),
@@ -1509,9 +1506,9 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                         border: Border.all(
                             color: const Color(0xFFEEF2F5), width: 1.5),
                       ),
-                      child: const Center(
-                        child: Text('ยกเลิก',
-                            style: TextStyle(
+                      child: Center(
+                        child: Text('cancel'.tr(),
+                            style: const TextStyle(
                                 color: Color(0xFF64748B),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14)),
@@ -1552,7 +1549,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                                   rating > 0 ? Colors.white : Colors.grey[400],
                               size: 16),
                           const SizedBox(width: 6),
-                          Text('ส่งคะแนน',
+                          Text('appointmentInfo.submitRating'.tr(),
                               style: TextStyle(
                                   color: rating > 0
                                       ? Colors.white
@@ -1575,17 +1572,17 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   String _ratingLabel(double rating) {
     switch (rating.toInt()) {
       case 1:
-        return 'แย่มาก';
+        return 'rating_appointment.terrible'.tr();
       case 2:
-        return 'พอใช้';
+        return 'rating_appointment.fair'.tr();
       case 3:
-        return 'ดีพอสมควร';
+        return 'rating_appointment.good'.tr();
       case 4:
-        return 'ดีมาก';
+        return 'rating_appointment.very_good'.tr();
       case 5:
-        return 'ยอดเยี่ยม! 🎉';
+        return 'rating_appointment.excellent'.tr();
       default:
-        return 'กรุณาให้คะแนน';
+        return 'rating_appointment.prompt'.tr();
     }
   }
 
@@ -1606,14 +1603,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 color: Color(0xFF2E7D32), size: 44),
           ),
           const SizedBox(height: 20),
-          const Text('ส่งคะแนนสำเร็จ!',
-              style: TextStyle(
+          Text('rating_appointment.successTitle'.tr(),
+              style:const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A2340))),
           const SizedBox(height: 8),
           Text(
-            'ขอบคุณที่ให้ความคิดเห็น\nคะแนนของคุณมีคุณค่ามากสำหรับเรา',
+            'rating_appointment.successDescription'.tr(),
             textAlign: TextAlign.center,
             style:
                 TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.6),
@@ -1635,13 +1632,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       offset: const Offset(0, 4))
                 ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.home_rounded, color: Colors.white, size: 18),
                   SizedBox(width: 8),
-                  Text('กลับหน้าหลัก',
-                      style: TextStyle(
+                  Text('returns.returnHome'.tr(),
+                      style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 15)),

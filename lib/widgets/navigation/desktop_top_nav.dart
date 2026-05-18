@@ -8,6 +8,7 @@ import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 // ══════════════════════════════════════════════════════════
@@ -210,15 +211,15 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
-                tooltip: "การแจ้งเตือน",
+                tooltip: "notifications".tr(),
                 itemBuilder: (_) => [
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     enabled: false,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     child: SizedBox(
                       width: 350,
                       height: 400,
-                      child: const NotificationDropdownContent(),
+                      child: NotificationDropdownContent(),
                     ),
                   ),
                 ],
@@ -274,7 +275,7 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   border: Border.all(color: const Color(0xFFF5A623)),
                 ),
                 child: Text(
-                  userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป',
+                  userType == 'lawyer' ? 'role.lawyer'.tr() : 'role.client'.tr(),
                   style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFFF5A623),
@@ -299,8 +300,8 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   } else if (value == 'logout') {
                     DialogService.showConfirmLogout(
                       context,
-                      title: "ยืนยันการออกจากระบบ",
-                      message: "คุณต้องการออกจากระบบหรือไม่?",
+                      title: "confirmLogoutTitle".tr(),
+                      message: "confirmLogoutMessage".tr(),
                       onConfirm: () async {
                         await UserProfileStore.instance.resetAndClear();
                         await LawyerProfileStore.instance.reset();
@@ -318,12 +319,12 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   PopupMenuItem(
                     value: 'profile',
                     child: Row(
-                      children: const [
-                        Icon(Icons.person_outline_rounded,
+                      children: [
+                        const Icon(Icons.person_outline_rounded,
                             size: 18, color: Color(0xFF0262EC)),
-                        SizedBox(width: 10),
-                        Text('โปรไฟล์',
-                            style: TextStyle(
+                        const SizedBox(width: 10),
+                        Text('profile'.tr(),
+                            style: const TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
                       ],
                     ),
@@ -332,12 +333,12 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   PopupMenuItem(
                     value: 'logout',
                     child: Row(
-                      children: const [
-                        Icon(Icons.logout_rounded,
+                      children: [
+                        const Icon(Icons.logout_rounded,
                             size: 18, color: Color(0xFFEF4444)),
-                        SizedBox(width: 10),
-                        Text('ออกจากระบบ',
-                            style: TextStyle(
+                        const SizedBox(width: 10),
+                        Text('logout'.tr(),
+                            style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFFEF4444))),
@@ -393,7 +394,7 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   context,
                   MaterialPageRoute(builder: (_) => LoginPage(isBack: true)),
                 ),
-                child: const Text('เข้าสู่ระบบ'),
+                child: Text('login'.tr()),
               ),
           ],
         ),

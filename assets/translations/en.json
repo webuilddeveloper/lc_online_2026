@@ -205,9 +205,16 @@
     "section_5_title": "5. Changes to Terms",
     "section_5_content": "The company reserves the right to modify the terms of use without prior notice."
   },
+  "navHome": "Home",
+  "navChat": "Chat",
+  "navCommunity": "Community",
+  "navAppointment": "Appointment",
+  "navProfile": "Profile",
   "myAppointment": "My Appointment",
   "status": {
     "waiting": "Waiting",
+    "requested": "Requested",
+    "waitingForConfirm": "Waiting for Confirmation",
     "confirmed": "Confirmed",
     "consulting": "Consulting",
     "completed": "Completed"
@@ -361,5 +368,107 @@
   "redirecting": "Redirecting automatically",
   "confirmDeleteTitle": "Confirm Account Deletion",
   "confirmDeleteDesc": "Enter your password to permanently delete your account",
-  "passwordPlaceholder": "Password"
+  "passwordPlaceholder": "Password",
+  "role": {
+    "lawyer": "Lawyer",
+    "client": "Client"
+  },
+
+  "steps": {
+    "requested": {
+      "title": "Submit Request",
+      "desc": "Request received by system"
+    },
+    "pending": {
+      "title": "Pending Confirmation",
+      "desc": "Lawyer checking schedule"
+    },
+    "confirmed": {
+      "title": "Confirmed",
+      "desc": "Appointment has been confirmed"
+    },
+    "consulting": {
+      "title": "Consulting",
+      "desc": "Consultation is in progress"
+    },
+    "completed": {
+      "title": "Completed",
+      "desc": "Consultation completed"
+    }
+  },
+
+  "appointmentInfo": {
+    "title": "Appointment Information",
+    "appointmentCode": "Appointment Code",
+    "appointmentDate": "Appointment Date",
+    "appointmentTime": "Appointment Time",
+    "serviceType": "Service Type",
+    "topic": "Topic",
+    "subTopic": "Sub Topic",
+    "caseDetails": "Case Details",
+    "videoCall": "Video Call",
+    "appointmentTimeline": "Appointment Timeline",
+    "currentStep": "Current Step",
+    "requested": "Submit Request",
+    "pending": "Pending Confirmation",
+    "confirmed": "Confirmed",
+    "consulting": "Consulting",
+    "completed": "Completed",
+    "rating": "Rating",
+    "Excellent": "Excellent",
+    "Good": "Good",
+    "Normal": "Normal",
+    "preparation_guide": "Please prepare relevant documents and join the consultation room 5 minutes before the appointment time.\nIf you have any questions, please contact us via chat at any time.",
+    "newAppointment": "New Appointment",
+    "rateAppointment": "Rate Appointment",
+    "rateAppointmentDesc": "If you want to rate the lawyer, please rate the consultation.",
+    "cancelAppointment": "Cancel Appointment",
+    "cancelAppointmentMessage": "Do you want to cancel this appointment?\nThis action cannot be undone.",
+    "shareAppointment": "Share Appointment",
+    "downloadPDF": "Download PDF",
+    "reportIssue": "Report Issue",
+    "rateLawyer": "Rate Lawyer",
+    "comment": "Your feedback is very valuable",
+    "submitRating": "Submit Rating"
+  },
+
+  "returns":{
+    "returnHome": "Return to Home"
+  },
+
+  "call_room":{
+    "consultingRoom": "Enter Consultation Room"
+  },
+  "memssage_cancel_appointment":{
+    "success": "The system has successfully cancelled the appointment and will refund the appointment fee through the registered bank account."
+  },
+
+  "rating_appointment":{
+    "terrible": "Terrible",
+    "fair": "Fair",
+    "good": "Good",
+    "very_good": "Very Good",
+    "excellent": "Excellent! 🎉",
+    "prompt": "Please rate",
+    "successTitle": "Rating Submitted Successfully!",
+    "successDescription": "Thank you for your feedback"
+  },
+  "notification":{
+    "pre_consultation_instruction": "Pre-consultation Instructions",
+    "pre_consultation_instruction_message": "Please enter '1234' in the Enter Name field before clicking Join Now",
+    "permission_denied_title": "Permission Denied",
+    "permission_denied_content": "Please allow camera and microphone access to use video call",
+    "join_now": "Join Now",
+    "incoming_call": "Incoming Call"
+  },
+  "permission":{
+    "title": "Access Settings",
+    "content": "Please go to Settings and allow the app to access your camera and microphone",
+    "open_settings": "Open Settings"
+  },
+  "timeline":{
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "earlier": "Earlier"
+  }
 }

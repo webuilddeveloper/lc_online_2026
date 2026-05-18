@@ -38,10 +38,10 @@ class TermsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          const Center(
+          Center(
             child: Text(
-              "อัปเดตล่าสุด: 2026",
-              style: TextStyle(
+              "update_2026".tr(),
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 12,
               ),

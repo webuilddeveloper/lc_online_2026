@@ -205,9 +205,17 @@
     "section_5_title": "5. การเปลี่ยนแปลงเงื่อนไข",
     "section_5_content": "บริษัทขอสงวนสิทธิ์ในการแก้ไขเงื่อนไขการใช้งาน โดยไม่ต้องแจ้งให้ทราบล่วงหน้า"
   },
+  "navHome": "หน้าหลัก",
+  "navChat": "แชท",
+  "navCommunity": "ชุมชน",
+  "navAppointment": "นัดหมาย",
+  "navProfile": "โปรไฟล์",
   "myAppointment": "นัดหมายของฉัน",
+
   "status": {
     "waiting": "รอทนายรับเคส",
+    "waitingForConfirm": "รอยืนยัน",
+    "requested": "ส่งคำขอ",
     "confirmed": "ยืนยันแล้ว",
     "consulting": "กำลังปรึกษา",
     "completed": "เสร็จสิ้น"
@@ -361,5 +369,107 @@
   "redirecting": "กำลังเปลี่ยนหน้าอัตโนมัติ",
   "confirmDeleteTitle": "ยืนยันการลบบัญชี",
   "confirmDeleteDesc": "กรอกรหัสผ่านเพื่อยืนยันการลบบัญชีอย่างถาวร",
-  "passwordPlaceholder": "รหัสผ่าน"
+  "passwordPlaceholder": "รหัสผ่าน",
+  "role": {
+    "lawyer": "หมอความ",
+    "client": "บุคคลทั่วไป"
+  },
+
+  "steps": {
+    "requested": {
+      "title": "ส่งคำขอนัดหมาย",
+      "desc": "ระบบรับคำขอแล้ว"
+    },
+    "pending": {
+      "title": "รอการยืนยัน",
+      "desc": "ทนายตรวจสอบตารางเวลา"
+    },
+    "confirmed": {
+      "title": "ยืนยันแล้ว",
+      "desc": "นัดหมายได้รับการยืนยัน"
+    },
+    "consulting": {
+      "title": "กำลังปรึกษา",
+      "desc": "การปรึกษากำลังดำเนินอยู่"
+    },
+    "completed": {
+      "title": "เสร็จสิ้น",
+      "desc": "การปรึกษาเสร็จสมบูรณ์"
+    }
+  },
+  
+  "appointmentInfo": {
+    "title": "ข้อมูลการนัดหมาย",
+    "appointmentCode": "รหัสการนัดหมาย",
+    "appointmentDate": "วันที่นัดหมาย",
+    "appointmentTime": "เวลานัดหมาย",
+    "serviceType": "ประเภทบริการ",
+    "topic": "หัวข้อ",
+    "subTopic": "ประเด็น",
+    "caseDetails": "รายละเอียดเคส",
+    "videoCall": "วิดีโอคอล",
+    "appointmentTimeline": "ขั้นตอนการนัดหมาย",
+    "currentStep": "ปัจจุบัน",
+    "requested": "ส่งคำขอ",
+    "pending": "รอการยืนยัน",
+    "confirmed": "ยืนยัน",
+    "consulting": "ปรึกษา",
+    "completed": "สำเร็จ",
+    "rating": "คะแนนที่ให้",
+    "Excellent": "ดีเยี่ยม",
+    "Good": "ดี",
+    "Normal": "พอใช้",
+    "preparation_guide": "กรุณาเตรียมเอกสารที่เกี่ยวข้อง และเข้าห้องสนทนาก่อนเวลานัด 5 นาที\nหากมีข้อสงสัยเพิ่มเติม สามารถติดต่อผ่านแชทได้ตลอดเวลา",
+    "newAppointment": "นัดหมายใหม่",
+    "rateAppointment": "ให้คะแนนการปรึกษา",
+    "rateAppointmentDesc": "หากคุณต้องการให้คะแนนทนายความ กรุณาให้คะแนนการปรึกษา",
+    "cancelAppointment": "ยกเลิกนัดหมาย",
+    "cancelAppointmentMessage": "คุณต้องการยกเลิกการนัดหมายนี้ใช่หรือไม่?\nการกระทำนี้ไม่สามารถย้อนกลับได้",
+    "shareAppointment": "แชร์นัดหมาย",
+    "downloadPDF": "ดาวน์โหลด PDF",
+    "reportIssue": "รายงานปัญหา",
+    "rateLawyer": "ให้คะแนนทนาย",
+    "comment": "ความคิดเห็นของคุณมีคุณค่ามาก",
+    "submitRating": "ส่งคะแนน"
+  },
+
+  "returns":{
+    "returnHome": "กลับหน้าหลัก"
+  },
+
+  "call_room":{
+    "consultingRoom": "เข้าสู่ห้องปรึกษา"
+  },
+  "memssage_cancel_appointment":{
+    "success": "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้"
+  },
+
+  "rating_appointment":{
+    "terrible": "แย่มาก",
+    "fair": "พอใช้",
+    "good": "ดีพอสมควร",
+    "very_good": "ดีมาก",
+    "excellent": "ยอดเยี่ยม! 🎉",
+    "prompt": "กรุณาให้คะแนน",
+    "successTitle": "ส่งคะแนนสำเร็จ!",
+    "successDescription": "ขอบคุณสำหรับความคิดเห็นของคุณ"
+  },
+  "notification":{
+    "pre_consultation_instruction": "คำแนะนำก่อนเข้าห้อง",
+    "pre_consultation_instruction_message": "กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now",
+    "permission_denied_title": "การอนุญาตถูกปฏิเสธ",
+    "permission_denied_content": "กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟนเพื่อใช้งานวิดีโอคอล",
+    "join_now": "เข้าใช้งาน",
+    "incoming_call": "สายเรียกเข้า"
+  },
+  "permission":{
+    "title": "ตั้งค่าการเข้าถึง",
+    "content": "กรุณาไปที่การตั้งค่า  แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
+    "open_settings": "เปิดการตั้งค่า"
+  },
+  "timeline":{
+    "today": "วันนี้",
+    "yesterday": "เมื่อวาน",
+    "earlier": "ก่อนหน้านี้"
+  }
 }
