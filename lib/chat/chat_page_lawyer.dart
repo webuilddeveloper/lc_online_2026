@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
+import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -29,11 +30,18 @@ class ChatPageLawyer extends StatefulWidget {
   State<ChatPageLawyer> createState() => _ChatPageLawyerState();
 }
 
-class _ChatPageLawyerState extends State<ChatPageLawyer> {
+class _ChatPageLawyerState extends State<ChatPageLawyer>
+    with AutoPopOnDesktopMixin {
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
   late bool _caseSuccess;
+
+  // ── skip auto-pop เมื่อ embeddedMode (อยู่ใน 2-panel แล้ว) ──
+  @override
+  void didChangeDependencies() {
+    if (!widget.embeddedMode) super.didChangeDependencies();
+  }
 
   @override
   void initState() {

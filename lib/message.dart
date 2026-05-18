@@ -13,6 +13,9 @@ import 'package:easy_localization/easy_localization.dart';
 
   Tablet/Desktop → 2-panel layout (list ซ้าย | chat ขวา) เหมือน FB Messenger
   Mobile         → navigate แบบปกติ (push)
+
+  [FIX] เมื่อ resize จาก mobile → tablet/desktop ขณะอยู่หน้า chat:
+        pop route กลับ แล้วแสดง 2-panel layout ทันที (ไม่ต้องย้อนกลับเอง)
 =========================================
 */
 
@@ -37,9 +40,12 @@ class _MessagePageState extends State<MessagePage> {
     _load();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _load() async {
-    // ใช้ UserProfileStore แทน FlutterSecureStorage โดยตรง
-    // เพราะมี _SafeStorage wrapper ป้องกัน OperationError บน Web แล้ว
     await UserProfileStore.instance.load();
     final type = UserProfileStore.instance.userType;
     final convs = await chatRepository.getConversations(type);
@@ -50,7 +56,9 @@ class _MessagePageState extends State<MessagePage> {
       _conversations = convs;
       _isLoading = false;
       // auto-select รายการแรกบน desktop
-      if (convs.isNotEmpty) _selectedConv = convs.first;
+      if (convs.isNotEmpty && !ResponsiveLayout.isMobile(context)) {
+        _selectedConv = convs.first;
+      }
     });
   }
 
@@ -88,6 +96,8 @@ class _MessagePageState extends State<MessagePage> {
   // ── build ──────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    // อ่าน breakpoint จาก MediaQuery ทุกครั้งที่ build
+    // → Flutter จะ rebuild อัตโนมัติเมื่อ MediaQuery เปลี่ยน
     final isMobile = ResponsiveLayout.isMobile(context);
 
     if (!isMobile) {
@@ -236,7 +246,6 @@ class _MessagePageState extends State<MessagePage> {
 //  _ConversationItem
 //  - ใช้ AnimatedContainer สำหรับ selected state (ไม่กระพริบ)
 //  - ใช้ MouseRegion + InkWell สำหรับ hover (desktop)
-//  - ไม่ใช้ AnimationController + ColorTween เพราะทำให้กระพริบ
 // ══════════════════════════════════════════════════════════
 class _ConversationItem extends StatefulWidget {
   final Conversation conv;
@@ -263,16 +272,13 @@ class _ConversationItemState extends State<_ConversationItem> {
     final conv = widget.conv;
     final isDesktop = widget.isDesktop;
 
-    // ── สีพื้นหลัง ─────────────────────────────────────────
-    // selected ชนะเสมอ — hover จะไม่แสดงถ้า isSelected = true
     final bool showHover = _isHovered && !widget.isSelected;
     final Color bgColor;
     if (widget.isSelected && isDesktop) {
-      bgColor = const Color(0xFFE8F0FE); // สีฟ้าอ่อนเมื่อเลือก
+      bgColor = const Color(0xFFE8F0FE);
     } else if (showHover) {
       bgColor = const Color(0xFFF0F2F5);
     } else {
-      // bgColor = isDesktop ? Colors.transparent : Colors.white;
       bgColor =
           isDesktop ? const Color.fromARGB(0, 255, 255, 255) : Colors.white;
     }
@@ -340,7 +346,6 @@ class _ConversationItemState extends State<_ConversationItem> {
                             ),
                           ),
                         ),
-                  // online dot
                   if (!conv.caseSuccess)
                     Positioned(
                       right: 0,
@@ -446,9 +451,9 @@ class _EmptyChat extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded,
+          const Icon(Icons.chat_bubble_outline_rounded,
               size: 64, color: Color(0xFFD1D9E6)),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'selectConversation'.tr(),
             style: const TextStyle(fontSize: 16, color: Color(0xFF8593A8)),
