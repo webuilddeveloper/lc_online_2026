@@ -10,6 +10,8 @@ import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
+import 'package:LawyerOnline/lawyer-profile-view.dart';
+import 'package:LawyerOnline/lawyer-edit-profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -143,6 +145,18 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 10),
+              if (userType == 'lawyer')
+                menuItem(
+                  title: 'โปรไฟล์ทนายความ',
+                  onTap: () => {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LawyerProfileViewPage(),
+                      ),
+                    ),
+                  },
+                ),
               menuItem(
                 title: 'editInformation'.tr(),
                 onTap: () => {
@@ -154,6 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 },
               ),
+
               menuItem(
                 title: 'changePassword'.tr(),
                 onTap: () => {
@@ -263,9 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       }),
               menuItem(
                 title: 'changelanguage'.tr(),
-                onTap: () => {
-                  showLanguagePicker(context)
-                },
+                onTap: () => {showLanguagePicker(context)},
               ),
               menuItem(
                 title: 'aboutUs'.tr(),
