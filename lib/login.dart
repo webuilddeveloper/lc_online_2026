@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/models/user_model.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LoginPage extends StatefulWidget {
   final bool isBack;
@@ -144,11 +145,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               height: 120,
                             ),
 
-                            // const SizedBox(height: 12),
+                            const SizedBox(height: 12),
 
-                            const Text(
-                              'หมอความออนไลน์',
-                              style: TextStyle(
+                            Text(
+                              'appTitle'.tr(),
+                              style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -174,7 +175,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               controller: usernameController,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.person_outline),
-                                labelText: "ชื่อผู้ใช้",
+                                labelText: "username".tr(),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -189,7 +190,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               obscureText: obscure,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock_outline),
-                                labelText: "รหัสผ่าน",
+                                labelText: "password".tr(),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -233,7 +234,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                  child: const Text("สมัครสมาชิก"),
+                                  child: Text("register".tr()),
                                 ),
                                 const Spacer(),
                                 TextButton(
@@ -246,7 +247,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                  child: const Text("ลืมรหัสผ่าน"),
+                                  child: Text("forgotPassword".tr()),
                                 )
                               ],
                             ),
@@ -281,7 +282,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                             color: Color(0xFF0262EC),
                                           )
                                         : Text(
-                                            "เข้าสู่ระบบ",
+                                            "login".tr(),
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -337,8 +338,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
-                                          "เข้าสู่ระบบด้วย Thai ID",
-                                          style: TextStyle(
+                                          'loginWithThaiID'.tr(),
+                                          style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white),
@@ -387,17 +388,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 20),
 
-                const Row(
+                Row(
                   children: [
-                    Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        "หรือ",
-                        style: TextStyle(color: Colors.white),
+                        'or'.tr(),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
                   ],
                 ),
 
@@ -616,15 +617,15 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       } else {
         DialogService.showError(
           context,
-          title: "เข้าสู่ระบบไม่สำเร็จ",
-          message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
+          title: "loginFailed".tr(),
+          message: "genericError".tr(),
         );
       }
     } catch (e) {
       DialogService.showError(
         context,
-        title: "เข้าสู่ระบบไม่สำเร็จ",
-        message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
+        title: "loginFailed".tr(),
+        message: "genericError".tr(),
       );
     }
   }
@@ -699,7 +700,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       });
       DialogService.showError(
         context,
-        title: 'ไม่สามารถเข้าสู่ระบบได้',
+        title: 'loginFailed'.tr(),
         message: error.toString(),
       );
     }

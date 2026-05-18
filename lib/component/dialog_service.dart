@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class DialogService {
   /// SUCCESS
@@ -20,7 +21,7 @@ class DialogService {
               "https://assets10.lottiefiles.com/packages/lf20_jbrw3hcz.json",
           title: title,
           message: message,
-          buttonText: "ตกลง",
+          buttonText: "ok".tr(),
           buttonColor: const Color(0xFF0262EC),
           onPressed: () {
             Navigator.pop(context);
@@ -93,7 +94,7 @@ class DialogService {
               "https://assets6.lottiefiles.com/packages/lf20_bhw1ul4g.json",
           title: title,
           message: message,
-          buttonText: "ปิด",
+          buttonText: "close".tr(),
           buttonColor: const Color(0xFF0262EC),
           onPressed: () => Navigator.pop(context),
         );
@@ -142,14 +143,14 @@ class DialogService {
                         color: Colors.red,
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        "ยืนยันการลบบัญชี",
-                        style: TextStyle(
+                       Text(
+                        "confirmDeleteTitle".tr(),
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        "กรุณากรอกรหัสผ่านของคุณเพื่อยืนยันการลบบัญชีอย่างถาวร",
+                       Text(
+                        "confirmDeleteDesc".tr(),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
@@ -160,7 +161,7 @@ class DialogService {
                           if (errorMsg != null) setState(() => errorMsg = null);
                         },
                         decoration: InputDecoration(
-                          hintText: 'รหัสผ่าน',
+                          hintText: 'passwordPlaceholder'.tr(),
                           errorText: errorMsg,
                           prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                           suffixIcon: IconButton(
@@ -205,9 +206,9 @@ class DialogService {
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                "ยกเลิก",
-                                style: TextStyle(
+                              child: Text(
+                                "cancel".tr(),
+                                style: const TextStyle(
                                   color: Color(0xFF0262EC),
                                   fontSize: 16,
                                 ),
@@ -229,9 +230,9 @@ class DialogService {
                                 Navigator.pop(context);
                                 onConfirm(passwordController.text.trim());
                               },
-                              child: const Text(
-                                "ลบบัญชี",
-                                style: TextStyle(
+                              child:  Text(
+                                "deleteAccount".tr(),
+                                style: const  TextStyle(
                                   color: Color(0xFFFFFFFF),
                                   fontSize: 16,
                                 ),
@@ -730,9 +731,9 @@ class DialogService {
                       children: [
                         countdownBadge!,
                         const SizedBox(width: 10),
-                        const Text(
-                          'กำลังเปลี่ยนเส้นทางอัตโนมัติ',
-                          style: TextStyle(
+                         Text(
+                          'redirecting'.tr(),
+                          style: const  TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w600,
                           ),
@@ -822,7 +823,7 @@ class _AutoCloseDialogContentState extends State<_AutoCloseDialogContent>
       animationUrl: widget.animationUrl,
       title: widget.title,
       message: widget.message,
-      buttonText: "ตกลง",
+      buttonText: "ok".tr(),
       buttonColor: widget.buttonColor,
       onPressed: widget.onClose,
       isShowButton: widget.isBtn,

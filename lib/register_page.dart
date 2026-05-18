@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/login.dart';
 
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -109,13 +110,13 @@ class _RegisterPageState extends State<RegisterPage> {
   String _strengthLabel() {
     switch (_pwStrength) {
       case 1:
-        return 'อ่อนมาก';
+        return 'strengthWeak,'.tr();
       case 2:
-        return 'พอใช้';
+        return 'strengthFair'.tr();
       case 3:
-        return 'ดี';
+        return 'strengthGood'.tr();
       case 4:
-        return 'แข็งแกร่ง';
+        return 'strengthStrong'.tr();
       default:
         return '';
     }
@@ -156,7 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     // ตรวจ terms ก่อน (ใช้ dialog เพราะไม่มี field)
     if (!_agreeTerms) {
-      _showError('กรุณายอมรับข้อตกลงการใช้งาน');
+      _showError('agreeTermsRequired'.tr());
       return;
     }
 
@@ -165,24 +166,24 @@ class _RegisterPageState extends State<RegisterPage> {
     GlobalKey? firstErrorKey;
 
     if (_nameCtrl.text.trim().isEmpty) {
-      _nameError = 'กรุณากรอกชื่อ - นามสกุล';
+      _nameError = 'nameRequired'.tr();
       firstErrorKey ??= _nameKey;
     } else if (_nameCtrl.text.trim().split(RegExp(r'\s+')).length < 2) {
-      _nameError = 'กรุณากรอกทั้งชื่อและนามสกุล';
+      _nameError = 'nameTooShort'.tr();
       firstErrorKey ??= _nameKey;
     }
 
     if (!_isPhoneValid(_phoneCtrl.text)) {
-      _phoneError = 'เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมีอย่างน้อย 9 หลัก)';
+      _phoneError = 'phoneInvalidMin'.tr();
       firstErrorKey ??= _phoneKey;
     }
 
     if (_userType == 'lawyer') {
       if (_barNumCtrl.text.trim().isEmpty) {
-        _barNumError = 'กรุณากรอกเลขทะเบียนทนายความ';
+        _barNumError = 'barNumberRequired'.tr();
         firstErrorKey ??= _barNumKey;
       } else if (!_isBarNumValid(_barNumCtrl.text)) {
-        _barNumError = 'รูปแบบไม่ถูกต้อง เช่น 12345/2565';
+        _barNumError = 'barNumberInvalid'.tr();
         firstErrorKey ??= _barNumKey;
       }
 
@@ -193,26 +194,26 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     if (_emailCtrl.text.trim().isEmpty) {
-      _emailError = 'กรุณากรอกอีเมล';
+      _emailError = 'emailRequired'.tr();
       firstErrorKey ??= _emailKey;
     } else if (!_isEmailValid(_emailCtrl.text.trim())) {
-      _emailError = 'รูปแบบอีเมลไม่ถูกต้อง';
+      _emailError = 'emailInvalid'.tr();
       firstErrorKey ??= _emailKey;
     }
 
     if (_passwordCtrl.text.isEmpty) {
-      _passwordError = 'กรุณากรอกรหัสผ่าน';
+      _passwordError = 'passwordRequired'.tr();
       firstErrorKey ??= _passwordKey;
     } else if (_passwordCtrl.text.length < 8) {
-      _passwordError = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+      _passwordError = 'passwordTooShort'.tr();
       firstErrorKey ??= _passwordKey;
     }
 
     if (_confirmCtrl.text.isEmpty) {
-      _confirmError = 'กรุณายืนยันรหัสผ่าน';
+      _confirmError = 'confirmPasswordRequired'.tr();
       firstErrorKey ??= _confirmKey;
     } else if (_passwordCtrl.text != _confirmCtrl.text) {
-      _confirmError = 'รหัสผ่านไม่ตรงกัน';
+      _confirmError = 'passwordMismatch'.tr();
       firstErrorKey ??= _confirmKey;
     }
 
@@ -252,7 +253,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _emailError = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+        _emailError = 'emailDuplicate'.tr();
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_emailKey);
@@ -262,7 +263,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _phoneError = 'เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์อื่น';
+        _phoneError = 'phoneDuplicate'.tr();
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToKey(_phoneKey);
@@ -277,11 +278,11 @@ class _RegisterPageState extends State<RegisterPage> {
       if (raw.contains('network') ||
           raw.contains('connection') ||
           raw.contains('timeout')) {
-        friendlyMsg = 'ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบอินเทอร์เน็ต';
+        friendlyMsg = 'networkError'.tr();
       } else if (raw.contains('server') || raw.contains('500')) {
-        friendlyMsg = 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง';
+        friendlyMsg = 'serverError'.tr();
       } else {
-        friendlyMsg = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+        friendlyMsg = 'genericError'.tr();
       }
       _showError(friendlyMsg);
     }
@@ -292,12 +293,12 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('แจ้งเตือน'),
+        title: Text('registerAlert'.tr()),
         content: Text(msg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ตกลง', style: TextStyle(color: _blue)),
+            child: Text('ok'.tr(), style: const TextStyle(color: _blue)),
           ),
         ],
       ),
@@ -313,14 +314,14 @@ class _RegisterPageState extends State<RegisterPage> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.check_circle_rounded, color: Color(0xFF1D9E75)),
             SizedBox(width: 8),
-            Text('สมัครสมาชิกแล้ว'),
+            Text('registerSuccess'.tr()),
           ],
         ),
-        content: const Text('บัญชีของคุณถูกสร้างเรียบร้อยแล้ว'),
+        content: Text('registerSuccessMessage'.tr()),
         actions: [
           TextButton(
             onPressed: () {
@@ -331,7 +332,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 (route) => false, // ล้าง stack ทั้งหมด
               );
             },
-            child: const Text('เริ่มต้นใช้งาน', style: TextStyle(color: _blue)),
+            child:
+                Text('getStarted'.tr(), style: const TextStyle(color: _blue)),
           ),
         ],
       ),
@@ -344,7 +346,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: _bg,
       appBar: appBar(
-        title: "profile".tr(),
+        title: "register".tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -362,24 +364,24 @@ class _RegisterPageState extends State<RegisterPage> {
                 Center(child: _buildAvatarPicker()),
                 const SizedBox(height: 24),
 
-                _sectionLabel('คุณคือ'),
+                _sectionLabel('whoAreYou'.tr()),
                 const SizedBox(height: 8),
                 _buildTypeSelector(),
                 const SizedBox(height: 20),
 
-                _sectionLabel('ชื่อ - นามสกุล *'),
+                _sectionLabel('fullName'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _nameKey, // ผูก GlobalKey
                   controller: _nameCtrl,
-                  hint: 'ชื่อและนามสกุลจริง',
+                  hint: 'fullNameHint'.tr(),
                   icon: Icons.person_outline_rounded,
                   errorText: _nameError,
                   onChanged: (_) => setState(() => _nameError = null),
                 ),
                 const SizedBox(height: 14),
 
-                _sectionLabel('เบอร์โทรศัพท์ *'),
+                _sectionLabel('phone'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _phoneKey,
@@ -396,12 +398,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 // ── lawyer-only fields ─────────────────────────────────────────
                 if (_userType == 'lawyer') ...[
                   const SizedBox(height: 14),
-                  _sectionLabel('เลขทะเบียนทนายความ *'),
+                  _sectionLabel('barNumber'.tr()),
                   const SizedBox(height: 6),
                   _buildTextField(
                     key: _barNumKey,
                     controller: _barNumCtrl,
-                    hint: 'เช่น 12345/2565',
+                    hint: 'barNumberHint'.tr(),
                     icon: Icons.badge_outlined,
                     errorText: _barNumError,
                     onChanged: (_) => setState(() => _barNumError = null),
@@ -412,7 +414,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Row(
                     key: _specialtyKey, // ผูก GlobalKey ที่แถว label
                     children: [
-                      _sectionLabel('ความเชี่ยวชาญ *'),
+                      _sectionLabel('specialty'.tr()),
                       const SizedBox(width: 8),
                       if (_selectedSpecialties.isNotEmpty)
                         Container(
@@ -436,18 +438,19 @@ class _RegisterPageState extends State<RegisterPage> {
                   // แสดง error text ใต้ label ถ้ายังไม่ได้เลือก
                   if (_specialtyError)
                     Row(
-                      children: const [
+                      children: [
                         Icon(Icons.error_outline_rounded,
                             size: 13, color: _errorColor),
                         SizedBox(width: 4),
                         Text(
-                          'กรุณาเลือกความเชี่ยวชาญอย่างน้อย 1 ด้าน',
-                          style: TextStyle(fontSize: 11, color: _errorColor),
+                          'specialtyRequired'.tr(),
+                          style:
+                              const TextStyle(fontSize: 11, color: _errorColor),
                         ),
                       ],
                     ),
                   Text(
-                    'เลือกได้หลายด้าน',
+                    'specialtyMultiple'.tr(),
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
                   const SizedBox(height: 10),
@@ -463,9 +466,9 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _sectionLabel('ข้อมูลบัญชี'),
+                _sectionLabel('myAccount'.tr()),
                 const SizedBox(height: 14),
-                _sectionLabel('อีเมล *'),
+                _sectionLabel('email'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _emailKey,
@@ -477,12 +480,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   onChanged: (_) => setState(() => _emailError = null),
                 ),
                 const SizedBox(height: 14),
-                _sectionLabel('รหัสผ่าน *'),
+                _sectionLabel('password'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _passwordKey,
                   controller: _passwordCtrl,
-                  hint: 'อย่างน้อย 8 ตัวอักษร',
+                  hint: 'passwordHint'.tr(),
                   icon: Icons.lock_outline_rounded,
                   obscure: !_pwVisible,
                   suffix: IconButton(
@@ -501,7 +504,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     _passwordError = null;
                     if (_confirmCtrl.text.isNotEmpty &&
                         _confirmCtrl.text != v) {
-                      _confirmError = 'รหัสผ่านไม่ตรงกัน';
+                      _confirmError = 'passwordMismatch'.tr();
                     } else {
                       _confirmError = null;
                     }
@@ -512,12 +515,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   _buildStrengthBar(),
                 ],
                 const SizedBox(height: 14),
-                _sectionLabel('ยืนยันรหัสผ่าน *'),
+                _sectionLabel('confirmPassword'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _confirmKey,
                   controller: _confirmCtrl,
-                  hint: 'กรอกรหัสผ่านอีกครั้ง',
+                  hint: 'confirmPasswordHint'.tr(),
                   icon: Icons.lock_outline_rounded,
                   obscure: !_cfVisible,
                   suffix: IconButton(
@@ -533,7 +536,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   errorText: _confirmError,
                   onChanged: (v) => setState(() {
                     _confirmError = v.isNotEmpty && v != _passwordCtrl.text
-                        ? 'รหัสผ่านไม่ตรงกัน'
+                        ? 'passwordMismatch'.tr()
                         : null;
                   }),
                 ),
@@ -547,8 +550,8 @@ class _RegisterPageState extends State<RegisterPage> {
             child: _buildCheckRow(
               value: _agreeTerms,
               onChanged: (v) => setState(() => _agreeTerms = v ?? false),
-              label: 'ฉันยอมรับ ',
-              linkLabel: 'ข้อกำหนดการใช้งาน',
+              label: 'agreeTerms'.tr(),
+              linkLabel: 'termsLink'.tr(),
             ),
           ),
           const SizedBox(height: 24),
@@ -559,12 +562,12 @@ class _RegisterPageState extends State<RegisterPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('มีบัญชีแล้ว? ',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
+               Text('alreadyHaveAccount'.tr(),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Text('เข้าสู่ระบบ',
-                    style: TextStyle(
+                child:  Text('loginLink'.tr(),
+                    style: const  TextStyle(
                         fontSize: 13,
                         color: _blue,
                         fontWeight: FontWeight.w600)),
@@ -665,9 +668,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildTypeSelector() {
     return Row(
       children: [
-        _typeChip('client', Icons.person_rounded, 'ลูกความ', 'ปรึกษา / หาทนาย'),
+        _typeChip('client', Icons.person_rounded, 'clientType'.tr(), 'clientTypeSub'.tr()),
         const SizedBox(width: 10),
-        _typeChip('lawyer', Icons.gavel_rounded, 'ทนายความ', 'รับเคส'),
+        _typeChip('lawyer', Icons.gavel_rounded, 'lawyerType'.tr(), 'lawyerTypeSub'.tr()),
       ],
     );
   }
@@ -764,7 +767,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: const TextStyle(
                           color: _blue, fontWeight: FontWeight.w600),
                     ),
-                  const TextSpan(text: ' และนโยบายความเป็นส่วนตัว'),
+                   TextSpan(text: 'privacyPolicy'.tr()),
                 ],
               ),
             ),
@@ -802,8 +805,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2.5),
                 )
-              : const Text('สมัครสมาชิก',
-                  style: TextStyle(
+              :  Text('register'.tr(),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

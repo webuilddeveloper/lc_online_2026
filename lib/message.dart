@@ -5,6 +5,7 @@ import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/models/chat/chat_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /*
 =========================================
@@ -97,7 +98,7 @@ class _MessagePageState extends State<MessagePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: appBar(
-        title: 'กล่องข้อความ',
+        title: 'messages'.tr(),
         backBtn: false,
         rightBtn: false,
         rightAction: () {},
@@ -105,9 +106,9 @@ class _MessagePageState extends State<MessagePage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _conversations.isEmpty
-              ? const Center(
-                  child: Text('ยังไม่มีการสนทนา',
-                      style: TextStyle(color: Color(0xFF8593A8))))
+              ? Center(
+                  child: Text('noConversations'.tr(),
+                      style: const TextStyle(color: Color(0xFF8593A8))))
               : Column(
                   children: [
                     const SizedBox(height: 20),
@@ -145,9 +146,9 @@ class _MessagePageState extends State<MessagePage> {
                       bottom: BorderSide(color: Color(0xFFE4E8EF), width: 1),
                     ),
                   ),
-                  child: const Text(
-                    'กล่องข้อความ',
-                    style: TextStyle(
+                  child: Text(
+                    'messages'.tr(),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1A2540),
@@ -160,9 +161,10 @@ class _MessagePageState extends State<MessagePage> {
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _conversations.isEmpty
-                          ? const Center(
-                              child: Text('ยังไม่มีการสนทนา',
-                                  style: TextStyle(color: Color(0xFF8593A8))))
+                          ? Center(
+                              child: Text('noConversations'.tr(),
+                                  style: const TextStyle(
+                                      color: Color(0xFF8593A8))))
                           : _buildList(isDesktop: true),
                 ),
               ],
@@ -268,10 +270,11 @@ class _ConversationItemState extends State<_ConversationItem> {
     if (widget.isSelected && isDesktop) {
       bgColor = const Color(0xFFE8F0FE); // สีฟ้าอ่อนเมื่อเลือก
     } else if (showHover) {
-      bgColor = const Color(0xFFF0F2F5); 
+      bgColor = const Color(0xFFF0F2F5);
     } else {
       // bgColor = isDesktop ? Colors.transparent : Colors.white;
-       bgColor = isDesktop ? const Color.fromARGB(0, 255, 255, 255) : Colors.white;
+      bgColor =
+          isDesktop ? const Color.fromARGB(0, 255, 255, 255) : Colors.white;
     }
 
     return MouseRegion(
@@ -439,7 +442,7 @@ class _EmptyChat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -447,8 +450,8 @@ class _EmptyChat extends StatelessWidget {
               size: 64, color: Color(0xFFD1D9E6)),
           SizedBox(height: 16),
           Text(
-            'เลือกการสนทนาเพื่อเริ่มแชท',
-            style: TextStyle(fontSize: 16, color: Color(0xFF8593A8)),
+            'selectConversation'.tr(),
+            style: const TextStyle(fontSize: 16, color: Color(0xFF8593A8)),
           ),
         ],
       ),

@@ -54,33 +54,38 @@ class HomeActionCards extends StatelessWidget {
       }
     }
 
-    return Row(children: [
-      Expanded(
-        child: _actionCard(
-          title: 'openCase'.tr(),
-          subtitle: 'openCaseSub'.tr(),
-          iconAssets: 'assets/icons/open-case.png',
-          gradientColors: [_kCard, _kCard],
-          titleColor: const Color(0xFF1565C0),
-          subTitleColor: const Color(0xFF1565C0),
-          iconColor: const Color(0xFF1565C0),
-          onTap: () => go(ConsultPage()),
-        ),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _actionCard(
+              title: 'openCase'.tr(),
+              subtitle: 'openCaseSub'.tr(),
+              iconAssets: 'assets/icons/open-case.png',
+              gradientColors: [_kCard, _kCard],
+              titleColor: const Color(0xFF1565C0),
+              subTitleColor: const Color(0xFF1565C0),
+              iconColor: const Color(0xFF1565C0),
+              onTap: () => go(ConsultPage()),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: _actionCard(
+              title: 'bookConsult'.tr(),
+              subtitle: 'bookConsultSub'.tr(),
+              iconAssets: 'assets/icons/appointment-lawyer.png',
+              gradientColors: [
+                const Color(0xFF1565C0),
+                const Color(0xFF1E88E5),
+              ],
+              onTap: () => go(TopicPage()),
+            ),
+          ),
+        ],
       ),
-      const SizedBox(width: 14),
-      Expanded(
-        child: _actionCard(
-          title: 'bookConsult'.tr(),
-          subtitle: 'bookConsultSub'.tr(),
-          iconAssets: 'assets/icons/appointment-lawyer.png',
-          gradientColors: [
-            const Color(0xFF1565C0),
-            const Color(0xFF1E88E5),
-          ],
-          onTap: () => go(TopicPage()),
-        ),
-      ),
-    ]);
+    );
   }
 
   // ── Lawyer: สวิตช์รับเคสด่วน + ดูงาน + ตั้งเวลา ───────────────
@@ -305,26 +310,32 @@ Widget _actionCard({
                         ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.prompt(
-                        color: titleColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.prompt(
+                          color: titleColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.prompt(
-                        color: subTitleColor,
-                        fontSize: 11,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.prompt(
+                          color: subTitleColor,
+                          fontSize: 11,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
