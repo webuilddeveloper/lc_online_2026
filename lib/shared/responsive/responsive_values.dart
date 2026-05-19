@@ -90,7 +90,7 @@ class RV {
   static double bannerHeight(BuildContext context) {
     if (ResponsiveLayout.isDesktop(context)) return 300;
     if (ResponsiveLayout.isTablet(context)) return 260;
-    return 140;
+    return 170;
   }
 
 // ── Dialog ────────────────────────────────────────────

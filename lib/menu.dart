@@ -47,25 +47,28 @@ class _MenuPageState extends State<MenuPage> {
 
   // ── Nav items config ───────────────────────────────────
   List<NavItem> get _navItems => [
-    NavItem(icon: 'assets/icons/home.png', label: 'navHome'.tr(), index: 0),
-    NavItem(
-        icon: 'assets/icons/message.png',
-        label: 'navChat'.tr(),
-        index: 1,
-        showBadge: true),
-    NavItem(
-        icon: 'assets/icons/logo-no-bg.png',
-        label: 'navCommunity'.tr(),
-        index: 2,
-        isLogo: true,
-        showBadge: true),
-    NavItem(
-        icon: 'assets/icons/appointment.png',
-        label: 'navAppointment'.tr(),
-        index: 3,
-        showBadge: true),
-    NavItem(icon: 'assets/icons/profile.png', label: 'navProfile'.tr(), index: 4),
-  ];
+        NavItem(icon: 'assets/icons/home.png', label: 'navHome'.tr(), index: 0),
+        NavItem(
+            icon: 'assets/icons/message.png',
+            label: 'navChat'.tr(),
+            index: 1,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/logo-no-bg.png',
+            label: 'navCommunity'.tr(),
+            index: 2,
+            isLogo: true,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/appointment.png',
+            label: 'navAppointment'.tr(),
+            index: 3,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/profile.png',
+            label: 'navProfile'.tr(),
+            index: 4),
+      ];
 
   @override
   void initState() {
@@ -205,13 +208,13 @@ class _MenuPageState extends State<MenuPage> {
       bottomNavigationBar: isDesktop
           ? null
           : Padding(
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.fromLTRB(15, 10, 15, 20),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(35),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    height: 65,
+                    height: 75,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF010101).withOpacity(0.50),
@@ -223,7 +226,7 @@ class _MenuPageState extends State<MenuPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: _navItems
-                          .map((item) => Flexible(
+                          .map((item) => Expanded(
                                 child: _BottomNavItem(
                                   item: item,
                                   isSelected: _currentPage == item.index,
@@ -260,50 +263,54 @@ class _BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: item.isLogo
-            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 5)
-            : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFF8F9FD).withOpacity(0.9)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF085DD3).withOpacity(0.3)
-                  : Colors.transparent,
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Image.asset(
-              item.icon,
-              width: item.isLogo ? 34 : 22,
-              height: item.isLogo ? 34 : 22,
-              color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
-            ),
-            if (showBadge)
-              Positioned(
-                top: -1,
-                right: 2,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF70C0C),
-                    shape: BoxShape.circle,
+      behavior: HitTestBehavior.opaque,
+      child: Center(  // ← ใส่ Center หุ้มเพื่อให้ AnimatedContainer อยู่กลาง
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          // ลบ width/height: double.infinity ออก ← ให้ขนาดพอดีกับเนื้อหา
+          padding: item.isLogo
+              ? const EdgeInsets.symmetric(horizontal: 30, vertical: 8)
+              : const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFF8F9FD).withOpacity(0.9)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? const Color(0xFF085DD3).withOpacity(0.3)
+                    : Colors.transparent,
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Image.asset(
+                item.icon,
+                width: item.isLogo ? 34 : 22,
+                height: item.isLogo ? 34 : 22,
+                color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
+              ),
+              if (showBadge)
+                Positioned(
+                  top: -1,
+                  right: -2,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF70C0C),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

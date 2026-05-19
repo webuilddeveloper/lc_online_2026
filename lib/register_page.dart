@@ -468,7 +468,7 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 _sectionLabel('myAccount'.tr()),
                 const SizedBox(height: 14),
-                _sectionLabel('email'),
+                _sectionLabel('email'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
                   key: _emailKey,

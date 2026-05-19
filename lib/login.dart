@@ -190,7 +190,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               obscureText: obscure,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock_outline),
-                                labelText: "password".tr(),
+                                labelText: "passwordPlaceholder".tr(),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),

@@ -154,10 +154,11 @@ class HomeUserSection extends StatelessWidget {
   // ── Case Status List ──────────────────────────────────────────────
   Widget _buildCaseStatusList(BuildContext context) {
     return SizedBox(
-      height: 130,
+      height: 146, // เพิ่ม 16px ให้ shadow ไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 12), // top/bottom ให้ shadow หายใจได้
         itemCount: cases.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _caseStatusItem(context, cases[i]),
@@ -202,13 +203,10 @@ class HomeUserSection extends StatelessWidget {
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            )
-          ],
+          border: Border.all(
+            color: const Color(0xFFD6D5D5),
+            width: 1,
+          ),
         ),
         child: Row(children: [
           Container(
@@ -311,14 +309,10 @@ class HomeUserSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: _kCard,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _kAccent.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                )
-              ],
-              border: Border.all(color: const Color(0xFFE2EAF8)),
+              border: Border.all(
+                color: const Color(0xFFD6D5D5),
+                width: 1,
+              ),
             ),
             child: Image.asset(icon,
                 height: 34, fit: BoxFit.contain, color: _kPrimary),
@@ -336,10 +330,11 @@ class HomeUserSection extends StatelessWidget {
   // ── Lawyer Card List ──────────────────────────────────────────────
   Widget _buildLawyerList(BuildContext context, List<dynamic> list) {
     return SizedBox(
-      height: 210,
+      height: 226, // เพิ่ม 16px ให้ shadow ด้านล่างไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 15),
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 16), // bottom 16 = พื้นที่ shadow
         itemCount: list.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _lawyerCard(
@@ -361,13 +356,10 @@ class HomeUserSection extends StatelessWidget {
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            )
-          ],
+          border: Border.all(
+            color: const Color(0xFFD6D5D5),
+            width: 0.6,
+          ),
         ),
         child: Column(
           children: [

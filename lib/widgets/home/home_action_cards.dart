@@ -120,6 +120,7 @@ class HomeActionCards extends StatelessWidget {
           gradientColors: [_kCard, _kCard],
           titleColor: const Color(0xFF1565C0),
           subTitleColor: const Color(0xFF1565C0),
+          
           iconColor: const Color(0xFF1565C0),
           onTap: () => Navigator.push(
             context,
@@ -218,18 +219,9 @@ class _UrgentSwitchCardState extends State<_UrgentSwitchCard>
           color: enabled ? const Color(0xFFF0FDF7) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: enabled ? green : Colors.grey.shade300,
+            color: enabled ? green : const Color.fromARGB(255, 209, 209, 209),
             width: enabled ? 2.0 : 1.5,
           ),
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                    color: green.withOpacity(0.18),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  )
-                ]
-              : [],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -373,22 +365,10 @@ class _UrgentJobCardState extends State<_UrgentJobCard>
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: enabled
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFF1565C0).withOpacity(0.45),
-                        blurRadius: 16,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 4),
-                      ),
-                      BoxShadow(
-                        color: const Color(0xFF2F80ED).withOpacity(0.25),
-                        blurRadius: 28,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : [],
+              border: Border.all(
+                color: const Color.fromARGB(255, 134, 134, 134).withOpacity(0.18),
+                width: 1.5,
+              ),
             ),
             child: Material(
               color: Colors.transparent,
@@ -519,14 +499,12 @@ Widget _actionCard({
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: _kAccent.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              )
-            ],
-            border: Border.all(color: const Color(0xFFE2EAF8)),
+            border: Border.all(
+              color: gradientColors.first == Colors.white
+                  ? const Color(0xFFC0C0C0) // การ์ดขาว → border เทาเข้ม
+                  : Colors.black.withOpacity(0.18), // การ์ดสี → border ดำโปร่ง
+              width: 1,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),

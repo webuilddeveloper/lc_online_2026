@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/lawyer-edit-profile.dart';
+import 'package:LawyerOnline/widgets/profile/lawyer/lawyer_profile_widgets.dart';
 
 // ══════════════════════════════════════════════════════════
 //  LawyerProfileViewPage
@@ -386,7 +387,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
 
   Widget _buildStatsRow(Color color) {
     final ls = LawyerProfileStore.instance;
-    return _AnimCard(
+    return ProfileAnimCard(
       delay: 0.1,
       ctrl: _entryCtrl,
       child: Container(
@@ -432,7 +433,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
     final skills = LawyerProfileStore.instance.skills;
     if (skills.isEmpty) return const SizedBox.shrink();
 
-    return _AnimCard(
+    return ProfileAnimCard(
       delay: 0.2,
       ctrl: _entryCtrl,
       child: Container(
@@ -445,23 +446,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
             spacing: 8,
             runSpacing: 8,
             children: skills
-                .map((s) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [
-                          color.withOpacity(0.1),
-                          color.withOpacity(0.05),
-                        ]),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: color.withOpacity(0.25)),
-                      ),
-                      child: Text(s,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: color,
-                              fontWeight: FontWeight.w600)),
-                    ))
+                .map((s) => SkillViewChip(skill: s, color: color))
                 .toList(),
           ),
         ]),
@@ -477,7 +462,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
     final bio = LawyerProfileStore.instance.bio;
     if (bio.isEmpty) return const SizedBox.shrink();
 
-    return _AnimCard(
+    return ProfileAnimCard(
       delay: 0.28,
       ctrl: _entryCtrl,
       child: Container(
@@ -511,7 +496,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
     ];
     if (socials.isEmpty) return const SizedBox.shrink();
 
-    return _AnimCard(
+    return ProfileAnimCard(
       delay: 0.35,
       ctrl: _entryCtrl,
       child: Container(
@@ -587,35 +572,4 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
                 color: Color(0xFF1A2340),
                 letterSpacing: -0.2)),
       ]);
-}
-
-// ══════════════════════════════════════════════════════════
-//  _AnimCard
-// ══════════════════════════════════════════════════════════
-
-class _AnimCard extends StatelessWidget {
-  final double delay;
-  final AnimationController ctrl;
-  final Widget child;
-
-  const _AnimCard(
-      {required this.delay, required this.ctrl, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: ctrl,
-      builder: (_, ch) {
-        final t = Curves.easeOutCubic.transform(
-          ((ctrl.value - delay) / (1 - delay)).clamp(0.0, 1.0),
-        );
-        return Opacity(
-          opacity: t,
-          child:
-              Transform.translate(offset: Offset(0, 20 * (1 - t)), child: ch),
-        );
-      },
-      child: child,
-    );
-  }
 }
