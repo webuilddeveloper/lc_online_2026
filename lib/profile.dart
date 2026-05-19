@@ -147,7 +147,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               if (userType == 'lawyer')
                 menuItem(
-                  title: 'โปรไฟล์ทนายความ',
+                  title: 'lawyerProfile'.tr(),
                   onTap: () => {
                     Navigator.push(
                       context,

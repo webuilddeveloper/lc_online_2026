@@ -486,5 +486,41 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "earlier": "Earlier"
-  }
+  },
+  "calendar": {
+    "yearSuffix": "",
+    "yearOffset": "0",
+    "todayNoAppt": "No appointment today",
+    "allAppt": "All Appointments",
+    "noAppt": "No appointments",
+    "dayPrefix": "",
+    "apptToday": "Today's Appointments",
+    "apptItems": "items",
+    "apptBadge": "appt.",
+    "apptCount": "appointment(s)",
+    "periodMorning": "Morning",
+    "periodAfternoon": "Afternoon",
+    "periodEvening": "Evening",
+    "timeUnit": "",
+    "monthShort": {
+      "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+      "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+      "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+    },
+    "monthFull": {
+      "1": "January", "2": "February", "3": "March", "4": "April",
+      "5": "May", "6": "June", "7": "July", "8": "August",
+      "9": "September", "10": "October", "11": "November", "12": "December"
+    },
+    "dayFull": {
+      "1": "Monday", "2": "Tuesday", "3": "Wednesday",
+      "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday"
+    },
+    "dayShort": {
+      "0": "M", "1": "T", "2": "W", "3": "Th",
+      "4": "F", "5": "Sa", "6": "Su"
+    }
+  },
+  "lawyerProfile": "Lawyer Profile"
+
 }
