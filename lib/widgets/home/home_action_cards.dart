@@ -120,7 +120,6 @@ class HomeActionCards extends StatelessWidget {
           gradientColors: [_kCard, _kCard],
           titleColor: const Color(0xFF1565C0),
           subTitleColor: const Color(0xFF1565C0),
-          
           iconColor: const Color(0xFF1565C0),
           onTap: () => Navigator.push(
             context,
@@ -366,7 +365,8 @@ class _UrgentJobCardState extends State<_UrgentJobCard>
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color.fromARGB(255, 134, 134, 134).withOpacity(0.18),
+                color:
+                    const Color.fromARGB(255, 134, 134, 134).withOpacity(0.18),
                 width: 1.5,
               ),
             ),

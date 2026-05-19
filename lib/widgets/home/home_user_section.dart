@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'dart:math' as math;
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────
 int _statusToStep(String status) => status == '4' ? 4 : 3;
@@ -157,8 +160,8 @@ class HomeUserSection extends StatelessWidget {
       height: 146, // เพิ่ม 16px ให้ shadow ไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 12), // top/bottom ให้ shadow หายใจได้
+        padding: const EdgeInsets.fromLTRB(
+            18, 8, 18, 12), // top/bottom ให้ shadow หายใจได้
         itemCount: cases.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _caseStatusItem(context, cases[i]),
@@ -187,6 +190,23 @@ class HomeUserSection extends StatelessWidget {
     final category = model['category'] ?? '';
     final statusText = model['statusText'] ?? '';
 
+    // คำนวณความกว้างของการ์ดให้พอดีกับหน้าจอ
+    final screenW = MediaQuery.of(context).size.width;
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+    
+    // ความกว้างของกรอบเนื้อหา
+    final actualContentW = isDesktop ? math.min(screenW, RV.maxContentWidth(context)) : screenW;
+    
+    double cardW;
+    if (isDesktop || isTablet) {
+      // Desktop/Tablet: แบ่ง 2 คอลัมน์ให้พอดีกรอบ
+      cardW = (actualContentW - (18 * 2) - 12) / 2;
+    } else {
+      // Mobile: กว้าง 72% เพื่อให้เห็นว่าเลื่อนได้
+      cardW = screenW * 0.72;
+    }
+
     return GestureDetector(
       onTap: () => _guardedNavigate(
         context,
@@ -198,7 +218,7 @@ class HomeUserSection extends StatelessWidget {
         ),
       ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.72,
+        width: cardW,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: _kCard,
@@ -333,8 +353,8 @@ class HomeUserSection extends StatelessWidget {
       height: 226, // เพิ่ม 16px ให้ shadow ด้านล่างไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 16), // bottom 16 = พื้นที่ shadow
+        padding: const EdgeInsets.fromLTRB(
+            18, 4, 18, 16), // bottom 16 = พื้นที่ shadow
         itemCount: list.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _lawyerCard(
