@@ -362,7 +362,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Row(children: [
                   Text(
-                    'พบ ${filtered.length} รายการ',
+                    '${'sort.found'.tr()} ${filtered.length} ${'sort.items'.tr()}',
                     style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[500],
@@ -609,9 +609,9 @@ class _AppointmentListPageState extends State<AppointmentListPage>
 
   Widget _buildActiveFilterChips(_TabFilter f) {
     final sortLabels = {
-      'date_desc': 'dateDesc'.tr(),
-      'date_asc': 'dateAsc'.tr(),
-      'name_asc': 'nameAsc'.tr(),
+      'date_desc': 'sort.date_desc'.tr(),
+      'date_asc': 'sort.date_asc'.tr(),
+      'name_asc': 'sort.name_asc'.tr(),
     };
 
     return Container(
@@ -642,7 +642,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
             _updateFilter(_TabFilter());
           },
           child: Text(
-            'clear_filter'.tr(),
+            'clear_filters'.tr(),
             style: TextStyle(
                 fontSize: 11,
                 color: const Color(0xFF0262EC).withOpacity(0.8),
@@ -1316,7 +1316,7 @@ class _AppointmentListPageState extends State<AppointmentListPage>
                 _searchControllers[_activeTab]!.clear();
                 _updateFilter(_TabFilter());
               },
-              child: Text('clear_filter'.tr(),
+              child: Text('clear_filters'.tr(),
                   style: TextStyle(
                       fontSize: 12,
                       color: const Color(0xFF0262EC).withOpacity(0.8))),
@@ -1396,7 +1396,7 @@ class _SortSheet extends StatelessWidget {
                 child: Icon(icon,
                     size: 17, color: selected ? _kPrimary : Colors.grey[400]),
               ),
-              title: Text(label,
+              title: Text(label.tr(),
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

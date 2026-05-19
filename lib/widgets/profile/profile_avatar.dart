@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 const _kPrimary = Color(0xFF0262EC);
 const _kGreen = Color(0xFF059669);
@@ -111,7 +112,7 @@ class ProfileMemberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป';
+    final label = userType == 'lawyer' ? 'role.lawyer'.tr() : 'role.client'.tr();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

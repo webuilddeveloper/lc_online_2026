@@ -250,7 +250,9 @@
   "sort": {
     "date_desc": "Newest first",
     "date_asc": "Oldest first",
-    "name_asc": "Lawyer name A–Z"
+    "name_asc": "Lawyer name A–Z",
+    "found": "Found",
+    "items": "Items"
   },
   "rating": "rating",
   "category": {
@@ -459,7 +461,21 @@
     "permission_denied_title": "Permission Denied",
     "permission_denied_content": "Please allow camera and microphone access to use video call",
     "join_now": "Join Now",
-    "incoming_call": "Incoming Call"
+    "incoming_call": "Incoming Call",
+    "allRead": "All Read",
+    "listAll": "See All",
+    "allItems": "all items",
+    "msg":{
+      "read": "Read",
+      "new": "New"
+    },
+    "common":{
+      "tapForDetail": "Tap message to view details",
+      "emptyCaseAlerts": "Important alerts regarding your cases will appear here.",
+      "noSubject": "No subject",
+      "time": "Time",
+      "noDetails": "No additional details"
+    }
   },
   "permission":{
     "title": "Access Settings",

@@ -6,6 +6,45 @@ import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+List<Map<String, dynamic>> globalNotifications = [
+  {
+    "type": "call",
+    "title": "สายที่ไม่ได้รับ",
+    "detail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์",
+    "time": "10:19",
+    "date": "today",
+    "isRead": false,
+    "fullDetail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์เมื่อเวลา 10:19 น. กรุณาติดต่อกลับเมื่อสะดวก"
+  },
+  {
+    "type": "booking",
+    "title": "นัดหมายคดี",
+    "detail": "คดีความกำลังจะมาถึง",
+    "time": "10:20",
+    "date": "today",
+    "isRead": false,
+    "fullDetail": "การนัดหมายปรึกษาคดีของคุณกับทนายศักดิ์สิทธิ์ ได้รับการยืนยันแล้ว กรุณาเตรียมเอกสารที่เกี่ยวข้องให้พร้อมก่อนถึงเวลานัดหมาย"
+  },
+  {
+    "type": "finish",
+    "title": "นัดหมายทนายความเสร็จสิ้น",
+    "detail": "กรุณารีวิวการให้คะแนนทนายความ",
+    "time": "เมื่อวาน",
+    "date": "yesterday",
+    "isRead": true,
+    "fullDetail": "การนัดหมายของคุณเสร็จสิ้นเรียบร้อยแล้ว กรุณาทำแบบประเมินและรีวิวการให้คะแนนทนายความเพื่อเป็นประโยชน์ในการพัฒนาบริการของเราต่อไป"
+  },
+  {
+    "type": "system",
+    "title": "ทนายความรับเคสแล้ว",
+    "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
+    "time": "2 วันก่อน",
+    "date": "old",
+    "isRead": true,
+    "fullDetail": "คดีของคุณมีทนายความรับเคสเรียบร้อยแล้ว คุณสามารถเริ่มสนทนาหรือส่งเอกสารเพิ่มเติมให้กับทนายความได้ทันที"
+  }
+];
+
 class NotificationPage extends StatefulWidget {
   const NotificationPage({Key? key}) : super(key: key);
 
@@ -14,56 +53,7 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  List notifications = [
-    // {
-    //   "type": "chat",
-    //   "title": "ข้อความใหม่",
-    //   "detail": "คุณได้รับข้อความใหม่จากทนายศักดิ์สิทธิ์",
-    //   "time": "10:20",
-    //   "date": "today",
-    //   "isRead": false
-    // },
-    {
-      "type": "call",
-      "title": "สายที่ไม่ได้รับ",
-      "detail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์",
-      "time": "10:19",
-      "date": "today",
-      "isRead": false
-    },
-    {
-      "type": "booking",
-      "title": "นัดหมายคดี",
-      "detail": "คดีความกำลังจะมาถึง",
-      "time": "10:20",
-      "date": "today",
-      "isRead": false
-    },
-    // {
-    //   "type": "booking",
-    //   "title": "การนัดหมายใหม่",
-    //   "detail": "ลูกค้าได้ทำการนัดหมาย",
-    //   "time": "09:40",
-    //   "date": "today",
-    //   "isRead": false
-    // },
-    {
-      "type": "finish",
-      "title": "นัดหมายทนายความเสร็จสิ้น",
-      "detail": "กรุณารีวิวการให้คะแนนทนายความ",
-      "time": "เมื่อวาน",
-      "date": "yesterday",
-      "isRead": true
-    },
-    {
-      "type": "system",
-      "title": "ทนายความรับเคสแล้ว",
-      "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
-      "time": "2 วันก่อน",
-      "date": "old",
-      "isRead": true
-    }
-  ];
+  List<Map<String, dynamic>> get notifications => globalNotifications;
 
   int get unreadCount =>
       notifications.where((n) => n["isRead"] == false).length;

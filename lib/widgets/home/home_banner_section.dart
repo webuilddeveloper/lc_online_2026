@@ -41,7 +41,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => ComingSoonPage(
+          builder: (_) => const ComingSoonPage(
             title: 'Comming Soon',
             lottieUrl:
                 'https://assets7.lottiefiles.com/packages/lf20_kkflmtur.json',
