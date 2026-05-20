@@ -14,6 +14,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/models/user_model.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 class LoginPage extends StatefulWidget {
   final bool isBack;
@@ -107,15 +109,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF061B4A),
       body: FadeTransition(
         opacity: fade,
         child: Container(
           decoration: const BoxDecoration(
             color: Color(0xFF061B4A),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
-            child: ListView(
+          child: AppLayout(
+            maxWidth: 500,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                child: ListView(
+                  shrinkWrap: ResponsiveLayout.isDesktop(context),
               children: [
                 const SizedBox(height: 20),
 
@@ -499,6 +506,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ),
               ],
             ),
+          ),
+          ),
           ),
         ),
       ),

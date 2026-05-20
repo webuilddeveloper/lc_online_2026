@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -342,21 +344,9 @@ class _RegisterPageState extends State<RegisterPage> {
   // ── BUILD ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: appBar(
-        title: "register".tr(),
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => goBack(),
-        rightAction: () => {},
-      ),
-      body: ListView(
-        controller: _scrollCtrl, // ผูก ScrollController
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-        children: [
-          // ── Card: ข้อมูลส่วนตัว ─────────────────────────────────────────────
-          _buildCard(
+    final isWide = ResponsiveLayout.isDesktop(context);
+
+    final personalInfoCard = _buildCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -457,11 +447,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+    );
 
-          // ── Card: บัญชีผู้ใช้ ───────────────────────────────────────────────
-          _buildCard(
+    final accountInfoCard = _buildCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -541,21 +529,67 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+    );
 
-          // ── Card: Terms ──────────────────────────────────────────────────────
-          _buildCard(
-            child: _buildCheckRow(
-              value: _agreeTerms,
-              onChanged: (v) => setState(() => _agreeTerms = v ?? false),
-              label: 'agreeTerms'.tr(),
-              linkLabel: 'termsLink'.tr(),
+    final termsCard = _buildCard(
+      child: _buildCheckRow(
+        value: _agreeTerms,
+        onChanged: (v) => setState(() => _agreeTerms = v ?? false),
+        label: 'agreeTerms'.tr(),
+        linkLabel: 'termsLink'.tr(),
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: appBar(
+        title: "register".tr(),
+        backBtn: true,
+        rightBtn: false,
+        backAction: () => goBack(),
+        rightAction: () => {},
+      ),
+      body: AppLayout(
+        maxWidth: 1000,
+        child: ListView(
+          controller: _scrollCtrl,
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+          children: [
+            if (isWide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: personalInfoCard,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      children: [
+                        accountInfoCard,
+                        const SizedBox(height: 16),
+                        termsCard,
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              personalInfoCard,
+              const SizedBox(height: 16),
+              accountInfoCard,
+              const SizedBox(height: 16),
+              termsCard,
+            ],
+            const SizedBox(height: 24),
+            Center(
+              child: SizedBox(
+                width: isWide ? 400 : double.infinity,
+                child: _buildSubmitButton(),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          _buildSubmitButton(),
           const SizedBox(height: 16),
 
           Row(
@@ -575,6 +609,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ],
           ),
         ],
+      ),
       ),
     );
   }

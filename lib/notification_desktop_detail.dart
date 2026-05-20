@@ -57,7 +57,7 @@ class _NotificationDesktopDetailPageState
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'notification.allItem'.tr(),
+                  'notification.allItems'.tr(),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
