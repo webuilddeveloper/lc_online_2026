@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class PaymentCardPage extends StatefulWidget {
   final String price;
-  final bool   isYearly;
+  final bool isYearly;
 
   const PaymentCardPage({
     Key? key,
@@ -25,17 +25,17 @@ class PaymentCardPage extends StatefulWidget {
 }
 
 class _PaymentCardPageState extends State<PaymentCardPage> {
-  final _formKey         = GlobalKey<FormState>();
-  final _cardNumberCtrl  = TextEditingController();
-  final _nameCtrl        = TextEditingController();
-  final _expiryCtrl      = TextEditingController();
-  final _cvvCtrl         = TextEditingController();
-  bool _isLoading        = false;
-  int  _selectedMethod   = 0; // 0=card, 1=promptpay
+  final _formKey = GlobalKey<FormState>();
+  final _cardNumberCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _expiryCtrl = TextEditingController();
+  final _cvvCtrl = TextEditingController();
+  bool _isLoading = false;
+  int _selectedMethod = 0; // 0=card, 1=promptpay
 
   final List<Map<String, dynamic>> _paymentMethods = [
     {'label': 'บัตรเครดิต/เดบิต', 'icon': Icons.credit_card_rounded},
-    {'label': 'PromptPay',         'icon': Icons.qr_code_rounded},
+    {'label': 'PromptPay', 'icon': Icons.qr_code_rounded},
   ];
 
   @override
@@ -59,7 +59,8 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
 
   String _formatExpiry(String value) {
     value = value.replaceAll('/', '');
-    if (value.length >= 2) return '${value.substring(0, 2)}/${value.substring(2)}';
+    if (value.length >= 2)
+      return '${value.substring(0, 2)}/${value.substring(2)}';
     return value;
   }
 
@@ -85,17 +86,17 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
     return Scaffold(
       backgroundColor: kSurface,
       appBar: appBar(
-        title:       'ชำระเงิน',
-        backBtn:     true,
-        rightBtn:    false,
-        backAction:  () => Navigator.pop(context, false),
+        title: 'ชำระเงิน',
+        backBtn: true,
+        rightBtn: false,
+        backAction: () => Navigator.pop(context, false),
         rightAction: () {},
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           // ── Payment method selector ───────────────────────────
           Row(
             children: _paymentMethods.asMap().entries.map((e) {
@@ -122,7 +123,8 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
                       Text(e.value['label'] as String,
                           style: GoogleFonts.prompt(
                               fontSize: 11,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              fontWeight:
+                                  selected ? FontWeight.w600 : FontWeight.w400,
                               color: selected ? kPrimary : kSub)),
                     ]),
                   ),
@@ -141,14 +143,20 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: kPrimary.withOpacity(0.2)),
             ),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Pro Plan · ${widget.isYearly ? "รายปี" : "รายเดือน"}',
-                  style: GoogleFonts.prompt(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: kPrimary)),
-              Text(widget.price,
-                  style: GoogleFonts.prompt(
-                      fontSize: 15, fontWeight: FontWeight.w700, color: kPrimary)),
-            ]),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Pro Plan · ${widget.isYearly ? "รายปี" : "รายเดือน"}',
+                      style: GoogleFonts.prompt(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: kPrimary)),
+                  Text(widget.price,
+                      style: GoogleFonts.prompt(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: kPrimary)),
+                ]),
           ),
 
           const SizedBox(height: 16),
@@ -164,81 +172,93 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
               ),
               child: Form(
                 key: _formKey,
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _label('หมายเลขบัตร'),
-                  const SizedBox(height: 6),
-                  _cardInput(
-                    controller: _cardNumberCtrl,
-                    hint: '0000 0000 0000 0000',
-                    keyboardType: TextInputType.number,
-                    maxLength: 19,
-                    prefixIcon: Icons.credit_card_rounded,
-                    onChanged: (v) {
-                      final formatted = _formatCardNumber(v);
-                      if (formatted != v) {
-                        _cardNumberCtrl.value = TextEditingValue(
-                          text: formatted,
-                          selection: TextSelection.collapsed(offset: formatted.length),
-                        );
-                      }
-                    },
-                    validator: (v) => (v ?? '').replaceAll(' ', '').length < 16
-                        ? 'กรุณากรอกหมายเลขบัตรให้ครบ'
-                        : null,
-                  ),
-                  const SizedBox(height: 14),
-                  _label('ชื่อบนบัตร'),
-                  const SizedBox(height: 6),
-                  _cardInput(
-                    controller: _nameCtrl,
-                    hint: 'FIRSTNAME LASTNAME',
-                    prefixIcon: Icons.person_outline_rounded,
-                    validator: (v) => (v ?? '').isEmpty ? 'กรุณากรอกชื่อบนบัตร' : null,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(children: [
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _label('วันหมดอายุ'),
-                        const SizedBox(height: 6),
-                        _cardInput(
-                          controller: _expiryCtrl,
-                          hint: 'MM/YY',
-                          keyboardType: TextInputType.number,
-                          maxLength: 5,
-                          onChanged: (v) {
-                            final formatted = _formatExpiry(v.replaceAll('/', ''));
-                            if (formatted != v) {
-                              _expiryCtrl.value = TextEditingValue(
-                                text: formatted,
-                                selection: TextSelection.collapsed(offset: formatted.length),
-                              );
-                            }
-                          },
-                          validator: (v) =>
-                              (v ?? '').length < 5 ? 'MM/YY' : null,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('หมายเลขบัตร'),
+                      const SizedBox(height: 6),
+                      _cardInput(
+                        controller: _cardNumberCtrl,
+                        hint: '0000 0000 0000 0000',
+                        keyboardType: TextInputType.number,
+                        maxLength: 19,
+                        prefixIcon: Icons.credit_card_rounded,
+                        onChanged: (v) {
+                          final formatted = _formatCardNumber(v);
+                          if (formatted != v) {
+                            _cardNumberCtrl.value = TextEditingValue(
+                              text: formatted,
+                              selection: TextSelection.collapsed(
+                                  offset: formatted.length),
+                            );
+                          }
+                        },
+                        validator: (v) =>
+                            (v ?? '').replaceAll(' ', '').length < 16
+                                ? 'กรุณากรอกหมายเลขบัตรให้ครบ'
+                                : null,
+                      ),
+                      const SizedBox(height: 14),
+                      _label('ชื่อบนบัตร'),
+                      const SizedBox(height: 6),
+                      _cardInput(
+                        controller: _nameCtrl,
+                        hint: 'FIRSTNAME LASTNAME',
+                        prefixIcon: Icons.person_outline_rounded,
+                        validator: (v) =>
+                            (v ?? '').isEmpty ? 'กรุณากรอกชื่อบนบัตร' : null,
+                      ),
+                      const SizedBox(height: 14),
+                      Row(children: [
+                        Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _label('วันหมดอายุ'),
+                                const SizedBox(height: 6),
+                                _cardInput(
+                                  controller: _expiryCtrl,
+                                  hint: 'MM/YY',
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 5,
+                                  onChanged: (v) {
+                                    final formatted =
+                                        _formatExpiry(v.replaceAll('/', ''));
+                                    if (formatted != v) {
+                                      _expiryCtrl.value = TextEditingValue(
+                                        text: formatted,
+                                        selection: TextSelection.collapsed(
+                                            offset: formatted.length),
+                                      );
+                                    }
+                                  },
+                                  validator: (v) =>
+                                      (v ?? '').length < 5 ? 'MM/YY' : null,
+                                ),
+                              ]),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _label('CVV'),
+                                const SizedBox(height: 6),
+                                _cardInput(
+                                  controller: _cvvCtrl,
+                                  hint: '•••',
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 3,
+                                  obscure: true,
+                                  prefixIcon: Icons.lock_outline_rounded,
+                                  validator: (v) => (v ?? '').length < 3
+                                      ? 'CVV ไม่ถูกต้อง'
+                                      : null,
+                                ),
+                              ]),
                         ),
                       ]),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _label('CVV'),
-                        const SizedBox(height: 6),
-                        _cardInput(
-                          controller: _cvvCtrl,
-                          hint: '•••',
-                          keyboardType: TextInputType.number,
-                          maxLength: 3,
-                          obscure: true,
-                          prefixIcon: Icons.lock_outline_rounded,
-                          validator: (v) =>
-                              (v ?? '').length < 3 ? 'CVV ไม่ถูกต้อง' : null,
-                        ),
-                      ]),
-                    ),
-                  ]),
-                ]),
+                    ]),
               ),
             ),
           ] else ...[
@@ -252,19 +272,23 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
               ),
               child: Column(children: [
                 Container(
-                  width: 160, height: 160,
+                  width: 160,
+                  height: 160,
                   decoration: BoxDecoration(
                     color: kSurface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: kBorder),
                   ),
                   child: const Center(
-                      child: Icon(Icons.qr_code_rounded, size: 100, color: kText)),
+                      child:
+                          Icon(Icons.qr_code_rounded, size: 100, color: kText)),
                 ),
                 const SizedBox(height: 14),
                 Text('สแกน QR เพื่อชำระเงิน',
                     style: GoogleFonts.prompt(
-                        fontSize: 14, fontWeight: FontWeight.w600, color: kText)),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: kText)),
                 const SizedBox(height: 4),
                 Text('QR มีอายุ 15 นาที',
                     style: GoogleFonts.prompt(fontSize: 12, color: kSub)),
@@ -289,7 +313,8 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
               ),
               child: _isLoading
                   ? const SizedBox(
-                      width: 22, height: 22,
+                      width: 22,
+                      height: 22,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2.5))
                   : Text('ยืนยันการชำระเงิน ${widget.price}',
@@ -329,12 +354,12 @@ class _PaymentCardPageState extends State<PaymentCardPage> {
         hintText: hint,
         hintStyle: GoogleFonts.prompt(fontSize: 14, color: kSub),
         counterText: '',
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, size: 18, color: kSub)
-            : null,
+        prefixIcon:
+            prefixIcon != null ? Icon(prefixIcon, size: 18, color: kSub) : null,
         filled: true,
         fillColor: kSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: kBorder)),

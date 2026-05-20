@@ -5,7 +5,8 @@ import 'package:LawyerOnline/notification.dart';
 class NotificationDesktopDetailPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const NotificationDesktopDetailPage({Key? key, this.initialData}) : super(key: key);
+  const NotificationDesktopDetailPage({Key? key, this.initialData})
+      : super(key: key);
 
   @override
   State<NotificationDesktopDetailPage> createState() =>
@@ -55,7 +56,7 @@ class _NotificationDesktopDetailPageState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 Text(
+                Text(
                   'notification.allItem'.tr(),
                   style: const TextStyle(
                     fontSize: 16,
@@ -85,7 +86,7 @@ class _NotificationDesktopDetailPageState
               itemBuilder: (context, index) {
                 String date = grouped.keys.elementAt(index);
                 List<Map<String, dynamic>> items = grouped[date]!;
-                
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -93,7 +94,8 @@ class _NotificationDesktopDetailPageState
                     Container(
                       width: double.infinity,
                       color: const Color(0xFFF9FAFB),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Text(
                         date,
                         style: const TextStyle(
@@ -117,9 +119,12 @@ class _NotificationDesktopDetailPageState
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFF3F4F6) : Colors.white,
+                            color: isSelected
+                                ? const Color(0xFFF3F4F6)
+                                : Colors.white,
                             border: const Border(
-                              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1),
+                              bottom: BorderSide(
+                                  color: Color(0xFFF3F4F6), width: 1),
                             ),
                           ),
                           padding: const EdgeInsets.all(16),
@@ -137,7 +142,9 @@ class _NotificationDesktopDetailPageState
                                             item["title"],
                                             style: TextStyle(
                                               fontSize: 15,
-                                              fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                              fontWeight: isRead
+                                                  ? FontWeight.w500
+                                                  : FontWeight.bold,
                                               color: const Color(0xFF111827),
                                             ),
                                             overflow: TextOverflow.ellipsis,
@@ -180,19 +187,28 @@ class _NotificationDesktopDetailPageState
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: isRead ? Colors.white : const Color(0xFFEFF6FF),
+                                      color: isRead
+                                          ? Colors.white
+                                          : const Color(0xFFEFF6FF),
                                       border: Border.all(
-                                        color: isRead ? const Color(0xFFE5E7EB) : const Color(0xFFBFDBFE),
+                                        color: isRead
+                                            ? const Color(0xFFE5E7EB)
+                                            : const Color(0xFFBFDBFE),
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      isRead ? 'notification.msg.read'.tr() : 'notification.msg.new'.tr(),
+                                      isRead
+                                          ? 'notification.msg.read'.tr()
+                                          : 'notification.msg.new'.tr(),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: isRead ? const Color(0xFF9CA3AF) : const Color(0xFF0262EC),
+                                        color: isRead
+                                            ? const Color(0xFF9CA3AF)
+                                            : const Color(0xFF0262EC),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -229,7 +245,7 @@ class _NotificationDesktopDetailPageState
                 color: const Color(0xFFFDE68A), // Light yellowish for bell icon
               ),
               const SizedBox(height: 24),
-               Text(
+              Text(
                 'notification.common.tapForDetail'.tr(),
                 style: const TextStyle(
                   fontSize: 20,
@@ -238,7 +254,7 @@ class _NotificationDesktopDetailPageState
                 ),
               ),
               const SizedBox(height: 8),
-               Text(
+              Text(
                 'notification.common.emptyCaseAlerts'.tr(),
                 style: const TextStyle(
                   fontSize: 14,
@@ -283,7 +299,9 @@ class _NotificationDesktopDetailPageState
           const Divider(color: Color(0xFFE5E7EB)),
           const SizedBox(height: 32),
           Text(
-            selectedItem!["fullDetail"] ?? selectedItem!["detail"] ?? 'notification.common.noDetails'.tr(),
+            selectedItem!["fullDetail"] ??
+                selectedItem!["detail"] ??
+                'notification.common.noDetails'.tr(),
             style: const TextStyle(
               fontSize: 16,
               height: 1.6,

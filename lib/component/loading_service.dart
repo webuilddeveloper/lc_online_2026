@@ -624,13 +624,13 @@ class LoadingDemoScreen extends StatelessWidget {
   }
 
   ButtonStyle _btnStyle() => ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF1A1A1A),
-    foregroundColor: Colors.white,
-    elevation: 0,
-    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-  );
+        backgroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+      );
 }
 
 class _DemoTile extends StatelessWidget {

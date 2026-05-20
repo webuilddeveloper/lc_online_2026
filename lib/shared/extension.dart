@@ -142,7 +142,6 @@ dateStringToDateStringFormatV2(String date, {String type = '/'}) {
   return result;
 }
 
-
 // List<Identity> toListModel(List<dynamic> model) {
 //   var list = new List<Identity>();
 //   model.forEach((element) {

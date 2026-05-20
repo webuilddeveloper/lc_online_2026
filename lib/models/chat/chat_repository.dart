@@ -8,23 +8,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //  พอพร้อมเชื่อม Firestore → เปลี่ยนเป็น FirestoreChatRepository
 //  ที่บรรทัดสุดท้ายของไฟล์นี้ (final ChatRepository chatRepository = ...)
 //  UI (message.dart, chat_page_user/lawyer) ไม่ต้องแก้เลย
-  // - getConversations() → ดึงรายการแชท
-  // - getMessages()      → stream ข้อความ realtime
-  // - sendMessage()      → ส่งข้อความ
-  // - endConversation()  → จบการสนทนา
+// - getConversations() → ดึงรายการแชท
+// - getMessages()      → stream ข้อความ realtime
+// - sendMessage()      → ส่งข้อความ
+// - endConversation()  → จบการสนทนา
 // ══════════════════════════════════════════════════════════
 
 // ── Model ──────────────────────────────────────────────────────
 class Conversation {
   final String id;
   final String name;
-  final String avatar;       // ตัวอักษรหรือ imageUrl
-  final bool avatarIsImage;  // true = imageUrl, false = ตัวอักษร
+  final String avatar; // ตัวอักษรหรือ imageUrl
+  final bool avatarIsImage; // true = imageUrl, false = ตัวอักษร
   final int clientColor;
   final String lastChat;
   final String lastChatDate;
   final int unreadCount;
-  final bool caseSuccess;    // true = จบงานแล้ว ปิดแชท
+  final bool caseSuccess; // true = จบงานแล้ว ปิดแชท
 
   const Conversation({
     required this.id,
@@ -236,7 +236,6 @@ class FirestoreChatRepository implements ChatRepository {
     });
   }
 }
-
 
 final ChatRepository chatRepository = MockChatRepository();
 // final ChatRepository chatRepository = FirestoreChatRepository();

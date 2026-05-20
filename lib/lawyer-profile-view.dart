@@ -85,7 +85,8 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: GestureDetector(
-          onTap: () => Navigator.pop(context), // หรือใส่เป็นฟังก์ชันกลับหน้าก่อนหน้าของคุณ
+          onTap: () => Navigator.pop(
+              context), // หรือใส่เป็นฟังก์ชันกลับหน้าก่อนหน้าของคุณ
           child: Container(
             margin: const EdgeInsets.fromLTRB(15, 8, 0, 8),
             decoration: BoxDecoration(
@@ -104,7 +105,8 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
             child: GestureDetector(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LawyerEditProfilePage()),
+                MaterialPageRoute(
+                    builder: (_) => const LawyerEditProfilePage()),
               ),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -324,8 +326,8 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.4)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.4)),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.star_rounded,

@@ -65,6 +65,7 @@ class UserProfileStore extends ChangeNotifier {
   UserModel? user;
   String typeLogin =
       'null'; // 'local' | 'google' | 'facebook' | 'line' | 'null'
+  String authToken = '';
   bool _loaded = false;
 
   // ── convenience getters ───────────────────────────────────────────────
@@ -77,6 +78,7 @@ class UserProfileStore extends ChangeNotifier {
   String get firstName => user?.firstName ?? '';
   String get lastName => user?.lastName ?? '';
   String get prefixName => user?.prefixName ?? '';
+  String get token => authToken;
   bool get isLoggedIn => typeLogin != 'null';
 
   // ── load จาก secure storage ──────────────────────────────────────────
@@ -94,6 +96,7 @@ class UserProfileStore extends ChangeNotifier {
   Future<void> _reload() async {
     try {
       typeLogin = await _storage.read(key: 'typeLogin') ?? 'null';
+      authToken = await _storage.read(key: 'authToken') ?? '';
 
       final code = await _storage.read(key: 'code') ?? '';
       if (code.isEmpty) {
@@ -135,17 +138,27 @@ class UserProfileStore extends ChangeNotifier {
       debugPrint('UserProfileStore._reload() error: $e');
       user = null;
       typeLogin = 'null';
+      authToken = '';
     }
     notifyListeners();
   }
 
   // ── setUser หลัง login / social login ────────────────────────────────
-  Future<void> setUser(UserModel model, {required String typeLogin}) async {
+  Future<void> setUser(
+    UserModel model, {
+    required String typeLogin,
+    String authToken = '',
+  }) async {
     user = model;
     this.typeLogin = typeLogin;
+    this.authToken = authToken;
     _loaded = true;
     notifyListeners(); // แสดง UI ก่อน แล้วค่อย persist
-    await _persistToStorage(model, typeLogin: typeLogin);
+    await _persistToStorage(
+      model,
+      typeLogin: typeLogin,
+      authToken: authToken,
+    );
   }
 
   // ── updateFromProfile หลัง save profile form สำเร็จ ──────────────────
@@ -186,6 +199,7 @@ class UserProfileStore extends ChangeNotifier {
   void reset() {
     user = null;
     typeLogin = 'null';
+    authToken = '';
     _loaded = false;
     notifyListeners();
   }
@@ -193,11 +207,13 @@ class UserProfileStore extends ChangeNotifier {
   Future<void> resetAndClear() async {
     user = null;
     typeLogin = 'null';
+    authToken = '';
     _loaded = false;
     notifyListeners();
 
     await Future.wait([
       _storage.delete(key: 'typeLogin'),
+      _storage.delete(key: 'authToken'),
       _storage.delete(key: 'code'),
       _storage.delete(key: 'userType'),
       _storage.delete(key: 'name'),
@@ -213,12 +229,16 @@ class UserProfileStore extends ChangeNotifier {
   }
 
   // ── persist ───────────────────────────────────────────────────────────
-  Future<void> _persistToStorage(UserModel m,
-      {required String typeLogin}) async {
+  Future<void> _persistToStorage(
+    UserModel m, {
+    required String typeLogin,
+    required String authToken,
+  }) async {
     final fullName =
         [m.firstName, m.lastName].where((s) => s.isNotEmpty).join(' ');
     await Future.wait([
       _storage.write(key: 'typeLogin', value: typeLogin),
+      _storage.write(key: 'authToken', value: authToken),
       _storage.write(key: 'code', value: m.code),
       _storage.write(key: 'userType', value: m.userType),
       _storage.write(key: 'name', value: fullName),

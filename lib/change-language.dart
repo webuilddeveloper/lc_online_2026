@@ -136,9 +136,7 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
               subtitle: "Japanese",
               flag: "🇯🇵",
             ),
-
             const Spacer(),
-
             GestureDetector(
               onTap: () async {
                 await context.setLocale(Locale(selectedLanguage));

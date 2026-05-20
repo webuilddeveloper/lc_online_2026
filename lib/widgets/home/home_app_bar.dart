@@ -30,8 +30,7 @@ class HomeAppBar extends StatefulWidget {
   State<HomeAppBar> createState() => _HomeAppBarState();
 }
 
-class _HomeAppBarState extends State<HomeAppBar>
-    with TickerProviderStateMixin {
+class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   // ── Pulse ring controllers ──────────────────────────────────────
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseScale;
@@ -206,8 +205,7 @@ class _HomeAppBarState extends State<HomeAppBar>
                                 ),
                                 const SizedBox(height: 2),
                                 ProfileMemberBadge(
-                                  userType:
-                                      UserProfileStore.instance.userType,
+                                  userType: UserProfileStore.instance.userType,
                                   isPro: LawyerProfileStore.instance.isPro &&
                                       UserProfileStore.instance.userType ==
                                           'lawyer',
@@ -242,7 +240,8 @@ class _HomeAppBarState extends State<HomeAppBar>
                                 color: const Color(0xFF1565C0).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFF1565C0).withOpacity(0.2),
+                                  color:
+                                      const Color(0xFF1565C0).withOpacity(0.2),
                                 ),
                               ),
                               child: Stack(
@@ -261,8 +260,7 @@ class _HomeAppBarState extends State<HomeAppBar>
                                       width: 9,
                                       height: 9,
                                       decoration: const BoxDecoration(
-                                        color:
-                                            Color.fromARGB(255, 247, 12, 12),
+                                        color: Color.fromARGB(255, 247, 12, 12),
                                         shape: BoxShape.circle,
                                       ),
                                     ),

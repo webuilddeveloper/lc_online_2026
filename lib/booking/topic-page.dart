@@ -44,11 +44,7 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
   ];
 
   final _caseTypeList = [
-    {
-      "code": "0",
-      "title": "ทั่วไป",
-      "subCase": []
-    },
+    {"code": "0", "title": "ทั่วไป", "subCase": []},
     {
       "code": "1",
       "title": "คดีที่พบบ่อย",
@@ -63,7 +59,6 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
         {"code": "7", "title": "พรากผู้เยาว์ / ความรุนแรงในครอบครัว"},
       ]
     },
-    
     {
       "code": "2",
       "title": "ครอบครัวและมรดก",
@@ -125,7 +120,10 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
         {"code": "1", "title": "ตรวจร่างสัญญา"},
         {"code": "2", "title": "ซื้อกิจการ / ควบรวมบริษัท"},
         {"code": "3", "title": "ภาษีอากร / บัญชี / การวางแผนภาษี"},
-        {"code": "5", "title": "ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)"},
+        {
+          "code": "5",
+          "title": "ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)"
+        },
         {"code": "6", "title": "นายหน้า / ตัวแทน"},
       ]
     },
@@ -156,7 +154,10 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
       "title": "ประกันภัยและผู้บริโภค",
       "subCase": [
         {"code": "0", "title": "ประกันภัย / เคลมประกัน คปภ."},
-        {"code": "1", "title": "คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)"},
+        {
+          "code": "1",
+          "title": "คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)"
+        },
         {"code": "2", "title": "อุบัติเหตุจราจร"},
         {"code": "3", "title": "ฟ้องแพทย์ / โรงพยาบาล / อาหารและยา"},
       ]
@@ -202,8 +203,8 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
     if (_search.isEmpty) return _caseTypeList;
     return _caseTypeList.where((item) {
       final title = (item['title'] as String).toLowerCase();
-      final sub = (item['subCase'] as List).any(
-          (s) => (s['title'] as String).toLowerCase().contains(_search.toLowerCase()));
+      final sub = (item['subCase'] as List).any((s) =>
+          (s['title'] as String).toLowerCase().contains(_search.toLowerCase()));
       return title.contains(_search.toLowerCase()) || sub;
     }).toList();
   }
@@ -279,14 +280,15 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
                           onHeaderTap: () {
                             HapticFeedback.selectionClick();
                             final subCases = (item['subCase'] as List)
-                                .where((s) => (s['title'] as String).trim().isNotEmpty)
+                                .where((s) =>
+                                    (s['title'] as String).trim().isNotEmpty)
                                 .toList();
                             if (subCases.isEmpty) {
                               // ไม่มี sub-case → navigate ไปเลย
                               _navigateToLawyer(item, {'title': ''});
                             } else {
-                              setState(() =>
-                                  _expandedIndex = isExpanded ? null : i);
+                              setState(
+                                  () => _expandedIndex = isExpanded ? null : i);
                             }
                           },
                           onSubTap: (sub) => _navigateToLawyer(item, sub),
@@ -319,8 +321,7 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          child: const Icon(Icons.gavel_rounded,
-              color: Colors.white, size: 18),
+          child: const Icon(Icons.gavel_rounded, color: Colors.white, size: 18),
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -433,9 +434,7 @@ class _CategoryCard extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isExpanded
-            ? const Color(0xFFEEF4FF)
-            : Colors.white,
+        color: isExpanded ? const Color(0xFFEEF4FF) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isExpanded
@@ -499,8 +498,8 @@ class _CategoryCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(13),
                       boxShadow: [
                         BoxShadow(
-                          color: palette.primary.withOpacity(
-                              isExpanded ? 0.5 : 0.25),
+                          color: palette.primary
+                              .withOpacity(isExpanded ? 0.5 : 0.25),
                           blurRadius: isExpanded ? 14 : 8,
                           offset: const Offset(0, 2),
                         ),
@@ -533,13 +532,17 @@ class _CategoryCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          subCases.isEmpty ? 'กดเพื่อเลือกทนายความ' : '${subCases.length} หัวข้อย่อย',
+                          subCases.isEmpty
+                              ? 'กดเพื่อเลือกทนายความ'
+                              : '${subCases.length} หัวข้อย่อย',
                           style: TextStyle(
                             color: subCases.isEmpty
                                 ? palette.primary
                                 : const Color(0xFF1A2340).withOpacity(0.35),
                             fontSize: 10,
-                            fontWeight: subCases.isEmpty ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight: subCases.isEmpty
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ],
@@ -560,9 +563,9 @@ class _CategoryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        subCases.isEmpty ?
-                        Icons.arrow_forward_ios_rounded :
-                        Icons.keyboard_arrow_down_rounded,
+                        subCases.isEmpty
+                            ? Icons.arrow_forward_ios_rounded
+                            : Icons.keyboard_arrow_down_rounded,
                         size: subCases.isEmpty ? 10 : 18,
                         color: isExpanded
                             ? palette.secondary
@@ -580,8 +583,7 @@ class _CategoryCard extends StatelessWidget {
               secondChild: Container(
                 decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(
-                        color: palette.primary.withOpacity(0.18)),
+                    top: BorderSide(color: palette.primary.withOpacity(0.18)),
                   ),
                 ),
                 child: Column(
@@ -611,10 +613,7 @@ class _CategoryCard extends StatelessWidget {
                             height: 6,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  palette.primary,
-                                  palette.secondary
-                                ],
+                                colors: [palette.primary, palette.secondary],
                               ),
                               shape: BoxShape.circle,
                             ),
@@ -625,7 +624,8 @@ class _CategoryCard extends StatelessWidget {
                               text: sub['title'] as String,
                               query: searchQuery,
                               style: TextStyle(
-                                color: const Color(0xFF1A2340).withOpacity(0.75),
+                                color:
+                                    const Color(0xFF1A2340).withOpacity(0.75),
                                 fontSize: 13,
                                 height: 1.4,
                               ),

@@ -194,10 +194,11 @@ class HomeUserSection extends StatelessWidget {
     final screenW = MediaQuery.of(context).size.width;
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final isTablet = ResponsiveLayout.isTablet(context);
-    
+
     // ความกว้างของกรอบเนื้อหา
-    final actualContentW = isDesktop ? math.min(screenW, RV.maxContentWidth(context)) : screenW;
-    
+    final actualContentW =
+        isDesktop ? math.min(screenW, RV.maxContentWidth(context)) : screenW;
+
     double cardW;
     if (isDesktop || isTablet) {
       // Desktop/Tablet: แบ่ง 2 คอลัมน์ให้พอดีกรอบ

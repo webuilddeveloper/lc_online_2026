@@ -2,13 +2,14 @@
 
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'dart:io';
 
+import 'package:LawyerOnline/core/config/api_config.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart';
@@ -18,16 +19,16 @@ import 'package:path_provider/path_provider.dart';
 // flutter build apk --build-name=4.0.0 --build-number=24
 // flutter build appbundle --build-name=4.0.0 --build-number=24
 
-const versionName = '4.1.8';
-const versionNumber = 418;
+const versionName = ApiConfig.versionName;
+const versionNumber = ApiConfig.versionNumber;
 
 // const server = 'http://122.155.223.63/td-lc-api/';
 // const server = 'http://localhost:5600/';
-const server = 'https://lc.we-builds.com/lc-api/';
-const serverUpload = 'https://lc.we-builds.com/lc-document/upload';
-const serverLineNoti = 'https://notify-api.line.me/api/notify';
-const serverOTP = 'https://portal-otp.smsmkt.com/api/';
-const serverElectionLc = 'http://122.155.223.63/td-election-lc-api/';
+const server = ApiConfig.apiBaseUrl;
+const serverUpload = ApiConfig.documentUploadUrl;
+const serverLineNoti = ApiConfig.lineNotifyUrl;
+const serverOTP = ApiConfig.otpBaseUrl;
+const serverElectionLc = ApiConfig.electionLcBaseUrl;
 // const serverElectionLc = 'http://lawyerselection2565.com/election-api/';
 
 const newsElectionLcApi = '${serverElectionLc}m/news/read';
@@ -155,6 +156,26 @@ const tracking4ReadApi = '${server}reporter/tr04/tracking/read';
 
 const reporterMemberConfigReadApi = '${server}configulation/read';
 
+Map<String, String> _jsonHeaders({bool includeAuth = true}) {
+  final headers = {
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+  };
+
+  final token = UserProfileStore.instance.token.trim();
+  if (includeAuth && token.isNotEmpty) {
+    headers["Authorization"] = "Bearer $token";
+  }
+
+  return headers;
+}
+
+Dio _createDio({bool includeAuth = true}) {
+  final dio = Dio();
+  dio.options.headers.addAll(_jsonHeaders(includeAuth: includeAuth));
+  return dio;
+}
+
 Future<dynamic> postCategory(String url, dynamic criteria) async {
   var body = json.encode({
     "permission": "all",
@@ -162,21 +183,16 @@ Future<dynamic> postCategory(String url, dynamic criteria) async {
     "limit": criteria['limit'] ?? 1,
     "code": criteria['code'] ?? '',
     "reference": criteria['reference'] ?? '',
-    "description":
-        criteria['description'] ?? '',
+    "description": criteria['description'] ?? '',
     "category": criteria['category'] ?? '',
     "keySearch": criteria['keySearch'] ?? '',
     "username": criteria['username'] ?? '',
-    "isHighlight":
-        criteria['isHighlight'] ?? false,
-    "isCategory":
-        criteria['isCategory'] ?? false,
+    "isHighlight": criteria['isHighlight'] ?? false,
+    "isCategory": criteria['isCategory'] ?? false,
   });
 
-  var response = await http.post(Uri.parse(url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response =
+      await http.post(Uri.parse(url), body: body, headers: _jsonHeaders());
 
   var data = json.decode(response.body);
 
@@ -197,8 +213,7 @@ Future<dynamic> post(String url, dynamic criteria) async {
     "limit": criteria['limit'] ?? 1,
     "code": criteria['code'] ?? '',
     "reference": criteria['reference'] ?? '',
-    "description":
-        criteria['description'] ?? '',
+    "description": criteria['description'] ?? '',
     "category": criteria['category'] ?? '',
     "keySearch": criteria['keySearch'] ?? '',
     "username": criteria['username'] ?? '',
@@ -208,22 +223,17 @@ Future<dynamic> post(String url, dynamic criteria) async {
     "lastName": criteria['lastName'] ?? '',
     "title": criteria['title'] ?? '',
     "answer": criteria['answer'] ?? '',
-    "isHighlight":
-        criteria['isHighlight'] ?? false,
+    "isHighlight": criteria['isHighlight'] ?? false,
     "createBy": criteria['createBy'] ?? '',
     "isPublic": criteria['isPublic'] ?? false,
     "imageList": criteria['imageList'] ?? [],
-    "profileCode":
-        criteria['profileCode'] ?? '',
-    "isCategory":
-        criteria['isCategory'] ?? false,
+    "profileCode": criteria['profileCode'] ?? '',
+    "isCategory": criteria['isCategory'] ?? false,
     "idcard": criteria['idcard'] ?? false,
   });
 
-  var response = await http.post(Uri.parse(url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response =
+      await http.post(Uri.parse(url), body: body, headers: _jsonHeaders());
 
   var data = json.decode(response.body);
   return Future.value(data['objectData']);
@@ -241,14 +251,11 @@ Future<dynamic> postAny(String url, dynamic criteria) async {
     "createBy": criteria['createBy'] ?? '',
     "imageUrlCreateBy": criteria['imageUrlCreateBy'] ?? '',
     "reference": criteria['reference'] ?? '',
-    "description":
-        criteria['description'] ?? '',
+    "description": criteria['description'] ?? '',
   });
 
-  var response = await http.post(Uri.parse(url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response =
+      await http.post(Uri.parse(url), body: body, headers: _jsonHeaders());
 
   var data = json.decode(response.body);
 
@@ -264,14 +271,11 @@ Future<dynamic> postAnyObj(String url, dynamic criteria) async {
     "createBy": criteria['createBy'] ?? '',
     "imageUrlCreateBy": criteria['imageUrlCreateBy'] ?? '',
     "reference": criteria['reference'] ?? '',
-    "description":
-        criteria['description'] ?? '',
+    "description": criteria['description'] ?? '',
   });
 
-  var response = await http.post(Uri.parse(url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response =
+      await http.post(Uri.parse(url), body: body, headers: _jsonHeaders());
 
   var data = json.decode(response.body);
 
@@ -286,10 +290,11 @@ Future<dynamic> postLogin(String url, dynamic criteria) async {
     "email": criteria['email'] ?? '',
   });
 
-  var response = await http.post(Uri.parse(url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response = await http.post(
+    Uri.parse(url),
+    body: body,
+    headers: _jsonHeaders(includeAuth: false),
+  );
 
   var data = json.decode(response.body);
 
@@ -299,10 +304,8 @@ Future<dynamic> postLogin(String url, dynamic criteria) async {
 Future<dynamic> postObjectData(String url, dynamic criteria) async {
   var body = json.encode(criteria);
 
-  var response = await http.post(Uri.parse(server + url), body: body, headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  });
+  var response = await http.post(Uri.parse(server + url),
+      body: body, headers: _jsonHeaders());
   // ignore: avoid_print
   print('_+_+_+_+__+ ${response.statusCode}');
 
@@ -325,10 +328,7 @@ Future<dynamic> postConfigShare() async {
   var response = await http.post(
       Uri.parse('${server}configulation/shared/read'),
       body: body,
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      });
+      headers: _jsonHeaders());
 
   if (response.statusCode == 200) {
     var data = json.decode(response.body);
@@ -353,7 +353,7 @@ Future<File> convertimageTofile(imgUrl) async {
 
 //upload with dio
 Future<String> uploadImage(File file) async {
-  Dio dio = Dio();
+  Dio dio = _createDio();
   String fileName = file.path.split('/').last;
   FormData formData = FormData.fromMap({
     "ImageCaption": "flutter",
@@ -366,7 +366,7 @@ Future<String> uploadImage(File file) async {
 }
 
 Future<String> uploadImageX(XFile file) async {
-  Dio dio = Dio();
+  Dio dio = _createDio();
   String fileName = file.path.split('/').last;
   FormData formData = FormData.fromMap({
     "ImageCaption": "flutter",
@@ -433,7 +433,7 @@ Future<dynamic> postDio(String url, dynamic criteria) async {
   if (profileCode != '' && profileCode != null) {
     criteria = {'profileCode': profileCode, ...criteria};
   }
-  Dio dio = Dio();
+  Dio dio = _createDio();
   try {
     var response = await dio.post(url, data: criteria);
     // print(response.data['objectData'].toString());
@@ -441,7 +441,7 @@ Future<dynamic> postDio(String url, dynamic criteria) async {
     //   response.data['objectData']['status2'] = 'S';
     // }
     return Future.value(response.data['objectData']);
-  // ignore: unused_catch_clause
+    // ignore: unused_catch_clause
   } on DioError catch (e) {
     return null;
     // throw Exception();
@@ -460,7 +460,7 @@ Future<dynamic> postDioCategory(String url, dynamic criteria) async {
     criteria = {'profileCode': profileCode, ...criteria};
   }
 
-  Dio dio = Dio();
+  Dio dio = _createDio();
   var response = await dio.post(url, data: criteria);
 
   List<dynamic> list = [
@@ -477,7 +477,7 @@ Future<dynamic> postDioMessage(String url, dynamic criteria) async {
   if (profileCode != '' && profileCode != null) {
     criteria = {'profileCode': profileCode, ...criteria};
   }
-  Dio dio = Dio();
+  Dio dio = _createDio();
   // print('-----dio criteria-----' + criteria.toString());
   var response = await dio.post(url, data: criteria);
   // print('-----dio message-----' + response.data['objectData'].toString());
@@ -525,7 +525,7 @@ Future<dynamic> postDioCategoryWeMart(String url, dynamic criteria) async {
     criteria = {'profileCode': profileCode, ...criteria};
   }
 
-  Dio dio = Dio();
+  Dio dio = _createDio();
   var response = await dio.post(url, data: criteria);
   var data = response.data['objectData'];
 
@@ -548,7 +548,7 @@ Future<dynamic> postDioCategoryWeMartNoAll(String url, dynamic criteria) async {
     criteria = {'profileCode': profileCode, ...criteria};
   }
 
-  Dio dio = Dio();
+  Dio dio = _createDio();
   var response = await dio.post(url, data: criteria);
   var data = response.data['objectData'];
 
@@ -587,7 +587,7 @@ Future<void> postTrackClick(String button) async {
   };
 // print('-----dio uri-----' + server + "trackClick/create");
 // print('-----dio criteria-----' + criteria.toString());
-  Dio dio = Dio();
+  Dio dio = _createDio();
   dio.post("${server}trackClick/create", data: criteria);
 }
 

@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/login.dart';
 
-
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -562,12 +561,13 @@ class _RegisterPageState extends State<RegisterPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-               Text('alreadyHaveAccount'.tr(),
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
+              Text('alreadyHaveAccount'.tr(),
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child:  Text('loginLink'.tr(),
-                    style: const  TextStyle(
+                child: Text('loginLink'.tr(),
+                    style: const TextStyle(
                         fontSize: 13,
                         color: _blue,
                         fontWeight: FontWeight.w600)),
@@ -668,9 +668,11 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildTypeSelector() {
     return Row(
       children: [
-        _typeChip('client', Icons.person_rounded, 'clientType'.tr(), 'clientTypeSub'.tr()),
+        _typeChip('client', Icons.person_rounded, 'clientType'.tr(),
+            'clientTypeSub'.tr()),
         const SizedBox(width: 10),
-        _typeChip('lawyer', Icons.gavel_rounded, 'lawyerType'.tr(), 'lawyerTypeSub'.tr()),
+        _typeChip('lawyer', Icons.gavel_rounded, 'lawyerType'.tr(),
+            'lawyerTypeSub'.tr()),
       ],
     );
   }
@@ -767,7 +769,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: const TextStyle(
                           color: _blue, fontWeight: FontWeight.w600),
                     ),
-                   TextSpan(text: 'privacyPolicy'.tr()),
+                  TextSpan(text: 'privacyPolicy'.tr()),
                 ],
               ),
             ),
@@ -805,7 +807,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2.5),
                 )
-              :  Text('register'.tr(),
+              : Text('register'.tr(),
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,

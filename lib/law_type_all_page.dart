@@ -111,7 +111,10 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
         {'code': '1', 'title': 'ตรวจร่างสัญญา'},
         {'code': '2', 'title': 'ซื้อกิจการ / ควบรวมบริษัท'},
         {'code': '3', 'title': 'ภาษีอากร / บัญชี / การวางแผนภาษี'},
-        {'code': '5', 'title': 'ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)'},
+        {
+          'code': '5',
+          'title': 'ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)'
+        },
         {'code': '6', 'title': 'นายหน้า / ตัวแทน'},
       ],
     },
@@ -148,7 +151,10 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
       'color': 0xFFDB2777,
       'subCase': [
         {'code': '0', 'title': 'ประกันภัย / เคลมประกัน คปภ.'},
-        {'code': '1', 'title': 'คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)'},
+        {
+          'code': '1',
+          'title': 'คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)'
+        },
         {'code': '2', 'title': 'อุบัติเหตุจราจร'},
         {'code': '3', 'title': 'ฟ้องแพทย์ / โรงพยาบาล / อาหารและยา'},
       ],
@@ -201,11 +207,14 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
 
   void _navigate(Map<String, dynamic> topic) {
     HapticFeedback.lightImpact();
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => LawyerOnlineList(topic: topic['title'] as String, subTopic: _selectedSubTopic['title'],),
+        builder: (_) => LawyerOnlineList(
+          topic: topic['title'] as String,
+          subTopic: _selectedSubTopic['title'],
+        ),
       ),
     );
   }
@@ -346,9 +355,8 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.1)
-                  : const Color(0xFFF8F9FB),
+              color:
+                  isSelected ? color.withOpacity(0.1) : const Color(0xFFF8F9FB),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isSelected ? color : const Color(0xFFE2E8F4),
@@ -381,8 +389,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                       fontSize: 10,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color:
-                          isSelected ? color : const Color(0xFF5B6E8A),
+                      color: isSelected ? color : const Color(0xFF5B6E8A),
                     ),
                   ),
                 ),
@@ -406,8 +413,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           Container(
             width: 8,
             height: 8,
-            decoration:
-                BoxDecoration(color: color, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -445,13 +451,12 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                   _navigate(_selectedTopic!);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 13),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                   decoration: BoxDecoration(
                     border: !isLast
                         ? const Border(
-                            bottom: BorderSide(
-                                color: Color(0xFFF0F4F8)))
+                            bottom: BorderSide(color: Color(0xFFF0F4F8)))
                         : null,
                   ),
                   child: Row(children: [
@@ -469,16 +474,14 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                         sub['title'] as String,
                         style: TextStyle(
                           fontSize: 13,
-                          color:
-                              const Color(0xFF1A2340).withOpacity(0.75),
+                          color: const Color(0xFF1A2340).withOpacity(0.75),
                           height: 1.4,
                         ),
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
                         size: 11,
-                        color:
-                            const Color(0xFF1A2340).withOpacity(0.2)),
+                        color: const Color(0xFF1A2340).withOpacity(0.2)),
                   ]),
                 ),
               );
@@ -500,8 +503,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             decoration: const BoxDecoration(
                 color: Color(0xFFF0F4F8), shape: BoxShape.circle),
             child: Icon(Icons.search_off_rounded,
-                color: const Color(0xFF1A2340).withOpacity(0.25),
-                size: 28),
+                color: const Color(0xFF1A2340).withOpacity(0.25), size: 28),
           ),
           const SizedBox(height: 12),
           Text('ไม่พบ "$_search"',

@@ -213,8 +213,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       child: Column(
         children: [
           const SizedBox(height: 10),
-          _selectCategory(
-              title: 'appointmentDay'.tr(), list: postCategoryList),
+          _selectCategory(title: 'appointmentDay'.tr(), list: postCategoryList),
           const SizedBox(height: 30),
           _buildTimeSlotSection(),
           const SizedBox(height: 30),
@@ -301,23 +300,18 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           ),
         ),
         const SizedBox(height: 16),
-
         _buildTimePeriod(
           title: 'timeMorning'.tr(),
           subtitle: 'timeMorningRange'.tr(),
           timeSlots: ['08:00', '09:00', '10:00', '11:00'],
         ),
-
         const SizedBox(height: 16),
-
         _buildTimePeriod(
           title: 'timeAfternoon'.tr(),
           subtitle: 'timeAfternoonRange'.tr(),
           timeSlots: ['13:00', '14:00', '15:00', '16:00', '17:00'],
         ),
-
         const SizedBox(height: 16),
-
         _buildTimePeriod(
           title: 'timeEvening'.tr(),
           subtitle: 'timeEveningRange'.tr(),
@@ -493,7 +487,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           ],
         ),
         const SizedBox(height: 8),
-
         TextField(
           controller: costPerHrController,
           enabled: isLawyerPro,
@@ -542,7 +535,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
             filled: true,
           ),
         ),
-
         const SizedBox(height: 8),
         if (!isLawyerPro) ...[
           Container(

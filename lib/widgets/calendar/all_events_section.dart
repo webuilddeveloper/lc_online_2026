@@ -27,8 +27,7 @@ class AllAppointmentsViewMobile extends StatelessWidget {
   Widget build(BuildContext context) {
     final sortedEntries = itemEvents.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final totalEvents =
-        sortedEntries.fold(0, (sum, e) => sum + e.value.length);
+    final totalEvents = sortedEntries.fold(0, (sum, e) => sum + e.value.length);
 
     return Container(
       key: const ValueKey('allView'),
@@ -75,7 +74,8 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.event_busy_rounded, size: 52, color: kBorder),
+                        Icon(Icons.event_busy_rounded,
+                            size: 52, color: kBorder),
                         const SizedBox(height: 12),
                         Text('calendar.noAppt'.tr(),
                             style:
@@ -89,8 +89,8 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: sortedEntries.length,
                     itemBuilder: (_, i) {
-                      final date    = sortedEntries[i].key;
-                      final events  = sortedEntries[i].value;
+                      final date = sortedEntries[i].key;
+                      final events = sortedEntries[i].value;
                       final dayName = 'calendar.dayFull.${date.weekday}'.tr();
                       final dateLabel =
                           '${date.day} ${'calendar.monthFull.${date.month}'.tr()} ${calYearLabel(date.year)}';
@@ -101,8 +101,7 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                         children: [
                           // date header
                           Padding(
-                            padding:
-                                const EdgeInsets.only(top: 16, bottom: 8),
+                            padding: const EdgeInsets.only(top: 16, bottom: 8),
                             child: Row(
                               children: [
                                 Container(
@@ -117,23 +116,18 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                                       style: GoogleFonts.prompt(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w700,
-                                        color: isToday
-                                            ? Colors.white
-                                            : kText,
+                                        color: isToday ? Colors.white : kText,
                                       )),
                                 ),
                                 const SizedBox(width: 10),
                                 Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('${'calendar.dayPrefix'.tr()}$dayName',
                                         style: GoogleFonts.prompt(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: isToday
-                                                ? kPrimary
-                                                : kSub)),
+                                            color: isToday ? kPrimary : kSub)),
                                     Text(dateLabel,
                                         style: GoogleFonts.prompt(
                                             fontSize: 11, color: kSub)),
@@ -158,8 +152,8 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                           ),
                           // event cards
                           ...events.map((entry) {
-                            final ev    = entry as Map;
-                            final sh    = (ev['startHour'] as int? ?? 9);
+                            final ev = entry as Map;
+                            final sh = (ev['startHour'] as int? ?? 9);
                             final color = periodColor(sh);
                             return GestureDetector(
                               onTap: () => onEventTap(ev),
@@ -170,8 +164,7 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                                   color: color.withOpacity(0.06),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                      color: color.withOpacity(0.25),
-                                      width: 1),
+                                      color: color.withOpacity(0.25), width: 1),
                                 ),
                                 child: Row(
                                   children: [
@@ -195,24 +188,18 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                                                   fontWeight: FontWeight.w600,
                                                   color: kText),
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis),
+                                              overflow: TextOverflow.ellipsis),
                                           const SizedBox(height: 3),
                                           Row(children: [
                                             Icon(Icons.access_time_rounded,
                                                 size: 12, color: kSub),
                                             const SizedBox(width: 4),
-                                            Text(
-                                                ev['appointmentTime'] ?? '',
+                                            Text(ev['appointmentTime'] ?? '',
                                                 style: GoogleFonts.prompt(
-                                                    fontSize: 11,
-                                                    color: kSub)),
+                                                    fontSize: 11, color: kSub)),
                                             const SizedBox(width: 8),
-                                            Icon(
-                                                Icons
-                                                    .person_outline_rounded,
-                                                size: 12,
-                                                color: kSub),
+                                            Icon(Icons.person_outline_rounded,
+                                                size: 12, color: kSub),
                                             const SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
@@ -221,8 +208,8 @@ class AllAppointmentsViewMobile extends StatelessWidget {
                                                       fontSize: 11,
                                                       color: kSub),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow
-                                                      .ellipsis),
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
                                             ),
                                           ]),
                                         ],
@@ -267,8 +254,7 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
   Widget build(BuildContext context) {
     final sortedEntries = itemEvents.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final totalEvents =
-        sortedEntries.fold(0, (sum, e) => sum + e.value.length);
+    final totalEvents = sortedEntries.fold(0, (sum, e) => sum + e.value.length);
 
     return Container(
       decoration: BoxDecoration(
@@ -293,8 +279,8 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                         color: kText)),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: kPrimary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -321,8 +307,8 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                             size: 40, color: kBorder),
                         const SizedBox(height: 8),
                         Text('calendar.noAppt'.tr(),
-                            style: GoogleFonts.prompt(
-                                color: kSub, fontSize: 13)),
+                            style:
+                                GoogleFonts.prompt(color: kSub, fontSize: 13)),
                       ],
                     ),
                   )
@@ -332,8 +318,8 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                     itemCount: sortedEntries.length,
                     itemBuilder: (_, i) {
-                      final date    = sortedEntries[i].key;
-                      final events  = sortedEntries[i].value;
+                      final date = sortedEntries[i].key;
+                      final events = sortedEntries[i].value;
                       final isToday = isSameDay(date, DateTime.now());
                       final dayName = 'calendar.dayFull.${date.weekday}'.tr();
                       final dateLabel =
@@ -344,8 +330,7 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                         children: [
                           // date header
                           Padding(
-                            padding: const EdgeInsets.only(
-                                top: 12, bottom: 6),
+                            padding: const EdgeInsets.only(top: 12, bottom: 6),
                             child: Row(
                               children: [
                                 Container(
@@ -353,17 +338,14 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                                   height: 36,
                                   decoration: BoxDecoration(
                                     color: isToday ? kPrimary : kSurface,
-                                    borderRadius:
-                                        BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text('${date.day}',
                                       style: GoogleFonts.prompt(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: isToday
-                                            ? Colors.white
-                                            : kText,
+                                        color: isToday ? Colors.white : kText,
                                       )),
                                 ),
                                 const SizedBox(width: 8),
@@ -372,17 +354,16 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text('${'calendar.dayPrefix'.tr()}$dayName',
+                                      Text(
+                                          '${'calendar.dayPrefix'.tr()}$dayName',
                                           style: GoogleFonts.prompt(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: isToday
-                                                  ? kPrimary
-                                                  : kSub)),
+                                              color:
+                                                  isToday ? kPrimary : kSub)),
                                       Text(dateLabel,
                                           style: GoogleFonts.prompt(
-                                              fontSize: 10,
-                                              color: kSub)),
+                                              fontSize: 10, color: kSub)),
                                     ],
                                   ),
                                 ),
@@ -391,8 +372,7 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                                       horizontal: 6, vertical: 1),
                                   decoration: BoxDecoration(
                                     color: kSurface,
-                                    borderRadius:
-                                        BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   // FIX: was hardcoded '${events.length} นัด'
                                   child: Text(
@@ -405,19 +385,17 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                           ),
                           // event cards
                           ...events.map((entry) {
-                            final ev    = entry as Map;
-                            final sh    = (ev['startHour'] as int? ?? 9);
+                            final ev = entry as Map;
+                            final sh = (ev['startHour'] as int? ?? 9);
                             final color = periodColor(sh);
                             return GestureDetector(
                               onTap: () => onEventTap(ev),
                               child: Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: 6),
+                                margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: color.withOpacity(0.06),
-                                  borderRadius:
-                                      BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                       color: color.withOpacity(0.25)),
                                 ),
@@ -428,8 +406,7 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                                       height: 36,
                                       decoration: BoxDecoration(
                                         color: color,
-                                        borderRadius:
-                                            BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -441,18 +418,13 @@ class AllAppointmentsViewDesktop extends StatelessWidget {
                                           Text(ev['title'] ?? '',
                                               style: GoogleFonts.prompt(
                                                   fontSize: 12,
-                                                  fontWeight:
-                                                      FontWeight.w600,
+                                                  fontWeight: FontWeight.w600,
                                                   color: kText),
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis),
-                                          Text(
-                                              ev['appointmentTime'] ??
-                                                  '',
+                                              overflow: TextOverflow.ellipsis),
+                                          Text(ev['appointmentTime'] ?? '',
                                               style: GoogleFonts.prompt(
-                                                  fontSize: 10,
-                                                  color: kSub)),
+                                                  fontSize: 10, color: kSub)),
                                         ],
                                       ),
                                     ),

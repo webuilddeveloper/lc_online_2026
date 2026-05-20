@@ -163,8 +163,9 @@ class _ChatPageUserState extends State<ChatPageUser>
               ),
             ),
             name: model['name'] ?? '',
-            statusText:
-                caseSuccess ? null : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
+            statusText: caseSuccess
+                ? null
+                : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
             actions: !caseSuccess
                 ? Row(
                     mainAxisSize: MainAxisSize.min,

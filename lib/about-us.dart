@@ -147,18 +147,17 @@ class AboutUsPage extends StatelessWidget {
             child: Column(
               children: [
                 menuItem(
-                  icon: Icons.privacy_tip_outlined,
-                  title: "privacyPolicy".tr(),
-                  value: "",
-                  onTap: () => {
+                    icon: Icons.privacy_tip_outlined,
+                    title: "privacyPolicy".tr(),
+                    value: "",
+                    onTap: () => {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const PrivacyPolicyPage(),
                             ),
                           ),
-                        }
-                ),
+                        }),
                 const Divider(),
                 menuItem(
                     icon: Icons.description_outlined,

@@ -46,11 +46,12 @@ class _PostDetailsState extends State<PostDetails> {
             height: 20,
           ),
           _postCard(),
-          model['lawyerApprove'] ? const SizedBox(
-            height: 20,
-          ) : Container(),
-          model['lawyerApprove'] ?
-          _lawyerCard() : Container(),
+          model['lawyerApprove']
+              ? const SizedBox(
+                  height: 20,
+                )
+              : Container(),
+          model['lawyerApprove'] ? _lawyerCard() : Container(),
           // _bookingCard(),
           const SizedBox(
             height: 20,
@@ -177,12 +178,13 @@ class _PostDetailsState extends State<PostDetails> {
     return GestureDetector(
       onTap: () {
         Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LawyerOnlineDetails(code: model['lawyerModel']['code'],),
-                  ),
-                );
-        
+          context,
+          MaterialPageRoute(
+            builder: (context) => LawyerOnlineDetails(
+              code: model['lawyerModel']['code'],
+            ),
+          ),
+        );
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -205,7 +207,7 @@ class _PostDetailsState extends State<PostDetails> {
                       fit: BoxFit.contain,
                     ),
                   ),
-      
+
                   // BG ขวา
                   Positioned(
                     right: 0,
@@ -217,7 +219,7 @@ class _PostDetailsState extends State<PostDetails> {
                       fit: BoxFit.contain,
                     ),
                   ),
-      
+
                   // AVATAR
                   Positioned(
                     right: 0,
@@ -229,11 +231,11 @@ class _PostDetailsState extends State<PostDetails> {
                       fit: BoxFit.contain,
                     ),
                   ),
-      
+
                   // CONTENT CARD
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 15),
                     child: Row(
                       children: [
                         Expanded(
@@ -251,7 +253,8 @@ class _PostDetailsState extends State<PostDetails> {
                               const SizedBox(height: 10),
                               Text(
                                 model['name'] ?? '-',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               // const SizedBox(height: 10),
                               Text(
@@ -261,14 +264,16 @@ class _PostDetailsState extends State<PostDetails> {
                                   color: model['lawyerModel']['scroll'] >= 5
                                       ? const Color(0xFF0262EC)
                                       : model['lawyerModel']['scroll'] >= 3
-                                          ? const Color.fromARGB(255, 75, 190, 18)
+                                          ? const Color.fromARGB(
+                                              255, 75, 190, 18)
                                           : model['lawyerModel']['scroll'] >= 2
                                               ? const Color.fromARGB(
                                                   255, 200, 200, 26)
-                                              : Color.fromARGB(255, 226, 59, 30),
+                                              : Color.fromARGB(
+                                                  255, 226, 59, 30),
                                 ),
                               ),
-                              
+
                               const SizedBox(height: 10),
                               Text(
                                 '${model['lawyerModel']['cost']}',

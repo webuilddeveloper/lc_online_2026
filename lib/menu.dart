@@ -264,7 +264,8 @@ class _BottomNavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Center(  // ← ใส่ Center หุ้มเพื่อให้ AnimatedContainer อยู่กลาง
+      child: Center(
+        // ← ใส่ Center หุ้มเพื่อให้ AnimatedContainer อยู่กลาง
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,

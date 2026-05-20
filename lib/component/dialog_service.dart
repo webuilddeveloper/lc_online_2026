@@ -109,7 +109,8 @@ class DialogService {
   }
 
   /// CONFIRM DELETE ACCOUNT
-  static showConfirmDeleteAccount(BuildContext context, {required Function(String) onConfirm}) {
+  static showConfirmDeleteAccount(BuildContext context,
+      {required Function(String) onConfirm}) {
     final TextEditingController passwordController = TextEditingController();
     bool obscureText = true;
     String? errorMsg;
@@ -118,136 +119,151 @@ class DialogService {
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        return StatefulBuilder(builder: (context, setState) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: RV.dialogMaxWidth(context),
+                minWidth: RV.dialogMinWidth(context),
               ),
-              insetPadding:
-                  const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: RV.dialogMaxWidth(context),
-                  minWidth: RV.dialogMinWidth(context),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 60,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 10),
-                       Text(
-                        "confirmDeleteTitle".tr(),
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 10),
-                       Text(
-                        "confirmDeleteDesc".tr(),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscureText,
-                        onChanged: (val) {
-                          if (errorMsg != null) setState(() => errorMsg = null);
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'passwordPlaceholder'.tr(),
-                          errorText: errorMsg,
-                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                            onPressed: () {
-                              setState(() {
-                                obscureText = !obscureText;
-                              });
-                            },
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: errorMsg != null ? Colors.red : const Color(0xFFECEDF0)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: errorMsg != null ? Colors.red : const Color(0xFF0262EC),
-                              width: 1.5,
-                            ),
-                          ),
-                          fillColor: errorMsg != null ? Colors.red.withOpacity(0.04) : const Color(0xFFFAFAFA),
-                          filled: true,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 60,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "confirmDeleteTitle".tr(),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "confirmDeleteDesc".tr(),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: obscureText,
+                      onChanged: (val) {
+                        if (errorMsg != null) setState(() => errorMsg = null);
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'passwordPlaceholder'.tr(),
+                        errorText: errorMsg,
+                        prefixIcon:
+                            const Icon(Icons.lock_outline, color: Colors.grey),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                              obscureText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              obscureText = !obscureText;
+                            });
+                          },
                         ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: errorMsg != null
+                                  ? Colors.red
+                                  : const Color(0xFFECEDF0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: errorMsg != null
+                                  ? Colors.red
+                                  : const Color(0xFFECEDF0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: errorMsg != null
+                                ? Colors.red
+                                : const Color(0xFF0262EC),
+                            width: 1.5,
+                          ),
+                        ),
+                        fillColor: errorMsg != null
+                            ? Colors.red.withOpacity(0.04)
+                            : const Color(0xFFFAFAFA),
+                        filled: true,
                       ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size(0, 55),
-                                side: const BorderSide(
-                                    color: Color(0xFF0262EC), width: 1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 55),
+                              side: const BorderSide(
+                                  color: Color(0xFF0262EC), width: 1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(100),
                               ),
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                "cancel".tr(),
-                                style: const TextStyle(
-                                  color: Color(0xFF0262EC),
-                                  fontSize: 16,
-                                ),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              "cancel".tr(),
+                              style: const TextStyle(
+                                color: Color(0xFF0262EC),
+                                fontSize: 16,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(0, 55),
-                                backgroundColor: const Color(0xD2FF0000),
-                              ),
-                              onPressed: () {
-                                if (passwordController.text.trim().isEmpty) {
-                                  setState(() => errorMsg = "กรุณากรอกรหัสผ่าน");
-                                  return;
-                                }
-                                Navigator.pop(context);
-                                onConfirm(passwordController.text.trim());
-                              },
-                              child:  Text(
-                                "deleteAccount".tr(),
-                                style: const  TextStyle(
-                                  color: Color(0xFFFFFFFF),
-                                  fontSize: 16,
-                                ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(0, 55),
+                              backgroundColor: const Color(0xD2FF0000),
+                            ),
+                            onPressed: () {
+                              if (passwordController.text.trim().isEmpty) {
+                                setState(() => errorMsg = "กรุณากรอกรหัสผ่าน");
+                                return;
+                              }
+                              Navigator.pop(context);
+                              onConfirm(passwordController.text.trim());
+                            },
+                            child: Text(
+                              "deleteAccount".tr(),
+                              style: const TextStyle(
+                                color: Color(0xFFFFFFFF),
+                                fontSize: 16,
                               ),
                             ),
-                          )
-                        ],
-                      )
-                    ],
-                  ),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
                 ),
               ),
-            );
-          }
-        );
+            ),
+          );
+        });
       },
     );
   }
@@ -627,7 +643,6 @@ class DialogService {
     );
   }
 
-
   /// LOADING
   static showLoading(BuildContext context) {
     showDialog(
@@ -731,9 +746,9 @@ class DialogService {
                       children: [
                         countdownBadge!,
                         const SizedBox(width: 10),
-                         Text(
+                        Text(
                           'redirecting'.tr(),
-                          style: const  TextStyle(
+                          style: const TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.w600,
                           ),

@@ -275,7 +275,9 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                   border: Border.all(color: const Color(0xFFF5A623)),
                 ),
                 child: Text(
-                  userType == 'lawyer' ? 'role.lawyer'.tr() : 'role.client'.tr(),
+                  userType == 'lawyer'
+                      ? 'role.lawyer'.tr()
+                      : 'role.client'.tr(),
                   style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFFF5A623),

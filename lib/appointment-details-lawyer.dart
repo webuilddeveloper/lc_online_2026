@@ -112,7 +112,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.4), width: 2),
             ),
             child: const Center(
               child: Icon(Icons.person_rounded, color: Colors.white, size: 28),
@@ -523,8 +524,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF0EE),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: _kDanger.withOpacity(0.3), width: 1.5),
+                  border:
+                      Border.all(color: _kDanger.withOpacity(0.3), width: 1.5),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -647,9 +648,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                     ? 'ต้องการยืนยันการนัดหมายนี้ใช่หรือไม่?'
                     : 'ต้องการปฏิเสธการนัดหมายนี้ใช่หรือไม่?',
                 style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                    height: 1.4),
+                    fontSize: 13, color: Colors.grey[500], height: 1.4),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -799,8 +798,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                 isApprove
                     ? 'การนัดหมายได้รับการยืนยันแล้ว\nระบบจะแจ้งลูกความทันที'
                     : 'การนัดหมายถูกปฏิเสธแล้ว\nระบบจะแจ้งลูกความทันที',
-                style:
-                    TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.5),
+                style: TextStyle(
+                    fontSize: 13, color: Colors.grey[500], height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

@@ -38,7 +38,6 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
   String? selectedCategory = "0";
   String? selectedCategoryTitle = "";
 
-
   int? trueCount;
 
   @override
@@ -146,7 +145,8 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value;
-                  selectedCategoryTitle = postCategoryList.firstWhere((x) => x['code'] == value)['title'];
+                  selectedCategoryTitle = postCategoryList
+                      .firstWhere((x) => x['code'] == value)['title'];
                 });
               },
             ),

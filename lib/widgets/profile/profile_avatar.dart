@@ -61,7 +61,8 @@ class ProfileAvatar extends StatelessWidget {
                   height: innerSize,
                   child: ClipOval(
                     child: imageUrl.isNotEmpty
-                        ? (imageUrl.startsWith('http') || imageUrl.startsWith('https'))
+                        ? (imageUrl.startsWith('http') ||
+                                imageUrl.startsWith('https'))
                             ? Image.network(imageUrl, fit: BoxFit.cover)
                             : Image.asset(imageUrl, fit: BoxFit.cover)
                         : Padding(
@@ -112,7 +113,8 @@ class ProfileMemberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = userType == 'lawyer' ? 'role.lawyer'.tr() : 'role.client'.tr();
+    final label =
+        userType == 'lawyer' ? 'role.lawyer'.tr() : 'role.client'.tr();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

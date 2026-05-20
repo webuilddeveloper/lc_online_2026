@@ -268,8 +268,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                           decoration: BoxDecoration(
                             color: const Color(0xFF34C759),
                             shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 2.5),
+                            border: Border.all(color: Colors.white, width: 2.5),
                           ),
                         ),
                       ),
@@ -277,8 +276,8 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.88),
                       borderRadius: BorderRadius.circular(20),
@@ -328,8 +327,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                                 .split(', ')
                                 .first,
                         style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 12),
+                            color: Colors.white.withOpacity(0.8), fontSize: 12),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -340,12 +338,10 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.4)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.4)),
                         ),
-                        child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.star_rounded,
                               color: Color(0xFFFFC107), size: 14),
                           const SizedBox(width: 4),
@@ -505,9 +501,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               accent: const Color(0xFF0262EC),
               bg: const Color(0xFFEEF4FF),
               // ── action เดิม ──
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -515,9 +513,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               label: 'โทร',
               accent: const Color(0xFF34C759),
               bg: const Color(0xFFEEFAF1),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -525,9 +525,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               label: 'วิดีโอ',
               accent: const Color(0xFFFF6B35),
               bg: const Color(0xFFFFF2EE),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
           ]),
         ]),
@@ -673,8 +675,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: const Color(0xFFDBDBDB), width: 1),
+              border: Border.all(color: const Color(0xFFDBDBDB), width: 1),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -779,8 +780,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            gradient:
-                LinearGradient(colors: [color, color.withOpacity(0.7)]),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(

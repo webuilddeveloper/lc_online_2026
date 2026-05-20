@@ -846,8 +846,8 @@ class _InfoTabContent extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8F9FB),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: const Color(0xFFE2E8F4), width: 1.5),
+                    border:
+                        Border.all(color: const Color(0xFFE2E8F4), width: 1.5),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -951,8 +951,7 @@ class _SkillsTabContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  const Icon(Icons.gavel_rounded,
-                      size: 14, color: _kPrimary),
+                  const Icon(Icons.gavel_rounded, size: 14, color: _kPrimary),
                   const SizedBox(width: 6),
                   Text(
                     'ความเชี่ยวชาญที่เลือก (${s._selectedSkills.length})',

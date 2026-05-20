@@ -13,14 +13,12 @@ class PaymentPage extends StatefulWidget {
   final String time;
   final String subTopic;
 
-
-  const PaymentPage({
-    required this.lawyer,
-    required this.topic,
-    required this.date,
-    required this.time,
-    required this.subTopic
-  });
+  const PaymentPage(
+      {required this.lawyer,
+      required this.topic,
+      required this.date,
+      required this.time,
+      required this.subTopic});
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -102,7 +100,9 @@ class _PaymentPageState extends State<PaymentPage> {
                                     lawyer: widget.lawyer,
                                     topic: widget.topic,
                                     subTopic: widget.subTopic,
-                                    appointmentDate: DateFormat('dd/MM/yyyy').format(widget.date!).toString(),
+                                    appointmentDate: DateFormat('dd/MM/yyyy')
+                                        .format(widget.date!)
+                                        .toString(),
                                     appointmentTime: widget.time,
                                     bookingCode: 'BK-2026-00123',
                                   ),

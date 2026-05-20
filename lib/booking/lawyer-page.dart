@@ -1,6 +1,6 @@
 import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
-import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/repositories/province_repository.dart';
 import 'package:flutter/material.dart';
 
 class LawyerPage extends StatefulWidget {
@@ -17,6 +17,7 @@ class LawyerPage extends StatefulWidget {
 }
 
 class _LawyerPageState extends State<LawyerPage> {
+  final ProvinceRepository _provinceRepository = const ApiProvinceRepository();
   int? _selectedIdx;
 
   // ── Filter State ───────────────────────────────────────
@@ -216,12 +217,13 @@ class _LawyerPageState extends State<LawyerPage> {
   }
 
   Future<void> _callReadProvince() async {
-    final param = await postDio("${server}route/province/read", {});
+    final provinces = await _provinceRepository.readProvinces();
+    if (!mounted) return;
 
     setState(() {
       _allProvinces = [
         {"code": "0", "title": "เลือกจังหวัด"},
-        ...param
+        ...provinces.map((province) => province.toJson())
       ];
     });
   }
@@ -965,15 +967,18 @@ class _LawyerPageState extends State<LawyerPage> {
                     color: Color(0xFF1A2340))),
             const SizedBox(height: 10),
             Row(children: [
-              _sortChip('none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
+              _sortChip(
+                  'none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
               const SizedBox(width: 8),
               _sortChip('rating', 'คะแนน', Icons.star_rounded, setModalState),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded, setModalState),
+              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded,
+                  setModalState),
               const SizedBox(width: 8),
-              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded, setModalState),
+              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded,
+                  setModalState),
             ]),
             const SizedBox(height: 24),
 

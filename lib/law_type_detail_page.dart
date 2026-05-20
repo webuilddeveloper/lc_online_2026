@@ -15,7 +15,6 @@ class LawTypeDetailPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-
             /// HEADER
             Container(
               width: double.infinity,

@@ -49,7 +49,8 @@ class UserModel {
       phone: json['phone']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
       category: json['category']?.toString() ?? '',
-      isActive: json['isActive'] == true || json['isActive']?.toString() == 'true',
+      isActive:
+          json['isActive'] == true || json['isActive']?.toString() == 'true',
       status: json['status']?.toString() ?? '',
       prefixName: json['prefixName']?.toString() ?? '',
       facebookID: json['facebookID']?.toString() ?? '',

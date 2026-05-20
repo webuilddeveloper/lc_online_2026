@@ -140,7 +140,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 16),
+                        const Icon(Icons.check_circle,
+                            color: Color(0xFF22C55E), size: 16),
                         const SizedBox(width: 6),
                         Text(
                           'passwordMatch'.tr(),
@@ -158,7 +159,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        const Icon(Icons.error, color: Color(0xFFEF4444), size: 16),
+                        const Icon(Icons.error,
+                            color: Color(0xFFEF4444), size: 16),
                         const SizedBox(width: 6),
                         Text(
                           'passwordMismatch'.tr(),

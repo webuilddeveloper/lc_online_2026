@@ -26,16 +26,12 @@ class PrivacyPolicyPage extends StatelessWidget {
               children: [
                 title("privacy_policy.section_1_title".tr()),
                 content("privacy_policy.section_1_content".tr()),
-
                 title("privacy_policy.section_2_title".tr()),
                 content("privacy_policy.section_2_content".tr()),
-
                 title("privacy_policy.section_3_title".tr()),
                 content("privacy_policy.section_3_content".tr()),
-
                 title("privacy_policy.section_4_title".tr()),
                 content("privacy_policy.section_4_content".tr()),
-
                 title("privacy_policy.section_5_title".tr()),
                 content("privacy_policy.section_5_content".tr()),
               ],

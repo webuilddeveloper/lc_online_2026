@@ -9,7 +9,6 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-
 class LawyerOnlineList extends StatefulWidget {
   LawyerOnlineList({super.key, this.topic, this.subTopic});
 
@@ -247,7 +246,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       setState(() {
         _allProvinces = [
           {'code': '0', 'title': 'ทั้งหมด'},
-          ...result['objectData'].map((p) => {'code': p['code'], 'title': p['title']})
+          ...result['objectData']
+              .map((p) => {'code': p['code'], 'title': p['title']})
         ];
         print(_allProvinces);
       });
@@ -265,7 +265,6 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         backBtn: true,
         isRightWidget: false,
         backAction: () => goBack(),
-        
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -273,9 +272,12 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         child: Column(
           children: [
             // _buildHeader(),
-            const SizedBox(height: 5,),
+            const SizedBox(
+              height: 5,
+            ),
             _buildSearchFilterBar(),
-            if (_activeFilterCount > 0 || (widget.topic ?? '') != '') _buildActiveChips(),
+            if (_activeFilterCount > 0 || (widget.topic ?? '') != '')
+              _buildActiveChips(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(children: [
@@ -450,8 +452,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(children: [
         if (widget.topic != '') ...[
-          _activeChip(widget.topic!,
-              onRemove: () => {}, isRemove: false),
+          _activeChip(widget.topic!, onRemove: () => {}, isRemove: false),
           const SizedBox(width: 6),
         ],
         if (_filterAvailableOnly)
@@ -482,7 +483,9 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   Widget _activeChip(String label,
-          {required VoidCallback onRemove, IconData? icon, bool isRemove = true}) =>
+          {required VoidCallback onRemove,
+          IconData? icon,
+          bool isRemove = true}) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
@@ -499,11 +502,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               style: const TextStyle(
                   fontSize: 11, color: _kPrimary, fontWeight: FontWeight.w600)),
           const SizedBox(width: 4),
-          isRemove ?
-          GestureDetector(
-            onTap: onRemove,
-            child: const Icon(Icons.close_rounded, size: 13, color: _kPrimary),
-          ) : const SizedBox()
+          isRemove
+              ? GestureDetector(
+                  onTap: onRemove,
+                  child: const Icon(Icons.close_rounded,
+                      size: 13, color: _kPrimary),
+                )
+              : const SizedBox()
         ]),
       );
 
@@ -537,7 +542,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color:  Colors.transparent,
+            color: Colors.transparent,
             width: 2,
           ),
           boxShadow: [

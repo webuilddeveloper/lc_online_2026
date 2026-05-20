@@ -11,7 +11,6 @@ class FavoriteLawyersPage extends StatefulWidget {
 }
 
 class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
-
   List<dynamic> favoriteLawyers = [
     {
       "code": "0",
@@ -87,7 +86,6 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// Avatar
               ClipRRect(
                 borderRadius: BorderRadius.circular(100),
@@ -106,7 +104,6 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       model['name'],
                       style: const TextStyle(
@@ -114,9 +111,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     const SizedBox(height: 3),
-
                     Text(
                       model['category'],
                       style: const TextStyle(
@@ -124,24 +119,16 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                         color: Color.fromARGB(255, 109, 109, 111),
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Row(
                       children: [
-
-                        const Icon(Icons.star,
-                            color: Colors.orange, size: 16),
-
+                        const Icon(Icons.star, color: Colors.orange, size: 16),
                         const SizedBox(width: 4),
-
                         Text(
                           model['rating'],
                           style: const TextStyle(fontSize: 12),
                         ),
-
                         const SizedBox(width: 8),
-
                         Text(
                           "(${model['reviews']})",
                           style: const TextStyle(
@@ -151,9 +138,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       model['experience'],
                       style: const TextStyle(
@@ -169,15 +154,12 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-
                   const Icon(
                     Icons.favorite,
                     color: Colors.red,
                     size: 20,
                   ),
-
                   const SizedBox(height: 15),
-
                   Row(
                     children: [
                       Container(

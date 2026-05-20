@@ -97,26 +97,26 @@ class LawyerProfileStore extends ChangeNotifier {
   // ── Load จาก storage ──────────────────────────────────────────────
   Future<void> load() async {
     try {
-      final urgent   = await _storage.read(key: 'urgentCaseEnabled');
+      final urgent = await _storage.read(key: 'urgentCaseEnabled');
       final available = await _storage.read(key: 'isAvailable');
-      final plan     = await _storage.read(key: 'currentPlan');
-      final billing  = await _storage.read(key: 'billingCycle');
+      final plan = await _storage.read(key: 'currentPlan');
+      final billing = await _storage.read(key: 'billingCycle');
 
       // profile
-      final title    = await _storage.read(key: 'lawyer_title');
-      final exp      = await _storage.read(key: 'lawyer_experience');
-      final cases    = await _storage.read(key: 'lawyer_casesWon');
-      final reviews  = await _storage.read(key: 'lawyer_clientReviews');
-      final bio      = await _storage.read(key: 'lawyer_bio');
-      final rating   = await _storage.read(key: 'lawyer_rating');
-      final skills   = await _storage.read(key: 'lawyer_skills');
+      final title = await _storage.read(key: 'lawyer_title');
+      final exp = await _storage.read(key: 'lawyer_experience');
+      final cases = await _storage.read(key: 'lawyer_casesWon');
+      final reviews = await _storage.read(key: 'lawyer_clientReviews');
+      final bio = await _storage.read(key: 'lawyer_bio');
+      final rating = await _storage.read(key: 'lawyer_rating');
+      final skills = await _storage.read(key: 'lawyer_skills');
       final province = await _storage.read(key: 'lawyer_province');
 
       // social
-      final fb  = await _storage.read(key: 'lawyer_facebook');
-      final ig  = await _storage.read(key: 'lawyer_instagram');
-      final tw  = await _storage.read(key: 'lawyer_twitter');
-      final li  = await _storage.read(key: 'lawyer_linkedin');
+      final fb = await _storage.read(key: 'lawyer_facebook');
+      final ig = await _storage.read(key: 'lawyer_instagram');
+      final tw = await _storage.read(key: 'lawyer_twitter');
+      final li = await _storage.read(key: 'lawyer_linkedin');
 
       _isUrgentCaseEnabled = urgent == 'true';
       _isAvailable = available != 'false'; // default true
@@ -124,21 +124,21 @@ class LawyerProfileStore extends ChangeNotifier {
       _billingCycle =
           billing == 'yearly' ? BillingCycle.yearly : BillingCycle.monthly;
 
-      _title          = title ?? '';
-      _experience     = exp ?? '';
-      _casesWon       = cases ?? '';
-      _clientReviews  = reviews ?? '';
-      _bio            = bio ?? '';
-      _rating         = double.tryParse(rating ?? '') ?? 0.0;
-      _skills         = skills != null && skills.isNotEmpty
+      _title = title ?? '';
+      _experience = exp ?? '';
+      _casesWon = cases ?? '';
+      _clientReviews = reviews ?? '';
+      _bio = bio ?? '';
+      _rating = double.tryParse(rating ?? '') ?? 0.0;
+      _skills = skills != null && skills.isNotEmpty
           ? skills.split('|').where((s) => s.isNotEmpty).toList()
           : [];
-      _province       = province ?? 'กรุงเทพมหานคร';
+      _province = province ?? 'กรุงเทพมหานคร';
 
-      _facebook  = fb ?? '';
+      _facebook = fb ?? '';
       _instagram = ig ?? '';
-      _twitter   = tw ?? '';
-      _linkedin  = li ?? '';
+      _twitter = tw ?? '';
+      _linkedin = li ?? '';
     } catch (e) {
       debugPrint('LawyerProfileStore.load() error: $e');
     }
@@ -198,19 +198,32 @@ class LawyerProfileStore extends ChangeNotifier {
 
     await Future.wait([
       if (title != null) _storage.write(key: 'lawyer_title', value: title),
-      if (experience != null) _storage.write(key: 'lawyer_experience', value: experience),
-      if (casesWon != null) _storage.write(key: 'lawyer_casesWon', value: casesWon),
-      if (clientReviews != null) _storage.write(key: 'lawyer_clientReviews', value: clientReviews),
+      if (experience != null)
+        _storage.write(key: 'lawyer_experience', value: experience),
+      if (casesWon != null)
+        _storage.write(key: 'lawyer_casesWon', value: casesWon),
+      if (clientReviews != null)
+        _storage.write(key: 'lawyer_clientReviews', value: clientReviews),
       if (bio != null) _storage.write(key: 'lawyer_bio', value: bio),
-      if (rating != null) _storage.write(key: 'lawyer_rating', value: rating.toString()),
-      if (skills != null) _storage.write(key: 'lawyer_skills', value: skills.join('|')),
-      if (province != null) _storage.write(key: 'lawyer_province', value: province),
-      if (isAvailable != null) _storage.write(key: 'isAvailable', value: isAvailable.toString()),
-      if (isUrgentCaseEnabled != null) _storage.write(key: 'urgentCaseEnabled', value: isUrgentCaseEnabled.toString()),
-      if (facebook != null) _storage.write(key: 'lawyer_facebook', value: facebook),
-      if (instagram != null) _storage.write(key: 'lawyer_instagram', value: instagram),
-      if (twitter != null) _storage.write(key: 'lawyer_twitter', value: twitter),
-      if (linkedin != null) _storage.write(key: 'lawyer_linkedin', value: linkedin),
+      if (rating != null)
+        _storage.write(key: 'lawyer_rating', value: rating.toString()),
+      if (skills != null)
+        _storage.write(key: 'lawyer_skills', value: skills.join('|')),
+      if (province != null)
+        _storage.write(key: 'lawyer_province', value: province),
+      if (isAvailable != null)
+        _storage.write(key: 'isAvailable', value: isAvailable.toString()),
+      if (isUrgentCaseEnabled != null)
+        _storage.write(
+            key: 'urgentCaseEnabled', value: isUrgentCaseEnabled.toString()),
+      if (facebook != null)
+        _storage.write(key: 'lawyer_facebook', value: facebook),
+      if (instagram != null)
+        _storage.write(key: 'lawyer_instagram', value: instagram),
+      if (twitter != null)
+        _storage.write(key: 'lawyer_twitter', value: twitter),
+      if (linkedin != null)
+        _storage.write(key: 'lawyer_linkedin', value: linkedin),
     ]);
   }
 

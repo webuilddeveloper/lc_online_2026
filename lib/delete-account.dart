@@ -67,7 +67,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   //   ),
                   // ),
                   const SizedBox(height: 8),
-                   Text(
+                  Text(
                     "deleteAccountSub".tr(),
                     style: TextStyle(
                       fontSize: 14,
@@ -77,7 +77,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                   Text(
+                  Text(
                     "deleteAccountWarning".tr(),
                     style: TextStyle(
                       fontSize: 14,

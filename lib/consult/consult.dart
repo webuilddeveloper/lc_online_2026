@@ -519,7 +519,7 @@ class _ConsultPageState extends State<ConsultPage> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedSubCase?['title'] as String?,
-          isExpanded: true, 
+          isExpanded: true,
           onChanged: (val) {
             final sub = _subCases.firstWhere((s) => s['title'] == val,
                 orElse: () => {});
@@ -547,13 +547,13 @@ class _ConsultPageState extends State<ConsultPage> {
               borderSide: BorderSide(color: Color(0xFF0262EC), width: 1.5),
             ),
           ),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0262EC)),
+          icon:
+              Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0262EC)),
           dropdownColor: Color(0xFFEEF2F5),
           borderRadius: BorderRadius.circular(14),
           items: _subCases
               .map((s) => DropdownMenuItem<String>(
                     value: s['title'] as String,
-                    
                     child: Text(
                       s['title'] as String,
                       style: const TextStyle(fontSize: 13),
@@ -848,8 +848,10 @@ class _ConsultPageState extends State<ConsultPage> {
           height: 52,
           decoration: BoxDecoration(
             gradient: _canSubmit
-                ? LinearGradient(
-                    colors: [Color(0xFF0262EC), Color(0xFF0262EC).withOpacity(0.8)])
+                ? LinearGradient(colors: [
+                    Color(0xFF0262EC),
+                    Color(0xFF0262EC).withOpacity(0.8)
+                  ])
                 : null,
             color: _canSubmit ? null : const Color(0xFFCDD5E0),
             borderRadius: BorderRadius.circular(14),

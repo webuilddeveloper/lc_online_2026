@@ -31,10 +31,8 @@ class NotificationService {
       importance: Importance.max,
       playSound: true,
     );
-    await _localNotif
-        .resolvePlatformSpecificImplementation;
-            AndroidFlutterLocalNotificationsPlugin()
-        .createNotificationChannel(channel);
+    await _localNotif.resolvePlatformSpecificImplementation;
+    AndroidFlutterLocalNotificationsPlugin().createNotificationChannel(channel);
 
     // 4. ดึง FCM Token แล้วเก็บลง Firestore
     final token = await _messaging.getToken();
@@ -55,22 +53,22 @@ class NotificationService {
     });
   }
 
- static Future<void> saveFcmToken(String token) async {
-  const storage = FlutterSecureStorage();
-  final userType = await storage.read(key: 'userType') ?? 'unknown';
-  final name = await storage.read(key: 'name') ?? '';
+  static Future<void> saveFcmToken(String token) async {
+    const storage = FlutterSecureStorage();
+    final userType = await storage.read(key: 'userType') ?? 'unknown';
+    final name = await storage.read(key: 'name') ?? '';
 
-  // ✅ เก็บ token โดยใช้ userType เป็น document id
-  await FirebaseFirestore.instance
-      .collection('devices')
-      .doc(userType)   // "lawyer" หรือ "user"
-      .set({
-        'fcmToken': token,
-        'userType': userType,
-        'name': name,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-}
+    // ✅ เก็บ token โดยใช้ userType เป็น document id
+    await FirebaseFirestore.instance
+        .collection('devices')
+        .doc(userType) // "lawyer" หรือ "user"
+        .set({
+      'fcmToken': token,
+      'userType': userType,
+      'name': name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   // ✅ แสดง notification สายเรียกเข้า
   static Future<void> showCallNotification({
@@ -82,7 +80,7 @@ class NotificationService {
       'สายเรียกเข้า',
       importance: Importance.max,
       priority: Priority.high,
-      fullScreenIntent: true,  // แสดงแม้หน้าจอล็อค
+      fullScreenIntent: true, // แสดงแม้หน้าจอล็อค
       playSound: true,
       enableVibration: true,
       styleInformation: BigTextStyleInformation(''),

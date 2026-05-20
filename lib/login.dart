@@ -560,67 +560,47 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final idToken = obj.accessToken.idToken;
       final userEmail = (idToken != null) ? idToken['email'] ?? '' : '';
 
-      if (obj != null) {
-        var model = {
-          "username": (userEmail != '') ? userEmail : obj.userProfile!.userId,
-          "email": userEmail,
-          "imageUrl": (obj.userProfile!.pictureUrl != '')
-              ? obj.userProfile!.pictureUrl
+      await NotificationService.saveFcmToken(
+        await FirebaseMessaging.instance.getToken() ?? '',
+      );
+
+      // ── setUser → persist + broadcast ──
+      await UserProfileStore.instance.setUser(
+        UserModel(
+          code: obj.userProfile!.userId,
+          userType: 'user',
+          firstName: obj.userProfile!.displayName,
+          lastName: '',
+          email: userEmail.toString(),
+          phone: '',
+          imageUrl: obj.userProfile!.pictureUrl?.isNotEmpty == true
+              ? obj.userProfile!.pictureUrl!
               : '',
-          "firstName": obj.userProfile!.displayName,
-          "lastName": '',
-          "lineID": obj.userProfile!.userId
-        };
+          category: 'Line',
+          isActive: true,
+          status: '',
+          prefixName: '',
+          facebookID: '',
+          googleID: '',
+          lineID: obj.userProfile!.userId,
+          line: '',
+          sex: '',
+          address: '',
+          idcard: '',
+        ),
+        typeLogin: 'social',
+      );
 
-        await NotificationService.saveFcmToken(
-          await FirebaseMessaging.instance.getToken() ?? '',
-        );
+      if (!mounted) return;
+      // ปิด Loading
+      Navigator.pop(context);
 
-        // ── setUser → persist + broadcast ──
-        await UserProfileStore.instance.setUser(
-          UserModel(
-            code: obj.userProfile!.userId,
-            userType: 'user',
-            firstName: obj.userProfile!.displayName ?? '',
-            lastName: '',
-            email: userEmail.toString(),
-            phone: '',
-            imageUrl: (obj.userProfile!.pictureUrl != null &&
-                    obj.userProfile!.pictureUrl!.isNotEmpty)
-                ? obj.userProfile!.pictureUrl!
-                : '',
-            category: 'Line',
-            isActive: true,
-            status: '',
-            prefixName: '',
-            facebookID: '',
-            googleID: '',
-            lineID: obj.userProfile!.userId,
-            line: '',
-            sex: '',
-            address: '',
-            idcard: '',
-          ),
-          typeLogin: 'social',
-        );
-
-        if (!mounted) return;
-        // ปิด Loading
-        Navigator.pop(context);
-
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MenuPage(),
-          ),
-        );
-      } else {
-        DialogService.showError(
-          context,
-          title: "loginFailed".tr(),
-          message: "genericError".tr(),
-        );
-      }
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MenuPage(),
+        ),
+      );
     } catch (e) {
       DialogService.showError(
         context,
@@ -670,11 +650,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     });
 
     try {
-      final user = await AuthService.login(
+      final session = await AuthService.loginSession(
         usernameController.text.trim(),
         passwordController.text,
         'guest',
       );
+      final user = session.user;
 
       // ── setUser → persist ทุก field + broadcast ให้ทุก widget ทราบทันที ──
       // ถ้า imageUrl ว่างใช้ default avatar แทน
@@ -685,6 +666,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       await UserProfileStore.instance.setUser(
         userWithAvatar,
         typeLogin: 'local',
+        authToken: session.token,
       );
 
       if (!mounted) return;

@@ -8,10 +8,12 @@ class NotificationDropdownContent extends StatefulWidget {
   const NotificationDropdownContent({Key? key}) : super(key: key);
 
   @override
-  State<NotificationDropdownContent> createState() => _NotificationDropdownContentState();
+  State<NotificationDropdownContent> createState() =>
+      _NotificationDropdownContentState();
 }
 
-class _NotificationDropdownContentState extends State<NotificationDropdownContent> {
+class _NotificationDropdownContentState
+    extends State<NotificationDropdownContent> {
   List<Map<String, dynamic>> get notifications => globalNotifications;
 
   int get unreadCount =>
@@ -65,15 +67,17 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: item["isRead"] ? Colors.transparent : const Color(0xFFBAD5FF).withOpacity(0.3),
+          color: item["isRead"]
+              ? Colors.transparent
+              : const Color(0xFFBAD5FF).withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
           leading: CircleAvatar(
-            backgroundColor: item["isRead"]
-                ? const Color(0xFFEEF2F5)
-                : Colors.white,
+            backgroundColor:
+                item["isRead"] ? const Color(0xFFEEF2F5) : Colors.white,
             child: Icon(
               getIcon(item["type"]),
               color: Colors.blue,
@@ -84,8 +88,7 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
             item["title"],
             style: TextStyle(
               fontSize: 14,
-              fontWeight:
-                  item["isRead"] ? FontWeight.normal : FontWeight.bold,
+              fontWeight: item["isRead"] ? FontWeight.normal : FontWeight.bold,
             ),
           ),
           subtitle: Text(
@@ -152,12 +155,14 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
               children: [
                 Text(
                   "notifications".tr(),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
                 if (unreadCount > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(10),
@@ -212,7 +217,8 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
                 ),
               );
             },
-            child:  Text("notification.listAll".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text("notification.listAll".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         )
       ],

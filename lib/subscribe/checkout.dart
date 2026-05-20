@@ -15,8 +15,8 @@ class CheckoutPage extends StatelessWidget {
   final bool isYearly;
   const CheckoutPage({Key? key, this.isYearly = false}) : super(key: key);
 
-  String get _priceDisplay   => isYearly ? '฿472' : '฿590';
-  String get _billingLabel   => isYearly ? 'รายปี (จ่าย ฿5,664/ปี)' : 'รายเดือน';
+  String get _priceDisplay => isYearly ? '฿472' : '฿590';
+  String get _billingLabel => isYearly ? 'รายปี (จ่าย ฿5,664/ปี)' : 'รายเดือน';
 
   static const List<String> _proFeatures = [
     'รับเคสออนไลน์ทุกประเภท',
@@ -32,78 +32,97 @@ class CheckoutPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: kSurface,
       appBar: appBar(
-        title:       'สรุปคำสั่งซื้อ',
-        backBtn:     true,
-        rightBtn:    false,
-        backAction:  () => Navigator.pop(context, false),
+        title: 'สรุปคำสั่งซื้อ',
+        backBtn: true,
+        rightBtn: false,
+        backAction: () => Navigator.pop(context, false),
         rightAction: () {},
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           // ── Plan summary card ──────────────────────────────────────
-          _sectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [kPrimary, kPrimaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.workspace_premium_rounded,
-                    color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Pro Plan',
-                      style: GoogleFonts.prompt(
-                          fontSize: 15, fontWeight: FontWeight.w700, color: kText)),
-                  Text(_billingLabel,
-                      style: GoogleFonts.prompt(fontSize: 12, color: kSub)),
-                ]),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                    color: kGoldLight, borderRadius: BorderRadius.circular(20)),
-                child: Text('แนะนำ',
-                    style: GoogleFonts.prompt(
-                        fontSize: 10, fontWeight: FontWeight.w600, color: kGold)),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            _divider(),
-            const SizedBox(height: 14),
-            ..._proFeatures.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(children: [
-                    Container(
-                      width: 16, height: 16,
-                      decoration: const BoxDecoration(color: kPrimaryLight, shape: BoxShape.circle),
-                      child: const Icon(Icons.check_rounded, size: 10, color: kPrimary),
+          _sectionCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [kPrimary, kPrimaryDark],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 8),
-                    Text(f, style: GoogleFonts.prompt(fontSize: 12, color: kSub)),
-                  ]),
-                )),
-          ])),
+                    child: const Icon(Icons.workspace_premium_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Pro Plan',
+                              style: GoogleFonts.prompt(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: kText)),
+                          Text(_billingLabel,
+                              style: GoogleFonts.prompt(
+                                  fontSize: 12, color: kSub)),
+                        ]),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: kGoldLight,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Text('แนะนำ',
+                        style: GoogleFonts.prompt(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: kGold)),
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                _divider(),
+                const SizedBox(height: 14),
+                ..._proFeatures.map((f) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(children: [
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: const BoxDecoration(
+                              color: kPrimaryLight, shape: BoxShape.circle),
+                          child: const Icon(Icons.check_rounded,
+                              size: 10, color: kPrimary),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(f,
+                            style:
+                                GoogleFonts.prompt(fontSize: 12, color: kSub)),
+                      ]),
+                    )),
+              ])),
 
           const SizedBox(height: 12),
 
           // ── Price breakdown ────────────────────────────────────────
-          _sectionCard(child: Column(children: [
+          _sectionCard(
+              child: Column(children: [
             _priceRow('ราคาแผน Pro (รายเดือน)', '฿590'),
             if (isYearly) ...[
               const SizedBox(height: 8),
-              _priceRow('ส่วนลดรายปี (−20%)', '−฿118/เดือน', valueColor: kGreen),
+              _priceRow('ส่วนลดรายปี (−20%)', '−฿118/เดือน',
+                  valueColor: kGreen),
             ],
             const SizedBox(height: 10),
             _divider(),
@@ -114,7 +133,9 @@ class CheckoutPage extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.w700, color: kText)),
               Text(_priceDisplay,
                   style: GoogleFonts.prompt(
-                      fontSize: 20, fontWeight: FontWeight.w800, color: kPrimary)),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: kPrimary)),
             ]),
             if (isYearly) ...[
               const SizedBox(height: 4),
@@ -138,21 +159,29 @@ class CheckoutPage extends StatelessWidget {
             ),
             child: Row(children: [
               Container(
-                width: 34, height: 34,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                     color: kGreen.withOpacity(0.15), shape: BoxShape.circle),
-                child: const Icon(Icons.card_giftcard_rounded, size: 18, color: kGreen),
+                child: const Icon(Icons.card_giftcard_rounded,
+                    size: 18, color: kGreen),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('ทดลองใช้ฟรี 7 วัน',
-                      style: GoogleFonts.prompt(
-                          fontSize: 13, fontWeight: FontWeight.w600, color: kGreen)),
-                  Text('จะถูกเรียกเก็บเงินหลังครบ 7 วัน · ยกเลิกก่อนได้ฟรี',
-                      style: GoogleFonts.prompt(
-                          fontSize: 11, color: kGreen.withOpacity(0.7), height: 1.5)),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ทดลองใช้ฟรี 7 วัน',
+                          style: GoogleFonts.prompt(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: kGreen)),
+                      Text('จะถูกเรียกเก็บเงินหลังครบ 7 วัน · ยกเลิกก่อนได้ฟรี',
+                          style: GoogleFonts.prompt(
+                              fontSize: 11,
+                              color: kGreen.withOpacity(0.7),
+                              height: 1.5)),
+                    ]),
               ),
             ]),
           ),

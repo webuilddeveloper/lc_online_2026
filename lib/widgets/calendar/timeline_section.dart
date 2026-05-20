@@ -43,8 +43,8 @@ class WeekStrip extends StatelessWidget {
           final i = e.key;
           final d = e.value;
           final isSelected = isSameDay(d, selectedDay);
-          final isToday    = isSameDay(d, today);
-          final dayEvents  = getEventsForDay(d);
+          final isToday = isSameDay(d, today);
+          final dayEvents = getEventsForDay(d);
 
           return Expanded(
             child: GestureDetector(
@@ -332,8 +332,8 @@ class DayEventListMobile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: events.map((entry) {
-                  final ev    = entry as Map;
-                  final sh    = (ev['startHour'] as int? ?? 9);
+                  final ev = entry as Map;
+                  final sh = (ev['startHour'] as int? ?? 9);
                   final color = periodColor(sh);
                   final label = periodLabel(sh);
 
@@ -474,7 +474,7 @@ class _DayEventCardDesktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sh    = (ev['startHour'] as int? ?? 9);
+    final sh = (ev['startHour'] as int? ?? 9);
     final color = periodColor(sh);
     final label = periodLabel(sh);
 
@@ -565,9 +565,9 @@ class TimelineView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now     = DateTime.now();
+    final now = DateTime.now();
     final isToday = isSameDay(selectedDay, now);
-    const total   = kTotalHours * kHourHeight;
+    const total = kTotalHours * kHourHeight;
 
     return Container(
       color: kBg,
@@ -590,9 +590,10 @@ class TimelineView extends StatelessWidget {
 
   List<Widget> _buildHourGrid() {
     return List.generate(kTotalHours, (i) {
-      final h     = kStartHour + i;
+      final h = kStartHour + i;
       final tUnit = 'calendar.timeUnit'.tr();
-      final label = '${h.toString().padLeft(2, '0')}:00${tUnit.isNotEmpty ? ' $tUnit' : ''}';
+      final label =
+          '${h.toString().padLeft(2, '0')}:00${tUnit.isNotEmpty ? ' $tUnit' : ''}';
       return Positioned(
         top: i * kHourHeight,
         left: 0,
@@ -616,8 +617,7 @@ class TimelineView extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(
-                          color: kBorder, width: i == 0 ? 0 : 0.5),
+                      top: BorderSide(color: kBorder, width: i == 0 ? 0 : 0.5),
                     ),
                   ),
                 ),
@@ -647,24 +647,23 @@ class TimelineView extends StatelessWidget {
               height: 12,
               decoration: const BoxDecoration(
                   color: Color(0xFFFF4444), shape: BoxShape.circle)),
-          Expanded(
-              child: Container(height: 2, color: const Color(0xFFFF4444))),
+          Expanded(child: Container(height: 2, color: const Color(0xFFFF4444))),
         ],
       ),
     );
   }
 
   Widget _buildEventBlock(dynamic entry, void Function(Map) onTap) {
-    final ev         = entry as Map;
-    final startHour  = (ev['startHour'] as int? ?? 9);
-    final startMin   = (ev['startMin'] as int? ?? 0);
-    final durMin     = (ev['durationMin'] as int? ?? 60);
-    const color      = kTimelineColor;
-    final topOffset  =
+    final ev = entry as Map;
+    final startHour = (ev['startHour'] as int? ?? 9);
+    final startMin = (ev['startMin'] as int? ?? 0);
+    final durMin = (ev['durationMin'] as int? ?? 60);
+    const color = kTimelineColor;
+    final topOffset =
         (startHour - kStartHour) * kHourHeight + startMin * kHourHeight / 60;
-    final blockH     = (durMin * kHourHeight / 60).clamp(28.0, 9999.0);
-    final endTotal   = startHour * 60 + startMin + durMin;
-    final timeLabel  =
+    final blockH = (durMin * kHourHeight / 60).clamp(28.0, 9999.0);
+    final endTotal = startHour * 60 + startMin + durMin;
+    final timeLabel =
         '${startHour.toString().padLeft(2, '0')}:${startMin.toString().padLeft(2, '0')} – '
         '${(endTotal ~/ 60).toString().padLeft(2, '0')}:'
         '${(endTotal % 60).toString().padLeft(2, '0')}${'calendar.timeUnit'.tr().isNotEmpty ? ' ${'calendar.timeUnit'.tr()}' : ''}';

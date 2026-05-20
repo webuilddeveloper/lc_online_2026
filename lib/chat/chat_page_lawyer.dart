@@ -150,7 +150,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(content: Text('callingUser'.tr())),
+      SnackBar(content: Text('callingUser'.tr())),
     );
   }
 
@@ -207,8 +207,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               ),
             ),
             name: model['name'] ?? '',
-            statusText:
-                _caseSuccess ? null : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
+            statusText: _caseSuccess
+                ? null
+                : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
             actions: actionButtons,
           );
 
@@ -328,7 +329,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12)),
-        child:  Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.lock_outline_rounded,

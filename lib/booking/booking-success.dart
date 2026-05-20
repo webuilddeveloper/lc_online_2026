@@ -127,8 +127,8 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   Widget build(BuildContext context) {
     final lawyer = widget.lawyer;
     final lawyerColor = Color(0xFF0262EC
-      // lawyer?['color'] as int? ?? 0xFF0262EC
-      );
+        // lawyer?['color'] as int? ?? 0xFF0262EC
+        );
 
     return Scaffold(
       backgroundColor: _kBg,

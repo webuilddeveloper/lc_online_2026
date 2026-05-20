@@ -44,7 +44,8 @@ class ProfileAnimCard extends StatelessWidget {
         );
         return Opacity(
           opacity: t,
-          child: Transform.translate(offset: Offset(0, 20 * (1 - t)), child: ch),
+          child:
+              Transform.translate(offset: Offset(0, 20 * (1 - t)), child: ch),
         );
       },
       child: child,
@@ -277,13 +278,11 @@ class SkillToggleChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? _kPrimary.withOpacity(0.08)
-              : const Color(0xFFEEF2F5),
+          color:
+              selected ? _kPrimary.withOpacity(0.08) : const Color(0xFFEEF2F5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color:
-                selected ? _kPrimary.withOpacity(0.4) : Colors.transparent,
+            color: selected ? _kPrimary.withOpacity(0.4) : Colors.transparent,
             width: 1.5,
           ),
         ),
@@ -298,10 +297,8 @@ class SkillToggleChip extends StatelessWidget {
             skill,
             style: TextStyle(
               fontSize: 11,
-              fontWeight:
-                  selected ? FontWeight.w700 : FontWeight.w400,
-              color:
-                  selected ? _kPrimary : const Color(0xFF1A2340),
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+              color: selected ? _kPrimary : const Color(0xFF1A2340),
             ),
           ),
           if (selected) ...[
@@ -374,9 +371,7 @@ class AvailabilityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: available
-            ? const Color(0xFFE8F5E9)
-            : const Color(0xFFFFEBEE),
+        color: available ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -384,9 +379,7 @@ class AvailabilityBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: available
-              ? const Color(0xFF2E7D32)
-              : const Color(0xFFC62828),
+          color: available ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
         ),
       ),
     );

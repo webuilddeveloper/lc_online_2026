@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:LawyerOnline/core/config/api_config.dart';
+import 'package:LawyerOnline/models/auth_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:LawyerOnline/models/user_model.dart';
@@ -28,7 +30,7 @@ class PasswordIncorrectException implements Exception {
 }
 
 class AuthService {
-  static const String _baseUrl = 'https://b7d2-125-25-100-59.ngrok-free.app';
+  static const String _baseUrl = ApiConfig.authBaseUrl;
   static const String _loginUrl = '$_baseUrl/m/register/login';
   static const String _registerUrl = '$_baseUrl/m/register/create';
   static const String _cancelUrl = '$_baseUrl/m/register/cancel';
@@ -41,6 +43,15 @@ class AuthService {
   };
 
   static Future<UserModel> login(
+    String email,
+    String password,
+    String category,
+  ) async {
+    final session = await loginSession(email, password, category);
+    return session.user;
+  }
+
+  static Future<AuthSession> loginSession(
     String email,
     String password,
     String category,
@@ -79,7 +90,10 @@ class AuthService {
       }
 
       debugPrint('[AuthService.login] success for email=$email');
-      return UserModel.fromJson(objectData);
+      return AuthSession(
+        user: UserModel.fromJson(objectData),
+        token: data['jsonData']?.toString() ?? '',
+      );
     } catch (e) {
       debugPrint('[AuthService.login] error: $e');
       rethrow;
@@ -131,9 +145,11 @@ class AuthService {
         final rawMsg = data['message']?.toString() ?? '';
         final msg = rawMsg.toLowerCase();
         if (msg.contains('email')) {
-          throw EmailDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
+          throw EmailDuplicateException(
+              rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
         } else if (msg.contains('phone') || msg.contains('เบอร์')) {
-          throw PhoneDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
+          throw PhoneDuplicateException(
+              rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
         }
         throw Exception(rawMsg.isNotEmpty ? rawMsg : 'Registration failed');
       }
@@ -243,6 +259,7 @@ class AuthService {
       rethrow;
     }
   }
+
   /// อัปเดตโปรไฟล์
   static Future<void> updateProfile({
     required String code,
@@ -290,11 +307,14 @@ class AuthService {
         final rawMsg = data['message']?.toString() ?? '';
         final msg = rawMsg.toLowerCase();
         if (msg.contains('email')) {
-          throw EmailDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
+          throw EmailDuplicateException(
+              rawMsg.isNotEmpty ? rawMsg : 'Email already exists');
         } else if (msg.contains('phone') || msg.contains('เบอร์')) {
-          throw PhoneDuplicateException(rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
+          throw PhoneDuplicateException(
+              rawMsg.isNotEmpty ? rawMsg : 'Phone already exists');
         } else if (msg.contains('password') || msg.contains('รหัสผ่าน')) {
-          throw PasswordIncorrectException(rawMsg.isNotEmpty ? rawMsg : 'รหัสผ่านไม่ถูกต้อง');
+          throw PasswordIncorrectException(
+              rawMsg.isNotEmpty ? rawMsg : 'รหัสผ่านไม่ถูกต้อง');
         }
         throw Exception(rawMsg.isNotEmpty ? rawMsg : 'Update profile failed');
       }

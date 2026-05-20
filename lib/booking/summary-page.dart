@@ -10,13 +10,12 @@ class SummaryPage extends StatelessWidget {
   final String time;
   final String subTopic;
 
-  const SummaryPage({
-    required this.topic,
-    required this.lawyer,
-    required this.date,
-    required this.time,
-    required this.subTopic
-  });
+  const SummaryPage(
+      {required this.topic,
+      required this.lawyer,
+      required this.date,
+      required this.time,
+      required this.subTopic});
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +132,6 @@ class SummaryPage extends StatelessWidget {
                                 style: const TextStyle(
                                     color: Colors.black, fontSize: 12)),
                             const SizedBox(height: 6),
-
                             Row(children: [
                               const Icon(Icons.star_rounded,
                                   color: Color(0xFFFFC107), size: 14),
@@ -169,8 +167,8 @@ class SummaryPage extends StatelessWidget {
                         _summaryRow(
                             Icons.label_outline_rounded, 'หัวข้อ', topic),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
-                        _summaryRow(
-                            Icons.label_outline_rounded, 'หัวข้อย่อย', subTopic),
+                        _summaryRow(Icons.label_outline_rounded, 'หัวข้อย่อย',
+                            subTopic),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
                             Icons.calendar_today_outlined, 'วันที่', dateStr),
@@ -251,10 +249,10 @@ class SummaryPage extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => PaymentPage(
                     lawyer: lawyer,
-                      topic: topic,
-                      subTopic: subTopic,
-                      time: time,
-                      date: date,
+                    topic: topic,
+                    subTopic: subTopic,
+                    time: time,
+                    date: date,
                   ),
                 ),
               ),
@@ -313,8 +311,7 @@ class SummaryPage extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.checklist,
-              color: Colors.white, size: 18),
+          child: const Icon(Icons.checklist, color: Colors.white, size: 18),
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
