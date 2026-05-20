@@ -7,7 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
 
@@ -83,13 +85,16 @@ class CommunityPost {
 
 // ─── Current User (loaded from profile) ────────────────────────────────────────
 
-CommunityUser currentUser = CommunityUser(
-  id: 'me',
-  name: 'User',
-  avatarUrl: '',
-  role: UserRole.client,
-  isVerified: false,
-);
+CommunityUser get currentUser {
+  final store = UserProfileStore.instance;
+  return CommunityUser(
+    id: 'me',
+    name: store.name.isNotEmpty ? store.name : 'defaultUser'.tr(),
+    avatarUrl: store.imageUrl,
+    role: store.userType == 'lawyer' ? UserRole.lawyer : UserRole.client,
+    isVerified: store.userType == 'lawyer',
+  );
+}
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 
@@ -889,33 +894,28 @@ class _CommunityPageState extends State<CommunityPage> {
   @override
   void initState() {
     super.initState();
+    UserProfileStore.instance.addListener(_onProfileChanged);
     callRead();
     _posts = List.from(mockPosts);
   }
 
+  @override
+  void dispose() {
+    UserProfileStore.instance.removeListener(_onProfileChanged);
+    super.dispose();
+  }
+
+  void _onProfileChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void callRead() async {
     final type = await storage.read(key: 'typeLogin');
-    final nameProfile = await storage.read(key: 'name');
-    final imageProfile = await storage.read(key: 'imageUrlSocial');
-    final userType = await storage.read(key: 'userType');
 
     setState(() {
       typeLogin = type.toString();
-
-      // อัปเดต currentUser จากโปรไฟล์ที่ล็อกอิน
-      if (type != null && type != 'null') {
-        currentUser = CommunityUser(
-          id: 'me',
-          name: (nameProfile != null && nameProfile != 'null')
-              ? nameProfile
-              : 'defaultUser'.tr(),
-          avatarUrl: (imageProfile != null && imageProfile != 'null')
-              ? imageProfile
-              : '',
-          role: userType == 'lawyer' ? UserRole.lawyer : UserRole.client,
-          isVerified: userType == 'lawyer',
-        );
-      }
     });
   }
 
@@ -951,23 +951,31 @@ class _CommunityPageState extends State<CommunityPage> {
     final bool isTablet = ResponsiveLayout.isTablet(context);
     final bool isDesktop = ResponsiveLayout.isDesktop(context);
 
-    // Responsive max width
-    final double maxWidth =
-        isDesktop ? 800 : (isTablet ? 680 : double.infinity);
     // Responsive horizontal padding
-    final double hPadding = isDesktop ? 0 : (isTablet ? 24 : 16);
+    final double hPadding = isDesktop ? 20 : (isTablet ? 24 : 16);
     // Responsive top spacing
     final double topSpacing = isMobile ? 12 : 24;
 
     return DefaultTabController(
       length: _tabs.length,
       child: Scaffold(
-        backgroundColor: isMobile ? Colors.white : const Color(0xFFF8F9FA),
+        backgroundColor: isDesktop
+            ? const Color.fromARGB(255, 233, 242, 249)
+            : (isMobile ? Colors.white : const Color(0xFFF8F9FA)),
         body: SafeArea(
           bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
+          child: AppLayout(
+            child: Container(
+              clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+              decoration: isDesktop
+                  ? const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    )
+                  : null,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: Column(
@@ -986,10 +994,10 @@ class _CommunityPageState extends State<CommunityPage> {
                               color: Color(0xFF1A1A2E),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'communitySubtitle'.tr(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF9E9E9E),
                             ),
@@ -1685,12 +1693,19 @@ class _PostCardState extends State<PostCard>
                         : [const Color(0xFF37474F), const Color(0xFF546E7A)]),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight)),
-        child: Center(
-            child: Text(initials,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size * 0.33,
-                    fontWeight: FontWeight.w700))),
+        child: ClipOval(
+          child: user.avatarUrl.isNotEmpty
+              ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                  ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                  : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+              : Center(
+                  child: Text(initials,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: size * 0.33,
+                          fontWeight: FontWeight.w700)),
+                ),
+        ),
       ),
       if (user.isVerified)
         Positioned(
@@ -1866,66 +1881,124 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F0),
-      appBar: appBarCustom(
-        title: "postDetailTitle".tr(),
-        backBtn: true,
-        isRightWidget: false,
-        backAction: () => goBack(),
-      ),
-      body: Column(children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _buildPostContent(),
-              const SizedBox(height: 16),
-              Row(children: [
-                Text('commentsAndAnswers'.tr(),
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E))),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A2E),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Text('${_comments.length}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
-                ),
-              ]),
-              const SizedBox(height: 12),
-              ..._comments.map((c) => _buildCommentCard(c)),
-              if (_comments.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(children: [
-                      Icon(Icons.chat_bubble_outline_rounded,
-                          size: 40, color: Colors.grey.shade300),
-                      const SizedBox(height: 10),
-                      Text('noComments'.tr(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade400,
-                              height: 1.5)),
-                    ]),
+      backgroundColor: isDesktop ? const Color.fromARGB(255, 233, 242, 249) : const Color(0xFFF5F4F0),
+      appBar: isDesktop
+          ? null
+          : appBarCustom(
+              title: "postDetailTitle".tr(),
+              backBtn: true,
+              isRightWidget: false,
+              backAction: () => goBack(),
+            ),
+      body: AppLayout(
+        child: Container(
+          clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+          decoration: isDesktop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (isDesktop) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                        onPressed: () => goBack(),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "postDetailTitle".tr(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ]),
+                const Divider(height: 1),
+              ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPostContent(),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            'commentsAndAnswers'.tr(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1A2E),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_comments.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ..._comments.map((c) => _buildCommentCard(c)),
+                      if (_comments.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              children: [
+                                Icon(Icons.chat_bubble_outline_rounded,
+                                    size: 40, color: Colors.grey.shade300),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'noComments'.tr(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade400,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              _buildCommentInput(),
+            ],
           ),
         ),
-        _buildCommentInput(),
-      ]),
+      ),
     );
   }
 
@@ -2300,12 +2373,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         : [const Color(0xFF37474F), const Color(0xFF546E7A)]),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight)),
-        child: Center(
-            child: Text(initials,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size * 0.33,
-                    fontWeight: FontWeight.w700))),
+        child: ClipOval(
+          child: user.avatarUrl.isNotEmpty
+              ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                  ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                  : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+              : Center(
+                  child: Text(initials,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: size * 0.33,
+                          fontWeight: FontWeight.w700)),
+                ),
+        ),
       ),
       if (user.isVerified)
         Positioned(
@@ -2420,9 +2500,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+      builder: (_) => AppLayout(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
                 width: 40,
@@ -2456,8 +2537,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ]),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _imgSourceBtn(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
@@ -2520,63 +2602,137 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: const Color(0xFFF5F4F0),
-                borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.close_rounded,
-                size: 20, color: Color(0xFF1A1A2E)),
-          ),
-        ),
-        title: Text('newQuestion'.tr(),
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E))),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: _canPost && !_isPosting ? _submitPost : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                    color: _canPost
-                        ? const Color(0xFF1A1A2E)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(10)),
-                child: _isPosting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('post'.tr(),
-                        style: TextStyle(
-                            color:
-                                _canPost ? Colors.white : Colors.grey.shade400,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700)),
+      backgroundColor: isDesktop ? const Color.fromARGB(255, 233, 242, 249) : const Color(0xFFF5F4F0),
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              leading: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF5F4F0),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.close_rounded,
+                      size: 20, color: Color(0xFF1A1A2E)),
+                ),
               ),
+              title: Text('newQuestion'.tr(),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E))),
+              centerTitle: true,
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: _canPost && !_isPosting ? _submitPost : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                          color: _canPost
+                              ? const Color(0xFF1A1A2E)
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: _isPosting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : Text('post'.tr(),
+                              style: TextStyle(
+                                  color:
+                                      _canPost ? Colors.white : Colors.grey.shade400,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      body: AppLayout(
+        child: Container(
+          clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+          decoration: isDesktop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (isDesktop) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFF5F4F0),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(Icons.close_rounded,
+                              size: 20, color: Color(0xFF1A1A2E)),
+                        ),
+                      ),
+                      Text(
+                        'newQuestion'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _canPost && !_isPosting ? _submitPost : null,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                              color: _canPost
+                                  ? const Color(0xFF1A1A2E)
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10)),
+                          child: _isPosting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : Text('post'.tr(),
+                                  style: TextStyle(
+                                      color: _canPost ? Colors.white : Colors.grey.shade400,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+              ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
           // User info
           Container(
             padding: const EdgeInsets.all(14),
@@ -2880,7 +3036,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
 
           const SizedBox(height: 30),
-        ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2900,12 +3062,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               colors: [Color(0xFFF57F17), Color(0xFFFF8F00)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight)),
-      child: Center(
-          child: Text(initials,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: size * 0.33,
-                  fontWeight: FontWeight.w700))),
+      child: ClipOval(
+        child: user.avatarUrl.isNotEmpty
+            ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+            : Center(
+                child: Text(initials,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: size * 0.33,
+                        fontWeight: FontWeight.w700)),
+              ),
+      ),
     );
   }
 }

@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 // ══════════════════════════════════════════════════════════
 //  AppointmentDetailPage  (Redesigned — Clean Premium)
@@ -128,52 +130,137 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   //  BUILD
   // ════════════════════════════════════════════════════════
 
+  bool get _isDesktop => ResponsiveLayout.isDesktop(context);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _surface,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollCtrl,
-            physics: ClampingScrollPhysics(),
-            slivers: [
-              _buildHero(),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 100),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _stagger(0, _buildDateTimeRow()),
-                    _gap(14),
-                    _stagger(1, _buildLawyerCard()),
-                    _gap(14),
-                    _stagger(2, _buildInfoCard()),
-                    // _gap(14),
-                    // _stagger(3, _buildTimelineCard()),
-                    if (appointmentModel['status'] == 3 &&
-                        appointmentModel['rating'] != null) ...[
-                      _gap(14),
-                      _stagger(4, _buildRatingCard()),
+      backgroundColor: _isDesktop ? const Color(0xFFE9F2F9) : _surface,
+      body: AppLayout(
+        child: _isDesktop
+            ? Column(
+                children: [
+                  // Desktop inline header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    child: Row(
+                      children: [
+                        _circleBtn(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          color: _ink,
+                          bg: Colors.white,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const SizedBox(width: 14),
+                        Text(
+                          'appointmentInfo.title'.tr(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: _ink,
+                          ),
+                        ),
+                        const Spacer(),
+                        _circleBtn(
+                          icon: Icons.more_horiz_rounded,
+                          color: _ink,
+                          bg: Colors.white,
+                          onTap: _showMenu,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Desktop content area
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: _surface,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          CustomScrollView(
+                            controller: _scrollCtrl,
+                            physics: const ClampingScrollPhysics(),
+                            slivers: [
+                              _buildHero(),
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                                sliver: SliverList(
+                                  delegate: SliverChildListDelegate([
+                                    _stagger(0, _buildDateTimeRow()),
+                                    _gap(14),
+                                    _stagger(1, _buildLawyerCard()),
+                                    _gap(14),
+                                    _stagger(2, _buildInfoCard()),
+                                    if (appointmentModel['status'] == 3 &&
+                                        appointmentModel['rating'] != null) ...[
+                                      _gap(14),
+                                      _stagger(4, _buildRatingCard()),
+                                    ],
+                                    _gap(14),
+                                    _stagger(5, _buildNoteCard()),
+                                  ]),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Bottom CTA
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: _stagger(6, _buildBottomCTA()),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Stack(
+                children: [
+                  CustomScrollView(
+                    controller: _scrollCtrl,
+                    physics: const ClampingScrollPhysics(),
+                    slivers: [
+                      _buildHero(),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 100),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate([
+                            _stagger(0, _buildDateTimeRow()),
+                            _gap(14),
+                            _stagger(1, _buildLawyerCard()),
+                            _gap(14),
+                            _stagger(2, _buildInfoCard()),
+                            if (appointmentModel['status'] == 3 &&
+                                appointmentModel['rating'] != null) ...[
+                              _gap(14),
+                              _stagger(4, _buildRatingCard()),
+                            ],
+                            _gap(14),
+                            _stagger(5, _buildNoteCard()),
+                          ]),
+                        ),
+                      ),
                     ],
-                    _gap(14),
-                    _stagger(5, _buildNoteCard()),
-                  ]),
-                ),
+                  ),
+                  // Floating AppBar
+                  _buildFloatingAppBar(),
+                  // Bottom CTA
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: _stagger(6, _buildBottomCTA()),
+                  ),
+                ],
               ),
-            ],
-          ),
-
-          // Floating AppBar
-          _buildFloatingAppBar(),
-
-          // Bottom CTA
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _stagger(6, _buildBottomCTA()),
-          ),
-        ],
       ),
     );
   }
@@ -1311,28 +1398,30 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: _card, borderRadius: BorderRadius.circular(24)),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F4),
-                    borderRadius: BorderRadius.circular(2)),
-              ),
-              _menuTile(Icons.share_rounded, 'appointmentInfo.shareAppointment'.tr(), _blue),
-              _menuTile(Icons.picture_as_pdf_rounded, 'appointmentInfo.downloadPDF'.tr(), _green),
-              _menuTile(Icons.flag_outlined, 'appointmentInfo.reportIssue'.tr(), _amber),
-              const SizedBox(height: 8),
-            ]),
+      builder: (_) => AppLayout(
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              color: _card, borderRadius: BorderRadius.circular(24)),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F4),
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+                _menuTile(Icons.share_rounded, 'appointmentInfo.shareAppointment'.tr(), _blue),
+                _menuTile(Icons.picture_as_pdf_rounded, 'appointmentInfo.downloadPDF'.tr(), _green),
+                _menuTile(Icons.flag_outlined, 'appointmentInfo.reportIssue'.tr(), _amber),
+                const SizedBox(height: 8),
+              ]),
+            ),
           ),
         ),
       ),
