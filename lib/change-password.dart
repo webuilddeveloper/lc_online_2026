@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:easy_localization/easy_localization.dart';
-
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
 
@@ -76,9 +76,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         backAction: () => goBack(),
         isRightWidget: false,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-        children: [
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            children: [
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -180,6 +183,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             ),
           )
         ],
+      ),
+        ),
       ),
     );
   }

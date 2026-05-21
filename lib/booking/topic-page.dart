@@ -2,6 +2,7 @@ import 'package:LawyerOnline/booking/lawyer-page.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class TopicPage extends StatefulWidget {
   const TopicPage({Key? key}) : super(key: key);
@@ -235,10 +236,13 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
         backAction: () => Navigator.pop(context, false),
         rightAction: () {},
       ),
-      body: Column(
-        children: [
-          // ── Header ──────────────────────────────────
-          _buildHeader(),
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: Column(
+            children: [
+              // ── Header ──────────────────────────────────
+              _buildHeader(),
 
           // ── Search ──────────────────────────────────
           _buildSearchBar(),
@@ -298,6 +302,8 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
                   ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

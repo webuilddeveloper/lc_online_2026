@@ -5,6 +5,9 @@ import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 class CaseStatusAllPage extends StatefulWidget {
   final List<dynamic> caseList;
@@ -91,94 +94,150 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      // backgroundColor: const Color(0xFFEEF2F5),
-      backgroundColor: Colors.white,
-      appBar: appBar(
-        title: "สถานะเคสทั้งหมด",
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => Navigator.pop(context),
-        rightAction: () {},
-      ),
-      body: Column(
-        children: [
-          // ── Tab Bar ──────────────────────────────────────────
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              labelColor: const Color(0xFF0262EC),
-              unselectedLabelColor: const Color(0xFF8E8E93),
-              labelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
-              indicatorColor: const Color(0xFF0262EC),
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: _tabs.map((tab) {
-                final count = _filteredList(tab['status']).length;
-                return Tab(
+      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : Colors.white,
+      appBar: isDesktop
+          ? null
+          : appBar(
+              title: "สถานะเคสทั้งหมด",
+              backBtn: true,
+              rightBtn: false,
+              backAction: () => Navigator.pop(context),
+              rightAction: () {},
+            ),
+      body: AppLayout(
+        child: Container(
+          decoration: isDesktop
+              ? BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                )
+              : null,
+          child: Column(
+            children: [
+              if (isDesktop)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   child: Row(
                     children: [
-                      Text(
-                        tab['label'],
-                        style: GoogleFonts.prompt(),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2F5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: GoogleFonts.prompt(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF8E8E93),
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                width: 1, color: const Color(0xFFDBDBDB)),
                           ),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 18, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        'สถานะเคสทั้งหมด',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
                     ],
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          // ── Tab Views ─────────────────────────────────────────
-          Expanded(
-            child: Container(
-              color: const Color(0xFFEEF2F5),
-              child: TabBarView(
-                controller: _tabController,
-                children: _tabs.map((tab) {
-                  final list = _filteredList(tab['status']);
-                  return list.isEmpty
-                      ? _buildEmpty()
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(15, 16, 15, 30),
-                          itemCount: list.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) =>
-                              _caseCard(list[index]),
-                        );
-                }).toList(),
+                ),
+              // ── Tab Bar ──────────────────────────────────────────
+              Container(
+                color: Colors.white,
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: const Color(0xFF0262EC),
+                  unselectedLabelColor: const Color(0xFF8E8E93),
+                  labelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  indicatorColor: const Color(0xFF0262EC),
+                  indicatorWeight: 3,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  tabs: _tabs.map((tab) {
+                    final count = _filteredList(tab['status']).length;
+                    return Tab(
+                      child: Row(
+                        children: [
+                          Text(
+                            tab['label'],
+                            style: GoogleFonts.prompt(),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2F5),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$count',
+                              style: GoogleFonts.prompt(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
+
+              // ── Tab Views ─────────────────────────────────────────
+              Expanded(
+                child: Container(
+                  color: const Color(0xFFEEF2F5),
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: _tabs.map((tab) {
+                      final list = _filteredList(tab['status']);
+                      return list.isEmpty
+                          ? _buildEmpty()
+                          : ListView.separated(
+                              padding:
+                                  const EdgeInsets.fromLTRB(15, 16, 15, 30),
+                              itemCount: list.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) =>
+                                  _caseCard(list[index]),
+                            );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

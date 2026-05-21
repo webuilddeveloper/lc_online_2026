@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
@@ -126,111 +127,117 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-      body: ListView(
-        controller: _scrollCtrl,
-        padding: const EdgeInsets.fromLTRB(15, 20, 15, 100),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                )
-              ],
-            ),
-            child: Column(
-              children: [
-                /// Profile Image
-                GestureDetector(
-                  onTap: pickImage,
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      CircleAvatar(
-                        radius: 45,
-                        backgroundColor: _blue,
-                        backgroundImage: profileImage != null
-                            ? FileImage(profileImage!) as ImageProvider
-                            : _storedImageUrl.isEmpty
-                                ? null
-                                : _typeLogin == 'local'
-                                    ? AssetImage(_storedImageUrl)
-                                        as ImageProvider
-                                    : NetworkImage(_storedImageUrl),
-                        child: _storedImageUrl.isEmpty && profileImage == null
-                            ? const Icon(Icons.person,
-                                size: 45, color: Colors.white)
-                            : null,
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: ListView(
+            controller: _scrollCtrl,
+            padding: const EdgeInsets.fromLTRB(15, 20, 15, 100),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    /// Profile Image
+                    GestureDetector(
+                      onTap: pickImage,
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            radius: 45,
+                            backgroundColor: _blue,
+                            backgroundImage: profileImage != null
+                                ? FileImage(profileImage!) as ImageProvider
+                                : _storedImageUrl.isEmpty
+                                    ? null
+                                    : _typeLogin == 'local'
+                                        ? AssetImage(_storedImageUrl)
+                                            as ImageProvider
+                                        : NetworkImage(_storedImageUrl),
+                            child:
+                                _storedImageUrl.isEmpty && profileImage == null
+                                    ? const Icon(Icons.person,
+                                        size: 45, color: Colors.white)
+                                    : null,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: _blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          )
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: _blue,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                    ),
 
-                const SizedBox(height: 25),
+                    const SizedBox(height: 25),
 
-                _textField(
-                  fieldKey: _firstNameKey,
-                  title: 'firstName'.tr(),
-                  controller: firstNameController,
-                  icon: Icons.person_outline,
-                  errorText: _firstNameError,
-                  onChanged: (_) => setState(() => _firstNameError = null),
-                ),
-                const SizedBox(height: 15),
-                _textField(
-                  fieldKey: _lastNameKey,
-                  title: 'lastName'.tr(),
-                  controller: lastNameController,
-                  icon: Icons.person_outline,
-                  errorText: _lastNameError,
-                  onChanged: (_) => setState(() => _lastNameError = null),
-                ),
-                const SizedBox(height: 15),
-                _textField(
-                  fieldKey: _phoneKey,
-                  title: 'phone'.tr(),
-                  controller: phoneController,
-                  icon: Icons.phone_outlined,
-                  maxLength: 10,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  errorText: _phoneError,
-                  onChanged: (_) => setState(() => _phoneError = null),
-                ),
-                const SizedBox(height: 15),
-                _textField(
-                  fieldKey: _emailKey,
-                  title: 'email'.tr(),
-                  controller: emailController,
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                  onChanged: (_) => setState(() => _emailError = null),
-                ),
+                    _textField(
+                      fieldKey: _firstNameKey,
+                      title: 'firstName'.tr(),
+                      controller: firstNameController,
+                      icon: Icons.person_outline,
+                      errorText: _firstNameError,
+                      onChanged: (_) => setState(() => _firstNameError = null),
+                    ),
+                    const SizedBox(height: 15),
+                    _textField(
+                      fieldKey: _lastNameKey,
+                      title: 'lastName'.tr(),
+                      controller: lastNameController,
+                      icon: Icons.person_outline,
+                      errorText: _lastNameError,
+                      onChanged: (_) => setState(() => _lastNameError = null),
+                    ),
+                    const SizedBox(height: 15),
+                    _textField(
+                      fieldKey: _phoneKey,
+                      title: 'phone'.tr(),
+                      controller: phoneController,
+                      icon: Icons.phone_outlined,
+                      maxLength: 10,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      errorText: _phoneError,
+                      onChanged: (_) => setState(() => _phoneError = null),
+                    ),
+                    const SizedBox(height: 15),
+                    _textField(
+                      fieldKey: _emailKey,
+                      title: 'email'.tr(),
+                      controller: emailController,
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      errorText: _emailError,
+                      onChanged: (_) => setState(() => _emailError = null),
+                    ),
 
-                const SizedBox(height: 25),
-                _saveButton(),
-              ],
-            ),
-          )
-        ],
+                    const SizedBox(height: 25),
+                    _saveButton(),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

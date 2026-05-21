@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawyerOnlineList extends StatefulWidget {
   LawyerOnlineList({super.key, this.topic, this.subTopic});
@@ -266,41 +267,45 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         isRightWidget: false,
         backAction: () => goBack(),
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            // _buildHeader(),
-            const SizedBox(
-              height: 5,
-            ),
-            _buildSearchFilterBar(),
-            if (_activeFilterCount > 0 || (widget.topic ?? '') != '')
-              _buildActiveChips(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Row(children: [
-                Text(
-                  'พบ ${filtered.length} ทนายความ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w500,
-                  ),
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 5,
                 ),
-              ]),
-            ),
-            Expanded(
-              child: filtered.isEmpty
-                  ? _buildEmpty()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) => _buildLawyerCard(filtered[i]),
+                _buildSearchFilterBar(),
+                if (_activeFilterCount > 0 || (widget.topic ?? '') != '')
+                  _buildActiveChips(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: Row(children: [
+                    Text(
+                      'พบ ${filtered.length} ทนายความ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
+                  ]),
+                ),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? _buildEmpty()
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, i) => _buildLawyerCard(filtered[i]),
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawTypeAllPage extends StatefulWidget {
   const LawTypeAllPage({super.key});
@@ -213,7 +214,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
       MaterialPageRoute(
         builder: (_) => LawyerOnlineList(
           topic: topic['title'] as String,
-          subTopic: _selectedSubTopic['title'],
+          subTopic: _selectedSubTopic?['title'],
         ),
       ),
     );
@@ -237,35 +238,97 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           isRightWidget: false,
           backAction: () => Navigator.pop(context),
         ),
-        body: Column(
-          children: [
-            // ── Search bar ──────────────────────────────
-            _buildSearchBar(),
-
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth > 768;
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : 500),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Grid ──────────────────────────────
-                    if (filtered.isEmpty)
-                      _buildEmpty()
-                    else
-                      _buildGrid(filtered),
+                    // ── Search bar ──────────────────────────────
+                    _buildSearchBar(),
+                    Expanded(
+                      child: isDesktop
+                          ? _buildDesktopLayout(filtered, selectedColor)
+                          : _buildMobileLayout(filtered, selectedColor),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-                    // ── Sub-case dropdown (ถ้าเลือก topic ที่มี subCase) ──
-                    if (_selectedTopic != null && _hasSubCase) ...[
-                      const SizedBox(height: 20),
-                      _buildSubCaseSection(selectedColor),
-                    ],
+  Widget _buildDesktopLayout(
+      List<Map<String, dynamic>> filtered, Color selectedColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+            child: filtered.isEmpty
+                ? _buildEmpty()
+                : _buildGrid(filtered, isDesktop: true),
+          ),
+        ),
+        if (_selectedTopic != null && _hasSubCase)
+          Expanded(
+            flex: 2,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 16, 40),
+              child: _buildSubCaseSection(selectedColor),
+            ),
+          )
+        else
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 60),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.touch_app_rounded,
+                        size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'เลือกหัวข้อเพื่อดูรายละเอียด',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
                   ],
                 ),
               ),
             ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(
+      List<Map<String, dynamic>> filtered, Color selectedColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (filtered.isEmpty)
+            _buildEmpty()
+          else
+            _buildGrid(filtered, isDesktop: false),
+          if (_selectedTopic != null && _hasSubCase) ...[
+            const SizedBox(height: 20),
+            _buildSubCaseSection(selectedColor),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -321,15 +384,15 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
   //  Grid — copy จาก ConsultPage._buildTopicField()
   // ════════════════════════════════════════════════════════
 
-  Widget _buildGrid(List<Map<String, dynamic>> items) {
+  Widget _buildGrid(List<Map<String, dynamic>> items, {bool isDesktop = false}) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1.1,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isDesktop ? 4 : 3,
+        crossAxisSpacing: isDesktop ? 16 : 8,
+        mainAxisSpacing: isDesktop ? 16 : 8,
+        childAspectRatio: isDesktop ? 1.3 : 1.1,
       ),
       itemCount: items.length,
       itemBuilder: (_, i) {

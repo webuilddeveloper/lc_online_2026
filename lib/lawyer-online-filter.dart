@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawyerOnlineFilter extends StatefulWidget {
   const LawyerOnlineFilter({super.key});
@@ -66,8 +67,9 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
         backAction: () => goBack(),
         rightAction: () => {},
       ),
-      body: Container(
-        child: ListView(
+      body: AppLayout(
+        child: Container(
+          child: ListView(
           padding: EdgeInsets.symmetric(horizontal: 15),
           children: [
             const SizedBox(
@@ -274,6 +276,7 @@ class _LawyerOnlineFilterState extends State<LawyerOnlineFilter> {
             // Expanded(child: _buildLawyerOnline()),
           ],
         ),
+      ),
       ),
     );
   }

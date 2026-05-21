@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultStatusPage extends StatefulWidget {
   final int currentStep;
@@ -103,36 +104,38 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         rightAction: () {},
         backAction: () => Navigator.pop(context),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _headerCard(currentStep),
-                  const SizedBox(height: 16),
-                  if (lawyer != null) ...[
-                    _lawyerCard(lawyer),
+      body: AppLayout(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _headerCard(currentStep),
                     const SizedBox(height: 16),
+                    if (lawyer != null) ...[
+                      _lawyerCard(lawyer),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.caseModel != null) ...[
+                      _caseDetailCard(widget.caseModel!),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.appointmentDate != null ||
+                        widget.appointmentTime != null) ...[
+                      _infoRow(),
+                      const SizedBox(height: 16),
+                    ],
+                    _progressCard(currentStep),
+                    const SizedBox(height: 8),
                   ],
-                  if (widget.caseModel != null) ...[
-                    _caseDetailCard(widget.caseModel!),
-                    const SizedBox(height: 16),
-                  ],
-                  if (widget.appointmentDate != null ||
-                      widget.appointmentTime != null) ...[
-                    _infoRow(),
-                    const SizedBox(height: 16),
-                  ],
-                  _progressCard(currentStep),
-                  const SizedBox(height: 8),
-                ],
+                ),
               ),
             ),
-          ),
-          _bottomBar(currentStep, context),
-        ],
+            _bottomBar(currentStep, context),
+          ],
+        ),
       ),
     );
   }

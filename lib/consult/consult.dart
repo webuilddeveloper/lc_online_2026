@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultPage extends StatefulWidget {
   const ConsultPage({super.key});
@@ -265,91 +266,96 @@ class _ConsultPageState extends State<ConsultPage> {
           rightAction: () {},
           backAction: () => Navigator.pop(context, false),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // ── Header gradient ──────────────────
-                    _buildHeaderCard(),
-                    const SizedBox(height: 16),
+        body: AppLayout(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // ── Header gradient ──────────────────
+                        _buildHeaderCard(),
+                        const SizedBox(height: 16),
 
-                    // ── Form card ────────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+                        // ── Form card ────────────────────────
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ── ประเภทหัวข้อ ─────────────
-                          _buildTopicField(),
-                          const SizedBox(height: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ── ประเภทหัวข้อ ─────────────
+                              _buildTopicField(),
+                              const SizedBox(height: 20),
 
-                          // ── หัวข้อย่อย (ถ้ามี) ──────
-                          if (_selectedTopic != null && _hasSubCase) ...[
-                            _buildSubCaseField(topicColor),
-                            const SizedBox(height: 20),
-                          ],
+                              // ── หัวข้อย่อย (ถ้ามี) ──────
+                              if (_selectedTopic != null && _hasSubCase) ...[
+                                _buildSubCaseField(topicColor),
+                                const SizedBox(height: 20),
+                              ],
 
-                          // ── วันที่ ───────────────────
-                          // _buildDateField(),
-                          // const SizedBox(height: 20),
+                              // ── วันที่ ───────────────────
+                              // _buildDateField(),
+                              // const SizedBox(height: 20),
 
-                          // ── จังหวัด ─────────────────
-                          _buildDropdownField(
-                            label: 'จังหวัด',
-                            hint: 'เลือกจังหวัด',
-                            icon: Icons.location_on_outlined,
-                            value: _selectedProvince,
-                            items: _provinces,
-                            onChanged: (val) =>
-                                setState(() => _selectedProvince = val),
+                              // ── จังหวัด ─────────────────
+                              _buildDropdownField(
+                                label: 'จังหวัด',
+                                hint: 'เลือกจังหวัด',
+                                icon: Icons.location_on_outlined,
+                                value: _selectedProvince,
+                                items: _provinces,
+                                onChanged: (val) =>
+                                    setState(() => _selectedProvince = val),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── สรุปเหตุการณ์ ────────────
+                              _buildTextArea(
+                                label: 'สรุปเหตุการณ์',
+                                hint:
+                                    'อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...',
+                                controller: _detailController,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── ข้อเรียกร้อง ─────────────
+                              _buildTextArea(
+                                label: 'ข้อเรียกร้อง',
+                                hint:
+                                    'ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...',
+                                controller: _demandController,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── แนบภาพ ───────────────────
+                              _buildImageField(),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-
-                          // ── สรุปเหตุการณ์ ────────────
-                          _buildTextArea(
-                            label: 'สรุปเหตุการณ์',
-                            hint:
-                                'อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...',
-                            controller: _detailController,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── ข้อเรียกร้อง ─────────────
-                          _buildTextArea(
-                            label: 'ข้อเรียกร้อง',
-                            hint:
-                                'ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...',
-                            controller: _demandController,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── แนบภาพ ───────────────────
-                          _buildImageField(),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // ── Bottom Button ────────────────────────────
-            _buildBottomButton(topicColor),
-          ],
+                // ── Bottom Button ────────────────────────────
+                _buildBottomButton(topicColor),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -385,7 +391,7 @@ class _ConsultPageState extends State<ConsultPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('กรอกข้อมูลเบื้อต้น',
+              Text('กรอกข้อมูลเบื้องต้น',
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
