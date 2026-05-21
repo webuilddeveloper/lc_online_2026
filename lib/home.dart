@@ -28,10 +28,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/lawyer/appointment_store.dart';
+import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<dynamic> lawyerOnlineList = [
     // ── เดิม 5 คน ──────────────────────────────────────────────────────────────
     {
-      "code": "0",
+      "code": "20260513101915-561-752",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       "title": "ทนายความอาวุโส",
       "scroll": 4.8,
@@ -323,55 +323,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
   List<dynamic> get appointmentList => AppointmentStore.instance.list;
-
-  List<dynamic> caseList = [
-    {
-      "code": "0",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "กฏหมายครอบครัว",
-      "story": "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามี",
-      "createDate": "9 ชั่วโมงที่ผ่านมา",
-      "appointmentDate": "28/03/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "lawyerApprove": true,
-      "lawyerModel": {
-        "code": "0",
-        "name": "ศักดิ์สิทธิ์ พิพากษ์",
-        "scroll": 4.8,
-        "cost": "ไม่เสียค่าใช้จ่าย",
-        "costUnit": "/hr",
-        "imageUrl": "assets/images/lawyer-avatar-1.png",
-        "experience": "11+ years",
-        "skills": ["Family lawyer", "Estate planning lawyer"]
-      },
-      "position": const LatLng(13.7466, 100.5393),
-      "status": "3",
-      "statusText": "กำลังปรึกษา",
-    },
-    {
-      "code": "1",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "กฏหมายครอบครัว",
-      "story": "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามี",
-      "createDate": "9 ชั่วโมงที่ผ่านมา",
-      "appointmentDate": "28/03/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "lawyerApprove": true,
-      "lawyerModel": {
-        "code": "0",
-        "name": "ศักดิ์สิทธิ์ พิพากษ์",
-        "scroll": 4.8,
-        "cost": "ไม่เสียค่าใช้จ่าย",
-        "costUnit": "/hr",
-        "imageUrl": "assets/images/lawyer-avatar-1.png",
-        "experience": "11+ years",
-        "skills": ["Family lawyer", "Estate planning lawyer"]
-      },
-      "position": const LatLng(13.7466, 100.5393),
-      "status": "4",
-      "statusText": "เสร็จสิ้น",
-    },
-  ];
 
   // ─── law categories ───────────────────────────────────────────────
   final List<Map<String, dynamic>> _lawCategories = [
@@ -668,12 +619,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // ── User dashboard ───────────────────────────────────
             if (typeLogin == 'null' || userType == 'user')
-              HomeUserSection(
-                cases: caseList,
-                lawCategories: _lawCategories,
-                lawyers: lawyerOnlineList,
-                newLawyers: newLawyerOnlineList,
-                isGuest: typeLogin == 'null',
+              ListenableBuilder(
+                listenable: LawyerJobsStore.instance,
+                builder: (_, __) => HomeUserSection(
+                  cases: UserCaseAdapter.fromJobs(LawyerJobsStore.instance
+                      .jobsForClient(UserProfileStore.instance.code)),
+                  lawCategories: _lawCategories,
+                  lawyers: lawyerOnlineList,
+                  newLawyers: newLawyerOnlineList,
+                  isGuest: typeLogin == 'null',
+                ),
               ),
 
             // ── Lawyer dashboard ─────────────────────────────────
@@ -682,7 +637,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeLawyerSection(
                   appointments: appointmentList,
-                  jobRequests: LawyerJobsStore.instance.jobs,
+                  jobRequests: LawyerJobsStore.instance
+                      .jobsForLawyer(UserProfileStore.instance.code),
                   onJobStatusChanged: (id, newStatus) {
                     LawyerJobsStore.instance.updateStatus(id, newStatus);
                   },

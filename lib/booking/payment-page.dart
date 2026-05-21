@@ -104,7 +104,8 @@ class _PaymentPageState extends State<PaymentPage> {
                                         .format(widget.date!)
                                         .toString(),
                                     appointmentTime: widget.time,
-                                    bookingCode: 'BK-2026-00123',
+                                    bookingCode:
+                                        'BK-${DateTime.now().millisecondsSinceEpoch}',
                                   ),
                                 ),
                               );

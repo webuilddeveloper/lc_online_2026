@@ -5,13 +5,24 @@ abstract class ProvinceRepository {
   Future<List<ProvinceModel>> readProvinces();
 }
 
+class ProvinceRepositoryException implements Exception {
+  const ProvinceRepositoryException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class ApiProvinceRepository implements ProvinceRepository {
   const ApiProvinceRepository();
 
   @override
   Future<List<ProvinceModel>> readProvinces() async {
     final result = await postDio('${server}route/province/read', {});
-    if (result is! List) return const [];
+    if (result is! List) {
+      throw const ProvinceRepositoryException('Invalid province response');
+    }
 
     return result
         .whereType<Map>()

@@ -4,6 +4,7 @@ import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 
 // ══════════════════════════════════════════════════════════
@@ -26,7 +27,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   static const _kPrimary = Color(0xFF0262EC);
 
-  final _jobs = LawyerJobsStore.instance.jobs;
+  List<Map<String, dynamic>> get _jobs =>
+      LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code);
 
   @override
   void initState() {
@@ -90,9 +92,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   @override
   Widget build(BuildContext context) {
-    final pending = LawyerJobsStore.instance.jobs
-        .where((j) => j['status'] == 'pending')
-        .length;
+    final pending = _jobs.where((j) => j['status'] == 'pending').length;
     final filtered = _filtered;
 
     return Scaffold(

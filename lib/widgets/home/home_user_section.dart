@@ -13,11 +13,25 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────
-int _statusToStep(String status) => status == '4' ? 4 : 3;
+int _statusToStep(String status) {
+  switch (status) {
+    case '1':
+      return 1;
+    case '2':
+      return 2;
+    case '4':
+      return 4;
+    default:
+      return 3;
+  }
+}
 
-dynamic _buildLawyerForConsult(Map? m) {
+dynamic _buildLawyerForConsult(Map? m, Map caseModel) {
   if (m == null) return null;
   return {
+    'id': caseModel['id'],
+    'jobId': caseModel['id'],
+    'code': m['code'],
     'name': m['name'] ?? '',
     'avatar': (m['name'] as String? ?? 'ท').characters.first,
     'title': (m['skills'] as List?)?.isNotEmpty == true
@@ -25,6 +39,10 @@ dynamic _buildLawyerForConsult(Map? m) {
         : m['experience'] ?? '',
     'rating': m['scroll'] ?? 0,
     'imageUrl': m['imageUrl'] ?? '',
+    'appointmentDate': caseModel['appointmentDate'],
+    'appointmentTime': caseModel['appointmentTime'],
+    'active': caseModel['jobStatus'] == 'accepted',
+    'caseSuccess': caseModel['jobStatus'] == 'done',
   };
 }
 
@@ -61,6 +79,38 @@ class HomeUserSection extends StatelessWidget {
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
     }
+  }
+
+  void _showRejectedCase(BuildContext context, Map model) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: Color(0xFFEF4444)),
+            SizedBox(width: 8),
+            Expanded(child: Text('เคสถูกปฏิเสธ')),
+          ],
+        ),
+        content: Text(
+          'คำขอ "${model['category'] ?? ''}" ถูกปฏิเสธแล้ว คุณสามารถเปิดเคสใหม่หรือเลือกทนายคนอื่นได้',
+          style: GoogleFonts.prompt(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'ตกลง',
+              style: GoogleFonts.prompt(
+                color: _kPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -209,15 +259,20 @@ class HomeUserSection extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => _guardedNavigate(
-        context,
-        ConsultStatusPage(
-          currentStep: _statusToStep(status),
-          lawyer: _buildLawyerForConsult(lawyerModel),
-          appointmentDate: model['appointmentDate'],
-          appointmentTime: model['appointmentTime'],
-        ),
-      ),
+      onTap: () {
+        final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+        _guardedNavigate(
+          context,
+          ConsultStatusPage(
+            currentStep: _statusToStep(status),
+            lawyer: _buildLawyerForConsult(lawyerModel, model),
+            appointmentDate: model['appointmentDate'],
+            appointmentTime: model['appointmentTime'],
+            canOpenChat: jobStatus == 'accepted' || jobStatus == 'done',
+            caseModel: Map<String, dynamic>.from(model),
+          ),
+        );
+      },
       child: Container(
         width: cardW,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -503,6 +558,9 @@ _StatusStyle _statusStyle(String status) {
     case '4':
       return _StatusStyle(const Color(0xFF6B7A99), const Color(0xFFF4F6FB),
           Icons.check_circle_outline_rounded);
+    case '5':
+      return _StatusStyle(const Color(0xFFEF4444), const Color(0xFFFFF1F2),
+          Icons.cancel_outlined);
     default:
       return _StatusStyle(const Color(0xFF6B7A99), const Color(0xFFF4F6FB),
           Icons.info_outline_rounded);

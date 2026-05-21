@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ══════════════════════════════════════════════════════════
@@ -77,7 +78,8 @@ class MockChatRepository implements ChatRepository {
   Future<List<Conversation>> getConversations(String userType) async {
     if (userType == 'lawyer') {
       // ✅ ดึงจาก LawyerJobsStore — เฉพาะงานที่รับแล้วหรือจบแล้ว
-      return LawyerJobsStore.instance.jobs
+      return LawyerJobsStore.instance
+          .jobsForLawyer(UserProfileStore.instance.code)
           .where((j) => j['status'] == 'accepted' || j['status'] == 'done')
           .map((j) => Conversation(
                 id: j['id'] as String,

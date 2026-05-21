@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:LawyerOnline/carousel_form.dart';
 import 'package:LawyerOnline/component/comming-soon.dart';
 import 'package:LawyerOnline/component/link_url_in.dart';
@@ -20,12 +22,85 @@ class HomeBannerSection extends StatefulWidget {
 }
 
 class _HomeBannerSectionState extends State<HomeBannerSection> {
+  static const _autoPlayInterval = Duration(seconds: 4);
+  static const _autoPlayAnimationDuration = Duration(milliseconds: 800);
+
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
+  Timer? _autoPlayTimer;
+  ModalRoute<dynamic>? _route;
+  bool _autoPlayAnimating = false;
   int _current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _restartAutoPlayTimer();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeBannerSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.banners, widget.banners) ||
+        oldWidget.banners.length != widget.banners.length) {
+      if (_current >= widget.banners.length) {
+        _current = widget.banners.isEmpty ? 0 : widget.banners.length - 1;
+      }
+      _restartAutoPlayTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopAutoPlayTimer();
+    super.dispose();
+  }
+
+  void _restartAutoPlayTimer() {
+    _stopAutoPlayTimer();
+    if (widget.banners.length <= 1) return;
+
+    _autoPlayTimer = Timer.periodic(_autoPlayInterval, (_) {
+      unawaited(_advanceBanner());
+    });
+  }
+
+  void _stopAutoPlayTimer() {
+    _autoPlayTimer?.cancel();
+    _autoPlayTimer = null;
+  }
+
+  Future<void> _advanceBanner() async {
+    if (!mounted || _autoPlayAnimating || !_carouselController.ready) return;
+    if (_route?.isCurrent == false) return;
+
+    _autoPlayAnimating = true;
+    try {
+      await _carouselController.nextPage(
+        duration: _autoPlayAnimationDuration,
+        curve: Curves.fastOutSlowIn,
+      );
+    } catch (_) {
+      // The carousel may be disposed while an autoplay frame is in flight.
+    } finally {
+      _autoPlayAnimating = false;
+    }
+  }
 
   void _onBannerTap(dynamic item) {
     if (item['action'] == 'out') {
       launchInWebViewWithJavaScript(item['path']);
     } else if (item['action'] == 'in') {
+      if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -38,6 +113,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
         ),
       );
     } else if ((item['action'] as String? ?? '').toUpperCase() == 'P') {
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -74,14 +150,20 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
         SizedBox(
           height: RV.bannerHeight(context),
           child: CarouselSlider(
+            carouselController: _carouselController,
             options: CarouselOptions(
               viewportFraction: 0.9,
               aspectRatio: 3,
               enlargeCenterPage: true,
               enlargeFactor: 0.32,
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 4),
-              onPageChanged: (index, _) => setState(() => _current = index),
+              autoPlay: false,
+              autoPlayInterval: _autoPlayInterval,
+              autoPlayAnimationDuration: _autoPlayAnimationDuration,
+              pauseAutoPlayOnManualNavigate: false,
+              onPageChanged: (index, _) {
+                if (!mounted) return;
+                setState(() => _current = index);
+              },
             ),
             items: widget.banners.map((item) {
               return GestureDetector(
@@ -93,7 +175,12 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
                       image: AssetImage(item['imageUrl']),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
-                        const Color.fromARGB(133, 55, 55, 55).withOpacity(0.5),
+                        const Color.fromARGB(
+                          133,
+                          55,
+                          55,
+                          55,
+                        ).withValues(alpha: 0.5),
                         BlendMode.srcATop,
                       ),
                     ),

@@ -5,6 +5,7 @@ import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -62,6 +63,12 @@ class _ChatPageUserState extends State<ChatPageUser>
       title: 'endConsultTitle'.tr(),
       message: 'endConsultMessageUser'.tr(),
       onConfirm: () {
+        final jobId = widget.model['jobId']?.toString() ??
+            widget.model['id']?.toString() ??
+            '';
+        if (jobId.isNotEmpty) {
+          LawyerJobsStore.instance.updateStatus(jobId, 'done');
+        }
         final lawyer = {
           'name': widget.model['name'] ?? '',
           'avatar': (widget.model['name'] as String? ?? 'ท').characters.first,
