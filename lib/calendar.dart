@@ -88,24 +88,49 @@ class _CalendarPageState extends State<CalendarPage>
 
   Future<void> _loadAppointments() async {
     final lawyerCode = UserProfileStore.instance.code.trim();
-    if (_isLoadingAppointments || lawyerCode.isEmpty) return;
+    if (lawyerCode.isEmpty) return;
+    final localAppointments =
+        LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+    if (_isLoadingAppointments) {
+      if (localAppointments.isNotEmpty && mounted) {
+        setState(() {
+          _appointments = CaseAppointmentMapper.mergeAppointments(
+            _appointments,
+            localAppointments,
+          );
+        });
+      }
+      return;
+    }
     setState(() {
+      if (localAppointments.isNotEmpty) {
+        _appointments = CaseAppointmentMapper.mergeAppointments(
+          _appointments,
+          localAppointments,
+        );
+      }
       _isLoadingAppointments = true;
       _appointmentLoadError = null;
     });
     try {
-      final appointments =
+      final realAppointments =
           await _appointmentRepository.readAppointmentsForLawyer(lawyerCode);
       if (!mounted) return;
       setState(() {
-        _appointments = appointments;
+        _appointments = CaseAppointmentMapper.mergeAppointments(
+          realAppointments,
+          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode),
+        );
         _isLoadingAppointments = false;
       });
     } catch (_) {
       if (!mounted) return;
+      final fallbackAppointments =
+          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
       setState(() {
-        _appointments = const [];
-        _appointmentLoadError = 'genericError'.tr();
+        _appointments = fallbackAppointments;
+        _appointmentLoadError =
+            fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
         _isLoadingAppointments = false;
       });
     }

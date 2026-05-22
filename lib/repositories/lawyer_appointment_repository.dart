@@ -5,6 +5,18 @@ abstract class LawyerAppointmentRepository {
   Future<List<Map<String, dynamic>>> readAppointmentsForLawyer(
     String lawyerCode,
   );
+
+  Future<LawyerScheduleSnapshot> readScheduleForLawyer(String lawyerCode);
+}
+
+class LawyerScheduleSnapshot {
+  const LawyerScheduleSnapshot({
+    required this.appointments,
+    required this.bookingJobs,
+  });
+
+  final List<Map<String, dynamic>> appointments;
+  final List<Map<String, dynamic>> bookingJobs;
 }
 
 class ApiLawyerAppointmentRepository implements LawyerAppointmentRepository {
@@ -18,14 +30,31 @@ class ApiLawyerAppointmentRepository implements LawyerAppointmentRepository {
   Future<List<Map<String, dynamic>>> readAppointmentsForLawyer(
     String lawyerCode,
   ) async {
-    final code = lawyerCode.trim();
-    if (code.isEmpty) return const [];
+    final snapshot = await readScheduleForLawyer(lawyerCode);
+    return snapshot.appointments;
+  }
 
+  @override
+  Future<LawyerScheduleSnapshot> readScheduleForLawyer(
+      String lawyerCode) async {
+    final code = lawyerCode.trim();
+    if (code.isEmpty) {
+      return const LawyerScheduleSnapshot(
+        appointments: [],
+        bookingJobs: [],
+      );
+    }
     final cases = await _caseRepository.readCases(lawyerCode: code);
-    return [
-      for (var i = 0; i < cases.length; i++)
-        CaseAppointmentMapper.fromCase(cases[i], colorIndex: i % 6),
-    ];
+    return LawyerScheduleSnapshot(
+      appointments: [
+        for (var i = 0; i < cases.length; i++)
+          CaseAppointmentMapper.fromCase(cases[i], colorIndex: i % 6),
+      ],
+      bookingJobs: [
+        for (final item in cases)
+          CaseAppointmentMapper.bookingJobFromCase(item),
+      ],
+    );
   }
 }
 
@@ -86,6 +115,47 @@ class CaseAppointmentMapper {
     };
   }
 
+  static Map<String, dynamic> bookingJobFromCase(Map<String, dynamic> source) {
+    final appointment = fromCase(source);
+    final code = _caseIdentity(source);
+    final rawCode = _string(_first(source, const [
+      'code',
+      'id',
+      '_id',
+      'messageRef',
+    ]));
+    final lawyerCode = _string(_first(source, const ['lawyerCode']));
+    final lawyerName = _string(_first(source, const ['lawyerName']));
+    final clientName = _string(_first(source, const ['clientName', 'name']));
+
+    return {
+      'id': code,
+      'caseCode': rawCode,
+      'clientCode': _string(_first(source, const ['clientCode'])),
+      'lawyerCode': lawyerCode,
+      'lawyerModel': {
+        'code': lawyerCode,
+        'name': lawyerName,
+        'imageUrl': 'assets/images/lawyer-avatar-1.png',
+      },
+      'clientName': clientName,
+      'clientAvatar': clientName.isNotEmpty ? clientName.substring(0, 1) : '',
+      'clientColor': 0xFF0262EC,
+      'topic': appointment['caseType'] ?? '',
+      'subTopic': appointment['subCaseType'] ?? '',
+      'detail': appointment['details'] ?? '',
+      'date': appointment['appointmentDate'] ?? '',
+      'time': appointment['appointmentTime'] ?? '',
+      'status': _jobStatus(source['caseStatus']),
+      'requestedAt': '',
+      'jobSource': 'booking',
+      'budget': _string(_first(source, const ['price', 'budget'])),
+      'rawCase': source,
+      'isApiCase': true,
+      'apiCaseCode': rawCode,
+    };
+  }
+
   static Map<DateTime, List<dynamic>> eventMapFromAppointments(
     List<Map<String, dynamic>> appointments,
   ) {
@@ -97,6 +167,21 @@ class CaseAppointmentMapper {
       if (date == null) continue;
       final key = DateTime(date.year, date.month, date.day);
       result.putIfAbsent(key, () => []).add(appointment);
+    }
+    return result;
+  }
+
+  static List<Map<String, dynamic>> mergeAppointments(
+    List<Map<String, dynamic>> primary,
+    List<Map<String, dynamic>> secondary,
+  ) {
+    final result = <Map<String, dynamic>>[];
+    final seen = <String>{};
+
+    for (final appointment in [...primary, ...secondary]) {
+      final key = _appointmentKey(appointment);
+      if (key.isNotEmpty && !seen.add(key)) continue;
+      result.add(Map<String, dynamic>.from(appointment));
     }
     return result;
   }
@@ -155,6 +240,41 @@ class CaseAppointmentMapper {
     return '';
   }
 
+  static String _appointmentKey(Map<String, dynamic> appointment) {
+    final rawCase = appointment['rawCase'];
+    final candidates = [
+      appointment['jobId'],
+      appointment['code'],
+      if (rawCase is Map) rawCase['jobId'],
+      if (rawCase is Map) rawCase['code'],
+      if (rawCase is Map) rawCase['id'],
+      if (rawCase is Map) rawCase['_id'],
+      if (rawCase is Map) rawCase['messageRef'],
+    ];
+    for (final candidate in candidates) {
+      final value = candidate?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  static String _caseIdentity(Map<String, dynamic> source) {
+    final direct = _string(_first(source, const [
+      'code',
+      'id',
+      '_id',
+      'messageRef',
+    ]));
+    if (direct.isNotEmpty) return direct;
+    return [
+      _string(_first(source, const ['clientCode'])),
+      _string(_first(source, const ['lawyerCode'])),
+      _dateString(_first(source, const ['caseDate', 'appointmentDate'])),
+      _timeString(_first(source, const ['startTime'])),
+      _timeString(_first(source, const ['endTime'])),
+    ].where((part) => part.isNotEmpty).join('|');
+  }
+
   static String _string(dynamic value) => value?.toString().trim() ?? '';
 
   static String _dateString(dynamic value) {
@@ -207,6 +327,20 @@ class CaseAppointmentMapper {
     final raw = value?.toString().trim() ?? '';
     if (raw == '3' || raw.toLowerCase() == 'done') return '3';
     return '2';
+  }
+
+  static String _jobStatus(dynamic value) {
+    final raw = value?.toString().trim().toLowerCase() ?? '';
+    if (raw == '1' || raw == 'pending') return 'pending';
+    if (raw == '2' || raw == 'confirmed' || raw == 'accepted') {
+      return 'confirmed';
+    }
+    if (raw == '3' || raw == 'in_session') return 'in_session';
+    if (raw == '4' || raw == 'done' || raw == 'success') return 'done';
+    if (raw == '5' || raw == 'rejected' || raw == 'cancelled') {
+      return 'rejected';
+    }
+    return 'pending';
   }
 }
 

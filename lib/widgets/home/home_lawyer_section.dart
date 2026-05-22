@@ -4,7 +4,6 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
-import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
@@ -23,7 +22,8 @@ class HomeLawyerSection extends StatelessWidget {
   final List<dynamic> jobRequests;
   final bool isLoadingAppointments;
   final String? appointmentLoadError;
-  final void Function(String id, String newStatus)? onJobStatusChanged;
+  final Future<void> Function(Map<String, dynamic> job, String newStatus)?
+      onJobStatusChanged;
 
   const HomeLawyerSection({
     super.key,
@@ -50,8 +50,7 @@ class HomeLawyerSection extends StatelessWidget {
             (j['jobSource'] ?? 'urgent') == 'booking' &&
             j['status'] == 'pending')
         .toList();
-    final dueBookings = LawyerJobsStore.instance
-        .bookingsDueToday(UserProfileStore.instance.code);
+    final dueBookings = jobRequests.where(_isConfirmedBookingDueToday).toList();
 
     if (ResponsiveLayout.isDesktop(context)) {
       return _buildDesktopLayout(
@@ -59,6 +58,21 @@ class HomeLawyerSection extends StatelessWidget {
     }
     return _buildMobileLayout(
         context, activeUrgentJobs, pendingBookings, dueBookings);
+  }
+
+  bool _isConfirmedBookingDueToday(dynamic job) {
+    if (job is! Map) return false;
+    if ((job['jobSource'] ?? 'urgent') != 'booking') return false;
+    if (job['status'] != 'confirmed') return false;
+    final dateStr = job['date']?.toString() ?? '';
+    final parts = dateStr.split('/');
+    if (parts.length != 3) return false;
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return false;
+    final now = DateTime.now();
+    return now.day == day && now.month == month && now.year == year;
   }
 
   // ══════════════════════════════════════════════════════════
@@ -854,16 +868,20 @@ class HomeLawyerSection extends StatelessWidget {
                               message: "acceptJobConfirm".tr(),
                               onConfirm: () {
                                 if (isBooking) {
-                                  LawyerJobsStore.instance
-                                      .confirmBooking(job['id'] as String);
+                                  if (job['isApiCase'] != true) {
+                                    LawyerJobsStore.instance
+                                        .confirmBooking(job['id'] as String);
+                                  }
                                 } else {
                                   LawyerJobsStore.instance
                                       .acceptJob(job['id'] as String);
                                 }
                                 if (detailCtx.mounted) {
                                   Navigator.pop(detailCtx);
-                                  onJobStatusChanged?.call(job['id'],
-                                      isBooking ? 'confirmed' : 'accepted');
+                                  onJobStatusChanged?.call(
+                                    job,
+                                    isBooking ? 'confirmed' : 'accepted',
+                                  );
                                 }
                               },
                             );
@@ -880,8 +898,7 @@ class HomeLawyerSection extends StatelessWidget {
                                     .rejectJob(job['id'] as String);
                                 if (detailCtx.mounted) {
                                   Navigator.pop(detailCtx);
-                                  onJobStatusChanged?.call(
-                                      job['id'], 'rejected');
+                                  onJobStatusChanged?.call(job, 'rejected');
                                 }
                               },
                             );

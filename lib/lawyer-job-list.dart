@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
+import 'package:LawyerOnline/repositories/booking_case_repository.dart';
+import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 // ══════════════════════════════════════════════════════════
@@ -24,11 +26,19 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     with TickerProviderStateMixin {
   String _activeTab = 'all';
   late AnimationController _entryCtrl;
+  final LawyerAppointmentRepository _appointmentRepository =
+      const ApiLawyerAppointmentRepository();
+  final BookingCaseRepository _caseRepository =
+      const ApiBookingCaseRepository();
+  List<Map<String, dynamic>> _apiJobs = const [];
+  bool _isLoadingApiJobs = false;
 
   static const _kPrimary = Color(0xFF0262EC);
 
-  List<Map<String, dynamic>> get _jobs =>
-      LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code);
+  List<Map<String, dynamic>> get _jobs => _mergeJobs(
+        _apiJobs,
+        LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
+      );
 
   bool _isBooking(Map<String, dynamic> job) =>
       (job['jobSource'] ?? 'urgent') == 'booking';
@@ -43,6 +53,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
+    _loadApiJobs();
   }
 
   @override
@@ -103,6 +114,94 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   void _onJobUpdated() {
     if (!mounted) return;
     setState(() {});
+    _loadApiJobs();
+  }
+
+  Future<void> _loadApiJobs() async {
+    final lawyerCode = UserProfileStore.instance.code.trim();
+    if (lawyerCode.isEmpty || _isLoadingApiJobs) return;
+    _isLoadingApiJobs = true;
+    try {
+      final snapshot =
+          await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      if (!mounted) return;
+      setState(() => _apiJobs = snapshot.bookingJobs);
+    } finally {
+      _isLoadingApiJobs = false;
+    }
+  }
+
+  List<Map<String, dynamic>> _mergeJobs(
+    List<Map<String, dynamic>> apiJobs,
+    List<Map<String, dynamic>> localJobs,
+  ) {
+    final byId = <String, Map<String, dynamic>>{};
+    for (final job in apiJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    for (final job in localJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    return byId.values.toList(growable: false);
+  }
+
+  Future<void> _setJobStatus(Map<String, dynamic> job, String status) async {
+    final jobId = job['id']?.toString() ?? '';
+    final isApiCase = job['isApiCase'] == true;
+    final isBooking = _isBooking(job);
+
+    if (!isApiCase) {
+      if (isBooking && status == 'confirmed') {
+        LawyerJobsStore.instance.confirmBooking(jobId);
+      } else if (status == 'accepted') {
+        LawyerJobsStore.instance.acceptJob(jobId);
+      } else {
+        LawyerJobsStore.instance.updateStatus(jobId, status);
+      }
+      return;
+    }
+
+    final updatedJob = Map<String, dynamic>.from(job)..['status'] = status;
+    if (mounted) {
+      setState(() {
+        _apiJobs = _apiJobs.map((item) {
+          return item['id'] == jobId ? updatedJob : item;
+        }).toList(growable: false);
+      });
+    }
+
+    final rawCase = job['rawCase'];
+    final payload = rawCase is Map
+        ? Map<String, dynamic>.from(rawCase)
+        : <String, dynamic>{'code': job['caseCode'] ?? jobId};
+    payload['caseStatus'] = _caseStatusFromJobStatus(status);
+    if ((payload['code']?.toString() ?? '').isEmpty && jobId.isNotEmpty) {
+      payload['code'] = jobId;
+    }
+
+    try {
+      await _caseRepository.updateCase(payload);
+      _loadApiJobs();
+    } catch (_) {
+      if (mounted) _showSnackbar('เกิดข้อผิดพลาด กรุณาลองใหม่', false);
+    }
+  }
+
+  int _caseStatusFromJobStatus(String status) {
+    switch (status) {
+      case 'confirmed':
+        return 2;
+      case 'in_session':
+        return 3;
+      case 'done':
+        return 4;
+      case 'rejected':
+        return 5;
+      default:
+        return 1;
+    }
   }
 
   void _showSnackbar(String msg, bool success) {
@@ -409,8 +508,19 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
           MaterialPageRoute(
             builder: (_) => LawyerJobDetailPage(
               job: job,
-              onAccept: isPending ? () {} : null,
-              onReject: isPending ? () {} : null,
+              onAccept: isPending
+                  ? () {
+                      _setJobStatus(
+                        job,
+                        isBooking ? 'confirmed' : 'accepted',
+                      );
+                    }
+                  : null,
+              onReject: isPending
+                  ? () {
+                      _setJobStatus(job, 'rejected');
+                    }
+                  : null,
             ),
           ),
         ).then((_) => _onJobUpdated());
@@ -595,8 +705,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           title: "ปฏิเสธคำขอ",
                           message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
                           onConfirm: () {
-                            LawyerJobsStore.instance
-                                .rejectJob(job['id'] as String);
+                            _setJobStatus(job, 'rejected');
                             if (mounted) {
                               setState(() {});
                               _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
@@ -640,11 +749,9 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
                           onConfirm: () {
                             if (isBooking) {
-                              LawyerJobsStore.instance
-                                  .confirmBooking(job['id'] as String);
+                              _setJobStatus(job, 'confirmed');
                             } else {
-                              LawyerJobsStore.instance
-                                  .acceptJob(job['id'] as String);
+                              _setJobStatus(job, 'accepted');
                             }
                             if (mounted) {
                               setState(() {});
@@ -1254,7 +1361,7 @@ class LawyerJobDetailPage extends StatelessWidget {
                 title: "ปฏิเสธคำขอ",
                 message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
                 onConfirm: () {
-                  LawyerJobsStore.instance.rejectJob(job['id'] as String);
+                  onReject?.call();
                   if (context.mounted) Navigator.pop(context);
                 },
               );
@@ -1295,10 +1402,9 @@ class LawyerJobDetailPage extends StatelessWidget {
                 message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
                 onConfirm: () {
                   if (isBooking) {
-                    LawyerJobsStore.instance
-                        .confirmBooking(job['id'] as String);
+                    onAccept?.call();
                   } else {
-                    LawyerJobsStore.instance.acceptJob(job['id'] as String);
+                    onAccept?.call();
                   }
                   if (context.mounted) Navigator.pop(context);
                 },
