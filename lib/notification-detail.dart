@@ -48,18 +48,15 @@ class NotificationDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
-
       appBar: appBarCustom(
         title: "รายละเอียดแจ้งเตือน",
         backBtn: true,
         isRightWidget: false,
         backAction: () => Navigator.pop(context),
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-
           /// ICON
           Center(
             child: Container(
@@ -122,7 +119,6 @@ class NotificationDetailPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 const Text(
                   "รายละเอียด",
                   style: TextStyle(
@@ -130,9 +126,7 @@ class NotificationDetailPage extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 Text(
                   data["detail"],
                   style: const TextStyle(
@@ -140,24 +134,17 @@ class NotificationDetailPage extends StatelessWidget {
                     color: Colors.black87,
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 const Divider(),
-
                 const SizedBox(height: 10),
-
                 Row(
                   children: [
-
                     const Icon(
                       Icons.access_time,
                       size: 18,
                       color: Colors.grey,
                     ),
-
                     const SizedBox(width: 6),
-
                     Text(
                       data["time"],
                       style: const TextStyle(
@@ -186,10 +173,7 @@ class NotificationDetailPage extends StatelessWidget {
             ),
             child: const Text(
               "กลับ",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white),
             ),
           )
         ],

@@ -22,46 +22,103 @@ class SubscribePage extends StatefulWidget {
 class _SubscribePageState extends State<SubscribePage>
     with SingleTickerProviderStateMixin {
   // ── ดึง current plan จาก store ──────────────────────────────────
-  final _store       = LawyerProfileStore.instance;
-  bool _isYearly     = false;
+  final _store = LawyerProfileStore.instance;
+  bool _isYearly = false;
   late String _selectedPlan;
 
   late AnimationController _animCtrl;
-  late Animation<double>   _fadeAnim;
+  late Animation<double> _fadeAnim;
 
   // ─── Feature data ───────────────────────────────────────────────
   final List<_Feature> _freeFeatures = const [
-    _Feature(icon: Icons.gavel_rounded,              label: 'รับเคสออนไลน์ทั่วไป',        enabled: true),
-    _Feature(icon: Icons.person_outline_rounded,     label: 'โปรไฟล์มาตรฐาน',             enabled: true),
-    _Feature(icon: Icons.chat_bubble_outline_rounded,label: 'แชทกับลูกค้า',               enabled: true),
-    _Feature(icon: Icons.star_outline_rounded,       label: 'รับรีวิวจากลูกค้า',           enabled: true),
-    _Feature(icon: Icons.share_outlined,             label: 'เชื่อม Social Media',         enabled: false),
-    _Feature(icon: Icons.price_change_outlined,      label: 'ตั้งค่าราคาขั้นสูง',          enabled: false),
-    _Feature(icon: Icons.schedule_outlined,          label: 'จัดการตารางรับเคส',           enabled: false),
-    _Feature(icon: Icons.trending_up_rounded,        label: 'ติดอันดับสูงกว่าในผลค้นหา',  enabled: false),
+    _Feature(
+        icon: Icons.gavel_rounded, label: 'รับเคสออนไลน์ทั่วไป', enabled: true),
+    _Feature(
+        icon: Icons.person_outline_rounded,
+        label: 'โปรไฟล์มาตรฐาน',
+        enabled: true),
+    _Feature(
+        icon: Icons.chat_bubble_outline_rounded,
+        label: 'แชทกับลูกค้า',
+        enabled: true),
+    _Feature(
+        icon: Icons.star_outline_rounded,
+        label: 'รับรีวิวจากลูกค้า',
+        enabled: true),
+    _Feature(
+        icon: Icons.share_outlined,
+        label: 'เชื่อม Social Media',
+        enabled: false),
+    _Feature(
+        icon: Icons.price_change_outlined,
+        label: 'ตั้งค่าราคาขั้นสูง',
+        enabled: false),
+    _Feature(
+        icon: Icons.schedule_outlined,
+        label: 'จัดการตารางรับเคส',
+        enabled: false),
+    _Feature(
+        icon: Icons.trending_up_rounded,
+        label: 'ติดอันดับสูงกว่าในผลค้นหา',
+        enabled: false),
   ];
 
   final List<_Feature> _proFeatures = const [
-    _Feature(icon: Icons.gavel_rounded,              label: 'รับเคสออนไลน์ทุกประเภท',     enabled: true),
-    _Feature(icon: Icons.badge_outlined,             label: 'โปรไฟล์ขยาย + แบดจ์ Pro',   enabled: true),
-    _Feature(icon: Icons.chat_bubble_outline_rounded,label: 'แชทกับลูกค้า',               enabled: true),
-    _Feature(icon: Icons.star_outline_rounded,       label: 'รีวิวพร้อมแสดงผลเด่น',       enabled: true),
-    _Feature(icon: Icons.share_outlined,             label: 'Social Media (FB, LINE, IG)', enabled: true),
-    _Feature(icon: Icons.price_change_outlined,      label: 'ตั้งค่าราคาและเงื่อนไขเอง',  enabled: true),
-    _Feature(icon: Icons.schedule_outlined,          label: 'เปิด/ปิดรับเคสตามช่วงเวลา',  enabled: true),
-    _Feature(icon: Icons.trending_up_rounded,        label: 'ติดอันดับสูงกว่าในผลค้นหา',  enabled: true),
+    _Feature(
+        icon: Icons.gavel_rounded,
+        label: 'รับเคสออนไลน์ทุกประเภท',
+        enabled: true),
+    _Feature(
+        icon: Icons.badge_outlined,
+        label: 'โปรไฟล์ขยาย + แบดจ์ Pro',
+        enabled: true),
+    _Feature(
+        icon: Icons.chat_bubble_outline_rounded,
+        label: 'แชทกับลูกค้า',
+        enabled: true),
+    _Feature(
+        icon: Icons.star_outline_rounded,
+        label: 'รีวิวพร้อมแสดงผลเด่น',
+        enabled: true),
+    _Feature(
+        icon: Icons.share_outlined,
+        label: 'Social Media (FB, LINE, IG)',
+        enabled: true),
+    _Feature(
+        icon: Icons.price_change_outlined,
+        label: 'ตั้งค่าราคาและเงื่อนไขเอง',
+        enabled: true),
+    _Feature(
+        icon: Icons.schedule_outlined,
+        label: 'เปิด/ปิดรับเคสตามช่วงเวลา',
+        enabled: true),
+    _Feature(
+        icon: Icons.trending_up_rounded,
+        label: 'ติดอันดับสูงกว่าในผลค้นหา',
+        enabled: true),
   ];
 
   final List<_CompareRow> _compareRows = const [
-    _CompareRow(label: 'รับเคสออนไลน์',       free: true,  pro: true,  freeNote: 'ทั่วไป',     proNote: 'ทุกประเภท'),
-    _CompareRow(label: 'โปรไฟล์',             free: true,  pro: true,  freeNote: 'มาตรฐาน',    proNote: 'ขยาย+แบดจ์'),
-    _CompareRow(label: 'แชทกับลูกค้า',        free: true,  pro: true),
-    _CompareRow(label: 'รีวิวจากลูกค้า',      free: true,  pro: true,  proNote:  'แสดงเด่น'),
-    _CompareRow(label: 'Social Media',        free: false, pro: true),
-    _CompareRow(label: 'ตั้งค่าราคาเอง',      free: false, pro: true),
-    _CompareRow(label: 'จัดการตารางรับเคส',   free: false, pro: true),
-    _CompareRow(label: 'ติดอันดับสูงกว่า',    free: false, pro: true),
-    _CompareRow(label: 'ทดลองใช้ฟรี',         free: false, pro: true,  proNote:  '7 วัน'),
+    _CompareRow(
+        label: 'รับเคสออนไลน์',
+        free: true,
+        pro: true,
+        freeNote: 'ทั่วไป',
+        proNote: 'ทุกประเภท'),
+    _CompareRow(
+        label: 'โปรไฟล์',
+        free: true,
+        pro: true,
+        freeNote: 'มาตรฐาน',
+        proNote: 'ขยาย+แบดจ์'),
+    _CompareRow(label: 'แชทกับลูกค้า', free: true, pro: true),
+    _CompareRow(
+        label: 'รีวิวจากลูกค้า', free: true, pro: true, proNote: 'แสดงเด่น'),
+    _CompareRow(label: 'Social Media', free: false, pro: true),
+    _CompareRow(label: 'ตั้งค่าราคาเอง', free: false, pro: true),
+    _CompareRow(label: 'จัดการตารางรับเคส', free: false, pro: true),
+    _CompareRow(label: 'ติดอันดับสูงกว่า', free: false, pro: true),
+    _CompareRow(label: 'ทดลองใช้ฟรี', free: false, pro: true, proNote: '7 วัน'),
   ];
 
   // ── Lifecycle ────────────────────────────────────────────────────
@@ -70,7 +127,7 @@ class _SubscribePageState extends State<SubscribePage>
     super.initState();
     // เริ่มต้น selected plan ตาม current plan จริงจาก store
     _selectedPlan = _store.isPro ? 'pro' : 'free';
-    _isYearly     = _store.billingCycle.isYearly;
+    _isYearly = _store.billingCycle.isYearly;
 
     _animCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 450));
@@ -86,7 +143,7 @@ class _SubscribePageState extends State<SubscribePage>
 
   // ── Computed ─────────────────────────────────────────────────────
   bool get _isCurrentFree => _store.currentPlan == CurrentPlan.free;
-  bool get _isCurrentPro  => _store.currentPlan == CurrentPlan.pro;
+  bool get _isCurrentPro => _store.currentPlan == CurrentPlan.pro;
 
   String get _proPrice => _isYearly ? '฿472' : '฿590';
 
@@ -103,18 +160,18 @@ class _SubscribePageState extends State<SubscribePage>
 
   bool get _ctaEnabled {
     if (_selectedPlan == 'free' && _isCurrentFree) return false;
-    if (_selectedPlan == 'pro'  && _isCurrentPro)  return false;
+    if (_selectedPlan == 'pro' && _isCurrentPro) return false;
     return true;
   }
 
   Color get _ctaBg {
-    if (!_ctaEnabled)            return kBorder;
+    if (!_ctaEnabled) return kBorder;
     if (_selectedPlan == 'free') return kSurface;
     return kPrimary;
   }
 
   Color get _ctaTextColor {
-    if (!_ctaEnabled)            return kSub;
+    if (!_ctaEnabled) return kSub;
     if (_selectedPlan == 'free') return kText;
     return Colors.white;
   }
@@ -127,10 +184,10 @@ class _SubscribePageState extends State<SubscribePage>
     return Scaffold(
       backgroundColor: kSurface,
       appBar: appBar(
-        title:       'Lawyer Pro',
-        backBtn:     true,
-        rightBtn:    false,
-        backAction:  () => Navigator.pop(context, false),
+        title: 'Lawyer Pro',
+        backBtn: true,
+        rightBtn: false,
+        backAction: () => Navigator.pop(context, false),
         rightAction: () {},
       ),
       body: FadeTransition(
@@ -149,28 +206,28 @@ class _SubscribePageState extends State<SubscribePage>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(children: [
                   _buildPlanCard(
-                    planId:       'free',
-                    name:         'ฟรี',
-                    price:        '฿0',
-                    unit:         '/เดือน',
-                    tagLabel:     _isCurrentFree ? 'แผนปัจจุบัน' : 'พื้นฐาน',
-                    tagColor:     _isCurrentFree ? kPrimaryLight  : kSurface,
-                    tagTextColor: _isCurrentFree ? kPrimary       : kSub,
-                    features:     _freeFeatures,
-                    isFeatured:   false,
+                    planId: 'free',
+                    name: 'ฟรี',
+                    price: '฿0',
+                    unit: '/เดือน',
+                    tagLabel: _isCurrentFree ? 'แผนปัจจุบัน' : 'พื้นฐาน',
+                    tagColor: _isCurrentFree ? kPrimaryLight : kSurface,
+                    tagTextColor: _isCurrentFree ? kPrimary : kSub,
+                    features: _freeFeatures,
+                    isFeatured: false,
                   ),
                   const SizedBox(height: 12),
                   _buildPlanCard(
-                    planId:        'pro',
-                    name:          'Pro',
-                    price:         _proPrice,
-                    unit:          '/เดือน',
+                    planId: 'pro',
+                    name: 'Pro',
+                    price: _proPrice,
+                    unit: '/เดือน',
                     originalPrice: _isYearly ? '฿590' : null,
-                    tagLabel:      _isCurrentPro ? 'แผนปัจจุบัน' : 'แนะนำ',
-                    tagColor:      _isCurrentPro ? kGreenLight    : kGoldLight,
-                    tagTextColor:  _isCurrentPro ? kGreen         : kGold,
-                    features:      _proFeatures,
-                    isFeatured:    true,
+                    tagLabel: _isCurrentPro ? 'แผนปัจจุบัน' : 'แนะนำ',
+                    tagColor: _isCurrentPro ? kGreenLight : kGoldLight,
+                    tagTextColor: _isCurrentPro ? kGreen : kGold,
+                    features: _proFeatures,
+                    isFeatured: true,
                   ),
                 ]),
               ),
@@ -216,7 +273,10 @@ class _SubscribePageState extends State<SubscribePage>
           'ยกระดับการให้บริการด้วย Lawyer Pro',
           textAlign: TextAlign.center,
           style: GoogleFonts.prompt(
-              fontSize: 20, fontWeight: FontWeight.w700, color: kText, height: 1.3),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: kText,
+              height: 1.3),
         ),
         const SizedBox(height: 6),
         Text(
@@ -241,9 +301,13 @@ class _SubscribePageState extends State<SubscribePage>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSegmentTab(label: 'รายเดือน', selected: !_isYearly,
+            _buildSegmentTab(
+                label: 'รายเดือน',
+                selected: !_isYearly,
                 onTap: () => setState(() => _isYearly = false)),
-            _buildSegmentTab(label: 'รายปี', selected: _isYearly,
+            _buildSegmentTab(
+                label: 'รายปี',
+                selected: _isYearly,
                 onTap: () => setState(() => _isYearly = true),
                 badge: 'ประหยัด 20%'),
           ],
@@ -268,7 +332,12 @@ class _SubscribePageState extends State<SubscribePage>
           color: selected ? kCard : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: selected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.07),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2))
+                ]
               : [],
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -286,12 +355,15 @@ class _SubscribePageState extends State<SubscribePage>
                 color: selected ? kGreenLight : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: selected ? kGreen.withOpacity(0.3) : kSub.withOpacity(0.25),
+                  color: selected
+                      ? kGreen.withOpacity(0.3)
+                      : kSub.withOpacity(0.25),
                 ),
               ),
               child: Text(badge,
                   style: GoogleFonts.prompt(
-                      fontSize: 10, fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
                       color: selected ? kGreen : kSub)),
             ),
           ],
@@ -308,15 +380,15 @@ class _SubscribePageState extends State<SubscribePage>
     required String unit,
     String? originalPrice,
     required String tagLabel,
-    required Color  tagColor,
-    required Color  tagTextColor,
+    required Color tagColor,
+    required Color tagTextColor,
     required List<_Feature> features,
     required bool isFeatured,
   }) {
     final isSelected = _selectedPlan == planId;
-    final isCurrent  = (planId == 'free' && _isCurrentFree) ||
-                       (planId == 'pro'  && _isCurrentPro);
-    final isPro      = planId == 'pro';
+    final isCurrent = (planId == 'free' && _isCurrentFree) ||
+        (planId == 'pro' && _isCurrentPro);
+    final isPro = planId == 'pro';
 
     return GestureDetector(
       onTap: () => setState(() => _selectedPlan = planId),
@@ -331,12 +403,21 @@ class _SubscribePageState extends State<SubscribePage>
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: kPrimary.withOpacity(0.10), blurRadius: 18, offset: const Offset(0, 5))]
-              : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+              ? [
+                  BoxShadow(
+                      color: kPrimary.withOpacity(0.10),
+                      blurRadius: 18,
+                      offset: const Offset(0, 5))
+                ]
+              : [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
+                ],
         ),
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
           // ── top row: name + tag ──
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(children: [
@@ -345,7 +426,8 @@ class _SubscribePageState extends State<SubscribePage>
                       fontSize: 17, fontWeight: FontWeight.w700, color: kText)),
               if (isCurrent) ...[
                 const SizedBox(width: 6),
-                const Icon(Icons.check_circle_rounded, size: 16, color: kPrimary),
+                const Icon(Icons.check_circle_rounded,
+                    size: 16, color: kPrimary),
               ],
             ]),
             Container(
@@ -354,7 +436,9 @@ class _SubscribePageState extends State<SubscribePage>
                   color: tagColor, borderRadius: BorderRadius.circular(20)),
               child: Text(tagLabel,
                   style: GoogleFonts.prompt(
-                      fontSize: 10, fontWeight: FontWeight.w600, color: tagTextColor)),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: tagTextColor)),
             ),
           ]),
 
@@ -367,7 +451,8 @@ class _SubscribePageState extends State<SubscribePage>
               children: [
                 Text(price,
                     style: GoogleFonts.prompt(
-                        fontSize: 30, fontWeight: FontWeight.w800,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
                         color: isSelected ? kPrimary : kText)),
                 const SizedBox(width: 4),
                 Text(unit,
@@ -376,16 +461,21 @@ class _SubscribePageState extends State<SubscribePage>
                   const SizedBox(width: 10),
                   Text(originalPrice,
                       style: GoogleFonts.prompt(
-                          fontSize: 12, color: kSub,
+                          fontSize: 12,
+                          color: kSub,
                           decoration: TextDecoration.lineThrough)),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                        color: kGreenLight, borderRadius: BorderRadius.circular(6)),
+                        color: kGreenLight,
+                        borderRadius: BorderRadius.circular(6)),
                     child: Text('−20%',
                         style: GoogleFonts.prompt(
-                            fontSize: 10, fontWeight: FontWeight.w700, color: kGreen)),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: kGreen)),
                   ),
                 ],
               ],
@@ -424,14 +514,14 @@ class _SubscribePageState extends State<SubscribePage>
           ),
         ),
         const SizedBox(width: 9),
-        Icon(f.icon, size: 13,
-            color: f.enabled ? kSub : kSub.withOpacity(0.3)),
+        Icon(f.icon, size: 13, color: f.enabled ? kSub : kSub.withOpacity(0.3)),
         const SizedBox(width: 6),
         Expanded(
           child: Opacity(
             opacity: f.enabled ? 1.0 : 0.4,
             child: Text(f.label,
-                style: GoogleFonts.prompt(fontSize: 13, color: kText, height: 1.3)),
+                style: GoogleFonts.prompt(
+                    fontSize: 13, color: kText, height: 1.3)),
           ),
         ),
       ]),
@@ -447,15 +537,22 @@ class _SubscribePageState extends State<SubscribePage>
           padding: const EdgeInsets.only(bottom: 10),
           child: Text('เปรียบเทียบฟีเจอร์',
               style: GoogleFonts.prompt(
-                  fontSize: 11, fontWeight: FontWeight.w600,
-                  color: kSub, letterSpacing: 0.5)),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: kSub,
+                  letterSpacing: 0.5)),
         ),
         Container(
           decoration: BoxDecoration(
             color: kCard,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: kBorder),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2))
+            ],
           ),
           child: Column(children: [
             // header
@@ -463,22 +560,38 @@ class _SubscribePageState extends State<SubscribePage>
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: kSurface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(14)),
                 border: Border(bottom: BorderSide(color: kBorder)),
               ),
               child: Row(children: [
-                Expanded(child: Text('ฟีเจอร์',
-                    style: GoogleFonts.prompt(fontSize: 11, fontWeight: FontWeight.w600, color: kSub))),
-                SizedBox(width: 72, child: Text('ฟรี',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.prompt(fontSize: 11, fontWeight: FontWeight.w600, color: kSub))),
-                SizedBox(width: 72, child: Text('Pro',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.prompt(fontSize: 11, fontWeight: FontWeight.w600, color: kPrimary))),
+                Expanded(
+                    child: Text('ฟีเจอร์',
+                        style: GoogleFonts.prompt(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: kSub))),
+                SizedBox(
+                    width: 72,
+                    child: Text('ฟรี',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.prompt(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: kSub))),
+                SizedBox(
+                    width: 72,
+                    child: Text('Pro',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.prompt(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: kPrimary))),
               ]),
             ),
-            ..._compareRows.asMap().entries.map((e) =>
-                _compareRowWidget(e.value, isLast: e.key == _compareRows.length - 1)),
+            ..._compareRows.asMap().entries.map((e) => _compareRowWidget(
+                e.value,
+                isLast: e.key == _compareRows.length - 1)),
           ]),
         ),
       ]),
@@ -489,15 +602,22 @@ class _SubscribePageState extends State<SubscribePage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        border: isLast ? null : Border(bottom: BorderSide(color: kBorder, width: 0.5)),
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: kBorder, width: 0.5)),
       ),
       child: Row(children: [
-        Expanded(child: Text(row.label,
-            style: GoogleFonts.prompt(fontSize: 12, color: kText))),
-        SizedBox(width: 72,
-            child: Center(child: _compareCell(row.free, row.freeNote, isPro: false))),
-        SizedBox(width: 72,
-            child: Center(child: _compareCell(row.pro, row.proNote, isPro: true))),
+        Expanded(
+            child: Text(row.label,
+                style: GoogleFonts.prompt(fontSize: 12, color: kText))),
+        SizedBox(
+            width: 72,
+            child: Center(
+                child: _compareCell(row.free, row.freeNote, isPro: false))),
+        SizedBox(
+            width: 72,
+            child:
+                Center(child: _compareCell(row.pro, row.proNote, isPro: true))),
       ]),
     );
   }
@@ -513,12 +633,14 @@ class _SubscribePageState extends State<SubscribePage>
         ),
         child: Text(note,
             style: GoogleFonts.prompt(
-                fontSize: 10, fontWeight: FontWeight.w600,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
                 color: isPro ? kPrimary : kGreen)),
       );
     }
     return Container(
-      width: 20, height: 20,
+      width: 20,
+      height: 20,
       decoration: BoxDecoration(
         color: value
             ? (isPro ? kPrimaryLight : kGreenLight)
@@ -528,9 +650,7 @@ class _SubscribePageState extends State<SubscribePage>
       child: Icon(
         value ? Icons.check_rounded : Icons.close_rounded,
         size: 11,
-        color: value
-            ? (isPro ? kPrimary : kGreen)
-            : kSub.withOpacity(0.45),
+        color: value ? (isPro ? kPrimary : kGreen) : kSub.withOpacity(0.45),
       ),
     );
   }
@@ -556,7 +676,9 @@ class _SubscribePageState extends State<SubscribePage>
               Expanded(
                 child: Text('จ่ายรายปี ประหยัด ฿1,416 เมื่อเทียบกับรายเดือน',
                     style: GoogleFonts.prompt(
-                        fontSize: 12, fontWeight: FontWeight.w500, color: kGreen)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: kGreen)),
               ),
             ]),
           ),
@@ -574,7 +696,12 @@ class _SubscribePageState extends State<SubscribePage>
                 : null,
             borderRadius: BorderRadius.circular(14),
             boxShadow: (_ctaEnabled && _selectedPlan == 'pro')
-                ? [BoxShadow(color: kPrimary.withOpacity(0.22), blurRadius: 14, offset: const Offset(0, 5))]
+                ? [
+                    BoxShadow(
+                        color: kPrimary.withOpacity(0.22),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5))
+                  ]
                 : [],
           ),
           child: Material(
@@ -643,7 +770,8 @@ class _SubscribePageState extends State<SubscribePage>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('ยกเลิก',
-                style: GoogleFonts.prompt(color: kSub, fontWeight: FontWeight.w500)),
+                style: GoogleFonts.prompt(
+                    color: kSub, fontWeight: FontWeight.w500)),
           ),
           TextButton(
             onPressed: () async {
@@ -664,15 +792,16 @@ class _SubscribePageState extends State<SubscribePage>
 // ─── Data classes ─────────────────────────────────────────────────────
 class _Feature {
   final IconData icon;
-  final String   label;
-  final bool     enabled;
-  const _Feature({required this.icon, required this.label, required this.enabled});
+  final String label;
+  final bool enabled;
+  const _Feature(
+      {required this.icon, required this.label, required this.enabled});
 }
 
 class _CompareRow {
-  final String  label;
-  final bool    free;
-  final bool    pro;
+  final String label;
+  final bool free;
+  final bool pro;
   final String? freeNote;
   final String? proNote;
   const _CompareRow({

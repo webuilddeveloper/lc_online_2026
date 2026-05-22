@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
+import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ChatPageUser extends StatefulWidget {
   final Map<String, dynamic> model;
@@ -22,10 +25,17 @@ class ChatPageUser extends StatefulWidget {
   State<ChatPageUser> createState() => _ChatPageUserState();
 }
 
-class _ChatPageUserState extends State<ChatPageUser> {
+class _ChatPageUserState extends State<ChatPageUser>
+    with AutoPopOnDesktopMixin {
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
+
+  // ── skip auto-pop เมื่อ embeddedMode (อยู่ใน 2-panel แล้ว) ──
+  @override
+  void didChangeDependencies() {
+    if (!widget.embeddedMode) super.didChangeDependencies();
+  }
 
   void _sendMessage() {
     final text = _chatController.text.trim();
@@ -50,9 +60,15 @@ class _ChatPageUserState extends State<ChatPageUser> {
   void _endConsultation() {
     DialogService.showConfirm(
       context,
-      title: 'จบการปรึกษา',
-      message: 'คุณต้องการจบการปรึกษากับทนายความใช่หรือไม่?',
+      title: 'endConsultTitle'.tr(),
+      message: 'endConsultMessageUser'.tr(),
       onConfirm: () {
+        final jobId = widget.model['jobId']?.toString() ??
+            widget.model['id']?.toString() ??
+            '';
+        if (jobId.isNotEmpty) {
+          LawyerJobsStore.instance.updateStatus(jobId, 'done');
+        }
         final lawyer = {
           'name': widget.model['name'] ?? '',
           'avatar': (widget.model['name'] as String? ?? 'ท').characters.first,
@@ -83,8 +99,8 @@ class _ChatPageUserState extends State<ChatPageUser> {
   void _showReminderBeforeJoin() {
     DialogService.showConfirm(
       context,
-      title: 'คำแนะนำก่อนเข้าห้อง',
-      message: 'กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now',
+      title: 'callReminderTitle'.tr(),
+      message: 'callReminderMessage'.tr(),
       onConfirm: () async {
         if (!Platform.isIOS) {
           await Permission.camera.request();
@@ -95,9 +111,8 @@ class _ChatPageUserState extends State<ChatPageUser> {
             if (!mounted) return;
             DialogService.showConfirm(
               context,
-              title: 'ต้องเปิดการเข้าถึงใน Settings',
-              message:
-                  'กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน',
+              title: 'permissionSettingsTitle'.tr(),
+              message: 'permissionSettingsMessage'.tr(),
               onConfirm: () => openAppSettings(),
             );
             return;
@@ -155,8 +170,9 @@ class _ChatPageUserState extends State<ChatPageUser> {
               ),
             ),
             name: model['name'] ?? '',
-            statusText:
-                caseSuccess ? null : (isActive ? 'Active Now' : 'Not Active'),
+            statusText: caseSuccess
+                ? null
+                : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
             actions: !caseSuccess
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
@@ -240,7 +256,7 @@ class _ChatPageUserState extends State<ChatPageUser> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 if (!caseSuccess)
-                  Text(isActive ? 'Active Now' : 'Not Active',
+                  Text(isActive ? 'activeNow'.tr() : 'notActive'.tr(),
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF8593A8))),
               ],
@@ -303,14 +319,14 @@ class _ChatPageUserState extends State<ChatPageUser> {
         decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12)),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.lock_outline_rounded,
                 size: 16, color: Color(0xFF8593A8)),
             SizedBox(width: 6),
-            Text('จบการสนทนาแล้ว',
-                style: TextStyle(
+            Text('conversationEnded'.tr(),
+                style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF8593A8),
                     fontWeight: FontWeight.w500)),

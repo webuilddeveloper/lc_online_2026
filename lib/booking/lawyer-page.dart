@@ -1,6 +1,6 @@
 import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
-import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/repositories/province_repository.dart';
 import 'package:flutter/material.dart';
 
 class LawyerPage extends StatefulWidget {
@@ -17,7 +17,10 @@ class LawyerPage extends StatefulWidget {
 }
 
 class _LawyerPageState extends State<LawyerPage> {
+  final ProvinceRepository _provinceRepository = const ApiProvinceRepository();
   int? _selectedIdx;
+  bool _isLoadingProvinces = false;
+  String? _provinceLoadError;
 
   // ── Filter State ───────────────────────────────────────
   bool _filterAvailableOnly = false;
@@ -27,6 +30,7 @@ class _LawyerPageState extends State<LawyerPage> {
   static const _kPrimary = Color(0xFF0262EC);
   final List<dynamic> _lawyers = [
     {
+      'code': '20260513101915-561-752',
       'name': 'ศักดิ์สิทธิ์ พิพากษ์',
       'title': 'ทนายความอาวุโส',
       'specialty': 'Criminal lawyer, Corporate lawyer',
@@ -46,6 +50,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'province': 'กรุงเทพมหานครฯ', // ← NEW
     },
     {
+      'code': 'MOCK-LAWYER-002',
       'name': 'พิมพ์ใจ รักษาธรรม',
       'title': 'ทนายความ',
       'specialty': 'กฎหมายครอบครัว, มรดก',
@@ -65,6 +70,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'province': 'เชียงใหม่', // ← NEW
     },
     {
+      'code': 'MOCK-LAWYER-003',
       'name': 'ธนากร นิติบัณฑิต',
       'title': 'ที่ปรึกษากฎหมาย',
       'specialty': 'กฎหมายธุรกิจ, สัญญา',
@@ -84,6 +90,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'province': 'ขอนแก่น', // ← NEW
     },
     {
+      'code': 'MOCK-LAWYER-004',
       'name': 'วีระ ศักดิ์สิทธิ์กุล',
       'title': 'ทนายความอาวุโส',
       'specialty': 'คดีแรงงาน, ประกันสังคม',
@@ -103,6 +110,7 @@ class _LawyerPageState extends State<LawyerPage> {
       'province': 'กรุงเทพมหานคร', // ← NEW
     },
     {
+      'code': 'MOCK-LAWYER-005',
       'name': 'อรุณี ยุติธรรม',
       'title': 'ทนายความ',
       'specialty': 'กฎหมายที่ดิน, ทรัพย์สิน',
@@ -216,14 +224,30 @@ class _LawyerPageState extends State<LawyerPage> {
   }
 
   Future<void> _callReadProvince() async {
-    final param = await postDio("${server}route/province/read", {});
-
     setState(() {
-      _allProvinces = [
-        {"code": "0", "title": "เลือกจังหวัด"},
-        ...param
-      ];
+      _isLoadingProvinces = true;
+      _provinceLoadError = null;
     });
+
+    try {
+      final provinces = await _provinceRepository.readProvinces();
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingProvinces = false;
+        _allProvinces = [
+          {"code": "0", "title": "เลือกจังหวัด"},
+          ...provinces.map((province) => province.toJson())
+        ];
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingProvinces = false;
+        _provinceLoadError = 'โหลดจังหวัดไม่สำเร็จ';
+      });
+    }
   }
 
   @override
@@ -738,6 +762,40 @@ class _LawyerPageState extends State<LawyerPage> {
     }
   }
 
+  Widget _buildProvinceSkeleton() => Container(
+        width: double.infinity,
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FB),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F4), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F4),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F4),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+            const SizedBox(width: 36),
+          ],
+        ),
+      );
+
   filter(context, setModalState) {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -855,105 +913,121 @@ class _LawyerPageState extends State<LawyerPage> {
               ],
             ),
             const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                color: _selectedProvince != 'ทั้งหมด'
-                    ? _kPrimary.withOpacity(0.08)
-                    : const Color(0xFFF8F9FB),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
+            if (_isLoadingProvinces)
+              _buildProvinceSkeleton()
+            else
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
                   color: _selectedProvince != 'ทั้งหมด'
-                      ? _kPrimary.withOpacity(0.4)
-                      : const Color(0xFFE2E8F4),
-                  width: 1.5,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  // value: _selectedProvince,
-                  value:
-                      _allProvinces.any((e) => e['title'] == _selectedProvince)
-                          ? _selectedProvince
-                          : null, // 🔥
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
+                      ? _kPrimary.withOpacity(0.08)
+                      : const Color(0xFFF8F9FB),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
                     color: _selectedProvince != 'ทั้งหมด'
-                        ? _kPrimary
-                        : Colors.grey[400],
-                    size: 20,
+                        ? _kPrimary.withOpacity(0.4)
+                        : const Color(0xFFE2E8F4),
+                    width: 1.5,
                   ),
-                  selectedItemBuilder: (_) => _allProvinces.map((p) {
-                    return Row(children: [
-                      Icon(
-                        p['title'] != 'ทั้งหมด'
-                            ? Icons.location_city_outlined
-                            : Icons.public_rounded,
-                        size: 15,
-                        color: _selectedProvince != 'ทั้งหมด'
-                            ? _kPrimary
-                            : Colors.grey[400],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        p['title'],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    // value: _selectedProvince,
+                    value: _allProvinces
+                            .any((e) => e['title'] == _selectedProvince)
+                        ? _selectedProvince
+                        : null, // 🔥
+                    isExpanded: true,
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: _selectedProvince != 'ทั้งหมด'
+                          ? _kPrimary
+                          : Colors.grey[400],
+                      size: 20,
+                    ),
+                    selectedItemBuilder: (_) => _allProvinces.map((p) {
+                      return Row(children: [
+                        Icon(
+                          p['title'] != 'ทั้งหมด'
+                              ? Icons.location_city_outlined
+                              : Icons.public_rounded,
+                          size: 15,
                           color: _selectedProvince != 'ทั้งหมด'
                               ? _kPrimary
-                              : const Color(0xFF64748B),
+                              : Colors.grey[400],
                         ),
-                      ),
-                    ]);
-                  }).toList(),
-                  items: _allProvinces.map<DropdownMenuItem<String>>(
-                    (p) {
-                      final isSelected = _selectedProvince == p['title'];
-                      return DropdownMenuItem<String>(
-                        value: p['title'],
-                        child: Row(
-                          children: [
-                            Icon(
-                              p['title'] != 'ทั้งหมด'
-                                  ? Icons.location_city_outlined
-                                  : Icons.public_rounded,
-                              size: 15,
-                              color: isSelected ? _kPrimary : Colors.grey[400],
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                p['title'],
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? _kPrimary
-                                      : const Color(0xFF1A2340),
+                        const SizedBox(width: 8),
+                        Text(
+                          p['title'],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedProvince != 'ทั้งหมด'
+                                ? _kPrimary
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ]);
+                    }).toList(),
+                    items: _allProvinces.map<DropdownMenuItem<String>>(
+                      (p) {
+                        final isSelected = _selectedProvince == p['title'];
+                        return DropdownMenuItem<String>(
+                          value: p['title'],
+                          child: Row(
+                            children: [
+                              Icon(
+                                p['title'] != 'ทั้งหมด'
+                                    ? Icons.location_city_outlined
+                                    : Icons.public_rounded,
+                                size: 15,
+                                color:
+                                    isSelected ? _kPrimary : Colors.grey[400],
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  p['title'],
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? _kPrimary
+                                        : const Color(0xFF1A2340),
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (isSelected)
-                              const Icon(Icons.check_rounded,
-                                  size: 15, color: _kPrimary),
-                          ],
-                        ),
-                      );
+                              if (isSelected)
+                                const Icon(Icons.check_rounded,
+                                    size: 15, color: _kPrimary),
+                            ],
+                          ),
+                        );
+                      },
+                    ).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setModalState(() => _selectedProvince = val);
+                      }
                     },
-                  ).toList(),
-                  onChanged: (val) {
-                    print(val);
-                    if (val != null)
-                      setModalState(() => _selectedProvince = val);
-                  },
+                  ),
                 ),
               ),
-            ),
+            if (_provinceLoadError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _provinceLoadError!,
+                style: const TextStyle(
+                  color: Color(0xFFC62828),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
 
             const SizedBox(height: 20),
 
@@ -965,15 +1039,18 @@ class _LawyerPageState extends State<LawyerPage> {
                     color: Color(0xFF1A2340))),
             const SizedBox(height: 10),
             Row(children: [
-              _sortChip('none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
+              _sortChip(
+                  'none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
               const SizedBox(width: 8),
               _sortChip('rating', 'คะแนน', Icons.star_rounded, setModalState),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded, setModalState),
+              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded,
+                  setModalState),
               const SizedBox(width: 8),
-              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded, setModalState),
+              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded,
+                  setModalState),
             ]),
             const SizedBox(height: 24),
 

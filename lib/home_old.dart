@@ -575,7 +575,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 4),
                   Text(
                     category,
-                    style: GoogleFonts.prompt(fontSize: 11, color: Colors.grey.shade600),
+                    style: GoogleFonts.prompt(
+                        fontSize: 11, color: Colors.grey.shade600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -867,8 +868,8 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(title!,
-              style:
-                 GoogleFonts.prompt(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: GoogleFonts.prompt(
+                  fontSize: 16, fontWeight: FontWeight.w600)),
           isRightBtn
               ? GestureDetector(
                   onTap: () => viewAll!(),

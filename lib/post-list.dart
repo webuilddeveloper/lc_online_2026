@@ -7,8 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:easy_localization/easy_localization.dart';
-
+import 'package:LawyerOnline/models/user_profile_store.dart';
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
 
@@ -84,13 +85,16 @@ class CommunityPost {
 
 // ─── Current User (loaded from profile) ────────────────────────────────────────
 
-CommunityUser currentUser = CommunityUser(
-  id: 'me',
-  name: 'คุณ (ผู้ใช้งาน)',
-  avatarUrl: '',
-  role: UserRole.client,
-  isVerified: false,
-);
+CommunityUser get currentUser {
+  final store = UserProfileStore.instance;
+  return CommunityUser(
+    id: 'me',
+    name: store.name.isNotEmpty ? store.name : 'defaultUser'.tr(),
+    avatarUrl: store.imageUrl,
+    role: store.userType == 'lawyer' ? UserRole.lawyer : UserRole.client,
+    isVerified: store.userType == 'lawyer',
+  );
+}
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 
@@ -105,7 +109,7 @@ List<CommunityPost> mockPosts = [
         id: 'u1', name: 'สมชาย วงศ์ใหญ่', avatarUrl: '', role: UserRole.client),
     content:
         'ผมทำงานมา 5 ปี โดนเลิกจ้างกะทันหันโดยไม่ได้รับแจ้งล่วงหน้า และไม่ได้รับค่าชดเชยใดๆ เลย ต้องทำอะไรได้บ้างครับ?',
-    category: 'แรงงาน',
+    category: 'category.labor',
     createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
     likes: 47,
     views: 312,
@@ -135,7 +139,7 @@ List<CommunityPost> mockPosts = [
         id: 'u2', name: 'นิภา รักษ์ดี', avatarUrl: '', role: UserRole.client),
     content:
         'เช่าบ้านมา 2 ปี ตอนย้ายออกเจ้าของบ้านอ้างว่าบ้านเสียหาย แต่ความจริงไม่มีความเสียหายใดๆ เลย มีวิธีเรียกคืนเงินมัดจำ 20,000 บาทได้ไหมคะ?',
-    category: 'อสังหาริมทรัพย์',
+    category: 'category.real_estate',
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
     likes: 89,
     views: 543,
@@ -166,7 +170,7 @@ List<CommunityPost> mockPosts = [
         id: 'u3', name: 'ธนพล มีสุข', avatarUrl: '', role: UserRole.client),
     content:
         'โอนเงินไปแล้ว 15,000 บาท สินค้าไม่มา ติดต่อผู้ขายไม่ได้ บล็อกในทุกช่องทาง จะแจ้งความอย่างไร มีโอกาสได้เงินคืนไหมครับ?',
-    category: 'คดีอาญา',
+    category: 'category.criminal',
     createdAt: DateTime.now().subtract(const Duration(hours: 2)),
     likes: 156,
     views: 1024,
@@ -198,7 +202,7 @@ List<CommunityPost> mockPosts = [
         id: 'u4', name: 'รัตนา ใจดี', avatarUrl: '', role: UserRole.client),
     content:
         'ต้องการหย่าร้าง สามีมีพฤติกรรมดื่มเหล้าและทำร้ายร่างกาย มีลูก 1 คน อายุ 5 ขวบ อยากได้สิทธิ์เลี้ยงดูลูก ต้องทำอย่างไรคะ?',
-    category: 'ครอบครัว',
+    category: 'category.family',
     createdAt: DateTime.now().subtract(const Duration(hours: 3)),
     likes: 203,
     views: 1872,
@@ -228,7 +232,7 @@ List<CommunityPost> mockPosts = [
         id: 'u5', name: 'ปิยะ สว่างใจ', avatarUrl: '', role: UserRole.client),
     content:
         'รถชนกัน ฝ่ายตรงข้ามอ้างว่าผมผิด แต่กล้องวงจรปิดน่าจะช่วยได้ ประกันเขาไม่ยอมจ่าย บอกว่าคนขับไม่ใช่ชื่อเดียวกับกรมธรรม์ จะทำอย่างไรดีครับ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 4)),
     likes: 78,
     views: 567,
@@ -246,7 +250,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'นายจ้างไม่จ่ายเงินเดือนมา 3 เดือนแล้ว อ้างว่าบริษัทขาดสภาพคล่อง แต่เห็นว่าซื้อรถใหม่ ทำได้ไหมคะ มีลูกต้องเลี้ยงดู สภาพหนักมาก',
-    category: 'แรงงาน',
+    category: 'category.labor',
     createdAt: DateTime.now().subtract(const Duration(hours: 5)),
     likes: 312,
     views: 2341,
@@ -291,7 +295,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ซื้อคอนโดใหม่จากโครงการ สัญญาบอกว่าจะโอนกรรมสิทธิ์ใน 2 ปี แต่ผ่านมา 4 ปีแล้วยังไม่โอน โครงการอ้างปัญหาการก่อสร้าง จะเรียกเงินคืนพร้อมดอกเบี้ยได้ไหม?',
-    category: 'อสังหาริมทรัพย์',
+    category: 'category.real_estate',
     createdAt: DateTime.now().subtract(const Duration(hours: 6)),
     likes: 445,
     views: 3210,
@@ -321,7 +325,7 @@ List<CommunityPost> mockPosts = [
         id: 'u8', name: 'กนกวรรณ พรมมา', avatarUrl: '', role: UserRole.client),
     content:
         'โดนสามีเก่าหมิ่นประมาทใน Facebook โพสต์ข้อความเท็จว่าเราเป็นชู้ให้เพื่อนๆ เห็น อยากฟ้องได้ไหมคะ เขาทำมาตั้งแต่เลิกกัน ทรมานมากเลย',
-    category: 'คดีอาญา',
+    category: 'category.criminal',
     createdAt: DateTime.now().subtract(const Duration(hours: 7)),
     likes: 289,
     views: 1987,
@@ -351,7 +355,7 @@ List<CommunityPost> mockPosts = [
         id: 'u9', name: 'วิชาญ ตั้งมั่น', avatarUrl: '', role: UserRole.client),
     content:
         'เปิดร้านอาหาร มีพนักงานลาออกไปเปิดร้านแข่งข้างๆ ใช้สูตรอาหารเดียวกันหมดเลย สัญญาจ้างไม่ได้ระบุเรื่อง Non-compete เอาผิดได้ไหมครับ?',
-    category: 'แรงงาน',
+    category: 'category.labor',
     createdAt: DateTime.now().subtract(const Duration(hours: 9)),
     likes: 134,
     views: 876,
@@ -369,7 +373,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'พ่อเสียชีวิต มีทรัพย์สินเป็นบ้านและที่ดิน แต่พี่ชายอ้างว่าพ่อทำพินัยกรรมยกให้เขาคนเดียว ไม่เคยเห็นพินัยกรรมเลย จะตรวจสอบได้อย่างไรว่าพินัยกรรมจริงหรือปลอม?',
-    category: 'ครอบครัว',
+    category: 'category.family',
     createdAt: DateTime.now().subtract(const Duration(hours: 10)),
     likes: 567,
     views: 4321,
@@ -402,7 +406,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ขับรถชนคนข้ามถนน บาดเจ็บสาหัส ทำประกันภัยชั้น 1 ไว้ แต่ประกันบอกว่าคนเดินถนนต้องพิสูจน์ความผิดก่อน ถูกต้องไหมครับ? ตอนนี้คนเจ็บฟ้องแพ่งด้วย',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 11)),
     likes: 98,
     views: 743,
@@ -435,7 +439,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ยืมเงินเพื่อนไป 50,000 บาท มีสัญญากู้ยืมลงนาม แต่เพื่อนบอกว่าฉีกทิ้งแล้ว เราถ่ายรูปสัญญาไว้ รูปถ่ายใช้เป็นหลักฐานในศาลได้ไหมคะ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 12)),
     likes: 176,
     views: 1234,
@@ -468,7 +472,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'บริษัทให้ทำ OT ทุกวัน แต่ไม่จ่ายค่า OT เพิ่ม บอกว่ารวมอยู่ในเงินเดือนแล้ว สัญญาจ้างระบุว่า "ค่าจ้างรวม OT" แบบนี้ถูกกฎหมายไหมครับ?',
-    category: 'แรงงาน',
+    category: 'category.labor',
     createdAt: DateTime.now().subtract(const Duration(hours: 13)),
     likes: 423,
     views: 3456,
@@ -498,7 +502,7 @@ List<CommunityPost> mockPosts = [
         id: 'u14', name: 'พิมพ์ใจ ทองดี', avatarUrl: '', role: UserRole.client),
     content:
         'สั่งซื้อของออนไลน์ ได้รับสินค้าแต่แตกหักเสียหาย แม่ค้าบอกว่าไม่รับผิดชอบเพราะเป็นความผิดของบริษัทขนส่ง ต้องเรียกร้องจากใครคะ?',
-    category: 'คดีอาญา',
+    category: 'category.criminal',
     createdAt: DateTime.now().subtract(const Duration(hours: 14)),
     likes: 234,
     views: 1876,
@@ -516,7 +520,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'เปิดธุรกิจเล็กๆ มีคู่แข่งมาถ่ายรูปสินค้าและราคาของเรา แล้วเอาไปโพสต์แอดโจมตีร้านเรา บอกว่าสินค้าเราด้อยคุณภาพ ทั้งที่ไม่จริง มีผลต่อยอดขายมาก จะฟ้องได้ไหมครับ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 15)),
     likes: 189,
     views: 1456,
@@ -546,7 +550,7 @@ List<CommunityPost> mockPosts = [
         id: 'u16', name: 'จินตนา บุญมี', avatarUrl: '', role: UserRole.client),
     content:
         'แม่ป่วยหนักอยู่โรงพยาบาล แต่พี่ชายไม่ยอมให้เราเข้าเยี่ยม อ้างว่าเป็นคนดูแลตามกฎหมาย มีสิทธิ์ห้ามได้ไหม? และถ้าแม่เสีย เราจะมีสิทธิ์รับมรดกอย่างไร?',
-    category: 'ครอบครัว',
+    category: 'category.family',
     createdAt: DateTime.now().subtract(const Duration(hours: 16)),
     likes: 334,
     views: 2654,
@@ -579,7 +583,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ซื้อรถมือสองจากเต็นท์ ใช้ไปได้ 1 เดือน เครื่องยนต์พังหมด ตรวจพบว่าถูกซ่อนข้อบกพร่องมาก่อนขาย มีใบเสร็จ สัญญาซื้อขาย จะเรียกค่าเสียหายหรือยกเลิกสัญญาได้ไหมครับ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 18)),
     likes: 267,
     views: 2134,
@@ -612,7 +616,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ถูกบริษัทประกันปฏิเสธจ่ายค่าสินไหมทดแทนประกันชีวิตของสามีที่เพิ่งเสียชีวิต อ้างว่าสามีปกปิดโรคประจำตัว แต่ตอนทำประกันไม่เคยถูกถามถึงโรคนี้เลย มีทางสู้ได้ไหมคะ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(hours: 20)),
     likes: 523,
     views: 4567,
@@ -645,7 +649,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'เปิดร้านเช่าบ้าน ผู้เช่าค้างค่าเช่า 4 เดือน ขอเข้าไปเก็บของของตัวเองที่วางไว้ในห้องแต่ผู้เช่าไม่ให้ จะทำอย่างไรได้บ้างครับ ตอนนี้ทะเลาะกันหนักมาก',
-    category: 'อสังหาริมทรัพย์',
+    category: 'category.real_estate',
     createdAt: DateTime.now().subtract(const Duration(hours: 22)),
     likes: 156,
     views: 1234,
@@ -660,7 +664,7 @@ List<CommunityPost> mockPosts = [
         id: 'u20', name: 'วาสนา ศรีสุข', avatarUrl: '', role: UserRole.client),
     content:
         'ลูกชายถูกครูที่โรงเรียนตีจนเป็นรอย อ้างว่าทำผิดระเบียบ โรงเรียนบอกว่าเป็นการลงโทษตามระเบียบ แบบนี้ถูกกฎหมายไหม และจะฟ้องได้ไหมคะ?',
-    category: 'คดีอาญา',
+    category: 'category.criminal',
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
     likes: 678,
     views: 5432,
@@ -690,7 +694,7 @@ List<CommunityPost> mockPosts = [
         id: 'u21', name: 'อรุณ ไชยวงศ์', avatarUrl: '', role: UserRole.client),
     content:
         'ซื้อที่ดินมา 10 ปี เพิ่งรู้ว่ามีเส้นทางสาธารณะผ่านกลางที่ดิน ตอนซื้อไม่มีใครบอก โฉนดไม่ได้ระบุไว้ ต้องการปิดทางนั้น ทำได้ไหมครับ?',
-    category: 'อสังหาริมทรัพย์',
+    category: 'category.real_estate',
     createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
     likes: 234,
     views: 1876,
@@ -723,7 +727,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ทำงานเป็น Freelance รับงานออกแบบ ลูกค้าเอางานไปใช้แล้วไม่จ่ายเงิน อ้างว่างานไม่ตรงตาม brief บอกว่าจะแก้ไขให้กี่ครั้งก็ได้ฟรี แต่ตอนนี้แก้ไปแล้ว 15 ครั้ง สัญญาจ้างไม่มี จะทำอะไรได้บ้างคะ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 4)),
     likes: 445,
     views: 3456,
@@ -753,7 +757,7 @@ List<CommunityPost> mockPosts = [
         id: 'u23', name: 'บุญรอด ทับทิม', avatarUrl: '', role: UserRole.client),
     content:
         'เกษียณแล้ว นายจ้างไม่จ่ายกองทุนสำรองเลี้ยงชีพที่หักออกจากเงินเดือนมาตลอด 20 ปี บอกว่ากองทุนเจ๊งแล้ว เอาเงินไปไหน ทำอะไรได้บ้างครับ?',
-    category: 'แรงงาน',
+    category: 'category.labor',
     createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
     likes: 789,
     views: 6543,
@@ -786,7 +790,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'เปิดเพจขายของออนไลน์ มีคนมา impersonate เปิดเพจปลอมชื่อเหมือนกัน ขายของปลอม ลูกค้าหลงซื้อแล้วมาด่าเรา เพจ Facebook ไม่ช่วย จะทำอย่างไรได้บ้างคะ?',
-    category: 'คดีอาญา',
+    category: 'category.criminal',
     createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 8)),
     likes: 345,
     views: 2876,
@@ -804,7 +808,7 @@ List<CommunityPost> mockPosts = [
         role: UserRole.client),
     content:
         'ถูกรถชน บาดเจ็บ รถผมเสียหายหนัก แต่คนขับรถที่ชนไม่มีประกัน และไม่มีเงินจ่ายค่าเสียหาย กรมธรรม์ผมมีประกันภัยภาคสมัครใจ จะได้รับค่าชดเชยจากที่ไหนบ้างครับ?',
-    category: 'แพ่ง',
+    category: 'category.civil',
     createdAt: DateTime.now().subtract(const Duration(days: 2)),
     likes: 198,
     views: 1654,
@@ -846,14 +850,18 @@ class _CommunityPageState extends State<CommunityPage> {
   int _selectedTabIndex = 0;
 
   final List<String> _categories = [
-    'ทั้งหมด',
-    'คดีอาญา',
-    'แพ่ง',
-    'แรงงาน',
-    'อสังหาริมทรัพย์',
-    'ครอบครัว',
+    'category.all',
+    'category.criminal',
+    'category.civil',
+    'category.labor',
+    'category.real_estate',
+    'category.family',
   ];
-  final List<String> _tabs = ['ยอดนิยม', 'มาใหม่', 'บันทึกไว้'];
+  final List<String> _tabs = [
+    'home_tabs.popular',
+    'home_tabs.newest',
+    'home_tabs.saved',
+  ];
 
   // ── Filtered & sorted posts ──────────────────────────────
   List<CommunityPost> get _filteredPosts {
@@ -870,9 +878,7 @@ class _CommunityPageState extends State<CommunityPage> {
       result = List.from(_posts);
     } else {
       final selectedCategory = _categories[_selectedCategoryIndex];
-      result = _posts
-          .where((p) => p.category == selectedCategory)
-          .toList();
+      result = _posts.where((p) => p.category == selectedCategory).toList();
     }
 
     // 2) Sort by tab
@@ -888,33 +894,28 @@ class _CommunityPageState extends State<CommunityPage> {
   @override
   void initState() {
     super.initState();
+    UserProfileStore.instance.addListener(_onProfileChanged);
     callRead();
     _posts = List.from(mockPosts);
   }
 
+  @override
+  void dispose() {
+    UserProfileStore.instance.removeListener(_onProfileChanged);
+    super.dispose();
+  }
+
+  void _onProfileChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void callRead() async {
     final type = await storage.read(key: 'typeLogin');
-    final nameProfile = await storage.read(key: 'name');
-    final imageProfile = await storage.read(key: 'imageUrlSocial');
-    final userType = await storage.read(key: 'userType');
 
     setState(() {
       typeLogin = type.toString();
-
-      // อัปเดต currentUser จากโปรไฟล์ที่ล็อกอิน
-      if (type != null && type != 'null') {
-        currentUser = CommunityUser(
-          id: 'me',
-          name: (nameProfile != null && nameProfile != 'null')
-              ? nameProfile
-              : 'คุณ (ผู้ใช้งาน)',
-          avatarUrl: (imageProfile != null && imageProfile != 'null')
-              ? imageProfile
-              : '',
-          role: userType == 'lawyer' ? UserRole.lawyer : UserRole.client,
-          isVerified: userType == 'lawyer',
-        );
-      }
     });
   }
 
@@ -950,66 +951,78 @@ class _CommunityPageState extends State<CommunityPage> {
     final bool isTablet = ResponsiveLayout.isTablet(context);
     final bool isDesktop = ResponsiveLayout.isDesktop(context);
 
-    // Responsive max width
-    final double maxWidth = isDesktop ? 800 : (isTablet ? 680 : double.infinity);
     // Responsive horizontal padding
-    final double hPadding = isDesktop ? 0 : (isTablet ? 24 : 16);
+    final double hPadding = isDesktop ? 20 : (isTablet ? 24 : 16);
     // Responsive top spacing
     final double topSpacing = isMobile ? 12 : 24;
 
-    return Scaffold(
-      backgroundColor: isMobile ? Colors.white : const Color(0xFFF8F9FA),
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPadding),
-              child: Column(
-                children: [
-                  SizedBox(height: topSpacing),
-                  // ── Header ──
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Column(
-                      children: [
-                        Text(
-                          'community'.tr(),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A2E),
+    return DefaultTabController(
+      length: _tabs.length,
+      child: Scaffold(
+        backgroundColor: isDesktop
+            ? const Color.fromARGB(255, 233, 242, 249)
+            : (isMobile ? Colors.white : const Color(0xFFF8F9FA)),
+        body: SafeArea(
+          bottom: false,
+          child: AppLayout(
+            child: Container(
+              clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+              decoration: isDesktop
+                  ? const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    )
+                  : null,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Column(
+                  children: [
+                    SizedBox(height: topSpacing),
+                    // ── Header ──
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Column(
+                        children: [
+                          Text(
+                            'community'.tr(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A2E),
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Community Legal Hub',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF9E9E9E),
+                          const SizedBox(height: 2),
+                          Text(
+                            'communitySubtitle'.tr(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF9E9E9E),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCategories(isMobile: isMobile),
-                  SizedBox(height: isMobile ? 12 : 24),
-                  if (!isMobile) ...[
-                    _buildCreatePostCard(isMobile: false),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
+                    _buildCategories(isMobile: isMobile),
+                    SizedBox(height: isMobile ? 12 : 24),
+                    if (!isMobile) ...[
+                      _buildCreatePostCard(isMobile: false),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildTabs(),
+                    SizedBox(height: isMobile ? 8 : 16),
+                    Expanded(child: _buildPostsList()),
                   ],
-                  _buildTabs(),
-                  SizedBox(height: isMobile ? 8 : 16),
-                  Expanded(child: _buildPostsList()),
-                ],
+                ),
               ),
             ),
           ),
         ),
+        floatingActionButton: isMobile ? _buildFAB() : null,
       ),
-      floatingActionButton: isMobile ? _buildFAB() : null,
     );
   }
 
@@ -1075,7 +1088,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 ),
               ),
               child: Text(
-                text,
+                text.tr(),
                 style: TextStyle(
                   fontSize: isMobile ? 13 : 14,
                   color: isSelected ? Colors.white : Colors.grey.shade700,
@@ -1132,7 +1145,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'มีคำถามกฎหมาย หรืออยากแชร์อะไรไหม?',
+                  'postQuestionHint'.tr(),
                   style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: isMobile ? 13 : 14,
@@ -1149,39 +1162,25 @@ class _CommunityPageState extends State<CommunityPage> {
   // ── Tabs (ยอดนิยม / มาใหม่) ───────────────────────────
   Widget _buildTabs() {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: Row(
-        children: _tabs.asMap().entries.map((entry) {
-          int idx = entry.key;
-          String text = entry.value;
-          bool isSelected = idx == _selectedTabIndex;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedTabIndex = idx),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFF5E4BFF)
-                        : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-              ),
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: isSelected
-                      ? const Color(0xFF5E4BFF)
-                      : Colors.grey.shade600,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ),
+      child: TabBar(
+        onTap: (idx) => setState(() => _selectedTabIndex = idx),
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        indicatorColor: const Color(0xFF5E4BFF),
+        labelColor: const Color(0xFF5E4BFF),
+        unselectedLabelColor: Colors.grey.shade600,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        unselectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+        indicatorWeight: 2,
+        dividerColor: Colors.transparent,
+        tabs: _tabs.map((tabKey) {
+          return Tab(
+            text: tabKey.tr(), // มาแปลภาษาตรงนี้
           );
         }).toList(),
       ),
@@ -1206,7 +1205,7 @@ class _CommunityPageState extends State<CommunityPage> {
           const SizedBox(width: 14),
           Icon(Icons.search_rounded, size: 20, color: Colors.grey.shade400),
           const SizedBox(width: 10),
-          Text('ค้นหาปัญหากฎหมาย...',
+          Text('searchHint'.tr(),
               style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
           const Spacer(),
           Container(
@@ -1215,7 +1214,7 @@ class _CommunityPageState extends State<CommunityPage> {
             decoration: BoxDecoration(
                 color: const Color(0xFF1A1A2E),
                 borderRadius: BorderRadius.circular(10)),
-            child: const Text('ค้นหา',
+            child: Text('search'.tr(),
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1243,10 +1242,9 @@ class _CommunityPageState extends State<CommunityPage> {
                 const SizedBox(height: 12),
                 Text(
                   _selectedTabIndex == 2
-                      ? 'ยังไม่มีโพสต์ที่บันทึกไว้'
-                      : 'ยังไม่มีโพสต์ในหมวดหมู่นี้',
-                  style: TextStyle(
-                      fontSize: 14, color: Colors.grey.shade400),
+                      ? 'noSavedPosts'.tr()
+                      : 'noPostsInCategory'.tr(),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
                 ),
               ],
             ),
@@ -1327,13 +1325,13 @@ class _PostCardState extends State<PostCard>
 
   Color _categoryColor(String cat) {
     switch (cat) {
-      case 'แรงงาน':
+      case 'category.labor':
         return const Color(0xFF2196F3);
-      case 'อสังหาริมทรัพย์':
+      case 'category.real_estate':
         return const Color(0xFF4CAF50);
-      case 'ครอบครัว':
+      case 'category.family':
         return const Color(0xFFE91E63);
-      case 'คดีอาญา':
+      case 'category.criminal':
         return const Color(0xFFFF5722);
       default:
         return const Color(0xFF9C27B0);
@@ -1342,9 +1340,9 @@ class _PostCardState extends State<PostCard>
 
   String _formatTime(DateTime t) {
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 60) return '${d.inMinutes} นาทีที่แล้ว';
-    if (d.inHours < 24) return '${d.inHours} ชั่วโมงที่แล้ว';
-    return '${d.inDays} วันที่แล้ว';
+    if (d.inMinutes < 60) return 'time.minutesAgo'.tr(args: [d.inMinutes.toString()]);
+    if (d.inHours < 24) return 'time.hoursAgo'.tr(args: [d.inHours.toString()]);
+    return 'time.daysAgo'.tr(args: [d.inDays.toString()]);
   }
 
   String _fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
@@ -1369,17 +1367,21 @@ class _PostCardState extends State<PostCard>
       },
       child: Container(
         padding: const EdgeInsets.fromLTRB(15, 16, 16, 0),
-        margin: isDesktop ? const EdgeInsets.symmetric(horizontal: 2) : EdgeInsets.zero,
+        margin: isDesktop
+            ? const EdgeInsets.symmetric(horizontal: 2)
+            : EdgeInsets.zero,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: isDesktop ? Border.all(color: Colors.grey.shade200) : null,
-          boxShadow: isDesktop ? [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4))
-          ] : [],
+          boxShadow: isDesktop
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4))
+                ]
+              : [],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1416,7 +1418,7 @@ class _PostCardState extends State<PostCard>
                                             color: Colors.grey.shade400),
                                       ),
                                       TextSpan(
-                                        text: widget.post.category,
+                                        text: widget.post.category.tr(),
                                         style: GoogleFonts.prompt(
                                           fontWeight: FontWeight.w500,
                                           color: const Color(0xFF1A1A2E),
@@ -1614,7 +1616,7 @@ class _PostCardState extends State<PostCard>
           decoration: BoxDecoration(
               color: const Color(0xFF1565C0),
               borderRadius: BorderRadius.circular(6)),
-          child: const Text('⚖️ ทนาย',
+          child: Text('lawyerBadge'.tr(),
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 9,
@@ -1691,12 +1693,19 @@ class _PostCardState extends State<PostCard>
                         : [const Color(0xFF37474F), const Color(0xFF546E7A)]),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight)),
-        child: Center(
-            child: Text(initials,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size * 0.33,
-                    fontWeight: FontWeight.w700))),
+        child: ClipOval(
+          child: user.avatarUrl.isNotEmpty
+              ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                  ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                  : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+              : Center(
+                  child: Text(initials,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: size * 0.33,
+                          fontWeight: FontWeight.w700)),
+                ),
+        ),
       ),
       if (user.isVerified)
         Positioned(
@@ -1751,9 +1760,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   String _formatTime(DateTime t) {
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 60) return '${d.inMinutes} นาทีที่แล้ว';
-    if (d.inHours < 24) return '${d.inHours} ชั่วโมงที่แล้ว';
-    return '${d.inDays} วันที่แล้ว';
+    if (d.inMinutes < 60) return 'time.minutesAgo'.tr(args: [d.inMinutes.toString()]);
+    if (d.inHours < 24) return 'time.hoursAgo'.tr(args: [d.inHours.toString()]);
+    return 'time.daysAgo'.tr(args: [d.inDays.toString()]);
   }
 
   // ── Send comment (or reply or save edit) ────────────────
@@ -1835,25 +1844,27 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('แก้ไขโพสต์',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text('editPost'.tr(),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         content: TextField(
           controller: ctrl,
           maxLines: 6,
           decoration: InputDecoration(
-            hintText: 'เนื้อหาโพสต์...',
+            hintText: 'postContentHint'.tr(),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('ยกเลิก', style: TextStyle(color: Colors.grey.shade600)),
+            child:
+                Text('cancel'.tr(), style: TextStyle(color: Colors.grey.shade600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5E4BFF),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
               if (ctrl.text.trim().isNotEmpty) {
@@ -1861,7 +1872,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+            child: Text('save'.tr(), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1870,67 +1881,124 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F0),
-      appBar: appBarCustom(
-        title: "กระทู้ปัญหา",
-        backBtn: true,
-        isRightWidget: false,
-        backAction: () => goBack(),
-        
-      ),
-      body: Column(children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _buildPostContent(),
-              const SizedBox(height: 16),
-              Row(children: [
-                const Text('คำตอบและความคิดเห็น',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E))),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A2E),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Text('${_comments.length}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
-                ),
-              ]),
-              const SizedBox(height: 12),
-              ..._comments.map((c) => _buildCommentCard(c)),
-              if (_comments.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(children: [
-                      Icon(Icons.chat_bubble_outline_rounded,
-                          size: 40, color: Colors.grey.shade300),
-                      const SizedBox(height: 10),
-                      Text('ยังไม่มีความคิดเห็น\nเป็นคนแรกที่ตอบคำถามนี้!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade400,
-                              height: 1.5)),
-                    ]),
+      backgroundColor: isDesktop ? const Color.fromARGB(255, 233, 242, 249) : const Color(0xFFF5F4F0),
+      appBar: isDesktop
+          ? null
+          : appBarCustom(
+              title: "postDetailTitle".tr(),
+              backBtn: true,
+              isRightWidget: false,
+              backAction: () => goBack(),
+            ),
+      body: AppLayout(
+        child: Container(
+          clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+          decoration: isDesktop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (isDesktop) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                        onPressed: () => goBack(),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "postDetailTitle".tr(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ]),
+                const Divider(height: 1),
+              ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPostContent(),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            'commentsAndAnswers'.tr(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1A2E),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_comments.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ..._comments.map((c) => _buildCommentCard(c)),
+                      if (_comments.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              children: [
+                                Icon(Icons.chat_bubble_outline_rounded,
+                                    size: 40, color: Colors.grey.shade300),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'noComments'.tr(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade400,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              _buildCommentInput(),
+            ],
           ),
         ),
-        _buildCommentInput(),
-      ]),
+      ),
     );
   }
 
@@ -1951,14 +2019,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           _avatar(widget.post.author, 38),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(widget.post.author.name,
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1A1A2E))),
               Text(_formatTime(widget.post.createdAt),
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
             ]),
           ),
           if (widget.post.author.id == currentUser.id)
@@ -1970,7 +2040,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   color: const Color(0xFFF5F4F0),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF5E4BFF)),
+                child: const Icon(Icons.edit_outlined,
+                    size: 18, color: Color(0xFF5E4BFF)),
               ),
             ),
         ]),
@@ -2046,7 +2117,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   Row(children: [
                     Flexible(
                         child: Text(
-                      isMe ? 'คุณ' : c.author.name,
+                      isMe ? 'you'.tr() : c.author.name,
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -2064,7 +2135,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         decoration: BoxDecoration(
                             color: const Color(0xFF1565C0),
                             borderRadius: BorderRadius.circular(6)),
-                        child: Text(c.author.specialty ?? 'ทนายความ',
+                        child: Text(c.author.specialty ?? 'lawyerBadge'.tr(),
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
@@ -2079,7 +2150,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         decoration: BoxDecoration(
                             color: const Color(0xFFF57F17),
                             borderRadius: BorderRadius.circular(6)),
-                        child: const Text('คุณ',
+                        child: Text('you'.tr(),
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
@@ -2131,7 +2202,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             const SizedBox(width: 16),
             GestureDetector(
               onTap: () => _startReply(c),
-              child: Text('ตอบกลับ',
+              child: Text('reply'.tr(),
                   style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade400,
@@ -2141,7 +2212,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: () => _startEditComment(c),
-                child: const Text('แก้ไข',
+                child: Text('edit'.tr(),
                     style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF5E4BFF),
@@ -2161,11 +2232,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Widget _buildCommentInput() {
     final hasContext = _replyTarget != null || _editingComment != null;
-    String hintText = 'แสดงความคิดเห็นหรือตอบคำถาม...';
+    String hintText = 'commentHint'.tr();
     if (_replyTarget != null) {
-      hintText = 'ตอบกลับ ${_replyTarget!.author.name}...';
+      hintText = 'replyingTo'.tr(args: [_replyTarget!.author.name]);
     } else if (_editingComment != null) {
-      hintText = 'แก้ไขความคิดเห็น...';
+      hintText = 'editingComment'.tr();
     }
 
     return Column(
@@ -2180,7 +2251,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 : const Color(0xFFF0F7FF),
             child: Row(children: [
               Icon(
-                _editingComment != null ? Icons.edit_outlined : Icons.reply_rounded,
+                _editingComment != null
+                    ? Icons.edit_outlined
+                    : Icons.reply_rounded,
                 size: 16,
                 color: _editingComment != null
                     ? const Color(0xFF5E4BFF)
@@ -2190,8 +2263,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               Expanded(
                 child: Text(
                   _editingComment != null
-                      ? 'กำลังแก้ไขความคิดเห็น'
-                      : 'ตอบกลับ ${_replyTarget!.author.name}',
+                      ? 'editingComment'.tr()
+                      : 'replyingTo'.tr(args: [_replyTarget!.author.name]),
                   style: TextStyle(
                     fontSize: 12,
                     color: _editingComment != null
@@ -2222,7 +2295,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                     color: const Color(0xFFF5F4F0),
                     borderRadius: BorderRadius.circular(14)),
@@ -2231,9 +2305,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   focusNode: _focusNode,
                   decoration: InputDecoration.collapsed(
                     hintText: hintText,
-                    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
+                    hintStyle:
+                        const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13),
                   ),
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _sendComment(),
@@ -2261,7 +2337,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2)))
                     : Icon(
-                        _editingComment != null ? Icons.check_rounded : Icons.send_rounded,
+                        _editingComment != null
+                            ? Icons.check_rounded
+                            : Icons.send_rounded,
                         color: Colors.white,
                         size: 18,
                       ),
@@ -2295,12 +2373,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         : [const Color(0xFF37474F), const Color(0xFF546E7A)]),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight)),
-        child: Center(
-            child: Text(initials,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size * 0.33,
-                    fontWeight: FontWeight.w700))),
+        child: ClipOval(
+          child: user.avatarUrl.isNotEmpty
+              ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                  ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                  : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+              : Center(
+                  child: Text(initials,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: size * 0.33,
+                          fontWeight: FontWeight.w700)),
+                ),
+        ),
       ),
       if (user.isVerified)
         Positioned(
@@ -2353,32 +2438,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   final List<Map<String, dynamic>> _categories = [
     {
-      'label': 'แรงงาน',
+      'label': 'category.labor',
       'icon': Icons.work_outline_rounded,
       'color': const Color(0xFF2196F3)
     },
     {
-      'label': 'อสังหาริมทรัพย์',
+      'label': 'category.real_estate',
       'icon': Icons.home_outlined,
       'color': const Color(0xFF4CAF50)
     },
     {
-      'label': 'ครอบครัว',
+      'label': 'category.family',
       'icon': Icons.people_outline_rounded,
       'color': const Color(0xFFE91E63)
     },
     {
-      'label': 'คดีอาญา',
+      'label': 'category.criminal',
       'icon': Icons.gavel_rounded,
       'color': const Color(0xFFFF5722)
     },
     {
-      'label': 'แพ่ง',
+      'label': 'category.civil',
       'icon': Icons.balance_outlined,
       'color': const Color(0xFF9C27B0)
     },
     {
-      'label': 'อื่นๆ',
+      'label': 'other',
       'icon': Icons.help_outline_rounded,
       'color': const Color(0xFF607D8B)
     },
@@ -2415,9 +2500,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+      builder: (_) => AppLayout(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
                 width: 40,
@@ -2426,7 +2512,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
-            const Text('เพิ่มรูปภาพ',
+            Text('addImages'.tr(),
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -2435,14 +2521,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             Row(children: [
               Expanded(
                   child: _imgSourceBtn(
-                      Icons.photo_library_outlined, 'คลังรูปภาพ', () {
+                      Icons.photo_library_outlined, 'gallery'.tr(), () {
                 Navigator.pop(context);
                 _pickFromGallery();
               })),
               const SizedBox(width: 12),
               Expanded(
                   child: _imgSourceBtn(
-                      Icons.camera_alt_outlined, 'กล้องถ่ายรูป', () {
+                      Icons.camera_alt_outlined, 'camera'.tr(), () {
                 Navigator.pop(context);
                 _pickFromCamera();
               })),
@@ -2451,8 +2537,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ]),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _imgSourceBtn(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
@@ -2477,11 +2564,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _submitPost() async {
     if (_contentCtrl.text.trim().isEmpty) {
-      _showError('กรุณาใส่รายละเอียด');
+      _showError('enterDetails'.tr());
       return;
     }
     if (_selectedCategory == null) {
-      _showError('กรุณาเลือกหมวดหมู่');
+      _showError('selectCategory'.tr());
       return;
     }
 
@@ -2511,68 +2598,141 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   bool get _canPost =>
-      _contentCtrl.text.trim().isNotEmpty &&
-      _selectedCategory != null;
+      _contentCtrl.text.trim().isNotEmpty && _selectedCategory != null;
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: const Color(0xFFF5F4F0),
-                borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.close_rounded,
-                size: 20, color: Color(0xFF1A1A2E)),
-          ),
-        ),
-        title: const Text('ตั้งคำถามใหม่',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E))),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: _canPost && !_isPosting ? _submitPost : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                    color: _canPost
-                        ? const Color(0xFF1A1A2E)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(10)),
-                child: _isPosting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('โพสต์',
-                        style: TextStyle(
-                            color:
-                                _canPost ? Colors.white : Colors.grey.shade400,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700)),
+      backgroundColor: isDesktop ? const Color.fromARGB(255, 233, 242, 249) : const Color(0xFFF5F4F0),
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              leading: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF5F4F0),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.close_rounded,
+                      size: 20, color: Color(0xFF1A1A2E)),
+                ),
               ),
+              title: Text('newQuestion'.tr(),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1A2E))),
+              centerTitle: true,
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: _canPost && !_isPosting ? _submitPost : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                          color: _canPost
+                              ? const Color(0xFF1A1A2E)
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: _isPosting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : Text('post'.tr(),
+                              style: TextStyle(
+                                  color:
+                                      _canPost ? Colors.white : Colors.grey.shade400,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      body: AppLayout(
+        child: Container(
+          clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+          decoration: isDesktop
+              ? const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (isDesktop) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFF5F4F0),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(Icons.close_rounded,
+                              size: 20, color: Color(0xFF1A1A2E)),
+                        ),
+                      ),
+                      Text(
+                        'newQuestion'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _canPost && !_isPosting ? _submitPost : null,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                              color: _canPost
+                                  ? const Color(0xFF1A1A2E)
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10)),
+                          child: _isPosting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : Text('post'.tr(),
+                                  style: TextStyle(
+                                      color: _canPost ? Colors.white : Colors.grey.shade400,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+              ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
           // User info
           Container(
             padding: const EdgeInsets.all(14),
@@ -2588,18 +2748,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: Row(children: [
               _avatarWidget(currentUser, 40),
               const SizedBox(width: 10),
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(currentUser.name,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A2E))),
-                    const Text('โพสต์ต่อสาธารณะ',
-                        style:
-                            TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
-                  ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(currentUser.name,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A2E))),
+                Text('postPublicly'.tr(),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
+              ]),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2610,7 +2767,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   Icon(Icons.public_rounded,
                       size: 14, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
-                  Text('สาธารณะ',
+                  Text('public'.tr(),
                       style:
                           TextStyle(fontSize: 11, color: Colors.grey.shade600))
                 ]),
@@ -2621,7 +2778,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           const SizedBox(height: 16),
 
           // Category
-          const Text('หมวดหมู่ปัญหา *',
+          Text('problemCategory'.tr(),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -2659,7 +2816,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     Icon(cat['icon'] as IconData,
                         size: 16, color: isSelected ? Colors.white : color),
                     const SizedBox(width: 6),
-                    Text(cat['label'] as String,
+                    Text((cat['label'] as String).tr(),
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -2711,7 +2868,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           const SizedBox(height: 14),
 
           // Content
-          const Text('รายละเอียด *',
+          Text('details'.tr(),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -2730,9 +2887,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: TextField(
               controller: _contentCtrl,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText:
-                    'อธิบายปัญหาของคุณให้ละเอียด เช่น เกิดอะไรขึ้น เมื่อไหร่ มีหลักฐานอะไรบ้าง...',
+                    'describeProblemHint'.tr(),
                 hintStyle: TextStyle(color: Color(0xFFBDBDBD), fontSize: 13),
                 contentPadding: EdgeInsets.all(16),
                 border: InputBorder.none,
@@ -2748,7 +2905,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
           // Images
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('รูปภาพประกอบ',
+            Text('attachmentImages'.tr(),
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -2784,7 +2941,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Icon(Icons.add_rounded,
                                   size: 24, color: Colors.grey.shade400),
                               const SizedBox(height: 4),
-                              Text('เพิ่มรูป',
+                              Text('addImage'.tr(),
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey.shade400)),
@@ -2838,7 +2995,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       Icon(Icons.add_photo_alternate_outlined,
                           size: 28, color: Colors.grey.shade400),
                       const SizedBox(height: 6),
-                      Text('แตะเพื่อเพิ่มรูปภาพ (สูงสุด 4 รูป)',
+                      Text('tapToAddImages'.tr(),
                           style: TextStyle(
                               fontSize: 12, color: Colors.grey.shade400)),
                     ]),
@@ -2862,14 +3019,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    const Text('เคล็ดลับได้รับคำตอบเร็ว',
-                        style: TextStyle(
+                    Text('tipTitle'.tr(),
+                        style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1565C0))),
                     const SizedBox(height: 4),
                     Text(
-                        'ระบุรายละเอียดให้ครบ: เกิดอะไรขึ้น วันเวลา จำนวนเงิน และหลักฐานที่มี จะช่วยให้ทนายตอบได้ตรงประเด็นมากขึ้น',
+                        'tipBody'.tr(),
                         style: TextStyle(
                             fontSize: 11.5,
                             color: Colors.blue.shade700,
@@ -2879,7 +3036,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
 
           const SizedBox(height: 30),
-        ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2899,12 +3062,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               colors: [Color(0xFFF57F17), Color(0xFFFF8F00)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight)),
-      child: Center(
-          child: Text(initials,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: size * 0.33,
-                  fontWeight: FontWeight.w700))),
+      child: ClipOval(
+        child: user.avatarUrl.isNotEmpty
+            ? (user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('https')
+                ? Image.network(user.avatarUrl, fit: BoxFit.cover)
+                : Image.asset(user.avatarUrl, fit: BoxFit.cover))
+            : Center(
+                child: Text(initials,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: size * 0.33,
+                        fontWeight: FontWeight.w700)),
+              ),
+      ),
     );
   }
 }

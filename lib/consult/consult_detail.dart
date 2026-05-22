@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultDetailPage extends StatefulWidget {
   final Map<String, dynamic> lawyer;
@@ -64,97 +65,53 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6FF),
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Center(
-          child: Text(
-            "รายละเอียดหมอความ",
-            style: const TextStyle(fontSize: 16, color: Colors.white),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context, false),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(15, 8, 0, 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
-            ),
-            child: const Icon(Icons.chevron_left_rounded,
-                color: Colors.white, size: 24),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(0, 8, 15, 8),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                setState(() => isFavorite = !isFavorite);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    width: 1,
-                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: Column(
+            children: [
+              _buildHeroHeader(lawyerColor),
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))
+                    ]
                   ),
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-                  child: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    key: ValueKey(isFavorite),
-                    size: 18,
-                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                _buildHeroHeader(lawyerColor),
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                      child: Column(
-                        children: [
-                          _buildStatsRow(),
-                          const SizedBox(height: 14),
-                          _buildSpecialtyCard(lawyerColor),
-                          const SizedBox(height: 14),
-                          // _buildContactCard(lawyerColor),
-                          // const SizedBox(height: 14),
-                          _buildSocialCard(lawyerColor),
-                        ],
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                        child: Column(
+                          children: [
+                            _buildStatsRow(),
+                            const SizedBox(height: 14),
+                            _buildSpecialtyCard(lawyerColor),
+                            const SizedBox(height: 14),
+                            // _buildContactCard(lawyerColor),
+                            // const SizedBox(height: 14),
+                            _buildSocialCard(lawyerColor),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              _buildBookingButton(lawyerColor),
+            ],
           ),
-          _buildBookingButton(lawyerColor),
-        ],
+        ),
       ),
     );
   }
@@ -212,6 +169,81 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               ),
             ]),
           ),
+          // Custom AppBar
+          Positioned(
+            top: topPadding + 8,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: 40,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Text(
+                    "รายละเอียดหมอความ",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Positioned(
+                    left: 15,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context, false),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: const Icon(Icons.chevron_left_rounded,
+                            color: Colors.white, size: 24),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 15,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => isFavorite = !isFavorite);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            width: 1,
+                            color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                          ),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          transitionBuilder: (child, animation) =>
+                              ScaleTransition(scale: animation, child: child),
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            key: ValueKey(isFavorite),
+                            size: 18,
+                            color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Positioned(
             top: topPadding + appBarH + 8,
             left: 20,
@@ -268,8 +300,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                           decoration: BoxDecoration(
                             color: const Color(0xFF34C759),
                             shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 2.5),
+                            border: Border.all(color: Colors.white, width: 2.5),
                           ),
                         ),
                       ),
@@ -277,8 +308,8 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.88),
                       borderRadius: BorderRadius.circular(20),
@@ -328,8 +359,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                                 .split(', ')
                                 .first,
                         style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 12),
+                            color: Colors.white.withOpacity(0.8), fontSize: 12),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -340,12 +370,10 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.4)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.4)),
                         ),
-                        child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.star_rounded,
                               color: Color(0xFFFFC107), size: 14),
                           const SizedBox(width: 4),
@@ -505,9 +533,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               accent: const Color(0xFF0262EC),
               bg: const Color(0xFFEEF4FF),
               // ── action เดิม ──
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -515,9 +545,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               label: 'โทร',
               accent: const Color(0xFF34C759),
               bg: const Color(0xFFEEFAF1),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -525,9 +557,11 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               label: 'วิดีโอ',
               accent: const Color(0xFFFF6B35),
               bg: const Color(0xFFFFF2EE),
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ChatPageUser(model: widget.lawyer),
-              )),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPageUser(model: widget.lawyer),
+                  )),
             ),
           ]),
         ]),
@@ -673,8 +707,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: const Color(0xFFDBDBDB), width: 1),
+              border: Border.all(color: const Color(0xFFDBDBDB), width: 1),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -779,8 +812,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            gradient:
-                LinearGradient(colors: [color, color.withOpacity(0.7)]),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(

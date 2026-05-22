@@ -1,9 +1,12 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/notification.dart';
 
 class NotificationDesktopDetailPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const NotificationDesktopDetailPage({Key? key, this.initialData}) : super(key: key);
+  const NotificationDesktopDetailPage({Key? key, this.initialData})
+      : super(key: key);
 
   @override
   State<NotificationDesktopDetailPage> createState() =>
@@ -14,45 +17,7 @@ class _NotificationDesktopDetailPageState
     extends State<NotificationDesktopDetailPage> {
   Map<String, dynamic>? selectedItem;
 
-  // Mock data matching the UI image
-  List<Map<String, dynamic>> notifications = [
-    {
-      "type": "booking",
-      "title": "นัดหมายปรึกษาทนายความ",
-      "detail": "ทนายศักดิ์สิทธิ์",
-      "time": "09:00",
-      "date": "วันนี้",
-      "isRead": false,
-      "fullDetail": "การนัดหมายปรึกษาคดีของคุณกับทนายศักดิ์สิทธิ์ ได้รับการยืนยันแล้ว กรุณาเตรียมเอกสารที่เกี่ยวข้องให้พร้อมก่อนถึงเวลานัดหมาย"
-    },
-    {
-      "type": "system",
-      "title": "อัปเดตสถานะคำร้อง",
-      "detail": "ระบบอัตโนมัติ",
-      "time": "08:15",
-      "date": "วันนี้",
-      "isRead": true,
-      "fullDetail": "คำร้องของคุณได้รับการอัปเดตสถานะเรียบร้อยแล้ว สามารถตรวจสอบรายละเอียดเพิ่มเติมได้ในหน้าติดตามสถานะ"
-    },
-    {
-      "type": "document",
-      "title": "เอกสารของคุณถูกดาวน์โหลด",
-      "detail": "คุณรินรดา (ผู้ช่วยทนาย)",
-      "time": "16:45",
-      "date": "15 พ.ค. 2569",
-      "isRead": true,
-      "fullDetail": "เอกสารสำเนาคำฟ้องที่คุณอัปโหลดไว้ ถูกดาวน์โหลดโดย คุณรินรดา (ผู้ช่วยทนาย) เพื่อนำไปดำเนินการต่อเรียบร้อยแล้ว"
-    },
-    {
-      "type": "system",
-      "title": "ยินดีต้อนรับสู่ LegalApp",
-      "detail": "Support Team",
-      "time": "10:00",
-      "date": "14 พ.ค. 2569",
-      "isRead": true,
-      "fullDetail": "ยินดีต้อนรับเข้าสู่บริการ LawyerOnline ของเรา หากมีข้อสงสัยหรือต้องการความช่วยเหลือ สามารถติดต่อทีมซัพพอร์ตได้ตลอด 24 ชั่วโมง"
-    }
-  ];
+  List<Map<String, dynamic>> get notifications => globalNotifications;
 
   @override
   void initState() {
@@ -91,9 +56,9 @@ class _NotificationDesktopDetailPageState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'รายการทั้งหมด',
-                  style: TextStyle(
+                Text(
+                  'notification.allItems'.tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF374151),
@@ -101,9 +66,9 @@ class _NotificationDesktopDetailPageState
                 ),
                 InkWell(
                   onTap: markAllRead,
-                  child: const Text(
-                    'อ่านทั้งหมด',
-                    style: TextStyle(
+                  child: Text(
+                    "notification.allRead".tr(),
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF0262EC),
                       fontWeight: FontWeight.w500,
@@ -121,7 +86,7 @@ class _NotificationDesktopDetailPageState
               itemBuilder: (context, index) {
                 String date = grouped.keys.elementAt(index);
                 List<Map<String, dynamic>> items = grouped[date]!;
-                
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -129,7 +94,8 @@ class _NotificationDesktopDetailPageState
                     Container(
                       width: double.infinity,
                       color: const Color(0xFFF9FAFB),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Text(
                         date,
                         style: const TextStyle(
@@ -153,9 +119,12 @@ class _NotificationDesktopDetailPageState
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFF3F4F6) : Colors.white,
+                            color: isSelected
+                                ? const Color(0xFFF3F4F6)
+                                : Colors.white,
                             border: const Border(
-                              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1),
+                              bottom: BorderSide(
+                                  color: Color(0xFFF3F4F6), width: 1),
                             ),
                           ),
                           padding: const EdgeInsets.all(16),
@@ -173,7 +142,9 @@ class _NotificationDesktopDetailPageState
                                             item["title"],
                                             style: TextStyle(
                                               fontSize: 15,
-                                              fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                              fontWeight: isRead
+                                                  ? FontWeight.w500
+                                                  : FontWeight.bold,
                                               color: const Color(0xFF111827),
                                             ),
                                             overflow: TextOverflow.ellipsis,
@@ -216,19 +187,28 @@ class _NotificationDesktopDetailPageState
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: isRead ? Colors.white : const Color(0xFFEFF6FF),
+                                      color: isRead
+                                          ? Colors.white
+                                          : const Color(0xFFEFF6FF),
                                       border: Border.all(
-                                        color: isRead ? const Color(0xFFE5E7EB) : const Color(0xFFBFDBFE),
+                                        color: isRead
+                                            ? const Color(0xFFE5E7EB)
+                                            : const Color(0xFFBFDBFE),
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      isRead ? 'อ่านแล้ว' : 'ใหม่',
+                                      isRead
+                                          ? 'notification.msg.read'.tr()
+                                          : 'notification.msg.new'.tr(),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: isRead ? const Color(0xFF9CA3AF) : const Color(0xFF0262EC),
+                                        color: isRead
+                                            ? const Color(0xFF9CA3AF)
+                                            : const Color(0xFF0262EC),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -265,18 +245,18 @@ class _NotificationDesktopDetailPageState
                 color: const Color(0xFFFDE68A), // Light yellowish for bell icon
               ),
               const SizedBox(height: 24),
-              const Text(
-                'เลือกข้อความเพื่อดูรายละเอียด',
-                style: TextStyle(
+              Text(
+                'notification.common.tapForDetail'.tr(),
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF374151),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'ข้อความแจ้งเตือนสำคัญเกี่ยวกับเคสของคุณจะแสดงที่นี่',
-                style: TextStyle(
+              Text(
+                'notification.common.emptyCaseAlerts'.tr(),
+                style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF9CA3AF),
                 ),
@@ -294,7 +274,7 @@ class _NotificationDesktopDetailPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            selectedItem!["title"] ?? 'ไม่มีหัวข้อ',
+            selectedItem!["title"] ?? 'notification.common.noSubject'.tr(),
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -307,7 +287,7 @@ class _NotificationDesktopDetailPageState
               const Icon(Icons.access_time, size: 16, color: Color(0xFF6B7280)),
               const SizedBox(width: 8),
               Text(
-                '${selectedItem!["date"]} เวลา ${selectedItem!["time"]}',
+                '${selectedItem!["date"]} ${'notification.common.time'.tr()} ${selectedItem!["time"]}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
@@ -319,7 +299,9 @@ class _NotificationDesktopDetailPageState
           const Divider(color: Color(0xFFE5E7EB)),
           const SizedBox(height: 32),
           Text(
-            selectedItem!["fullDetail"] ?? selectedItem!["detail"] ?? 'ไม่มีรายละเอียดเพิ่มเติม',
+            selectedItem!["fullDetail"] ??
+                selectedItem!["detail"] ??
+                'notification.common.noDetails'.tr(),
             style: const TextStyle(
               fontSize: 16,
               height: 1.6,
@@ -336,9 +318,9 @@ class _NotificationDesktopDetailPageState
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'แจ้งเตือน',
-          style: TextStyle(
+        title: Text(
+          'notifications'.tr(),
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFF111827),
           ),

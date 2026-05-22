@@ -7,13 +7,31 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'dart:math' as math;
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────
-int _statusToStep(String status) => status == '4' ? 4 : 3;
+int _statusToStep(String status) {
+  switch (status) {
+    case '1':
+      return 1;
+    case '2':
+      return 2;
+    case '4':
+      return 4;
+    default:
+      return 3;
+  }
+}
 
-dynamic _buildLawyerForConsult(Map? m) {
+dynamic _buildLawyerForConsult(Map? m, Map caseModel) {
   if (m == null) return null;
   return {
+    'id': caseModel['id'],
+    'jobId': caseModel['id'],
+    'code': m['code'],
     'name': m['name'] ?? '',
     'avatar': (m['name'] as String? ?? 'ท').characters.first,
     'title': (m['skills'] as List?)?.isNotEmpty == true
@@ -21,6 +39,10 @@ dynamic _buildLawyerForConsult(Map? m) {
         : m['experience'] ?? '',
     'rating': m['scroll'] ?? 0,
     'imageUrl': m['imageUrl'] ?? '',
+    'appointmentDate': caseModel['appointmentDate'],
+    'appointmentTime': caseModel['appointmentTime'],
+    'active': caseModel['jobStatus'] == 'accepted',
+    'caseSuccess': caseModel['jobStatus'] == 'done',
   };
 }
 
@@ -59,6 +81,38 @@ class HomeUserSection extends StatelessWidget {
     }
   }
 
+  void _showRejectedCase(BuildContext context, Map model) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: Color(0xFFEF4444)),
+            SizedBox(width: 8),
+            Expanded(child: Text('เคสถูกปฏิเสธ')),
+          ],
+        ),
+        content: Text(
+          'คำขอ "${model['category'] ?? ''}" ถูกปฏิเสธแล้ว คุณสามารถเปิดเคสใหม่หรือเลือกทนายคนอื่นได้',
+          style: GoogleFonts.prompt(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'ตกลง',
+              style: GoogleFonts.prompt(
+                color: _kPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -67,20 +121,20 @@ class HomeUserSection extends StatelessWidget {
         // ── Case Status ──────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'สถานะเคสของคุณ',
+          title: 'caseStatus'.tr(),
           onMore: () =>
               _guardedNavigate(context, CaseStatusAllPage(caseList: cases)),
         ),
         if (cases.isNotEmpty)
           _buildCaseStatusList(context)
         else
-          _emptyState('ยังไม่มีเคสของคุณ'),
+          _emptyState('noCases'.tr()),
         const SizedBox(height: 20),
 
         // ── Law Categories ───────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'ประเด็นหัวข้อกฎหมาย',
+          title: 'lawCategories'.tr(),
           onMore: () => _guardedNavigate(context, LawTypeAllPage()),
         ),
         const SizedBox(height: 8),
@@ -90,25 +144,25 @@ class HomeUserSection extends StatelessWidget {
         // ── Lawyers For You ──────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'หมอความสำหรับคุณ',
+          title: 'lawyersForYou'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
         if (lawyers.isNotEmpty)
           _buildLawyerList(context, lawyers)
         else
-          _emptyState('ยังไม่มีหมอความสำหรับคุณ'),
+          _emptyState('noLawyers'.tr()),
         const SizedBox(height: 20),
 
         // ── New Lawyers ──────────────────────────────────────────
         _sectionHeader(
           context,
-          title: 'หมอความมาแรง',
+          title: 'trendingLawyers'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
         if (newLawyers.isNotEmpty)
           _buildLawyerList(context, newLawyers)
         else
-          _emptyState('ยังไม่มีหมอความมาแรง'),
+          _emptyState('noTrendingLawyers'.tr()),
         const SizedBox(height: 20),
       ],
     );
@@ -137,7 +191,7 @@ class HomeUserSection extends StatelessWidget {
             GestureDetector(
               onTap: onMore,
               child: Text(
-                'ดูทั้งหมด',
+                'viewAll'.tr(),
                 style: GoogleFonts.prompt(
                   fontSize: 12,
                   color: _kAccent,
@@ -153,10 +207,11 @@ class HomeUserSection extends StatelessWidget {
   // ── Case Status List ──────────────────────────────────────────────
   Widget _buildCaseStatusList(BuildContext context) {
     return SizedBox(
-      height: 130,
+      height: 146, // เพิ่ม 16px ให้ shadow ไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
+        padding: const EdgeInsets.fromLTRB(
+            18, 8, 18, 12), // top/bottom ให้ shadow หายใจได้
         itemCount: cases.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _caseStatusItem(context, cases[i]),
@@ -185,29 +240,49 @@ class HomeUserSection extends StatelessWidget {
     final category = model['category'] ?? '';
     final statusText = model['statusText'] ?? '';
 
+    // คำนวณความกว้างของการ์ดให้พอดีกับหน้าจอ
+    final screenW = MediaQuery.of(context).size.width;
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+
+    // ความกว้างของกรอบเนื้อหา
+    final actualContentW =
+        isDesktop ? math.min(screenW, RV.maxContentWidth(context)) : screenW;
+
+    double cardW;
+    if (isDesktop || isTablet) {
+      // Desktop/Tablet: แบ่ง 2 คอลัมน์ให้พอดีกรอบ
+      cardW = (actualContentW - (18 * 2) - 12) / 2;
+    } else {
+      // Mobile: กว้าง 72% เพื่อให้เห็นว่าเลื่อนได้
+      cardW = screenW * 0.72;
+    }
+
     return GestureDetector(
-      onTap: () => _guardedNavigate(
-        context,
-        ConsultStatusPage(
-          currentStep: _statusToStep(status),
-          lawyer: _buildLawyerForConsult(lawyerModel),
-          appointmentDate: model['appointmentDate'],
-          appointmentTime: model['appointmentTime'],
-        ),
-      ),
+      onTap: () {
+        final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+        _guardedNavigate(
+          context,
+          ConsultStatusPage(
+            currentStep: _statusToStep(status),
+            lawyer: _buildLawyerForConsult(lawyerModel, model),
+            appointmentDate: model['appointmentDate'],
+            appointmentTime: model['appointmentTime'],
+            canOpenChat: jobStatus == 'accepted' || jobStatus == 'done',
+            caseModel: Map<String, dynamic>.from(model),
+          ),
+        );
+      },
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.72,
+        width: cardW,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            )
-          ],
+          border: Border.all(
+            color: const Color(0xFFD6D5D5),
+            width: 1,
+          ),
         ),
         child: Row(children: [
           Container(
@@ -310,14 +385,10 @@ class HomeUserSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: _kCard,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _kAccent.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                )
-              ],
-              border: Border.all(color: const Color(0xFFE2EAF8)),
+              border: Border.all(
+                color: const Color(0xFFD6D5D5),
+                width: 1,
+              ),
             ),
             child: Image.asset(icon,
                 height: 34, fit: BoxFit.contain, color: _kPrimary),
@@ -335,10 +406,11 @@ class HomeUserSection extends StatelessWidget {
   // ── Lawyer Card List ──────────────────────────────────────────────
   Widget _buildLawyerList(BuildContext context, List<dynamic> list) {
     return SizedBox(
-      height: 210,
+      height: 226, // เพิ่ม 16px ให้ shadow ด้านล่างไม่โดน clip
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 15),
+        padding: const EdgeInsets.fromLTRB(
+            18, 4, 18, 16), // bottom 16 = พื้นที่ shadow
         itemCount: list.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _lawyerCard(
@@ -360,13 +432,10 @@ class HomeUserSection extends StatelessWidget {
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            )
-          ],
+          border: Border.all(
+            color: const Color(0xFFD6D5D5),
+            width: 0.6,
+          ),
         ),
         child: Column(
           children: [
@@ -405,7 +474,9 @@ class HomeUserSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isFree ? 'ฟรี' : '฿${model['cost']}${model['costUnit']}',
+                      isFree
+                          ? 'free'.tr()
+                          : '฿${model['cost']}${model['costUnit']}',
                       style: GoogleFonts.prompt(
                         color: Colors.white,
                         fontSize: 9,
@@ -487,6 +558,9 @@ _StatusStyle _statusStyle(String status) {
     case '4':
       return _StatusStyle(const Color(0xFF6B7A99), const Color(0xFFF4F6FB),
           Icons.check_circle_outline_rounded);
+    case '5':
+      return _StatusStyle(const Color(0xFFEF4444), const Color(0xFFFFF1F2),
+          Icons.cancel_outlined);
     default:
       return _StatusStyle(const Color(0xFF6B7A99), const Color(0xFFF4F6FB),
           Icons.info_outline_rounded);

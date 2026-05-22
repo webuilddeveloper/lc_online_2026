@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class NotificationSettingPage extends StatefulWidget {
@@ -72,32 +73,32 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.notifications_active,
               color: Colors.green,
               size: 60,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              "บันทึกสำเร็จ",
-              style: TextStyle(
+              "saveSuccess".tr(),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              "ตั้งค่าการแจ้งเตือนเรียบร้อยแล้ว",
+              "notificationSettingsMessage".tr(),
               textAlign: TextAlign.center,
             )
           ],
         ),
         actions: [
           TextButton(
-            child: const Text("ตกลง"),
+            child: Text("ok".tr()),
             onPressed: () {
               Navigator.pop(context);
             },
@@ -112,7 +113,7 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
       appBar: appBarCustom(
-        title: "ตั้งค่าการแจ้งเตือน",
+        title: "notificationSettingsTitle".tr(),
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,
@@ -122,8 +123,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         child: Column(
           children: [
             buildSwitchTile(
-              title: "เปิดการแจ้งเตือน",
-              subtitle: "เปิดหรือปิดการแจ้งเตือนทั้งหมด",
+              title: "enableNotification".tr(),
+              subtitle: "enableAllNotificationDesc".tr(),
               value: masterNotification,
               icon: Icons.notifications,
               onChanged: (value) {
@@ -133,8 +134,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               },
             ),
             buildSwitchTile(
-              title: "ข้อความ",
-              subtitle: "แจ้งเตือนเมื่อมีข้อความใหม่",
+              title: "message".tr(),
+              subtitle: "messageDesc".tr(),
               value: messageNotification,
               icon: Icons.message,
               onChanged: (value) {
@@ -144,8 +145,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               },
             ),
             buildSwitchTile(
-              title: "นัดหมาย",
-              subtitle: "แจ้งเตือนเกี่ยวกับการทัดหมาย",
+              title: "appointment".tr(),
+              subtitle: "appointmentDesc".tr(),
               value: promotionNotification,
               icon: Icons.local_offer,
               onChanged: (value) {
@@ -155,8 +156,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               },
             ),
             buildSwitchTile(
-              title: "การแจ้งเตือนระบบ",
-              subtitle: "แจ้งเตือนเกี่ยวกับระบบ",
+              title: "system".tr(),
+              subtitle: "systemDesc".tr(),
               value: systemNotification,
               icon: Icons.settings,
               onChanged: (value) {
@@ -166,8 +167,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               },
             ),
             buildSwitchTile(
-              title: "เสียงแจ้งเตือน",
-              subtitle: "เปิดเสียงเมื่อมีการแจ้งเตือน",
+              title: "sound".tr(),
+              subtitle: "soundDesc".tr(),
               value: sound,
               icon: Icons.volume_up,
               onChanged: (value) {
@@ -177,8 +178,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               },
             ),
             buildSwitchTile(
-              title: "สั่น",
-              subtitle: "สั่นเมื่อมีการแจ้งเตือน",
+              title: "vibration".tr(),
+              subtitle: "vibrationDesc".tr(),
               value: vibration,
               icon: Icons.vibration,
               onChanged: (value) {
@@ -192,8 +193,8 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
               onTap: () => {
                 DialogService.showSuccess(
                   context,
-                  title: "บันทึกแล้ว",
-                  message: "ระบบได้บันทึกการตั้งค่าเรียบร้อยแล้ว",
+                  title: "saveSuccess".tr(),
+                  message: "saveSuccessMessage".tr(),
                   onClose: () {
                     Navigator.pop(context);
                   },
@@ -208,9 +209,9 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
                     borderRadius: BorderRadius.circular(18),
                     border:
                         Border.all(width: 1, color: const Color(0xFFDBDBDB))),
-                child: const Text(
-                  "บันทึก",
-                  style: TextStyle(
+                child: Text(
+                  "saveButton".tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,

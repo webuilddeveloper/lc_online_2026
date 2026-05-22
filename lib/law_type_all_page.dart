@@ -2,6 +2,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawTypeAllPage extends StatefulWidget {
   const LawTypeAllPage({super.key});
@@ -111,7 +112,10 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
         {'code': '1', 'title': 'ตรวจร่างสัญญา'},
         {'code': '2', 'title': 'ซื้อกิจการ / ควบรวมบริษัท'},
         {'code': '3', 'title': 'ภาษีอากร / บัญชี / การวางแผนภาษี'},
-        {'code': '5', 'title': 'ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)'},
+        {
+          'code': '5',
+          'title': 'ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)'
+        },
         {'code': '6', 'title': 'นายหน้า / ตัวแทน'},
       ],
     },
@@ -148,7 +152,10 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
       'color': 0xFFDB2777,
       'subCase': [
         {'code': '0', 'title': 'ประกันภัย / เคลมประกัน คปภ.'},
-        {'code': '1', 'title': 'คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)'},
+        {
+          'code': '1',
+          'title': 'คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)'
+        },
         {'code': '2', 'title': 'อุบัติเหตุจราจร'},
         {'code': '3', 'title': 'ฟ้องแพทย์ / โรงพยาบาล / อาหารและยา'},
       ],
@@ -201,11 +208,14 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
 
   void _navigate(Map<String, dynamic> topic) {
     HapticFeedback.lightImpact();
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => LawyerOnlineList(topic: topic['title'] as String, subTopic: _selectedSubTopic['title'],),
+        builder: (_) => LawyerOnlineList(
+          topic: topic['title'] as String,
+          subTopic: _selectedSubTopic?['title'],
+        ),
       ),
     );
   }
@@ -228,35 +238,97 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           isRightWidget: false,
           backAction: () => Navigator.pop(context),
         ),
-        body: Column(
-          children: [
-            // ── Search bar ──────────────────────────────
-            _buildSearchBar(),
-
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth > 768;
+            return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : 500),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Grid ──────────────────────────────
-                    if (filtered.isEmpty)
-                      _buildEmpty()
-                    else
-                      _buildGrid(filtered),
+                    // ── Search bar ──────────────────────────────
+                    _buildSearchBar(),
+                    Expanded(
+                      child: isDesktop
+                          ? _buildDesktopLayout(filtered, selectedColor)
+                          : _buildMobileLayout(filtered, selectedColor),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-                    // ── Sub-case dropdown (ถ้าเลือก topic ที่มี subCase) ──
-                    if (_selectedTopic != null && _hasSubCase) ...[
-                      const SizedBox(height: 20),
-                      _buildSubCaseSection(selectedColor),
-                    ],
+  Widget _buildDesktopLayout(
+      List<Map<String, dynamic>> filtered, Color selectedColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+            child: filtered.isEmpty
+                ? _buildEmpty()
+                : _buildGrid(filtered, isDesktop: true),
+          ),
+        ),
+        if (_selectedTopic != null && _hasSubCase)
+          Expanded(
+            flex: 2,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 16, 40),
+              child: _buildSubCaseSection(selectedColor),
+            ),
+          )
+        else
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 60),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.touch_app_rounded,
+                        size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'เลือกหัวข้อเพื่อดูรายละเอียด',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
                   ],
                 ),
               ),
             ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(
+      List<Map<String, dynamic>> filtered, Color selectedColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (filtered.isEmpty)
+            _buildEmpty()
+          else
+            _buildGrid(filtered, isDesktop: false),
+          if (_selectedTopic != null && _hasSubCase) ...[
+            const SizedBox(height: 20),
+            _buildSubCaseSection(selectedColor),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -312,15 +384,15 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
   //  Grid — copy จาก ConsultPage._buildTopicField()
   // ════════════════════════════════════════════════════════
 
-  Widget _buildGrid(List<Map<String, dynamic>> items) {
+  Widget _buildGrid(List<Map<String, dynamic>> items, {bool isDesktop = false}) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1.1,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isDesktop ? 4 : 3,
+        crossAxisSpacing: isDesktop ? 16 : 8,
+        mainAxisSpacing: isDesktop ? 16 : 8,
+        childAspectRatio: isDesktop ? 1.3 : 1.1,
       ),
       itemCount: items.length,
       itemBuilder: (_, i) {
@@ -346,9 +418,8 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.1)
-                  : const Color(0xFFF8F9FB),
+              color:
+                  isSelected ? color.withOpacity(0.1) : const Color(0xFFF8F9FB),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isSelected ? color : const Color(0xFFE2E8F4),
@@ -381,8 +452,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                       fontSize: 10,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color:
-                          isSelected ? color : const Color(0xFF5B6E8A),
+                      color: isSelected ? color : const Color(0xFF5B6E8A),
                     ),
                   ),
                 ),
@@ -406,8 +476,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           Container(
             width: 8,
             height: 8,
-            decoration:
-                BoxDecoration(color: color, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -445,13 +514,12 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                   _navigate(_selectedTopic!);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 13),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                   decoration: BoxDecoration(
                     border: !isLast
                         ? const Border(
-                            bottom: BorderSide(
-                                color: Color(0xFFF0F4F8)))
+                            bottom: BorderSide(color: Color(0xFFF0F4F8)))
                         : null,
                   ),
                   child: Row(children: [
@@ -469,16 +537,14 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                         sub['title'] as String,
                         style: TextStyle(
                           fontSize: 13,
-                          color:
-                              const Color(0xFF1A2340).withOpacity(0.75),
+                          color: const Color(0xFF1A2340).withOpacity(0.75),
                           height: 1.4,
                         ),
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
                         size: 11,
-                        color:
-                            const Color(0xFF1A2340).withOpacity(0.2)),
+                        color: const Color(0xFF1A2340).withOpacity(0.2)),
                   ]),
                 ),
               );
@@ -500,8 +566,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             decoration: const BoxDecoration(
                 color: Color(0xFFF0F4F8), shape: BoxShape.circle),
             child: Icon(Icons.search_off_rounded,
-                color: const Color(0xFF1A2340).withOpacity(0.25),
-                size: 28),
+                color: const Color(0xFF1A2340).withOpacity(0.25), size: 28),
           ),
           const SizedBox(height: 12),
           Text('ไม่พบ "$_search"',

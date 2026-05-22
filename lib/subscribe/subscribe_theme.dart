@@ -8,19 +8,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ─── Palette ─────────────────────────────────────────────────────────
-const kPrimary      = Color(0xFF185FA5);
+const kPrimary = Color(0xFF185FA5);
 const kPrimaryLight = Color(0xFFE6F1FB);
-const kPrimaryDark  = Color(0xFF0C447C);
-const kGold         = Color(0xFFBA7517);
-const kGoldLight    = Color(0xFFFAEEDA);
-const kGreen        = Color(0xFF3B6D11);
-const kGreenLight   = Color(0xFFEAF3DE);
-const kSurface      = Color(0xFFF4F6FB);
-const kCard         = Colors.white;
-const kText         = Color(0xFF0D1B2A);
-const kSub          = Color(0xFF6B7A99);
-const kBorder       = Color(0xFFE2EAF4);
-const kError        = Color(0xFFDC2626);
+const kPrimaryDark = Color(0xFF0C447C);
+const kGold = Color(0xFFBA7517);
+const kGoldLight = Color(0xFFFAEEDA);
+const kGreen = Color(0xFF3B6D11);
+const kGreenLight = Color(0xFFEAF3DE);
+const kSurface = Color(0xFFF4F6FB);
+const kCard = Colors.white;
+const kText = Color(0xFF0D1B2A);
+const kSub = Color(0xFF6B7A99);
+const kBorder = Color(0xFFE2EAF4);
+const kError = Color(0xFFDC2626);
 
 // ─── Subscription state ───────────────────────────────────────────────
 /// แผนที่ user ใช้งานอยู่จริง — ดึงจาก backend/store
@@ -30,12 +30,13 @@ enum CurrentPlan { free, pro }
 enum BillingCycle { monthly, yearly }
 
 extension BillingCycleExt on BillingCycle {
-  bool get isYearly  => this == BillingCycle.yearly;
-  String get label   => isYearly ? 'รายปี' : 'รายเดือน';
-  String get price   => isYearly ? '฿472'  : '฿590';
-  String get yearly  => isYearly ? '฿5,664/ปี' : '';
-  String get saving  => isYearly ? '−20%'  : '';
+  bool get isYearly => this == BillingCycle.yearly;
+  String get label => isYearly ? 'รายปี' : 'รายเดือน';
+  String get price => isYearly ? '฿472' : '฿590';
+  String get yearly => isYearly ? '฿5,664/ปี' : '';
+  String get saving => isYearly ? '−20%' : '';
 }
+
 // ─── Pro Badge (reusable across all pages) ───────────────────────────
 class ProBadge extends StatelessWidget {
   final double fontSize;

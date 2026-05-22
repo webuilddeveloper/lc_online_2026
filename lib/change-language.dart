@@ -2,6 +2,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ChangeLanguagePage extends StatefulWidget {
   const ChangeLanguagePage({Key? key}) : super(key: key);
@@ -11,6 +12,9 @@ class ChangeLanguagePage extends StatefulWidget {
 }
 
 class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
+  // FIX: ย้าย _storage เข้ามาใน class (เดิมอยู่นอก class เป็น top-level variable)
+  final _storage = const FlutterSecureStorage();
+
   String selectedLanguage = "th";
 
   Widget languageItem({
@@ -86,53 +90,10 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
     );
   }
 
-  void saveLanguage() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(
-              Icons.language,
-              color: Colors.blue,
-              size: 60,
-            ),
-            SizedBox(height: 16),
-            Text(
-              "เปลี่ยนภาษาสำเร็จ",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              "Language updated successfully",
-              textAlign: TextAlign.center,
-            )
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: const Text("ตกลง"),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
-    // selectedLanguage = context.locale.languageCode;
-    print(context.locale.languageCode);
+    selectedLanguage = context.locale.languageCode;
   }
 
   @override
@@ -140,7 +101,8 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
       appBar: appBar(
-        title: "เปลี่ยนภาษา",
+        // FIX: ใช้ translation key แทน hardcoded Thai
+        title: 'changelanguage'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -156,54 +118,35 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
               subtitle: "Thai",
               flag: "🇹🇭",
             ),
-
             languageItem(
               code: "en",
               title: "English",
               subtitle: "English",
               flag: "🇺🇸",
             ),
-
             languageItem(
               code: "cn",
               title: "中文",
               subtitle: "Chinese",
               flag: "🇨🇳",
             ),
-
             languageItem(
               code: "jp",
               title: "日本語",
               subtitle: "Japanese",
               flag: "🇯🇵",
             ),
-
             const Spacer(),
-
-            // SizedBox(
-            //   width: double.infinity,
-            //   height: 50,
-            //   child: ElevatedButton(
-            //     onPressed: saveLanguage,
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: Colors.blue,
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(14),
-            //       ),
-            //     ),
-            //     child: const Text(
-            //       "บันทึก",
-            //       style: TextStyle(fontSize: 16),
-            //     ),
-            //   ),
-            // )
             GestureDetector(
               onTap: () async {
-                await context.setLocale(Locale(selectedLanguage!));
+                await context.setLocale(Locale(selectedLanguage));
+                await _storage.write(
+                    key: 'appLanguage', value: selectedLanguage);
+                // FIX: ใช้ translation key แทน hardcoded Thai strings
                 DialogService.showSuccess(
                   context,
-                  title: "เปลี่ยนภาษาสำเร็จ",
-                  message: "ระบบได้บันทึกภาษาใหม่เรียบร้อยแล้ว",
+                  title: 'changePasswordSuccessTitle'.tr(),
+                  message: 'saveSuccessMessage'.tr(),
                   onClose: () {
                     Navigator.pop(context);
                   },
@@ -218,9 +161,10 @@ class _ChangeLanguagePageState extends State<ChangeLanguagePage> {
                     borderRadius: BorderRadius.circular(18),
                     border:
                         Border.all(width: 1, color: const Color(0xFFDBDBDB))),
-                child: const Text(
-                  "ถัดไป",
-                  style: TextStyle(
+                // FIX: ใช้ translation key แทน hardcoded "ถัดไป"
+                child: Text(
+                  'confirm'.tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,

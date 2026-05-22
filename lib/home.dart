@@ -23,18 +23,20 @@ import 'dart:async';
 // import 'package:LawyerOnline/shared/api_provider.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
 // import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/lawyer/appointment_store.dart';
+import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart'; // ← UserProfileStore
 import 'package:easy_localization/easy_localization.dart';
 
 // ใน build
@@ -73,7 +75,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<dynamic> lawyerOnlineList = [
     // ── เดิม 5 คน ──────────────────────────────────────────────────────────────
     {
-      "code": "0",
+      "code": "20260513101915-561-752",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       "title": "ทนายความอาวุโส",
       "scroll": 4.8,
@@ -322,55 +324,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
   List<dynamic> get appointmentList => AppointmentStore.instance.list;
 
-  List<dynamic> caseList = [
-    {
-      "code": "0",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "กฏหมายครอบครัว",
-      "story": "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามี",
-      "createDate": "9 ชั่วโมงที่ผ่านมา",
-      "appointmentDate": "28/03/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "lawyerApprove": true,
-      "lawyerModel": {
-        "code": "0",
-        "name": "ศักดิ์สิทธิ์ พิพากษ์",
-        "scroll": 4.8,
-        "cost": "ไม่เสียค่าใช้จ่าย",
-        "costUnit": "/hr",
-        "imageUrl": "assets/images/lawyer-avatar-1.png",
-        "experience": "11+ years",
-        "skills": ["Family lawyer", "Estate planning lawyer"]
-      },
-      "position": const LatLng(13.7466, 100.5393),
-      "status": "3",
-      "statusText": "กำลังปรึกษา",
-    },
-    {
-      "code": "1",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "category": "กฏหมายครอบครัว",
-      "story": "เมื่อ2ปีที่แล้ว ดิฉันได้จ้างทนายท่านนี้เพื่อทำคดีของสามี",
-      "createDate": "9 ชั่วโมงที่ผ่านมา",
-      "appointmentDate": "28/03/2026",
-      "appointmentTime": "11.00 - 14.00",
-      "lawyerApprove": true,
-      "lawyerModel": {
-        "code": "0",
-        "name": "ศักดิ์สิทธิ์ พิพากษ์",
-        "scroll": 4.8,
-        "cost": "ไม่เสียค่าใช้จ่าย",
-        "costUnit": "/hr",
-        "imageUrl": "assets/images/lawyer-avatar-1.png",
-        "experience": "11+ years",
-        "skills": ["Family lawyer", "Estate planning lawyer"]
-      },
-      "position": const LatLng(13.7466, 100.5393),
-      "status": "4",
-      "statusText": "เสร็จสิ้น",
-    },
-  ];
-
   // ─── law categories ───────────────────────────────────────────────
   final List<Map<String, dynamic>> _lawCategories = [
     {
@@ -396,6 +349,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   ];
 
   final storage = FlutterSecureStorage();
+  // ── profile fields — sync จาก UserProfileStore ──────────────────────
   String userType = "";
   String imageUrl = "";
   String name = "";
@@ -515,6 +469,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     callRead();
+    // ← listen UserProfileStore เพื่อ rebuild ทันทีที่ profile เปลี่ยน
+    UserProfileStore.instance.addListener(_onProfileChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
       _fadeCtrl.forward();
@@ -524,41 +480,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    UserProfileStore.instance.removeListener(_onProfileChanged); // ←
     _urgentCaseTimer?.cancel();
     _fadeCtrl.dispose();
     super.dispose();
   }
 
+  // ── callback เมื่อ UserProfileStore เปลี่ยน ──────────────────────────
+  void _onProfileChanged() {
+    if (!mounted) return;
+    final store = UserProfileStore.instance;
+    setState(() {
+      name = store.name;
+      imageUrl = store.imageUrl;
+      userType = store.userType;
+      typeLogin = store.typeLogin;
+    });
+  }
+
   Future<void> requestPermissions() async {
+    if (kIsWeb) return; // permission_handler ไม่รองรับ Web
     await [
       Permission.camera,
       Permission.microphone,
       Permission.photos,
-      Permission.location
+      Permission.location,
     ].request();
   }
 
   callRead() async {
-    final uType = await storage.read(key: 'userType');
-    final imgPro = await storage.read(key: 'imageUrlSocial');
-    final namePro = await storage.read(key: 'name');
-    final type = await storage.read(key: 'typeLogin');
-    // final urgentCaseEnabled = await storage.read(key: 'urgentCaseEnabled');
-
+    // โหลด UserProfileStore (ครั้งแรกเท่านั้น — subsequent calls return immediately)
+    await UserProfileStore.instance.load();
     await LawyerProfileStore.instance.load();
 
+    final store = UserProfileStore.instance;
     setState(() {
-      userType = uType ?? '';
-      name = namePro ?? '';
-      imageUrl = imgPro ?? '';
-      typeLogin = type.toString();
-      // _isUrgentCaseEnabled = urgentCaseEnabled == 'true';
+      userType = store.userType;
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
     });
-    // final value =
-    //     await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
-    // setState(() {
-    //   mockBannerList = value;
-    // });
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -582,16 +543,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 // desktop ไม่แสดง SliverAppBar เพราะมี TopNav ใน menu.dart แล้ว
                 if (!ResponsiveLayout.isDesktop(context))
                   ListenableBuilder(
-                    listenable: LawyerProfileStore.instance,
+                    // listen ทั้งสอง store: profile data + lawyer urgent-case
+                    listenable: Listenable.merge([
+                      UserProfileStore.instance,
+                      LawyerProfileStore.instance,
+                    ]),
                     builder: (_, __) => HomeAppBar(
-                      name: name,
-                      imageUrl: imageUrl,
-                      userType: userType,
-                      typeLogin: typeLogin,
+                      name: UserProfileStore.instance.name,
+                      imageUrl: UserProfileStore.instance.imageUrl,
+                      userType: UserProfileStore.instance.userType,
+                      typeLogin: UserProfileStore.instance.typeLogin,
                       isUrgentCaseEnabled:
                           LawyerProfileStore.instance.isUrgentCaseEnabled,
                       onProfileTap:
-                          typeLogin != 'null' ? widget.onProfileTap : null,
+                          UserProfileStore.instance.typeLogin != 'null'
+                              ? widget.onProfileTap
+                              : null,
                     ),
                   ),
                 SliverToBoxAdapter(
@@ -652,12 +619,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // ── User dashboard ───────────────────────────────────
             if (typeLogin == 'null' || userType == 'user')
-              HomeUserSection(
-                cases: caseList,
-                lawCategories: _lawCategories,
-                lawyers: lawyerOnlineList,
-                newLawyers: newLawyerOnlineList,
-                isGuest: typeLogin == 'null',
+              ListenableBuilder(
+                listenable: LawyerJobsStore.instance,
+                builder: (_, __) => HomeUserSection(
+                  cases: UserCaseAdapter.fromJobs(LawyerJobsStore.instance
+                      .jobsForClient(UserProfileStore.instance.code)),
+                  lawCategories: _lawCategories,
+                  lawyers: lawyerOnlineList,
+                  newLawyers: newLawyerOnlineList,
+                  isGuest: typeLogin == 'null',
+                ),
               ),
 
             // ── Lawyer dashboard ─────────────────────────────────
@@ -666,7 +637,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeLawyerSection(
                   appointments: appointmentList,
-                  jobRequests: LawyerJobsStore.instance.jobs,
+                  jobRequests: LawyerJobsStore.instance
+                      .jobsForLawyer(UserProfileStore.instance.code),
                   onJobStatusChanged: (id, newStatus) {
                     LawyerJobsStore.instance.updateStatus(id, newStatus);
                   },

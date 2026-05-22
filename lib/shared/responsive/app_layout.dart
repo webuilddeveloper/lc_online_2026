@@ -60,8 +60,8 @@ class AppLayout extends StatelessWidget {
 class AppLayoutScaffold extends StatelessWidget {
   final Widget body;
   final PreferredSizeWidget? appBar;
-  final Widget? topNav;       // desktop top navigation
-  final Widget? bottomNav;    // mobile/tablet bottom navigation
+  final Widget? topNav; // desktop top navigation
+  final Widget? bottomNav; // mobile/tablet bottom navigation
   final Color? backgroundColor;
 
   const AppLayoutScaffold({
@@ -87,8 +87,7 @@ class AppLayoutScaffold extends StatelessWidget {
             )
           : appBar,
       // mobile/tablet ใช้ bottomNav
-      bottomNavigationBar:
-          !isDesktop && bottomNav != null ? bottomNav : null,
+      bottomNavigationBar: !isDesktop && bottomNav != null ? bottomNav : null,
       body: AppLayout(child: body),
     );
   }

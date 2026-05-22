@@ -4,8 +4,10 @@ import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
-
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 // ══════════════════════════════════════════════════════════
 //  LawyerJobListPage — รายการคำขอจากลูกความ (ฝั่งทนาย)
 //  เรียกใช้: Navigator.push(context, MaterialPageRoute(
@@ -26,7 +28,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   static const _kPrimary = Color(0xFF0262EC);
 
-  final _jobs = LawyerJobsStore.instance.jobs;
+  List<Map<String, dynamic>> get _jobs =>
+      LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code);
 
   @override
   void initState() {
@@ -90,23 +93,67 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
   @override
   Widget build(BuildContext context) {
-    final pending = LawyerJobsStore.instance.jobs
-        .where((j) => j['status'] == 'pending')
-        .length;
+    final pending = _jobs.where((j) => j['status'] == 'pending').length;
     final filtered = _filtered;
+    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FF),
-      appBar: appBar(
+      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
+      appBar: isDesktop ? null : appBar(
         title: 'คำขอจากลูกความ',
         backBtn: true,
         rightBtn: false,
         backAction: () => Navigator.pop(context),
         rightAction: () {},
       ),
-      body: Column(
-        children: [
-          // ── Pending alert ──────────────────────────────
+      body: AppLayout(
+        child: Container(
+          decoration: isDesktop ? BoxDecoration(
+            color: const Color(0xFFF2F6FF),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ) : null,
+          child: Column(
+            children: [
+              if (isDesktop)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+                          ),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        'คำขอจากลูกความ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              // ── Pending alert ──────────────────────────────
           if (pending > 0)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -183,6 +230,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                   ),
           ),
         ],
+      ),
+      ),
       ),
     );
   }
@@ -748,19 +797,65 @@ class LawyerJobDetailPage extends StatelessWidget {
     final isPending = status == 'pending';
     final isAccepted = status == 'accepted';
     final clientColor = Color(job['clientColor'] as int);
+    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FF),
-      appBar: appBar(
+      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
+      appBar: isDesktop ? null : appBar(
         title: 'รายละเอียดคำขอ',
         backBtn: true,
         rightBtn: false,
         backAction: () => Navigator.pop(context),
         rightAction: () {},
       ),
-      body: Column(
-        children: [
-          Expanded(
+      body: AppLayout(
+        child: Container(
+          decoration: isDesktop ? BoxDecoration(
+            color: const Color(0xFFF2F6FF),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ) : null,
+          child: Column(
+            children: [
+              if (isDesktop)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+                          ),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        'รายละเอียดคำขอ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -792,6 +887,8 @@ class LawyerJobDetailPage extends StatelessWidget {
           else if (isAccepted)
             _buildAcceptedButton(context),
         ],
+      ),
+      ),
       ),
     );
   }

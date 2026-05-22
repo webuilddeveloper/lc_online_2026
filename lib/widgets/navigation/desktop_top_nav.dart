@@ -7,8 +7,9 @@ import 'package:LawyerOnline/notification_dropdown.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // ══════════════════════════════════════════════════════════
 //  NavItem — model สำหรับ nav item แต่ละตัว
@@ -61,21 +62,78 @@ class DesktopTopNav extends StatefulWidget {
   State<DesktopTopNav> createState() => _DesktopTopNavState();
 }
 
-class _DesktopTopNavState extends State<DesktopTopNav> {
+class _DesktopTopNavState extends State<DesktopTopNav>
+    with TickerProviderStateMixin {
+  // ── Pulse ring (วนซ้ำตลอด) ──────────────────────────────────────
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _pulseScale;
+  late final Animation<double> _pulseOpacity;
+
+  // ── Burst (one-shot เมื่อ toggle เปิด) ─────────────────────────
+  late final AnimationController _burstCtrl;
+  late final Animation<double> _burstScale;
+  late final Animation<double> _burstOpacity;
+
+  bool _prevUrgent = false;
+
   @override
   void initState() {
     super.initState();
+
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.55).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.65, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+
+    _burstCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _burstScale = Tween<double>(begin: 1.0, end: 1.9).animate(
+      CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOut),
+    );
+    _burstOpacity = Tween<double>(begin: 0.7, end: 0.0).animate(
+      CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOut),
+    );
+
     LawyerProfileStore.instance.addListener(_onStoreChanged);
+
+    _prevUrgent = LawyerProfileStore.instance.isUrgentCaseEnabled;
+    _syncUrgentAnimation(_prevUrgent, burst: false);
   }
 
   @override
   void dispose() {
+    _pulseCtrl.dispose();
+    _burstCtrl.dispose();
     LawyerProfileStore.instance.removeListener(_onStoreChanged);
     super.dispose();
   }
 
+  void _syncUrgentAnimation(bool enabled, {bool burst = false}) {
+    if (enabled) {
+      _pulseCtrl.repeat();
+      if (burst) _burstCtrl.forward(from: 0);
+    } else {
+      _pulseCtrl.stop();
+      _pulseCtrl.reset();
+    }
+  }
+
   void _onStoreChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final urgent = LawyerProfileStore.instance.isUrgentCaseEnabled;
+    if (urgent != _prevUrgent) {
+      _syncUrgentAnimation(urgent, burst: true);
+      _prevUrgent = urgent;
+    }
+    setState(() {});
   }
 
   @override
@@ -153,15 +211,15 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
-                tooltip: "การแจ้งเตือน",
+                tooltip: "notifications".tr(),
                 itemBuilder: (_) => [
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     enabled: false,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     child: SizedBox(
                       width: 350,
                       height: 400,
-                      child: const NotificationDropdownContent(),
+                      child: NotificationDropdownContent(),
                     ),
                   ),
                 ],
@@ -217,7 +275,9 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   border: Border.all(color: const Color(0xFFF5A623)),
                 ),
                 child: Text(
-                  userType == 'lawyer' ? 'หมอความ' : 'บุคคลทั่วไป',
+                  userType == 'lawyer'
+                      ? 'role.lawyer'.tr()
+                      : 'role.client'.tr(),
                   style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFFF5A623),
@@ -242,11 +302,11 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   } else if (value == 'logout') {
                     DialogService.showConfirmLogout(
                       context,
-                      title: "ยืนยันการออกจากระบบ",
-                      message: "คุณต้องการออกจากระบบหรือไม่?",
+                      title: "confirmLogoutTitle".tr(),
+                      message: "confirmLogoutMessage".tr(),
                       onConfirm: () async {
-                        const storage = FlutterSecureStorage();
-                        await storage.deleteAll();
+                        await UserProfileStore.instance.resetAndClear();
+                        await LawyerProfileStore.instance.reset();
                         if (context.mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => MenuPage()),
@@ -261,12 +321,12 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   PopupMenuItem(
                     value: 'profile',
                     child: Row(
-                      children: const [
-                        Icon(Icons.person_outline_rounded,
+                      children: [
+                        const Icon(Icons.person_outline_rounded,
                             size: 18, color: Color(0xFF0262EC)),
-                        SizedBox(width: 10),
-                        Text('โปรไฟล์',
-                            style: TextStyle(
+                        const SizedBox(width: 10),
+                        Text('profile'.tr(),
+                            style: const TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
                       ],
                     ),
@@ -275,12 +335,12 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   PopupMenuItem(
                     value: 'logout',
                     child: Row(
-                      children: const [
-                        Icon(Icons.logout_rounded,
+                      children: [
+                        const Icon(Icons.logout_rounded,
                             size: 18, color: Color(0xFFEF4444)),
-                        SizedBox(width: 10),
-                        Text('ออกจากระบบ',
-                            style: TextStyle(
+                        const SizedBox(width: 10),
+                        Text('logout'.tr(),
+                            style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFFEF4444))),
@@ -288,53 +348,46 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                     ),
                   ),
                 ],
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isUrgentCaseEnabled
-                              ? const Color(0xFF059669)
-                              : const Color(0xFF0262EC),
-                          width: 2.5,
+                child: _UrgentAvatarRing(
+                  urgentOn: isUrgentCaseEnabled,
+                  pulseScale: _pulseScale,
+                  pulseOpacity: _pulseOpacity,
+                  burstScale: _burstScale,
+                  burstOpacity: _burstOpacity,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
                         ),
-                        boxShadow: isUrgentCaseEnabled
-                            ? [
-                                BoxShadow(
-                                    color: const Color(0xFF059669)
-                                        .withOpacity(0.4),
-                                    blurRadius: 6,
-                                    spreadRadius: 1)
-                              ]
-                            : [],
+                        child: ClipOval(
+                          child: imageUrl.isNotEmpty && imageUrl != 'null'
+                              ? Image.network(imageUrl, fit: BoxFit.cover)
+                              : Image.asset('assets/icons/profile.png',
+                                  fit: BoxFit.cover),
+                        ),
                       ),
-                      child: ClipOval(
-                        child: imageUrl.isNotEmpty && imageUrl != 'null'
-                            ? Image.network(imageUrl, fit: BoxFit.cover)
-                            : Image.asset('assets/icons/profile.png',
-                                fit: BoxFit.cover),
-                      ),
-                    ),
-                    if (isUrgentCaseEnabled)
-                      Positioned(
-                        bottom: -2,
-                        right: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF059669),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
+                      if (isUrgentCaseEnabled)
+                        Positioned(
+                          bottom: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF059669),
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            child: const Icon(Icons.balance_rounded,
+                                color: Colors.white, size: 12),
                           ),
-                          child: const Icon(Icons.balance_rounded,
-                              color: Colors.white, size: 12),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ] else
@@ -343,10 +396,132 @@ class _DesktopTopNavState extends State<DesktopTopNav> {
                   context,
                   MaterialPageRoute(builder: (_) => LoginPage(isBack: true)),
                 ),
-                child: const Text('เข้าสู่ระบบ'),
+                child: Text('login'.tr()),
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  _UrgentAvatarRing — pulse / burst / static ring wrapper
+//  ครอบ avatar โดยไม่แตะ ProfileAvatar
+// ══════════════════════════════════════════════════════════
+class _UrgentAvatarRing extends StatelessWidget {
+  final bool urgentOn;
+  final Animation<double> pulseScale;
+  final Animation<double> pulseOpacity;
+  final Animation<double> burstScale;
+  final Animation<double> burstOpacity;
+  final Widget child;
+
+  const _UrgentAvatarRing({
+    required this.urgentOn,
+    required this.pulseScale,
+    required this.pulseOpacity,
+    required this.burstScale,
+    required this.burstOpacity,
+    required this.child,
+  });
+
+  static const _green = Color(0xFF059669);
+  // ขนาด avatar ใน DesktopTopNav คือ 40×40
+  static const double _size = 40;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _size + 24,
+      height: _size + 24,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // ── burst (one-shot เมื่อ toggle เปิด) ─────────────
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: burstScale,
+              builder: (_, __) => Opacity(
+                opacity: burstOpacity.value,
+                child: Transform.scale(
+                  scale: burstScale.value,
+                  child: Container(
+                    width: _size,
+                    height: _size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _green, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── pulse วง 1 (วนซ้ำ) ─────────────────────────────
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: pulseScale,
+              builder: (_, __) => Opacity(
+                opacity: pulseOpacity.value,
+                child: Transform.scale(
+                  scale: pulseScale.value,
+                  child: Container(
+                    width: _size,
+                    height: _size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _green, width: 2.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── pulse วง 2 (offset phase 50% → double wave) ─────
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: pulseScale,
+              builder: (_, __) {
+                final t = (pulseScale.value - 1.0) / 0.55;
+                final shifted = ((t + 0.5) % 1.0);
+                final scale2 = 1.0 + shifted * 0.55;
+                final opacity2 = (1.0 - shifted) * 0.55;
+                return Opacity(
+                  opacity: opacity2.clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: scale2,
+                    child: Container(
+                      width: _size,
+                      height: _size,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _green, width: 2),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+          // ── static green border คงที่ ───────────────────────
+          if (urgentOn)
+            Container(
+              width: _size + 4,
+              height: _size + 4,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _green.withOpacity(0.85),
+                  width: 2.5,
+                ),
+              ),
+            ),
+
+          // ── avatar จริง ────────────────────────────────────
+          child,
+        ],
       ),
     );
   }

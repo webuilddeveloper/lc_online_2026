@@ -6,6 +6,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:LawyerOnline/login.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -23,6 +26,17 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _confirmCtrl = TextEditingController();
   final TextEditingController _barNumCtrl = TextEditingController();
 
+  // ── Scroll ────────────────────────────────────────────────────────────────────
+  // ใช้ ScrollController + GlobalKey เพื่อ scroll ไปตำแหน่ง error
+  final ScrollController _scrollCtrl = ScrollController();
+  final GlobalKey _nameKey = GlobalKey();
+  final GlobalKey _phoneKey = GlobalKey();
+  final GlobalKey _barNumKey = GlobalKey();
+  final GlobalKey _specialtyKey = GlobalKey();
+  final GlobalKey _emailKey = GlobalKey();
+  final GlobalKey _passwordKey = GlobalKey();
+  final GlobalKey _confirmKey = GlobalKey();
+
   // ── State ─────────────────────────────────────────────────────────────────────
   String _userType = 'client';
   bool _pwVisible = false;
@@ -30,8 +44,16 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _agreeTerms = false;
   bool _isLoading = false;
   File? _profileImage;
-  int _step = 1;
   int _pwStrength = 0;
+
+  // Error state สำหรับแต่ละ field
+  String? _nameError;
+  String? _phoneError;
+  String? _emailError;
+  String? _passwordError;
+  String? _confirmError;
+  String? _barNumError;
+  bool _specialtyError = false; // ใช้ bool เพราะเป็น chip ไม่ใช่ TextField
 
   // ── Specialty multi-select ────────────────────────────────────────────────────
   final List<String> _specialtyOptions = [
@@ -53,14 +75,15 @@ class _RegisterPageState extends State<RegisterPage> {
   static const Color _blue = Color(0xFF0262EC);
   static const Color _bg = Color(0xFFEEF2F5);
   static const Color _border = Color(0xFFECEDF0);
+  static const Color _errorColor = Color(0xFFD32F2F);
 
-  dynamic model = {};
-
-  // ── Validation ────────────────────────────────────────────────────────────────
+  // ── Validation helpers ────────────────────────────────────────────────────────
   bool _isEmailValid(String e) =>
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
 
   bool _isPhoneValid(String p) => p.replaceAll(RegExp(r'\D'), '').length >= 9;
+
+  bool _isBarNumValid(String b) => RegExp(r'^\d+/\d{4}$').hasMatch(b.trim());
 
   int _calcStrength(String pw) {
     int s = 0;
@@ -89,16 +112,30 @@ class _RegisterPageState extends State<RegisterPage> {
   String _strengthLabel() {
     switch (_pwStrength) {
       case 1:
-        return 'อ่อนมาก';
+        return 'strengthWeak,'.tr();
       case 2:
-        return 'พอใช้';
+        return 'strengthFair'.tr();
       case 3:
-        return 'ดี';
+        return 'strengthGood'.tr();
       case 4:
-        return 'แข็งแกร่ง';
+        return 'strengthStrong'.tr();
       default:
         return '';
     }
+  }
+
+  // ── Scroll to key ─────────────────────────────────────────────────────────────
+  // เรียกฟังก์ชันนี้พร้อม GlobalKey ของ field ที่ error
+  // จะ scroll หน้าจอลงไปให้ field นั้นอยู่ที่ประมาณ 30% จากบนจอ
+  void _scrollToKey(GlobalKey key) {
+    final ctx = key.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.3,
+    );
   }
 
   // ── Image ─────────────────────────────────────────────────────────────────────
@@ -109,36 +146,85 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ── Submit ────────────────────────────────────────────────────────────────────
   Future<void> _submit() async {
+    // ล้าง error ทั้งหมดก่อน validate ใหม่
+    setState(() {
+      _nameError = null;
+      _phoneError = null;
+      _emailError = null;
+      _passwordError = null;
+      _confirmError = null;
+      _barNumError = null;
+      _specialtyError = false;
+    });
+
+    // ตรวจ terms ก่อน (ใช้ dialog เพราะไม่มี field)
     if (!_agreeTerms) {
-      _showError('กรุณายอมรับข้อตกลงการใช้งาน');
+      _showError('agreeTermsRequired'.tr());
       return;
     }
+
+    // validate ทุก field พร้อมกัน
+    // เก็บ GlobalKey แรกที่ error ไว้เพื่อ scroll ไป
+    GlobalKey? firstErrorKey;
+
     if (_nameCtrl.text.trim().isEmpty) {
-      _showError('กรุณากรอกชื่อ - นามสกุล');
-      return;
+      _nameError = 'nameRequired'.tr();
+      firstErrorKey ??= _nameKey;
+    } else if (_nameCtrl.text.trim().split(RegExp(r'\s+')).length < 2) {
+      _nameError = 'nameTooShort'.tr();
+      firstErrorKey ??= _nameKey;
     }
+
     if (!_isPhoneValid(_phoneCtrl.text)) {
-      _showError('เบอร์โทรศัพท์ไม่ถูกต้อง');
-      return;
+      _phoneError = 'phoneInvalidMin'.tr();
+      firstErrorKey ??= _phoneKey;
     }
-    if (_userType == 'lawyer' && _barNumCtrl.text.trim().isEmpty) {
-      _showError('กรุณากรอกเลขทะเบียนทนายความ');
-      return;
+
+    if (_userType == 'lawyer') {
+      if (_barNumCtrl.text.trim().isEmpty) {
+        _barNumError = 'barNumberRequired'.tr();
+        firstErrorKey ??= _barNumKey;
+      } else if (!_isBarNumValid(_barNumCtrl.text)) {
+        _barNumError = 'barNumberInvalid'.tr();
+        firstErrorKey ??= _barNumKey;
+      }
+
+      if (_selectedSpecialties.isEmpty) {
+        _specialtyError = true;
+        firstErrorKey ??= _specialtyKey;
+      }
     }
-    if (_userType == 'lawyer' && _selectedSpecialties.isEmpty) {
-      _showError('กรุณาเลือกความเชี่ยวชาญอย่างน้อย 1 ด้าน');
-      return;
+
+    if (_emailCtrl.text.trim().isEmpty) {
+      _emailError = 'emailRequired'.tr();
+      firstErrorKey ??= _emailKey;
+    } else if (!_isEmailValid(_emailCtrl.text.trim())) {
+      _emailError = 'emailInvalid'.tr();
+      firstErrorKey ??= _emailKey;
     }
-    if (!_isEmailValid(_emailCtrl.text)) {
-      _showError('อีเมลไม่ถูกต้อง');
-      return;
+
+    if (_passwordCtrl.text.isEmpty) {
+      _passwordError = 'passwordRequired'.tr();
+      firstErrorKey ??= _passwordKey;
+    } else if (_passwordCtrl.text.length < 8) {
+      _passwordError = 'passwordTooShort'.tr();
+      firstErrorKey ??= _passwordKey;
     }
-    if (_passwordCtrl.text.length < 8) {
-      _showError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
-      return;
+
+    if (_confirmCtrl.text.isEmpty) {
+      _confirmError = 'confirmPasswordRequired'.tr();
+      firstErrorKey ??= _confirmKey;
+    } else if (_passwordCtrl.text != _confirmCtrl.text) {
+      _confirmError = 'passwordMismatch'.tr();
+      firstErrorKey ??= _confirmKey;
     }
-    if (_passwordCtrl.text != _confirmCtrl.text) {
-      _showError('รหัสผ่านไม่ตรงกัน');
+
+    if (firstErrorKey != null) {
+      setState(() {});
+      // รอให้ setState render เสร็จก่อน แล้วค่อย scroll
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(firstErrorKey!);
+      });
       return;
     }
 
@@ -163,10 +249,44 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showSuccess();
+    } on EmailDuplicateException {
+      // ── AuthService ตรวจ server message แล้ว throw EmailDuplicateException ────
+      // จับ type ได้แน่นอน ไม่ต้อง parse string ที่อาจดักพลาด
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _emailError = 'emailDuplicate'.tr();
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_emailKey);
+      });
+    } on PhoneDuplicateException {
+      // ── AuthService ตรวจ server message แล้ว throw PhoneDuplicateException ────
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _phoneError = 'phoneDuplicate'.tr();
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToKey(_phoneKey);
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showError(error.toString());
+
+      final raw = error.toString().toLowerCase();
+
+      String friendlyMsg;
+      if (raw.contains('network') ||
+          raw.contains('connection') ||
+          raw.contains('timeout')) {
+        friendlyMsg = 'networkError'.tr();
+      } else if (raw.contains('server') || raw.contains('500')) {
+        friendlyMsg = 'serverError'.tr();
+      } else {
+        friendlyMsg = 'genericError'.tr();
+      }
+      _showError(friendlyMsg);
     }
   }
 
@@ -175,12 +295,12 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('แจ้งเตือน'),
+        title: Text('registerAlert'.tr()),
         content: Text(msg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ตกลง', style: TextStyle(color: _blue)),
+            child: Text('ok'.tr(), style: const TextStyle(color: _blue)),
           ),
         ],
       ),
@@ -188,86 +308,103 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _showSuccess() {
-    // ignore: void_checks
-    return DialogService.showSuccess(
-      context,
-      title: "สมัครสมาชิกสำเร็จ",
-      message: "ท่านสมารถเข้าสู่ระบบได้แล้ว",
-      onClose: () {
-        Navigator.pop(context);
-      },
+    // เก็บ context ของ page ไว้ก่อน (ไม่ใช่ context ของ dialog)
+    final pageContext = context;
+
+    showDialog(
+      context: pageContext,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Color(0xFF1D9E75)),
+            SizedBox(width: 8),
+            Text('registerSuccess'.tr()),
+          ],
+        ),
+        content: Text('registerSuccessMessage'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(pageContext); // ปิด dialog
+              Navigator.pushAndRemoveUntil(
+                pageContext,
+                MaterialPageRoute(builder: (_) => LoginPage()),
+                (route) => false, // ล้าง stack ทั้งหมด
+              );
+            },
+            child:
+                Text('getStarted'.tr(), style: const TextStyle(color: _blue)),
+          ),
+        ],
+      ),
     );
   }
 
   // ── BUILD ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: appBar(
-        title: "profile".tr(),
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => goBack(),
-        rightAction: () => {},
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-        children: [
-          // _buildHeroBanner(),
-          // const SizedBox(height: 16),
-          // _buildStepIndicator(),
-          // const SizedBox(height: 16),
+    final isWide = ResponsiveLayout.isDesktop(context);
 
-          // ── Card: ข้อมูลส่วนตัว ─────────────────────────────────────────────
-          _buildCard(
+    final personalInfoCard = _buildCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(child: _buildAvatarPicker()),
                 const SizedBox(height: 24),
 
-                _sectionLabel('คุณคือ'),
+                _sectionLabel('whoAreYou'.tr()),
                 const SizedBox(height: 8),
                 _buildTypeSelector(),
                 const SizedBox(height: 20),
 
-                _sectionLabel('ชื่อ - นามสกุล *'),
+                _sectionLabel('fullName'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
+                  key: _nameKey, // ผูก GlobalKey
                   controller: _nameCtrl,
-                  hint: 'ชื่อและนามสกุลจริง',
+                  hint: 'fullNameHint'.tr(),
                   icon: Icons.person_outline_rounded,
+                  errorText: _nameError,
+                  onChanged: (_) => setState(() => _nameError = null),
                 ),
                 const SizedBox(height: 14),
 
-                _sectionLabel('เบอร์โทรศัพท์ *'),
+                _sectionLabel('phone'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
+                  key: _phoneKey,
                   controller: _phoneCtrl,
                   hint: '08X-XXX-XXXX',
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 10,
+                  errorText: _phoneError,
+                  onChanged: (_) => setState(() => _phoneError = null),
                 ),
 
                 // ── lawyer-only fields ─────────────────────────────────────────
                 if (_userType == 'lawyer') ...[
                   const SizedBox(height: 14),
-                  _sectionLabel('เลขทะเบียนทนายความ *'),
+                  _sectionLabel('barNumber'.tr()),
                   const SizedBox(height: 6),
                   _buildTextField(
+                    key: _barNumKey,
                     controller: _barNumCtrl,
-                    hint: 'เช่น 12345/2565',
+                    hint: 'barNumberHint'.tr(),
                     icon: Icons.badge_outlined,
+                    errorText: _barNumError,
+                    onChanged: (_) => setState(() => _barNumError = null),
                   ),
                   const SizedBox(height: 18),
 
-                  // ── MULTI-SELECT SPECIALTY ────────────────────────────────────
+                  // ── MULTI-SELECT SPECIALTY ──────────────────────────────────
                   Row(
+                    key: _specialtyKey, // ผูก GlobalKey ที่แถว label
                     children: [
-                      _sectionLabel('ความเชี่ยวชาญ *'),
+                      _sectionLabel('specialty'.tr()),
                       const SizedBox(width: 8),
                       if (_selectedSpecialties.isNotEmpty)
                         Container(
@@ -288,8 +425,22 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
+                  // แสดง error text ใต้ label ถ้ายังไม่ได้เลือก
+                  if (_specialtyError)
+                    Row(
+                      children: [
+                        Icon(Icons.error_outline_rounded,
+                            size: 13, color: _errorColor),
+                        SizedBox(width: 4),
+                        Text(
+                          'specialtyRequired'.tr(),
+                          style:
+                              const TextStyle(fontSize: 11, color: _errorColor),
+                        ),
+                      ],
+                    ),
                   Text(
-                    'เลือกได้หลายด้าน',
+                    'specialtyMultiple'.tr(),
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
                   const SizedBox(height: 10),
@@ -297,30 +448,32 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+    );
 
-          // ── Card: บัญชีผู้ใช้ ───────────────────────────────────────────────
-          _buildCard(
+    final accountInfoCard = _buildCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _sectionLabel('ข้อมูลบัญชี'),
+                _sectionLabel('myAccount'.tr()),
                 const SizedBox(height: 14),
-                _sectionLabel('อีเมล *'),
+                _sectionLabel('email'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
+                  key: _emailKey,
                   controller: _emailCtrl,
                   hint: 'example@email.com',
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  onChanged: (_) => setState(() => _emailError = null),
                 ),
                 const SizedBox(height: 14),
-                _sectionLabel('รหัสผ่าน *'),
+                _sectionLabel('password'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
+                  key: _passwordKey,
                   controller: _passwordCtrl,
-                  hint: 'อย่างน้อย 8 ตัวอักษร',
+                  hint: 'passwordHint'.tr(),
                   icon: Icons.lock_outline_rounded,
                   obscure: !_pwVisible,
                   suffix: IconButton(
@@ -333,19 +486,29 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     onPressed: () => setState(() => _pwVisible = !_pwVisible),
                   ),
-                  onChanged: (v) =>
-                      setState(() => _pwStrength = _calcStrength(v)),
+                  errorText: _passwordError,
+                  onChanged: (v) => setState(() {
+                    _pwStrength = _calcStrength(v);
+                    _passwordError = null;
+                    if (_confirmCtrl.text.isNotEmpty &&
+                        _confirmCtrl.text != v) {
+                      _confirmError = 'passwordMismatch'.tr();
+                    } else {
+                      _confirmError = null;
+                    }
+                  }),
                 ),
                 if (_passwordCtrl.text.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   _buildStrengthBar(),
                 ],
                 const SizedBox(height: 14),
-                _sectionLabel('ยืนยันรหัสผ่าน *'),
+                _sectionLabel('confirmPassword'.tr()),
                 const SizedBox(height: 6),
                 _buildTextField(
+                  key: _confirmKey,
                   controller: _confirmCtrl,
-                  hint: 'กรอกรหัสผ่านอีกครั้ง',
+                  hint: 'confirmPasswordHint'.tr(),
                   icon: Icons.lock_outline_rounded,
                   obscure: !_cfVisible,
                   suffix: IconButton(
@@ -358,35 +521,88 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     onPressed: () => setState(() => _cfVisible = !_cfVisible),
                   ),
+                  errorText: _confirmError,
+                  onChanged: (v) => setState(() {
+                    _confirmError = v.isNotEmpty && v != _passwordCtrl.text
+                        ? 'passwordMismatch'.tr()
+                        : null;
+                  }),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+    );
 
-          // ── Card: Terms ──────────────────────────────────────────────────────
-          _buildCard(
-            child: _buildCheckRow(
-              value: _agreeTerms,
-              onChanged: (v) => setState(() => _agreeTerms = v ?? false),
-              label: 'ฉันยอมรับ ',
-              linkLabel: 'ข้อกำหนดการใช้งาน',
+    final termsCard = _buildCard(
+      child: _buildCheckRow(
+        value: _agreeTerms,
+        onChanged: (v) => setState(() => _agreeTerms = v ?? false),
+        label: 'agreeTerms'.tr(),
+        linkLabel: 'termsLink'.tr(),
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: appBar(
+        title: "register".tr(),
+        backBtn: true,
+        rightBtn: false,
+        backAction: () => goBack(),
+        rightAction: () => {},
+      ),
+      body: AppLayout(
+        maxWidth: 1000,
+        child: ListView(
+          controller: _scrollCtrl,
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+          children: [
+            if (isWide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: personalInfoCard,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      children: [
+                        accountInfoCard,
+                        const SizedBox(height: 16),
+                        termsCard,
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              personalInfoCard,
+              const SizedBox(height: 16),
+              accountInfoCard,
+              const SizedBox(height: 16),
+              termsCard,
+            ],
+            const SizedBox(height: 24),
+            Center(
+              child: SizedBox(
+                width: isWide ? 400 : double.infinity,
+                child: _buildSubmitButton(),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          _buildSubmitButton(),
           const SizedBox(height: 16),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('มีบัญชีแล้ว? ',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
+              Text('alreadyHaveAccount'.tr(),
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Text('เข้าสู่ระบบ',
-                    style: TextStyle(
+                child: Text('loginLink'.tr(),
+                    style: const TextStyle(
                         fontSize: 13,
                         color: _blue,
                         fontWeight: FontWeight.w600)),
@@ -394,6 +610,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -412,6 +629,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 _selectedSpecialties.remove(option);
               } else {
                 _selectedSpecialties.add(option);
+                _specialtyError = false; // clear error ทันทีที่เลือก
               }
             });
           },
@@ -422,7 +640,10 @@ class _RegisterPageState extends State<RegisterPage> {
               color: selected ? _blue : const Color(0xFFFAFAFA),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected ? _blue : _border,
+                // chip เปลี่ยนเป็น border แดงเมื่อ specialtyError
+                color: _specialtyError && !selected
+                    ? _errorColor
+                    : (selected ? _blue : _border),
                 width: selected ? 1.5 : 1,
               ),
             ),
@@ -449,122 +670,6 @@ class _RegisterPageState extends State<RegisterPage> {
       }).toList(),
     );
   }
-
-  // ── Hero Banner ───────────────────────────────────────────────────────────────
-  Widget _buildHeroBanner() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _blue,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-              color: _blue.withOpacity(.25),
-              blurRadius: 16,
-              offset: const Offset(0, 6))
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('สร้างบัญชีใหม่',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('ปรึกษาทนายความได้ทุกที่ทุกเวลา',
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(.75), fontSize: 12)),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  children: ['ฟรีครั้งแรก', 'ทนาย 200+', '24 ชม.']
-                      .map((t) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(.15),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(t,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 11)),
-                          ))
-                      .toList(),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(.15),
-              shape: BoxShape.circle,
-            ),
-            child:
-                const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Step Indicator ────────────────────────────────────────────────────────────
-  Widget _buildStepIndicator() {
-    return Row(
-      children: [
-        _stepDot(1, 'ข้อมูลส่วนตัว'),
-        _stepLine(),
-        _stepDot(2, 'บัญชีผู้ใช้'),
-        _stepLine(),
-        _stepDot(3, 'เสร็จสิ้น'),
-      ],
-    );
-  }
-
-  Widget _stepDot(int n, String label) {
-    final active = _step >= n;
-    return Column(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-              color: active ? _blue : const Color(0xFFD8DCE0),
-              shape: BoxShape.circle),
-          child: Center(
-            child: Text('$n',
-                style: TextStyle(
-                    color: active ? Colors.white : const Color(0xFF8C8C8C),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                color: active ? _blue : const Color(0xFF8C8C8C),
-                fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
-      ],
-    );
-  }
-
-  Widget _stepLine() => Expanded(
-        child: Container(
-          height: 2,
-          margin: const EdgeInsets.only(bottom: 20),
-          decoration: BoxDecoration(
-              color: _blue.withOpacity(.2),
-              borderRadius: BorderRadius.circular(1)),
-        ),
-      );
 
   // ── Avatar Picker ─────────────────────────────────────────────────────────────
   Widget _buildAvatarPicker() {
@@ -599,52 +704,25 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildTypeSelector() {
     return Row(
       children: [
-        _typeChip(
-          'client',
-          Icons.person_rounded,
-          'ลูกความ',
-          'ปรึกษา / หาทนาย',
-          onTap: (value) {
-            setState(
-              () {
-                model['userType'] = value;
-              },
-            );
-          },
-        ),
+        _typeChip('client', Icons.person_rounded, 'clientType'.tr(),
+            'clientTypeSub'.tr()),
         const SizedBox(width: 10),
-        _typeChip(
-          'lawyer',
-          Icons.gavel_rounded,
-          'ทนายความ',
-          'รับเคส',
-          onTap: (value) {
-            setState(
-              () {
-                model['userType'] = value;
-              },
-            );
-          },
-        ),
+        _typeChip('lawyer', Icons.gavel_rounded, 'lawyerType'.tr(),
+            'lawyerTypeSub'.tr()),
       ],
     );
   }
 
-  Widget _typeChip(String value, IconData icon, String label, String sub,
-      {Function? onTap}) {
+  Widget _typeChip(String value, IconData icon, String label, String sub) {
     final selected = _userType == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => {
-          onTap!(_userType),
-          setState(
-            () {
-              _userType = value;
-              // ล้าง specialty เมื่อ switch type
-              _selectedSpecialties.clear();
-            },
-          ),
-        },
+        onTap: () => setState(() {
+          _userType = value;
+          _selectedSpecialties.clear();
+          _barNumError = null;
+          _specialtyError = false;
+        }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -727,7 +805,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: const TextStyle(
                           color: _blue, fontWeight: FontWeight.w600),
                     ),
-                  const TextSpan(text: ' และนโยบายความเป็นส่วนตัว'),
+                  TextSpan(text: 'privacyPolicy'.tr()),
                 ],
               ),
             ),
@@ -742,17 +820,20 @@ class _RegisterPageState extends State<RegisterPage> {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: _isLoading ? null : _submit,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         height: 52,
         decoration: BoxDecoration(
-          color: _blue,
+          color: _isLoading ? _blue.withOpacity(0.7) : _blue,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-                color: _blue.withOpacity(.3),
-                blurRadius: 12,
-                offset: const Offset(0, 5))
-          ],
+          boxShadow: _isLoading
+              ? []
+              : [
+                  BoxShadow(
+                      color: _blue.withOpacity(.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5))
+                ],
         ),
         child: Center(
           child: _isLoading
@@ -762,8 +843,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2.5),
                 )
-              : const Text('สมัครสมาชิก',
-                  style: TextStyle(
+              : Text('register'.tr(),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -798,6 +879,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
   Widget _buildTextField({
+    Key? key, // รับ GlobalKey เพื่อให้ scroll มาหาได้
     required TextEditingController controller,
     required String hint,
     required IconData icon,
@@ -807,39 +889,73 @@ class _RegisterPageState extends State<RegisterPage> {
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
     ValueChanged<String>? onChanged,
+    String? errorText,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      maxLength: maxLength,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        counterText: '',
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
-        prefixIcon: Icon(icon, color: Colors.grey, size: 20),
-        suffixIcon: suffix,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _blue, width: 1.5)),
-        fillColor: const Color(0xFFFAFAFA),
-        filled: true,
-      ),
+    return Column(
+      key: key, // ผูก key ที่ Column ครอบทั้ง TextField + error text
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          obscureText: obscure,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+            prefixIcon: Icon(icon,
+                color: errorText != null ? _errorColor : Colors.grey, size: 20),
+            suffixIcon: suffix,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: errorText != null ? _errorColor : _border)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: errorText != null ? _errorColor : _border)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: errorText != null ? _errorColor : _blue,
+                    width: 1.5)),
+            fillColor: errorText != null
+                ? _errorColor.withOpacity(0.04)
+                : const Color(0xFFFAFAFA),
+            filled: true,
+          ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  size: 13, color: _errorColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  errorText,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: _errorColor,
+                      fontWeight: FontWeight.w400),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 
   @override
   void dispose() {
+    _scrollCtrl.dispose(); // dispose ScrollController ด้วย
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();

@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawyerOnlineDetails extends StatefulWidget {
   LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic})
@@ -30,7 +31,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   // ── Data (เหมือนเดิม) ────────────────────────────────────
   List<Map<String, dynamic>> lawyerOnlineList = [
     {
-      "code": "0",
+      "code": "20260513101915-561-752",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       'title': 'ทนายความอาวุโส',
       "scroll": 4.8,
@@ -172,110 +173,53 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6FF),
       extendBodyBehindAppBar: true,
-      // ── AppBar โปร่งใส (เหมือน LawyerDetailPage) ────────
-      appBar: AppBar(
-        title: const Text(
-          '',
-          style: TextStyle(fontSize: 16, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => goBack(false), // action เดิม
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(15, 8, 0, 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
-            ),
-            child: const Icon(Icons.chevron_left_rounded,
-                color: Colors.white, size: 24),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(0, 8, 15, 8),
-            child: GestureDetector(
-              onTap: () {
-                // action เดิม
-                typeLogin != 'null'
-                    ? setState(() {
-                        isFavorite = !isFavorite;
-                      })
-                    : Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => LoginPage(
-                            isBack: true,
-                          ),
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: Column(
+            children: [
+              _buildHeroHeader(color),
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))
+                    ]
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                        child: Column(
+                          children: [
+                            _buildStatsRow(color),
+                            const SizedBox(height: 14),
+                            _buildSkillsCard(color),
+                            const SizedBox(height: 14),
+                            // _buildContactCard(color),
+                            // const SizedBox(height: 14),
+                            _buildSocialCard(color),
+                          ],
                         ),
-                      );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    width: 1,
-                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
-                  ),
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-                  child: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    key: ValueKey(isFavorite),
-                    size: 18,
-                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                // ── Hero Header ──────────────────────────
-                _buildHeroHeader(color),
-                // ── Scrollable content ───────────────────
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                      child: Column(
-                        children: [
-                          _buildStatsRow(color),
-                          const SizedBox(height: 14),
-                          _buildSkillsCard(color),
-                          const SizedBox(height: 14),
-                          // _buildContactCard(color),
-                          // const SizedBox(height: 14),
-                          _buildSocialCard(color),
-                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              _buildBookingButton(color),
+            ],
           ),
-          // ── Booking Button ───────────────────────────
-          _buildBookingButton(color),
-        ],
+        ),
       ),
     );
   }
@@ -332,6 +276,68 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                 ),
               ),
             ]),
+          ),
+          // Custom AppBar Buttons
+          Positioned(
+            top: topPadding + 8,
+            left: 15,
+            child: GestureDetector(
+              onTap: () => goBack(false),
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+          Positioned(
+            top: topPadding + 8,
+            right: 15,
+            child: GestureDetector(
+              onTap: () {
+                typeLogin != 'null'
+                    ? setState(() {
+                        isFavorite = !isFavorite;
+                      })
+                    : Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LoginPage(isBack: true),
+                        ),
+                      );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    width: 1,
+                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                  ),
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    key: ValueKey(isFavorite),
+                    size: 18,
+                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                  ),
+                ),
+              ),
+            ),
           ),
           // Content
           Positioned(

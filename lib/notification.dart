@@ -1,9 +1,53 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/notification-detail.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+List<Map<String, dynamic>> globalNotifications = [
+  {
+    "type": "call",
+    "title": "สายที่ไม่ได้รับ",
+    "detail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์",
+    "time": "10:19",
+    "date": "today",
+    "isRead": false,
+    "fullDetail":
+        "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์เมื่อเวลา 10:19 น. กรุณาติดต่อกลับเมื่อสะดวก"
+  },
+  {
+    "type": "booking",
+    "title": "นัดหมายคดี",
+    "detail": "คดีความกำลังจะมาถึง",
+    "time": "10:20",
+    "date": "today",
+    "isRead": false,
+    "fullDetail":
+        "การนัดหมายปรึกษาคดีของคุณกับทนายศักดิ์สิทธิ์ ได้รับการยืนยันแล้ว กรุณาเตรียมเอกสารที่เกี่ยวข้องให้พร้อมก่อนถึงเวลานัดหมาย"
+  },
+  {
+    "type": "finish",
+    "title": "นัดหมายทนายความเสร็จสิ้น",
+    "detail": "กรุณารีวิวการให้คะแนนทนายความ",
+    "time": "เมื่อวาน",
+    "date": "yesterday",
+    "isRead": true,
+    "fullDetail":
+        "การนัดหมายของคุณเสร็จสิ้นเรียบร้อยแล้ว กรุณาทำแบบประเมินและรีวิวการให้คะแนนทนายความเพื่อเป็นประโยชน์ในการพัฒนาบริการของเราต่อไป"
+  },
+  {
+    "type": "system",
+    "title": "ทนายความรับเคสแล้ว",
+    "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
+    "time": "2 วันก่อน",
+    "date": "old",
+    "isRead": true,
+    "fullDetail":
+        "คดีของคุณมีทนายความรับเคสเรียบร้อยแล้ว คุณสามารถเริ่มสนทนาหรือส่งเอกสารเพิ่มเติมให้กับทนายความได้ทันที"
+  }
+];
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({Key? key}) : super(key: key);
@@ -13,56 +57,7 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  List notifications = [
-    // {
-    //   "type": "chat",
-    //   "title": "ข้อความใหม่",
-    //   "detail": "คุณได้รับข้อความใหม่จากทนายศักดิ์สิทธิ์",
-    //   "time": "10:20",
-    //   "date": "today",
-    //   "isRead": false
-    // },
-    {
-      "type": "call",
-      "title": "สายที่ไม่ได้รับ",
-      "detail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์",
-      "time": "10:19",
-      "date": "today",
-      "isRead": false
-    },
-    {
-      "type": "booking",
-      "title": "นัดหมายคดี",
-      "detail": "คดีความกำลังจะมาถึง",
-      "time": "10:20",
-      "date": "today",
-      "isRead": false
-    },
-    // {
-    //   "type": "booking",
-    //   "title": "การนัดหมายใหม่",
-    //   "detail": "ลูกค้าได้ทำการนัดหมาย",
-    //   "time": "09:40",
-    //   "date": "today",
-    //   "isRead": false
-    // },
-    {
-      "type": "finish",
-      "title": "นัดหมายทนายความเสร็จสิ้น",
-      "detail": "กรุณารีวิวการให้คะแนนทนายความ",
-      "time": "เมื่อวาน",
-      "date": "yesterday",
-      "isRead": true
-    },
-    {
-      "type": "system",
-      "title": "ทนายความรับเคสแล้ว",
-      "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
-      "time": "2 วันก่อน",
-      "date": "old",
-      "isRead": true
-    }
-  ];
+  List<Map<String, dynamic>> get notifications => globalNotifications;
 
   int get unreadCount =>
       notifications.where((n) => n["isRead"] == false).length;
@@ -240,7 +235,7 @@ class _NotificationPageState extends State<NotificationPage> {
       // ),
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBarCustom(
-        title: "การแจ้งเตือน",
+        title: "notifications".tr(),
         backBtn: true,
         isRightWidget: true,
         backAction: () => goBack(),
@@ -275,9 +270,9 @@ class _NotificationPageState extends State<NotificationPage> {
         onRefresh: refresh,
         child: ListView(
           children: [
-            buildSection("วันนี้", "today"),
-            buildSection("เมื่อวาน", "yesterday"),
-            buildSection("ก่อนหน้านี้", "old"),
+            buildSection("timeline.today".tr(), "today"),
+            buildSection("timeline.yesterday".tr(), "yesterday"),
+            buildSection("timeline.earlier".tr(), "earlier"),
             const SizedBox(height: 20)
           ],
         ),
@@ -335,13 +330,12 @@ class _NotificationPageState extends State<NotificationPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("คำแนะนำก่อนเข้าห้อง"),
-        content: const Text(
-            "📌 กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now"),
+        title: Text("notification.pre_consultation_instruction".tr()),
+        content: Text("notification.pre_consultation_instruction_message".tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("ยกเลิก"),
+            child: Text("cancel".tr()),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -357,19 +351,18 @@ class _NotificationPageState extends State<NotificationPage> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("ต้องเปิดการเข้าถึงใน Settings"),
-                    content: const Text(
-                        "กรุณาไปที่การตั้งค่า แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน"),
+                    title: Text("permission.title".tr()),
+                    content: Text("permission.content".tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("ยกเลิก"),
+                        child: Text("cancel".tr()),
                       ),
                       TextButton(
                         onPressed: () {
                           openAppSettings(); // เปิดหน้า Settings
                         },
-                        child: const Text("เปิดการตั้งค่า"),
+                        child: Text("permission.open_settings".tr()),
                       ),
                     ],
                   ),
@@ -394,20 +387,20 @@ class _NotificationPageState extends State<NotificationPage> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("การอนุญาตถูกปฏิเสธ"),
-                    content: const Text(
-                        "กรุณาอนุญาตให้เข้าถึงกล้องและไมโครโฟนเพื่อใช้งานวิดีโอคอล"),
+                    title: Text("notification.permission_denied_title".tr()),
+                    content:
+                        Text("notification.permission_denied_content".tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("ตกลง"),
+                        child: Text("confirm".tr()),
                       ),
                     ],
                   ),
                 );
               }
             },
-            child: const Text("เข้าใช้งาน"),
+            child: Text("notification.join_now".tr()),
           ),
         ],
       ),
@@ -434,6 +427,7 @@ class _IncomingCallOverlay extends StatefulWidget {
   @override
   State<_IncomingCallOverlay> createState() => _IncomingCallOverlayState();
 }
+
 class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
@@ -522,9 +516,9 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "สายเรียกเข้า",
-                          style: TextStyle(
+                        Text(
+                          "notification.incoming_call".tr(),
+                          style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.w400,
                               fontSize: 12),
@@ -545,8 +539,8 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFAFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                          width: 1, color: const Color(0xFFDBDBDB)),
+                      border:
+                          Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
                     child: IconButton(
                       icon: Icon(Icons.call_end, color: Colors.red.shade600),
@@ -560,12 +554,12 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFAFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                          width: 1, color: const Color(0xFFDBDBDB)),
+                      border:
+                          Border.all(width: 1, color: const Color(0xFFDBDBDB)),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.call,
-                          color: Colors.greenAccent.shade700),
+                      icon:
+                          Icon(Icons.call, color: Colors.greenAccent.shade700),
                       onPressed: widget.onAccept,
                     ),
                   ),

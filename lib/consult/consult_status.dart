@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultStatusPage extends StatefulWidget {
   final int currentStep;
   final dynamic? lawyer;
   final String? appointmentDate;
   final String? appointmentTime;
+  final bool canOpenChat;
+  final Map<String, dynamic>? caseModel;
 
   const ConsultStatusPage({
     super.key,
@@ -17,6 +20,8 @@ class ConsultStatusPage extends StatefulWidget {
     this.lawyer,
     this.appointmentDate,
     this.appointmentTime,
+    this.canOpenChat = true,
+    this.caseModel,
   });
 
   @override
@@ -99,32 +104,38 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         rightAction: () {},
         backAction: () => Navigator.pop(context),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _headerCard(currentStep),
-                  const SizedBox(height: 16),
-                  if (lawyer != null) ...[
-                    _lawyerCard(lawyer),
+      body: AppLayout(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _headerCard(currentStep),
                     const SizedBox(height: 16),
+                    if (lawyer != null) ...[
+                      _lawyerCard(lawyer),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.caseModel != null) ...[
+                      _caseDetailCard(widget.caseModel!),
+                      const SizedBox(height: 16),
+                    ],
+                    if (widget.appointmentDate != null ||
+                        widget.appointmentTime != null) ...[
+                      _infoRow(),
+                      const SizedBox(height: 16),
+                    ],
+                    _progressCard(currentStep),
+                    const SizedBox(height: 8),
                   ],
-                  if (widget.appointmentDate != null ||
-                      widget.appointmentTime != null) ...[
-                    _infoRow(),
-                    const SizedBox(height: 16),
-                  ],
-                  _progressCard(currentStep),
-                  const SizedBox(height: 8),
-                ],
+                ),
               ),
             ),
-          ),
-          _bottomBar(currentStep, context),
-        ],
+            _bottomBar(currentStep, context),
+          ],
+        ),
       ),
     );
   }
@@ -277,6 +288,54 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         //   child: const Icon(Icons.chat_bubble_outline_rounded,
         //       color: _kPrimary, size: 20),
         // ),
+      ]),
+    );
+  }
+
+  Widget _caseDetailCard(Map<String, dynamic> model) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('รายละเอียดเคส',
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: Color(0xFF1A2340))),
+        const SizedBox(height: 10),
+        Text(model['category']?.toString() ?? '',
+            style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w700, color: _kPrimary)),
+        if ((model['subTopic']?.toString() ?? '').isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(model['subTopic'].toString(),
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A2340))),
+        ],
+        if ((model['story']?.toString() ?? '').isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(model['story'].toString(),
+              style: TextStyle(
+                  fontSize: 12, color: Colors.grey[600], height: 1.5)),
+        ],
+        if ((model['budget']?.toString() ?? '').isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(model['budget'].toString(),
+              style: const TextStyle(
+                  fontSize: 12, color: _kPrimary, fontWeight: FontWeight.w700)),
+        ],
       ]),
     );
   }
@@ -530,6 +589,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
   }
 
   Widget _bottomBar(int currentStep, BuildContext context) {
+    final canUsePrimaryAction = widget.canOpenChat && currentStep >= 3;
     final String primaryLabel =
         currentStep == 3 ? 'เข้าสู่ห้องปรึกษา' : 'ให้คะแนนทนายความ';
     final IconData primaryIcon =
@@ -548,45 +608,48 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          GestureDetector(
-            onTap: () {
-              currentStep == 3
-                  ? Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => ChatPageUser(model: widget.lawyer)),
-                      (Route<dynamic> route) => route.isFirst)
-                  : showRatingDialog(context);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                      color: _kPrimary.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(primaryIcon, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text(primaryLabel,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15)),
-                ],
+          if (canUsePrimaryAction) ...[
+            GestureDetector(
+              onTap: () {
+                currentStep == 3
+                    ? Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => ChatPageUser(
+                                model: widget.lawyer ?? <String, dynamic>{})),
+                        (Route<dynamic> route) => route.isFirst)
+                    : showRatingDialog(context);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                        color: _kPrimary.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(primaryIcon, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Text(primaryLabel,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15)),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
+          ],
           GestureDetector(
             onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
             child: Container(

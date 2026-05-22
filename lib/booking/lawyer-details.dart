@@ -417,7 +417,9 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                               ],
                             ),
                           ),
-                          const SizedBox(width: 5,),
+                          const SizedBox(
+                            width: 5,
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),

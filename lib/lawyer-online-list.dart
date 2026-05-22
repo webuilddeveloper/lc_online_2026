@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawyerOnlineList extends StatefulWidget {
   LawyerOnlineList({super.key, this.topic, this.subTopic});
@@ -27,7 +27,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   // ── Data ──────────────────────────────────────────────
   final List<dynamic> lawyerOnlineList = [
     {
-      "code": "0",
+      "code": "20260513101915-561-752",
       "name": "ศักดิ์สิทธิ์ พิพากษ์",
       'title': 'ทนายความอาวุโส',
       "rating": 4.8,
@@ -247,7 +247,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       setState(() {
         _allProvinces = [
           {'code': '0', 'title': 'ทั้งหมด'},
-          ...result['objectData'].map((p) => {'code': p['code'], 'title': p['title']})
+          ...result['objectData']
+              .map((p) => {'code': p['code'], 'title': p['title']})
         ];
         print(_allProvinces);
       });
@@ -265,40 +266,46 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         backBtn: true,
         isRightWidget: false,
         backAction: () => goBack(),
-        
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            // _buildHeader(),
-            const SizedBox(height: 5,),
-            _buildSearchFilterBar(),
-            if (_activeFilterCount > 0 || (widget.topic ?? '') != '') _buildActiveChips(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Row(children: [
-                Text(
-                  'พบ ${filtered.length} ทนายความ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w500,
-                  ),
+      body: AppLayout(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 5,
                 ),
-              ]),
-            ),
-            Expanded(
-              child: filtered.isEmpty
-                  ? _buildEmpty()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) => _buildLawyerCard(filtered[i]),
+                _buildSearchFilterBar(),
+                if (_activeFilterCount > 0 || (widget.topic ?? '') != '')
+                  _buildActiveChips(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: Row(children: [
+                    Text(
+                      'พบ ${filtered.length} ทนายความ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
+                  ]),
+                ),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? _buildEmpty()
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, i) => _buildLawyerCard(filtered[i]),
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -450,8 +457,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(children: [
         if (widget.topic != '') ...[
-          _activeChip(widget.topic!,
-              onRemove: () => {}, isRemove: false),
+          _activeChip(widget.topic!, onRemove: () => {}, isRemove: false),
           const SizedBox(width: 6),
         ],
         if (_filterAvailableOnly)
@@ -482,7 +488,9 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   Widget _activeChip(String label,
-          {required VoidCallback onRemove, IconData? icon, bool isRemove = true}) =>
+          {required VoidCallback onRemove,
+          IconData? icon,
+          bool isRemove = true}) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
@@ -499,11 +507,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               style: const TextStyle(
                   fontSize: 11, color: _kPrimary, fontWeight: FontWeight.w600)),
           const SizedBox(width: 4),
-          isRemove ?
-          GestureDetector(
-            onTap: onRemove,
-            child: const Icon(Icons.close_rounded, size: 13, color: _kPrimary),
-          ) : const SizedBox()
+          isRemove
+              ? GestureDetector(
+                  onTap: onRemove,
+                  child: const Icon(Icons.close_rounded,
+                      size: 13, color: _kPrimary),
+                )
+              : const SizedBox()
         ]),
       );
 
@@ -537,7 +547,7 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color:  Colors.transparent,
+            color: Colors.transparent,
             width: 2,
           ),
           boxShadow: [

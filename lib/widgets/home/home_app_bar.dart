@@ -1,13 +1,13 @@
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // ─── Home SliverAppBar ────────────────────────────────────────────
-// รับ props ทั้งหมด ไม่มี state ของตัวเอง
-// → rebuild เฉพาะเมื่อ name / imageUrl / userType / isUrgentCaseEnabled เปลี่ยน
 class HomeAppBar extends StatefulWidget {
   final String name;
   final String imageUrl;
@@ -30,16 +30,81 @@ class HomeAppBar extends StatefulWidget {
   State<HomeAppBar> createState() => _HomeAppBarState();
 }
 
-class _HomeAppBarState extends State<HomeAppBar> {
+class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
+  // ── Pulse ring controllers ──────────────────────────────────────
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _pulseScale;
+  late final Animation<double> _pulseOpacity;
+
+  // ── Burst (one-shot) เมื่อ toggle เปิด ─────────────────────────
+  late final AnimationController _burstCtrl;
+  late final Animation<double> _burstScale;
+  late final Animation<double> _burstOpacity;
+
+  bool _prevUrgent = false;
+
   @override
   void initState() {
     super.initState();
+
+    // วง pulse วนซ้ำตลอด
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.55).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.65, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeOut),
+    );
+
+    // burst ครั้งเดียวเมื่อ toggle เปิด
+    _burstCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _burstScale = Tween<double>(begin: 1.0, end: 1.9).animate(
+      CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOut),
+    );
+    _burstOpacity = Tween<double>(begin: 0.7, end: 0.0).animate(
+      CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOut),
+    );
+
     LawyerProfileStore.instance.addListener(_onStoreChanged);
+    UserProfileStore.instance.addListener(_onStoreChanged);
+
+    _syncUrgentAnimation(widget.isUrgentCaseEnabled, burst: false);
+    _prevUrgent = widget.isUrgentCaseEnabled;
+  }
+
+  @override
+  void didUpdateWidget(HomeAppBar old) {
+    super.didUpdateWidget(old);
+    if (old.isUrgentCaseEnabled != widget.isUrgentCaseEnabled) {
+      _syncUrgentAnimation(widget.isUrgentCaseEnabled, burst: true);
+      _prevUrgent = widget.isUrgentCaseEnabled;
+    }
+  }
+
+  void _syncUrgentAnimation(bool enabled, {bool burst = false}) {
+    if (enabled) {
+      _pulseCtrl.repeat();
+      if (burst) {
+        _burstCtrl.forward(from: 0);
+      }
+    } else {
+      _pulseCtrl.stop();
+      _pulseCtrl.reset();
+    }
   }
 
   @override
   void dispose() {
+    _pulseCtrl.dispose();
+    _burstCtrl.dispose();
     LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    UserProfileStore.instance.removeListener(_onStoreChanged);
     super.dispose();
   }
 
@@ -49,6 +114,9 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    final isLawyer = UserProfileStore.instance.userType == 'lawyer';
+    final urgentOn = isLawyer && widget.isUrgentCaseEnabled;
+
     return SliverAppBar(
       pinned: true,
       floating: false,
@@ -100,22 +168,33 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    ProfileAvatar(
-                      imageUrl: widget.imageUrl,
-                      typeLogin: widget.typeLogin,
-                      isOnline: widget.userType == 'lawyer' && widget.isUrgentCaseEnabled,
-                      onProfileTap: widget.onProfileTap,
+                    // ── ProfileAvatar + pulse ring ────────────────
+                    _UrgentAvatarRing(
+                      urgentOn: urgentOn,
+                      pulseScale: _pulseScale,
+                      pulseOpacity: _pulseOpacity,
+                      burstScale: _burstScale,
+                      burstOpacity: _burstOpacity,
+                      child: ProfileAvatar(
+                        imageUrl: UserProfileStore.instance.imageUrl,
+                        typeLogin: UserProfileStore.instance.typeLogin,
+                        isOnline: urgentOn,
+                        onProfileTap: widget.onProfileTap,
+                      ),
                     ),
                     const SizedBox(width: 12),
+
                     // ── ชื่อ + badge (เฉพาะ logged in) ──────────
                     Expanded(
-                      child: widget.typeLogin != 'null'
+                      child: UserProfileStore.instance.typeLogin != 'null'
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  widget.name.isNotEmpty ? widget.name : 'ผู้ใช้งาน',
+                                  UserProfileStore.instance.name.isNotEmpty
+                                      ? UserProfileStore.instance.name
+                                      : 'defaultUser'.tr(),
                                   style: GoogleFonts.prompt(
                                     color: Colors.black,
                                     fontSize: 17,
@@ -126,17 +205,18 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 ),
                                 const SizedBox(height: 2),
                                 ProfileMemberBadge(
-                                  userType: widget.userType,
-                                  isPro: LawyerProfileStore.instance.isPro && widget.userType == 'lawyer',
+                                  userType: UserProfileStore.instance.userType,
+                                  isPro: LawyerProfileStore.instance.isPro &&
+                                      UserProfileStore.instance.userType ==
+                                          'lawyer',
                                 ),
                               ],
                             )
                           : const SizedBox.shrink(),
                     ),
 
-                    // ── ปุ่มขวาสุด: bell (login) | ปุ่มเข้าสู่ระบบ (guest) ──
-                    if (widget.typeLogin != 'null')
-                      // ── Bell ───────────────────────────────────
+                    // ── ปุ่มขวาสุด: bell (login) | เข้าสู่ระบบ (guest) ──
+                    if (UserProfileStore.instance.typeLogin != 'null')
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
                         child: Material(
@@ -192,7 +272,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
                         ),
                       )
                     else
-                      // ── ปุ่มเข้าสู่ระบบ (guest) ────────────────
                       MouseRegion(
                         cursor: SystemMouseCursors.click,
                         child: Material(
@@ -225,7 +304,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 10, horizontal: 20),
                                 child: Text(
-                                  'เข้าสู่ระบบ',
+                                  'login'.tr(),
                                   style: GoogleFonts.prompt(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -248,6 +327,125 @@ class _HomeAppBarState extends State<HomeAppBar> {
   }
 }
 
+// ─── Pulse Ring wrapper ───────────────────────────────────────────
+// วาดวงเขียว pulse + burst รอบ avatar โดยไม่ต้องแก้ ProfileAvatar
+class _UrgentAvatarRing extends StatelessWidget {
+  final bool urgentOn;
+  final Animation<double> pulseScale;
+  final Animation<double> pulseOpacity;
+  final Animation<double> burstScale;
+  final Animation<double> burstOpacity;
+  final Widget child;
+
+  const _UrgentAvatarRing({
+    required this.urgentOn,
+    required this.pulseScale,
+    required this.pulseOpacity,
+    required this.burstScale,
+    required this.burstOpacity,
+    required this.child,
+  });
+
+  static const _green = Color(0xFF059669);
+
+  @override
+  Widget build(BuildContext context) {
+    // ขนาด avatar (ProfileAvatar ใช้ radius ~24 → diameter ~48)
+    const double avatarSize = 48;
+
+    return SizedBox(
+      // เผื่อที่ให้ ring วาดออกนอกขอบ
+      width: avatarSize + 24,
+      height: avatarSize + 24,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // ── burst (one-shot เมื่อ toggle เปิด) ──────────────
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: burstScale,
+              builder: (_, __) => Opacity(
+                opacity: burstOpacity.value,
+                child: Transform.scale(
+                  scale: burstScale.value,
+                  child: Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _green, width: 3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── pulse วนซ้ำ (วง 1) ───────────────────────────────
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: pulseScale,
+              builder: (_, __) => Opacity(
+                opacity: pulseOpacity.value,
+                child: Transform.scale(
+                  scale: pulseScale.value,
+                  child: Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _green, width: 2.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── pulse วง 2 (offset ครึ่งรอบ ทำให้ดู double wave) ─
+          if (urgentOn)
+            AnimatedBuilder(
+              animation: pulseScale,
+              builder: (_, __) {
+                // คำนวณ offset phase ~50%
+                final t = (pulseScale.value - 1.0) / 0.55;
+                final shifted = ((t + 0.5) % 1.0);
+                final scale2 = 1.0 + shifted * 0.55;
+                final opacity2 = (1.0 - shifted) * 0.55;
+                return Opacity(
+                  opacity: opacity2.clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: scale2,
+                    child: Container(
+                      width: avatarSize,
+                      height: avatarSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _green, width: 2),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+          // ── วง border เขียวคงที่ (ไม่ animate) ────────────────
+          if (urgentOn)
+            Container(
+              width: avatarSize + 4,
+              height: avatarSize + 4,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _green.withOpacity(0.8), width: 2.5),
+              ),
+            ),
+
+          // ── Avatar จริง ────────────────────────────────────────
+          child,
+        ],
+      ),
+    );
+  }
+}
 
 // ─── AppBar Overlay Painter ───────────────────────────────────────
 class AppBarOverlayPainter extends CustomPainter {

@@ -1,42 +1,20 @@
 import 'package:LawyerOnline/notification-detail.dart';
 import 'package:LawyerOnline/notification_desktop_detail.dart';
 import 'package:LawyerOnline/notification.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class NotificationDropdownContent extends StatefulWidget {
   const NotificationDropdownContent({Key? key}) : super(key: key);
 
   @override
-  State<NotificationDropdownContent> createState() => _NotificationDropdownContentState();
+  State<NotificationDropdownContent> createState() =>
+      _NotificationDropdownContentState();
 }
 
-class _NotificationDropdownContentState extends State<NotificationDropdownContent> {
-  List notifications = [
-    {
-      "type": "booking",
-      "title": "นัดหมายคดี",
-      "detail": "คดีความกำลังจะมาถึง",
-      "time": "10:20",
-      "date": "today",
-      "isRead": false
-    },
-    {
-      "type": "finish",
-      "title": "นัดหมายทนายความเสร็จสิ้น",
-      "detail": "กรุณารีวิวการให้คะแนนทนายความ",
-      "time": "เมื่อวาน",
-      "date": "yesterday",
-      "isRead": true
-    },
-    {
-      "type": "system",
-      "title": "ทนายความรับเคสแล้ว",
-      "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
-      "time": "2 วันก่อน",
-      "date": "old",
-      "isRead": true
-    }
-  ];
+class _NotificationDropdownContentState
+    extends State<NotificationDropdownContent> {
+  List<Map<String, dynamic>> get notifications => globalNotifications;
 
   int get unreadCount =>
       notifications.where((n) => n["isRead"] == false).length;
@@ -89,15 +67,17 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: item["isRead"] ? Colors.transparent : const Color(0xFFBAD5FF).withOpacity(0.3),
+          color: item["isRead"]
+              ? Colors.transparent
+              : const Color(0xFFBAD5FF).withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
           leading: CircleAvatar(
-            backgroundColor: item["isRead"]
-                ? const Color(0xFFEEF2F5)
-                : Colors.white,
+            backgroundColor:
+                item["isRead"] ? const Color(0xFFEEF2F5) : Colors.white,
             child: Icon(
               getIcon(item["type"]),
               color: Colors.blue,
@@ -108,8 +88,7 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
             item["title"],
             style: TextStyle(
               fontSize: 14,
-              fontWeight:
-                  item["isRead"] ? FontWeight.normal : FontWeight.bold,
+              fontWeight: item["isRead"] ? FontWeight.normal : FontWeight.bold,
             ),
           ),
           subtitle: Text(
@@ -174,14 +153,16 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
           children: [
             Row(
               children: [
-                const Text(
-                  "การแจ้งเตือน",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  "notifications".tr(),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
                 if (unreadCount > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(10),
@@ -196,7 +177,7 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
             IconButton(
               onPressed: markAllRead,
               icon: const Icon(Icons.done_all, size: 20),
-              tooltip: "อ่านทั้งหมด",
+              tooltip: "notification.allRead".tr(),
             )
           ],
         ),
@@ -206,9 +187,9 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              buildSection("วันนี้", "today"),
-              buildSection("เมื่อวาน", "yesterday"),
-              buildSection("ก่อนหน้านี้", "old"),
+              buildSection("timeline.today".tr(), "today"),
+              buildSection("timeline.yesterday".tr(), "yesterday"),
+              buildSection("timeline.earlier".tr(), "earlier"),
             ],
           ),
         ),
@@ -236,7 +217,8 @@ class _NotificationDropdownContentState extends State<NotificationDropdownConten
                 ),
               );
             },
-            child: const Text("ดูทั้งหมด", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text("notification.listAll".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         )
       ],

@@ -11,6 +11,11 @@ import 'package:LawyerOnline/shared/notification-service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/user_model.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 
 class LoginPage extends StatefulWidget {
   final bool isBack;
@@ -104,15 +109,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF061B4A),
       body: FadeTransition(
         opacity: fade,
         child: Container(
           decoration: const BoxDecoration(
             color: Color(0xFF061B4A),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
-            child: ListView(
+          child: AppLayout(
+            maxWidth: 500,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                child: ListView(
+                  shrinkWrap: ResponsiveLayout.isDesktop(context),
               children: [
                 const SizedBox(height: 20),
 
@@ -141,12 +151,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               width: 120,
                               height: 120,
                             ),
-                  
-                            // const SizedBox(height: 12),
-                  
-                            const Text(
-                              'หมอความออนไลน์',
-                              style: TextStyle(
+
+                            const SizedBox(height: 12),
+
+                            Text(
+                              'appTitle'.tr(),
+                              style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -154,7 +164,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                  
+
                             const SizedBox(height: 15),
                             // const Text(
                             //   "เข้าสู่ระบบ",
@@ -164,31 +174,30 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             //     fontWeight: FontWeight.bold,
                             //   ),
                             // ),
-                  
+
                             // const SizedBox(height: 10),
-                  
+
                             /// Username
                             TextField(
                               controller: usernameController,
                               decoration: InputDecoration(
-                                prefixIcon:
-                                    const Icon(Icons.person_outline),
-                                labelText: "ชื่อผู้ใช้",
+                                prefixIcon: const Icon(Icons.person_outline),
+                                labelText: "username".tr(),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                             ),
-                  
+
                             const SizedBox(height: 15),
-                  
+
                             /// Password
                             TextField(
                               controller: passwordController,
                               obscureText: obscure,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock_outline),
-                                labelText: "รหัสผ่าน",
+                                labelText: "passwordPlaceholder".tr(),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -206,8 +215,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                  
-                            // const SizedBox(height: 5),
+
+                            const SizedBox(height: 5),
+
                             /// Remember
                             Row(
                               children: [
@@ -231,7 +241,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                  child: const Text("สมัครสมาชิก"),
+                                  child: Text("register".tr()),
                                 ),
                                 const Spacer(),
                                 TextButton(
@@ -244,13 +254,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                  child: const Text("ลืมรหัสผ่าน"),
+                                  child: Text("forgotPassword".tr()),
                                 )
                               ],
                             ),
-                  
-                            const SizedBox(height: 10),
-                  
+
+                            const SizedBox(height: 20),
+
                             /// 🔹 Login Button
                             SizedBox(
                               height: 50,
@@ -279,7 +289,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                             color: Color(0xFF0262EC),
                                           )
                                         : Text(
-                                            "เข้าสู่ระบบ",
+                                            "login".tr(),
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -291,9 +301,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                  
+
                             const SizedBox(height: 20),
-                  
+
                             SizedBox(
                               height: 50,
                               child: ElevatedButton(
@@ -319,8 +329,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 child: Container(
                                   decoration: const BoxDecoration(
                                     color: Color(0xFF040651),
-                                    borderRadius: BorderRadius.all(
-                                        Radius.circular(14)),
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(14)),
                                   ),
                                   child: Center(
                                     child: Row(
@@ -335,8 +345,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
-                                          "เข้าสู่ระบบด้วย Thai ID",
-                                          style: TextStyle(
+                                          'loginWithThaiID'.tr(),
+                                          style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white),
@@ -349,51 +359,53 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        widget.isBack ? Positioned(
-                          top: 0,
-                          left: 0,
-                          child: GestureDetector(
-                            onTap: () => goBack(),
-                            child: Container(
-                              // width: 0,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFAFAFA),
-                                // borderRadius: BorderRadius.circular(22),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  width: 1,
-                                  color: const Color(0xFFDBDBDB),
+                        widget.isBack
+                            ? Positioned(
+                                top: 0,
+                                left: 0,
+                                child: GestureDetector(
+                                  onTap: () => goBack(),
+                                  child: Container(
+                                    // width: 0,
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFAFAFA),
+                                      // borderRadius: BorderRadius.circular(22),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        width: 1,
+                                        color: const Color(0xFFDBDBDB),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.arrow_back_ios_new,
+                                      size: 15,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 15,
-                              ),
-                            ),
-                          ),
-                        ) : const SizedBox(),
+                              )
+                            : const SizedBox(),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                const Row(
+                Row(
                   children: [
-                    Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        "หรือ",
-                        style: TextStyle(color: Colors.white),
+                        'or'.tr(),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    Expanded(child: Divider()),
+                    const Expanded(child: Divider()),
                   ],
                 ),
 
@@ -495,6 +507,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ],
             ),
           ),
+          ),
+          ),
         ),
       ),
     );
@@ -555,70 +569,52 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final idToken = obj.accessToken.idToken;
       final userEmail = (idToken != null) ? idToken['email'] ?? '' : '';
 
-      if (obj != null) {
-        var model = {
-          "username": (userEmail != '') ? userEmail : obj.userProfile!.userId,
-          "email": userEmail,
-          "imageUrl": (obj.userProfile!.pictureUrl != '')
-              ? obj.userProfile!.pictureUrl
+      await NotificationService.saveFcmToken(
+        await FirebaseMessaging.instance.getToken() ?? '',
+      );
+
+      // ── setUser → persist + broadcast ──
+      await UserProfileStore.instance.setUser(
+        UserModel(
+          code: obj.userProfile!.userId,
+          userType: 'user',
+          firstName: obj.userProfile!.displayName,
+          lastName: '',
+          email: userEmail.toString(),
+          phone: '',
+          imageUrl: obj.userProfile!.pictureUrl?.isNotEmpty == true
+              ? obj.userProfile!.pictureUrl!
               : '',
-          "firstName": obj.userProfile!.displayName,
-          "lastName": '',
-          "lineID": obj.userProfile!.userId
-        };
+          category: 'Line',
+          isActive: true,
+          status: '',
+          prefixName: '',
+          facebookID: '',
+          googleID: '',
+          lineID: obj.userProfile!.userId,
+          line: '',
+          sex: '',
+          address: '',
+          idcard: '',
+        ),
+        typeLogin: 'social',
+      );
 
-        await storage.write(
-          key: 'categorySocial',
-          value: 'Line',
-        );
+      if (!mounted) return;
+      // ปิด Loading
+      Navigator.pop(context);
 
-        await storage.write(
-          key: 'userType',
-          value: 'user',
-        );
-
-        await storage.write(
-          key: 'imageUrlSocial',
-          value: (obj.userProfile!.pictureUrl != '')
-              ? obj.userProfile!.pictureUrl
-              : '',
-        );
-
-        await storage.write(
-          key: 'name',
-          value: '${model['firstName']} ${model['lastName']}',
-        );
-
-        await storage.write(
-          key: 'typeLogin',
-          value: 'social',
-        );
-
-        await NotificationService.saveFcmToken(
-          await FirebaseMessaging.instance.getToken() ?? '',
-        );
-
-        // ปิด Loading
-        Navigator.pop(context);
-
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MenuPage(),
-          ),
-        );
-      } else {
-        DialogService.showError(
-          context,
-          title: "เข้าสู่ระบบไม่สำเร็จ",
-          message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
-        );
-      }
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MenuPage(),
+        ),
+      );
     } catch (e) {
       DialogService.showError(
         context,
-        title: "เข้าสู่ระบบไม่สำเร็จ",
-        message: "กรุณาลองใหม่อีกครั้ง\nหรือเลือกเข้าสู่ระบบช่องทางอื่นแทน",
+        title: "loginFailed".tr(),
+        message: "genericError".tr(),
       );
     }
   }
@@ -663,25 +659,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     });
 
     try {
-      final user = await AuthService.login(
+      final session = await AuthService.loginSession(
         usernameController.text.trim(),
         passwordController.text,
         'guest',
       );
+      final user = session.user;
 
-      await storage.write(key: 'userType', value: user.userType);
-      await storage.write(key: 'name', value: user.fullName);
-      await storage.write(
-        key: 'imageUrlSocial',
-        value: user.imageUrl.isNotEmpty
-            ? user.imageUrl
-            : 'assets/images/profile-avatar.jpg',
+      // ── setUser → persist ทุก field + broadcast ให้ทุก widget ทราบทันที ──
+      // ถ้า imageUrl ว่างใช้ default avatar แทน
+      final userWithAvatar = user.imageUrl.isNotEmpty
+          ? user
+          : user.copyWith(imageUrl: 'assets/images/profile-avatar.jpg');
+
+      await UserProfileStore.instance.setUser(
+        userWithAvatar,
+        typeLogin: 'local',
+        authToken: session.token,
       );
-      await storage.write(key: 'typeLogin', value: 'api');
-      await storage.write(key: 'email', value: user.email);
-      await storage.write(key: 'phone', value: user.phone);
-      await storage.write(key: 'code', value: user.code);
 
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -694,7 +691,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       });
       DialogService.showError(
         context,
-        title: 'ไม่สามารถเข้าสู่ระบบได้',
+        title: 'loginFailed'.tr(),
         message: error.toString(),
       );
     }
@@ -703,5 +700,4 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void goBack() async {
     Navigator.pop(context, false);
   }
-
 }

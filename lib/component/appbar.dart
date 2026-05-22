@@ -359,7 +359,6 @@ PreferredSizeWidget appBarChat({
           ),
         ],
       ),
-      
       child: Row(
         children: [
           GestureDetector(

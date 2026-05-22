@@ -1,5 +1,7 @@
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -42,6 +44,8 @@ class BookingSuccessPage extends StatefulWidget {
 
 class _BookingSuccessPageState extends State<BookingSuccessPage>
     with TickerProviderStateMixin {
+  bool _jobCreated = false;
+
   late AnimationController _checkCtrl;
   late AnimationController _contentCtrl;
   late AnimationController _pulseCtrl;
@@ -59,6 +63,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   void initState() {
     print('>>>>>><<<<<>>>> ======= ${widget.lawyer}');
     super.initState();
+    _createPendingJob();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
     // Check animation
@@ -115,6 +120,30 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
     HapticFeedback.heavyImpact();
   }
 
+  void _createPendingJob() {
+    if (_jobCreated || widget.lawyer == null) return;
+    _jobCreated = true;
+
+    final lawyer = Map<String, dynamic>.from(widget.lawyer as Map);
+    final profile = UserProfileStore.instance;
+    final clientCode = profile.code.isNotEmpty
+        ? profile.code
+        : LawyerJobsStore.mockSeedClientCode;
+    final clientName = profile.name.isNotEmpty ? profile.name : null;
+
+    LawyerJobsStore.instance.createFromBooking(
+      lawyerModel: lawyer,
+      topic: widget.topic,
+      subTopic: widget.subTopic,
+      appointmentDate: widget.appointmentDate,
+      appointmentTime: widget.appointmentTime,
+      clientCode: clientCode,
+      clientName: clientName,
+      bookingCode: widget.bookingCode,
+      budget: lawyer['cost']?.toString(),
+    );
+  }
+
   @override
   void dispose() {
     _checkCtrl.dispose();
@@ -127,8 +156,8 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   Widget build(BuildContext context) {
     final lawyer = widget.lawyer;
     final lawyerColor = Color(0xFF0262EC
-      // lawyer?['color'] as int? ?? 0xFF0262EC
-      );
+        // lawyer?['color'] as int? ?? 0xFF0262EC
+        );
 
     return Scaffold(
       backgroundColor: _kBg,

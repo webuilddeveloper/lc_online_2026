@@ -10,8 +10,10 @@ import 'package:LawyerOnline/profile.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -38,39 +40,60 @@ class _MenuPageState extends State<MenuPage> {
   int _currentPage = 0;
   DateTime? currentBackPressTime;
 
-  final storage = FlutterSecureStorage();
   String userType = '';
   String name = '';
   String imageUrl = '';
   String typeLogin = '';
 
   // ── Nav items config ───────────────────────────────────
-  final List<NavItem> _navItems = const [
-    NavItem(icon: 'assets/icons/home.png', label: 'หน้าหลัก', index: 0),
-    NavItem(
-        icon: 'assets/icons/message.png',
-        label: 'แชท',
-        index: 1,
-        showBadge: true),
-    NavItem(
-        icon: 'assets/icons/logo-no-bg.png',
-        label: 'ชุมชน',
-        index: 2,
-        isLogo: true,
-        showBadge: true),
-    NavItem(
-        icon: 'assets/icons/appointment.png',
-        label: 'นัดหมาย',
-        index: 3,
-        showBadge: true),
-    NavItem(icon: 'assets/icons/profile.png', label: 'โปรไฟล์', index: 4),
-  ];
+  List<NavItem> get _navItems => [
+        NavItem(icon: 'assets/icons/home.png', label: 'navHome'.tr(), index: 0),
+        NavItem(
+            icon: 'assets/icons/message.png',
+            label: 'navChat'.tr(),
+            index: 1,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/logo-no-bg.png',
+            label: 'navCommunity'.tr(),
+            index: 2,
+            isLogo: true,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/appointment.png',
+            label: 'navAppointment'.tr(),
+            index: 3,
+            showBadge: true),
+        NavItem(
+            icon: 'assets/icons/profile.png',
+            label: 'navProfile'.tr(),
+            index: 4),
+      ];
 
   @override
   void initState() {
     super.initState();
     callRead();
     Future.delayed(Duration.zero, requestPermissions);
+    // listen store — rebuild ทันทีเมื่อ profile เปลี่ยน (เช่น หลัง updateProfile)
+    UserProfileStore.instance.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    UserProfileStore.instance.removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  void _onStoreChanged() {
+    if (!mounted) return;
+    final store = UserProfileStore.instance;
+    setState(() {
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
+      userType = store.userType.isNotEmpty ? store.userType : userType;
+    });
   }
 
   Future<void> requestPermissions() async {
@@ -79,30 +102,40 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   Future<void> callRead() async {
-    final uType = await storage.read(key: 'userType');
-    final imageProfile = await storage.read(key: 'imageUrlSocial');
-    final nameProfile = await storage.read(key: 'name');
-    final type = await storage.read(key: 'typeLogin');
+    await UserProfileStore.instance.load();
+    await LawyerProfileStore.instance.load();
 
+    final store = UserProfileStore.instance;
     setState(() {
-      userType = widget.userType ?? uType.toString();
-      name = nameProfile.toString();
-      imageUrl = imageProfile.toString();
-      typeLogin = type.toString();
-
-      pages = [
-        HomePage(onProfileTap: () => _onNavTap(4)),
-        typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false),
-        CommunityPage(),
-        typeLogin != 'null'
-            ? userType == 'user'
-                ? AppointmentListPage()
-                : CalendarPage()
-            : LoginPage(isBack: false),
-        typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false),
-      ];
+      userType = widget.userType?.isNotEmpty == true
+          ? widget.userType!
+          : store.userType;
+      name = store.name;
+      imageUrl = store.imageUrl;
+      typeLogin = store.typeLogin;
       _currentPage = widget.pageIndex ?? 0;
     });
+  }
+
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0:
+        return HomePage(onProfileTap: () => _onNavTap(4));
+      case 1:
+        return typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false);
+      case 2:
+        return CommunityPage();
+      case 3:
+        return typeLogin != 'null'
+            ? userType == 'lawyer'
+                ? CalendarPage()
+                : AppointmentListPage()
+            : LoginPage(isBack: false);
+      case 4:
+        return typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false);
+      default:
+        return HomePage(onProfileTap: () => _onNavTap(4));
+    }
   }
 
   void _onNavTap(int index) => setState(() => _currentPage = index);
@@ -165,7 +198,7 @@ class _MenuPageState extends State<MenuPage> {
             ),
             child: KeyedSubtree(
               key: ValueKey<int>(_currentPage),
-              child: pages.isNotEmpty ? pages[_currentPage] : const SizedBox(),
+              child: _getPage(_currentPage),
             ),
           ),
         ),
@@ -175,13 +208,13 @@ class _MenuPageState extends State<MenuPage> {
       bottomNavigationBar: isDesktop
           ? null
           : Padding(
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.fromLTRB(15, 10, 15, 20),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(35),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    height: 65,
+                    height: 75,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF010101).withOpacity(0.50),
@@ -193,7 +226,7 @@ class _MenuPageState extends State<MenuPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: _navItems
-                          .map((item) => Flexible(
+                          .map((item) => Expanded(
                                 child: _BottomNavItem(
                                   item: item,
                                   isSelected: _currentPage == item.index,
@@ -230,50 +263,55 @@ class _BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: item.isLogo
-            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 5)
-            : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFF8F9FD).withOpacity(0.9)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF085DD3).withOpacity(0.3)
-                  : Colors.transparent,
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Image.asset(
-              item.icon,
-              width: item.isLogo ? 34 : 22,
-              height: item.isLogo ? 34 : 22,
-              color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
-            ),
-            if (showBadge)
-              Positioned(
-                top: -1,
-                right: 2,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF70C0C),
-                    shape: BoxShape.circle,
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        // ← ใส่ Center หุ้มเพื่อให้ AnimatedContainer อยู่กลาง
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          // ลบ width/height: double.infinity ออก ← ให้ขนาดพอดีกับเนื้อหา
+          padding: item.isLogo
+              ? const EdgeInsets.symmetric(horizontal: 30, vertical: 8)
+              : const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFF8F9FD).withOpacity(0.9)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? const Color(0xFF085DD3).withOpacity(0.3)
+                    : Colors.transparent,
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Image.asset(
+                item.icon,
+                width: item.isLogo ? 34 : 22,
+                height: item.isLogo ? 34 : 22,
+                color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
+              ),
+              if (showBadge)
+                Positioned(
+                  top: -1,
+                  right: -2,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF70C0C),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

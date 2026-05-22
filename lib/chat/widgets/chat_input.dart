@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ChatInput extends StatefulWidget {
   final TextEditingController controller;
@@ -86,7 +87,7 @@ class _ChatInputState extends State<ChatInput> {
                 fillColor: Colors.white,
                 contentPadding:
                     const EdgeInsets.fromLTRB(14.0, 10.0, 14.0, 10.0),
-                hintText: 'พิมพ์ข้อความ...',
+                hintText: 'typeMessage'.tr(),
                 hintStyle: const TextStyle(color: Color(0xFF8593A8)),
                 suffixIcon: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 13, 15, 13),

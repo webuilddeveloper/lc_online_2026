@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultPage extends StatefulWidget {
   const ConsultPage({super.key});
@@ -265,91 +266,96 @@ class _ConsultPageState extends State<ConsultPage> {
           rightAction: () {},
           backAction: () => Navigator.pop(context, false),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // ── Header gradient ──────────────────
-                    _buildHeaderCard(),
-                    const SizedBox(height: 16),
+        body: AppLayout(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // ── Header gradient ──────────────────
+                        _buildHeaderCard(),
+                        const SizedBox(height: 16),
 
-                    // ── Form card ────────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+                        // ── Form card ────────────────────────
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ── ประเภทหัวข้อ ─────────────
-                          _buildTopicField(),
-                          const SizedBox(height: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ── ประเภทหัวข้อ ─────────────
+                              _buildTopicField(),
+                              const SizedBox(height: 20),
 
-                          // ── หัวข้อย่อย (ถ้ามี) ──────
-                          if (_selectedTopic != null && _hasSubCase) ...[
-                            _buildSubCaseField(topicColor),
-                            const SizedBox(height: 20),
-                          ],
+                              // ── หัวข้อย่อย (ถ้ามี) ──────
+                              if (_selectedTopic != null && _hasSubCase) ...[
+                                _buildSubCaseField(topicColor),
+                                const SizedBox(height: 20),
+                              ],
 
-                          // ── วันที่ ───────────────────
-                          // _buildDateField(),
-                          // const SizedBox(height: 20),
+                              // ── วันที่ ───────────────────
+                              // _buildDateField(),
+                              // const SizedBox(height: 20),
 
-                          // ── จังหวัด ─────────────────
-                          _buildDropdownField(
-                            label: 'จังหวัด',
-                            hint: 'เลือกจังหวัด',
-                            icon: Icons.location_on_outlined,
-                            value: _selectedProvince,
-                            items: _provinces,
-                            onChanged: (val) =>
-                                setState(() => _selectedProvince = val),
+                              // ── จังหวัด ─────────────────
+                              _buildDropdownField(
+                                label: 'จังหวัด',
+                                hint: 'เลือกจังหวัด',
+                                icon: Icons.location_on_outlined,
+                                value: _selectedProvince,
+                                items: _provinces,
+                                onChanged: (val) =>
+                                    setState(() => _selectedProvince = val),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── สรุปเหตุการณ์ ────────────
+                              _buildTextArea(
+                                label: 'สรุปเหตุการณ์',
+                                hint:
+                                    'อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...',
+                                controller: _detailController,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── ข้อเรียกร้อง ─────────────
+                              _buildTextArea(
+                                label: 'ข้อเรียกร้อง',
+                                hint:
+                                    'ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...',
+                                controller: _demandController,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // ── แนบภาพ ───────────────────
+                              _buildImageField(),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-
-                          // ── สรุปเหตุการณ์ ────────────
-                          _buildTextArea(
-                            label: 'สรุปเหตุการณ์',
-                            hint:
-                                'อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...',
-                            controller: _detailController,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── ข้อเรียกร้อง ─────────────
-                          _buildTextArea(
-                            label: 'ข้อเรียกร้อง',
-                            hint:
-                                'ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...',
-                            controller: _demandController,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── แนบภาพ ───────────────────
-                          _buildImageField(),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // ── Bottom Button ────────────────────────────
-            _buildBottomButton(topicColor),
-          ],
+                // ── Bottom Button ────────────────────────────
+                _buildBottomButton(topicColor),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -385,7 +391,7 @@ class _ConsultPageState extends State<ConsultPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('กรอกข้อมูลเบื้อต้น',
+              Text('กรอกข้อมูลเบื้องต้น',
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -519,7 +525,7 @@ class _ConsultPageState extends State<ConsultPage> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedSubCase?['title'] as String?,
-          isExpanded: true, 
+          isExpanded: true,
           onChanged: (val) {
             final sub = _subCases.firstWhere((s) => s['title'] == val,
                 orElse: () => {});
@@ -547,13 +553,13 @@ class _ConsultPageState extends State<ConsultPage> {
               borderSide: BorderSide(color: Color(0xFF0262EC), width: 1.5),
             ),
           ),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0262EC)),
+          icon:
+              Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0262EC)),
           dropdownColor: Color(0xFFEEF2F5),
           borderRadius: BorderRadius.circular(14),
           items: _subCases
               .map((s) => DropdownMenuItem<String>(
                     value: s['title'] as String,
-                    
                     child: Text(
                       s['title'] as String,
                       style: const TextStyle(fontSize: 13),
@@ -848,8 +854,10 @@ class _ConsultPageState extends State<ConsultPage> {
           height: 52,
           decoration: BoxDecoration(
             gradient: _canSubmit
-                ? LinearGradient(
-                    colors: [Color(0xFF0262EC), Color(0xFF0262EC).withOpacity(0.8)])
+                ? LinearGradient(colors: [
+                    Color(0xFF0262EC),
+                    Color(0xFF0262EC).withOpacity(0.8)
+                  ])
                 : null,
             color: _canSubmit ? null : const Color(0xFFCDD5E0),
             borderRadius: BorderRadius.circular(14),

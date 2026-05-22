@@ -239,7 +239,7 @@ class _AppAppointmentState extends State<AppAppointment> {
     {'code': '3', 'title': 'อารีย์ ศิษย์กฎหมาย'},
     {'code': '4', 'title': 'Sachin K'},
   ];
-  
+
   String? _selectedLawyerCode;
 
   // ── can proceed ───────────────────────────────────────
@@ -316,12 +316,14 @@ class _AppAppointmentState extends State<AppAppointment> {
                     // const SizedBox(height: 16),
 
                     // ── เลือกประเภทหัวข้อ (grid) ──────────
-                    widget.topic == null ? Column(
-                      children: [
-                        _buildTopicSection(topicColor),
-                        const SizedBox(height: 16),
-                      ],
-                    ) : const SizedBox(),
+                    widget.topic == null
+                        ? Column(
+                            children: [
+                              _buildTopicSection(topicColor),
+                              const SizedBox(height: 16),
+                            ],
+                          )
+                        : const SizedBox(),
 
                     // ── หัวข้อย่อย (dropdown) ─────────────
                     if (_selectedTopic != null && _subCases.isNotEmpty) ...[
@@ -790,7 +792,7 @@ class _AppAppointmentState extends State<AppAppointment> {
                 //     );
                 //   },
                 // );
-                
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(

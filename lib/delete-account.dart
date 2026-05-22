@@ -2,9 +2,11 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key});
@@ -16,40 +18,25 @@ class DeleteAccountPage extends StatefulWidget {
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   int? selectedReason;
   final TextEditingController otherReasonController = TextEditingController();
-  final storage = const FlutterSecureStorage();
 
-  String name = "";
-  String imageUrl = "";
-  String typeLogin = "";
-  String email = "";
+  // อ่านจาก UserProfileStore โดยตรง ไม่ต้องใช้ storage
+  String get name => UserProfileStore.instance.name;
+  String get imageUrl => UserProfileStore.instance.imageUrl;
+  String get typeLogin => UserProfileStore.instance.typeLogin;
+  String get email => UserProfileStore.instance.email;
+  String get code => UserProfileStore.instance.code;
 
   @override
   void initState() {
-    callRead();
     super.initState();
   }
 
-  callRead() async {
-    var imageProfile =
-        await storage.read(key: 'imageUrlSocial') ?? 'assets/icons/profile.png';
-    var nameProfile = await storage.read(key: 'name');
-    var type = await storage.read(key: 'typeLogin');
-    var emailProfile = await storage.read(key: 'email');
-
-    setState(() {
-      name = nameProfile ?? "";
-      imageUrl = imageProfile ?? "";
-      typeLogin = type ?? "";
-      email = emailProfile ?? "";
-    });
-  }
-
   final List<String> reasons = [
-    'ไม่ได้ใช้งานแพลตฟอร์มแล้ว',
-    'พบแอปอื่นที่น่าสนใจกว่า',
-    'กังวลเรื่องความเป็นส่วนตัว',
-    'กังวลเรื่องความปลอดภัย',
-    'อื่นๆ',
+    'reasons.reason1'.tr(),
+    'reasons.reason2'.tr(),
+    'reasons.reason3'.tr(),
+    'reasons.reason4'.tr(),
+    'reasons.reason5'.tr(),
   ];
 
   @override
@@ -57,7 +44,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: appBarCustom(
-        title: "",
+        title: "deleteAccountTitle".tr(),
         backBtn: true,
         backAction: () => goBack(),
         isRightWidget: false,
@@ -68,27 +55,38 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 children: [
-                  const Text(
-                    "ลบบัญชี",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
+                  // const Text(
+                  //   "ลบบัญชี",
+                  //   style: TextStyle(
+                  //     fontSize: 32,
+                  //     fontWeight: FontWeight.w600,
+                  //     color: Color(0xFFE61313),
+                  //   ),
+                  // ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "หากคุณต้องการลบบัญชี กรุณาแจ้งให้เราทราบถึงเหตุผล เพื่อที่เราจะได้นำไปปรับปรุงบริการให้ดียิ่งขึ้น",
+                  Text(
+                    "deleteAccountSub".tr(),
                     style: TextStyle(
                       fontSize: 14,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF6B7280),
                       height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "deleteAccountWarning".tr(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color.fromARGB(255, 243, 186, 28),
+                      height: 1.5,
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  
+
                   // Profile Area
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -128,7 +126,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                                     : Image.network(
                                         imageUrl,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
                                           return Image.asset(
                                             "assets/icons/profile.png",
                                             fit: BoxFit.cover,
@@ -142,7 +141,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              name.isEmpty ? "กำลังโหลด..." : name,
+                              name.isEmpty ? "loading".tr() : name,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -174,9 +173,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFF0F7FF) : Colors.transparent,
+                          color: isSelected
+                              ? const Color(0xFFF0F7FF)
+                              : Colors.transparent,
                           border: Border(
                             bottom: BorderSide(
                                 color: isSelected
@@ -191,8 +193,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                               reasons[index],
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isSelected ? const Color(0xFF0262EC): const Color(0xFF374151),
-                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                color: isSelected
+                                    ? const Color(0xFF0262EC)
+                                    : const Color(0xFF374151),
+                                fontWeight: isSelected
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
                               ),
                             ),
                             Radio<int>(
@@ -223,22 +229,26 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                             maxLength: 150,
                             maxLines: 4,
                             decoration: InputDecoration(
-                              hintText: "กรุณาระบุรายละเอียดเพิ่มเติม...",
-                              hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                              hintText: "enter_reason".tr(),
+                              hintStyle: const TextStyle(
+                                  color: Color(0xFF9CA3AF), fontSize: 14),
                               filled: true,
                               fillColor: const Color(0xFFF9FAFB),
                               contentPadding: const EdgeInsets.all(16),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                                borderSide:
+                                    const BorderSide(color: Color(0xFFE5E7EB)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                                borderSide:
+                                    const BorderSide(color: Color(0xFFE5E7EB)),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(color: Color(0xFF9CA3AF), width: 2),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF9CA3AF), width: 2),
                               ),
                               counterText: "", // Hide default counter
                             ),
@@ -249,12 +259,13 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                           const SizedBox(height: 4),
                           Text(
                             "${otherReasonController.text.length}/150",
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF)),
+                            style: const TextStyle(
+                                fontSize: 10, color: Color(0xFF9CA3AF)),
                           )
                         ],
                       ),
                     ),
-                  
+
                   const SizedBox(height: 32),
                 ],
               ),
@@ -279,15 +290,17 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                     elevation: 10,
                     shadowColor: Colors.black.withOpacity(0.3),
                   ),
-                  onPressed: selectedReason != null ? () {
-                    DialogService.showConfirmDeleteAccount(
-                      context,
-                      onConfirm: () => _processDelete(),
-                    );
-                  } : null,
-                  child: const Text(
-                    "ลบ",
-                    style: TextStyle(
+                  onPressed: selectedReason != null
+                      ? () {
+                          DialogService.showConfirmDeleteAccount(
+                            context,
+                            onConfirm: (password) => _processDelete(password),
+                          );
+                        }
+                      : null,
+                  child: Text(
+                    "deleteAccount".tr(),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -302,7 +315,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     );
   }
 
-  void _processDelete() async {
+  void _processDelete(String password) async {
     // 1. แสดง Loading
     DialogService.showLoading(context);
 
@@ -310,13 +323,17 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       // เตรียมข้อมูลส่ง API
       String reasonCancel = "";
       if (selectedReason != null) {
-        reasonCancel = selectedReason == 4 ? otherReasonController.text : reasons[selectedReason!];
+        reasonCancel = selectedReason == 4
+            ? otherReasonController.text
+            : reasons[selectedReason!];
       }
-      
-      // เรียก API ลบบัญชี โดยส่ง reasonCancel
-      await AuthService.deleteAccount(
+
+      // เรียก API ยกเลิกบัญชี โดยส่ง email, code, และ reesonCancel
+      await AuthService.cancelAccount(
         email: email,
-        reasonCancel: reasonCancel,
+        code: code,
+        reesonCancel: reasonCancel,
+        password: password,
       );
 
       // 3. ปิดหน้าต่าง Loading
@@ -325,15 +342,16 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       // 4. แสดงข้อความสำเร็จ
       DialogService.showSuccess(
         context,
-        title: "ลบบัญชีสำเร็จแล้ว",
-        message: "ระบบกำลังพาท่านกลับสู่หน้าหลัก...",
+        title: "deleteAccountSuccessTitle".tr(),
+        message: "deleteAccountSuccessMessage".tr(),
         onClose: () async {
           // เคลียร์ข้อมูลการเข้าสู่ระบบทั้งหมด
-          await storage.deleteAll();
-          
+          await UserProfileStore.instance.resetAndClear();
+          await LawyerProfileStore.instance.reset();
+
           // ปิด Popup
           Navigator.pop(context);
-          
+
           // พาผู้ใช้กลับหน้าแรก (MenuPage) และล้างประวัติการนำทาง
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -346,12 +364,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     } catch (e) {
       // ปิดหน้าต่าง Loading
       Navigator.pop(context);
-      
+
       // แสดงข้อความผิดพลาด
       DialogService.showError(
         context,
-        title: "เกิดข้อผิดพลาด",
-        message: "ไม่สามารถลบบัญชีได้ กรุณาลองใหม่อีกครั้ง",
+        title: "deleteAccountErrorTitle".tr(),
+        message: "deleteAccountErrorMessage".tr(),
       );
     }
   }

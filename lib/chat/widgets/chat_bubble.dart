@@ -37,24 +37,19 @@ class ChatBubble extends StatelessWidget {
           // ── Bubble ──────────────────────────────────────
           Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.7,
             ),
             decoration: BoxDecoration(
-              color: isMe
-                  ? const Color(0xFF0262EC)
-                  : Colors.white,
+              color: isMe ? const Color(0xFF0262EC) : Colors.white,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
-                bottomLeft: isMe
-                    ? const Radius.circular(18)
-                    : const Radius.circular(4),
-                bottomRight: isMe
-                    ? const Radius.circular(4)
-                    : const Radius.circular(18),
+                bottomLeft:
+                    isMe ? const Radius.circular(18) : const Radius.circular(4),
+                bottomRight:
+                    isMe ? const Radius.circular(4) : const Radius.circular(18),
               ),
               boxShadow: [
                 BoxShadow(

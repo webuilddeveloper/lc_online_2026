@@ -7,10 +7,12 @@ class LawyerAppointmentHistoryPage extends StatefulWidget {
   const LawyerAppointmentHistoryPage({super.key});
 
   @override
-  State<LawyerAppointmentHistoryPage> createState() => _LawyerAppointmentHistoryState();
+  State<LawyerAppointmentHistoryPage> createState() =>
+      _LawyerAppointmentHistoryState();
 }
 
-class _LawyerAppointmentHistoryState extends State<LawyerAppointmentHistoryPage> {
+class _LawyerAppointmentHistoryState
+    extends State<LawyerAppointmentHistoryPage> {
   List<dynamic> lawyerOnlineList = [
     {
       "code": "0",
@@ -97,12 +99,10 @@ class _LawyerAppointmentHistoryState extends State<LawyerAppointmentHistoryPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// HEADER
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   /// Avatar
                   ClipRRect(
                     borderRadius: BorderRadius.circular(100),
@@ -121,13 +121,11 @@ class _LawyerAppointmentHistoryState extends State<LawyerAppointmentHistoryPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         Text(
                           model['name'],
                           style: const TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w600),
                         ),
-
                         Text(
                           model['caseType'],
                           style: const TextStyle(
@@ -135,9 +133,7 @@ class _LawyerAppointmentHistoryState extends State<LawyerAppointmentHistoryPage>
                             color: Color.fromARGB(255, 109, 109, 111),
                           ),
                         ),
-
                         const SizedBox(height: 3),
-
                         Text(
                           "${model['appointmentDate']}  ${model['appointmentTime']}",
                           style: const TextStyle(
@@ -181,8 +177,8 @@ class _LawyerAppointmentHistoryState extends State<LawyerAppointmentHistoryPage>
               /// TITLE
               Text(
                 model['title'],
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
