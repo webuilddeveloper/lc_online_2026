@@ -31,7 +31,8 @@ class LawyerJobsStore extends ChangeNotifier {
     'skills': ['อาญาและอาชญากรรม', 'ครอบครัวและมรดก'],
   };
 
-  final List<Map<String, dynamic>> jobs = [
+  // jobSource: 'urgent' = ลูกความส่งตรง (เคสด่วน), 'booking' = จองล่วงหน้า
+  static final List<Map<String, dynamic>> mockSeedJobs = [
     {
       'id': 'REQ-2026-001',
       'clientCode': mockSeedClientCode,
@@ -48,7 +49,7 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': '10:00 - 11:00',
       'status': 'pending',
       'requestedAt': '2 ชั่วโมงที่แล้ว',
-      'type': 'video',
+      'jobSource': 'urgent',
       'budget': 'ฟรี',
     },
     {
@@ -67,7 +68,7 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': '14:00 - 15:00',
       'status': 'pending',
       'requestedAt': '5 ชั่วโมงที่แล้ว',
-      'type': 'video',
+      'jobSource': 'urgent',
       'budget': '500 บาท',
     },
     {
@@ -86,7 +87,7 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': '09:00 - 10:00',
       'status': 'accepted',
       'requestedAt': '1 วันที่แล้ว',
-      'type': 'video',
+      'jobSource': 'urgent',
       'budget': '1,000 บาท',
     },
     {
@@ -105,7 +106,7 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': '11:00 - 12:00',
       'status': 'done',
       'requestedAt': '2 สัปดาห์ที่แล้ว',
-      'type': 'video',
+      'jobSource': 'urgent',
       'budget': '800 บาท',
     },
     {
@@ -124,10 +125,18 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': '',
       'status': 'rejected',
       'requestedAt': '3 วันที่แล้ว',
-      'type': 'video',
+      'jobSource': 'urgent',
       'budget': 'ฟรี',
     },
   ];
+
+  final List<Map<String, dynamic>> jobs = [];
+
+  void loadMockSeedJobsForDev() {
+    if (jobs.isNotEmpty) return;
+    jobs.addAll(mockSeedJobs.map((job) => Map<String, dynamic>.from(job)));
+    notifyListeners();
+  }
 
   // อัปเดต status — notifyListeners() ทำให้ทุก ListenableBuilder rebuild อัตโนมัติ
   Map<String, dynamic> createFromBooking({
@@ -146,11 +155,16 @@ class LawyerJobsStore extends ChangeNotifier {
     final lawyerCode =
         normalizedLawyer['code']?.toString().trim().isNotEmpty == true
             ? normalizedLawyer['code'].toString()
-            : mockSeedLawyerCode;
+            : '';
+    if (lawyerCode.isEmpty) {
+      throw ArgumentError('Selected lawyer is missing code');
+    }
     normalizedLawyer['code'] = lawyerCode;
 
-    final safeClientCode =
-        clientCode.trim().isNotEmpty ? clientCode.trim() : mockSeedClientCode;
+    final safeClientCode = clientCode.trim();
+    if (safeClientCode.isEmpty) {
+      throw ArgumentError('Logged-in user is missing code');
+    }
     final safeBookingCode = bookingCode?.trim().isNotEmpty == true
         ? bookingCode!.trim()
         : DateTime.now().millisecondsSinceEpoch.toString();
@@ -183,7 +197,64 @@ class LawyerJobsStore extends ChangeNotifier {
       'time': appointmentTime,
       'status': 'pending',
       'requestedAt': 'เมื่อสักครู่',
-      'type': 'video',
+      'jobSource': 'booking',
+      'budget': safeBudget,
+    };
+
+    jobs.insert(0, job);
+    notifyListeners();
+    return job;
+  }
+
+  Map<String, dynamic> createFromUrgent({
+    required Map<String, dynamic> lawyerModel,
+    required String topic,
+    required String subTopic,
+    required String detail,
+    required String clientCode,
+    String? clientName,
+    String? budget,
+  }) {
+    final normalizedLawyer = Map<String, dynamic>.from(lawyerModel);
+    final lawyerCode =
+        normalizedLawyer['code']?.toString().trim().isNotEmpty == true
+            ? normalizedLawyer['code'].toString()
+            : '';
+    if (lawyerCode.isEmpty) {
+      throw ArgumentError('Selected lawyer is missing code');
+    }
+    normalizedLawyer['code'] = lawyerCode;
+
+    final safeClientCode = clientCode.trim();
+    if (safeClientCode.isEmpty) {
+      throw ArgumentError('Logged-in user is missing code');
+    }
+    final safeClientName = clientName?.trim().isNotEmpty == true
+        ? clientName!.trim()
+        : 'Client $safeClientCode';
+    final safeBudget = budget?.trim().isNotEmpty == true
+        ? budget!.trim()
+        : (normalizedLawyer['cost']?.toString() ??
+            normalizedLawyer['price']?.toString() ??
+            'Free');
+    final jobId = 'REQ-${DateTime.now().millisecondsSinceEpoch}';
+
+    final job = {
+      'id': jobId,
+      'clientCode': safeClientCode,
+      'lawyerCode': lawyerCode,
+      'lawyerModel': normalizedLawyer,
+      'clientName': safeClientName,
+      'clientAvatar': safeClientName.isNotEmpty ? safeClientName[0] : 'U',
+      'clientColor': 0xFF0262EC,
+      'topic': topic,
+      'subTopic': subTopic,
+      'detail': detail.trim().isNotEmpty ? detail.trim() : subTopic,
+      'date': '',
+      'time': '',
+      'status': 'pending',
+      'requestedAt': 'เน€เธกเธทเนเธญเธชเธฑเธเธเธฃเธนเน',
+      'jobSource': 'urgent',
       'budget': safeBudget,
     };
 
@@ -193,28 +264,15 @@ class LawyerJobsStore extends ChangeNotifier {
   }
 
   List<Map<String, dynamic>> jobsForLawyer(String lawyerCode) {
-    final safeLawyerCode =
-        lawyerCode.trim().isNotEmpty ? lawyerCode.trim() : mockSeedLawyerCode;
-    final matched =
-        jobs.where((job) => job['lawyerCode'] == safeLawyerCode).toList();
-    if (matched.isNotEmpty) return matched;
-
-    // Mock/dev fallback: ให้หน้า lawyer ยังมี seed data ใช้ทดสอบ flow ได้
-    // แม้ login code จาก backend ยังไม่ตรงกับ mock seed ในเครื่องนี้
-    return jobs
-        .where((job) => job['lawyerCode'] == mockSeedLawyerCode)
-        .toList();
+    final safeLawyerCode = lawyerCode.trim();
+    if (safeLawyerCode.isEmpty) return [];
+    return jobs.where((job) => job['lawyerCode'] == safeLawyerCode).toList();
   }
 
   List<Map<String, dynamic>> jobsForClient(String clientCode) {
-    final safeClientCode =
-        clientCode.trim().isNotEmpty ? clientCode.trim() : mockSeedClientCode;
-    final matched =
-        jobs.where((job) => job['clientCode'] == safeClientCode).toList();
-    if (matched.isNotEmpty) return matched;
-    return jobs
-        .where((job) => job['clientCode'] == mockSeedClientCode)
-        .toList();
+    final safeClientCode = clientCode.trim();
+    if (safeClientCode.isEmpty) return [];
+    return jobs.where((job) => job['clientCode'] == safeClientCode).toList();
   }
 
   void updateStatus(String id, String newStatus) {
@@ -230,8 +288,132 @@ class LawyerJobsStore extends ChangeNotifier {
     updateStatus(id, 'accepted');
   }
 
+  // ยืนยันการจอง (booking) — ต่างจาก acceptJob ของ urgent
+  void confirmBooking(String id) {
+    HapticFeedback.mediumImpact();
+    updateStatus(id, 'confirmed');
+  }
+
   void rejectJob(String id) {
     HapticFeedback.lightImpact();
     updateStatus(id, 'rejected');
+  }
+
+  // เริ่ม session เมื่อถึงวันนัด
+  void startSession(String id) {
+    HapticFeedback.mediumImpact();
+    updateStatus(id, 'in_session');
+  }
+
+  // ── Query helpers ────────────────────────────────────────
+
+  // urgent jobs ที่ยังรอหรือกำลัง active (แสดงบน home ทนาย)
+  List<Map<String, dynamic>> urgentJobsForLawyer(String lawyerCode) {
+    return jobsForLawyer(lawyerCode)
+        .where((j) => (j['jobSource'] ?? 'urgent') == 'urgent')
+        .toList();
+  }
+
+  // booking jobs ทั้งหมดของทนาย
+  List<Map<String, dynamic>> bookingJobsForLawyer(String lawyerCode) {
+    return jobsForLawyer(lawyerCode)
+        .where((j) => (j['jobSource'] ?? 'urgent') == 'booking')
+        .toList();
+  }
+
+  // booking ที่ยืนยันแล้วและถึงวันนัดวันนี้ (สำหรับปุ่มเริ่มปรึกษา)
+  List<Map<String, dynamic>> bookingsDueToday(String lawyerCode) {
+    final today = DateTime.now();
+    return bookingJobsForLawyer(lawyerCode).where((j) {
+      if (j['status'] != 'confirmed') return false;
+      final dateStr = j['date']?.toString() ?? '';
+      if (dateStr.isEmpty) return false;
+      // รองรับรูปแบบ dd/MM/yyyy และ dd MMM yyyy (ภาษาไทย)
+      try {
+        final parsed = _parseJobDate(dateStr);
+        return parsed != null &&
+            parsed.year == today.year &&
+            parsed.month == today.month &&
+            parsed.day == today.day;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> bookingAppointmentsForLawyer(String lawyerCode) {
+    return bookingJobsForLawyer(lawyerCode)
+        .where((j) =>
+            j['status'] == 'confirmed' ||
+            j['status'] == 'in_session' ||
+            j['status'] == 'done')
+        .map(bookingJobToAppointment)
+        .toList();
+  }
+
+  static Map<String, dynamic> bookingJobToAppointment(
+      Map<String, dynamic> job) {
+    final parsedTime = _parseTimeWindow(job['time']?.toString() ?? '');
+    final status = job['status']?.toString() ?? 'confirmed';
+    return {
+      'code': job['id']?.toString() ?? '',
+      'jobId': job['id']?.toString() ?? '',
+      'jobSource': 'booking',
+      'jobStatus': status,
+      'clientCode': job['clientCode'] ?? '',
+      'lawyerCode': job['lawyerCode'] ?? '',
+      'lawyerModel': job['lawyerModel'],
+      'clientName': job['clientName'] ?? '',
+      'clientAvatar': job['clientAvatar'] ?? '',
+      'clientColor': job['clientColor'],
+      'caseType': job['topic'] ?? '',
+      'subCaseType': job['subTopic'] ?? '',
+      'appointmentDate': job['date'] ?? '',
+      'appointmentTime': job['time'] ?? '',
+      'startHour': parsedTime.$1,
+      'startMin': parsedTime.$2,
+      'durationMin': parsedTime.$3,
+      'title': job['subTopic'] ?? job['topic'] ?? '',
+      'details': job['detail'] ?? '',
+      'appointmentStatus': status == 'done' ? '3' : '2',
+      'paymentStatus': '1',
+      'colorIndex': 0,
+    };
+  }
+
+  static (int, int, int) _parseTimeWindow(String raw) {
+    final normalized = raw.replaceAll(':', '.').replaceAll('–', '-');
+    final parts = normalized.split('-').map((p) => p.trim()).toList();
+    if (parts.length != 2) return (9, 0, 60);
+
+    (int, int)? parsePoint(String value) {
+      final pieces = value.split('.');
+      if (pieces.length < 2) return null;
+      final hour = int.tryParse(pieces[0]);
+      final minute = int.tryParse(pieces[1]);
+      if (hour == null || minute == null) return null;
+      return (hour, minute);
+    }
+
+    final start = parsePoint(parts[0]);
+    final end = parsePoint(parts[1]);
+    if (start == null || end == null) return (9, 0, 60);
+
+    final startTotal = start.$1 * 60 + start.$2;
+    final endTotal = end.$1 * 60 + end.$2;
+    final duration = endTotal > startTotal ? endTotal - startTotal : 60;
+    return (start.$1, start.$2, duration);
+  }
+
+  // แปลงวันที่จาก job['date'] — รองรับ dd/MM/yyyy เป็นหลัก
+  static DateTime? _parseJobDate(String raw) {
+    // dd/MM/yyyy
+    final slashRe = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$');
+    final m = slashRe.firstMatch(raw.trim());
+    if (m != null) {
+      return DateTime(int.parse(m.group(3)!), int.parse(m.group(2)!),
+          int.parse(m.group(1)!));
+    }
+    return null;
   }
 }

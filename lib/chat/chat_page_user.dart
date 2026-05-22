@@ -31,6 +31,16 @@ class _ChatPageUserState extends State<ChatPageUser>
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
 
+  @override
+  void initState() {
+    super.initState();
+    LawyerJobsStore.instance.addListener(_handleStoreChanged);
+  }
+
+  void _handleStoreChanged() {
+    if (mounted) setState(() {});
+  }
+
   // ── skip auto-pop เมื่อ embeddedMode (อยู่ใน 2-panel แล้ว) ──
   @override
   void didChangeDependencies() {
@@ -143,17 +153,47 @@ class _ChatPageUserState extends State<ChatPageUser>
 
   @override
   void dispose() {
+    LawyerJobsStore.instance.removeListener(_handleStoreChanged);
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  Map<String, dynamic> _currentModel() {
+    final merged = Map<String, dynamic>.from(widget.model);
+    final jobId = merged['jobId']?.toString() ?? merged['id']?.toString() ?? '';
+    if (jobId.isEmpty) return merged;
+
+    Map<String, dynamic>? latestJob;
+    for (final job in LawyerJobsStore.instance.jobs) {
+      if (job['id']?.toString() == jobId) {
+        latestJob = job;
+        break;
+      }
+    }
+    if (latestJob == null) return merged;
+
+    final status = latestJob['status']?.toString() ?? 'pending';
+    final jobSource = (latestJob['jobSource'] ?? 'urgent').toString();
+    merged['jobStatus'] = status;
+    merged['jobSource'] = jobSource;
+    merged['appointmentDate'] = latestJob['date'] ?? merged['appointmentDate'];
+    merged['appointmentTime'] = latestJob['time'] ?? merged['appointmentTime'];
+    merged['active'] = status == 'accepted' || status == 'in_session';
+    merged['chatLocked'] = status == 'confirmed';
+    merged['caseSuccess'] = status == 'done';
+    return merged;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final model = widget.model;
+    final model = _currentModel();
     final isActive = model['active'] as bool? ?? true;
     final caseSuccess = model['caseSuccess'] as bool? ?? false;
+    final chatLocked = model['chatLocked'] as bool? ?? false;
     final imageUrl = model['imageUrl'] as String? ?? '';
+    final appointmentDate = model['appointmentDate'] as String? ?? '';
+    final appointmentTime = model['appointmentTime'] as String? ?? '';
 
     // ── AppBar: ซ่อนเมื่อ embeddedMode (desktop panel มี header ของตัวเอง) ──
     final chatAppBar = widget.embeddedMode
@@ -173,7 +213,7 @@ class _ChatPageUserState extends State<ChatPageUser>
             statusText: caseSuccess
                 ? null
                 : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
-            actions: !caseSuccess
+            actions: !caseSuccess && !chatLocked
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -200,7 +240,8 @@ class _ChatPageUserState extends State<ChatPageUser>
         children: [
           // ── Desktop embedded header (แทน AppBar) ─────────────
           if (widget.embeddedMode)
-            _buildEmbeddedHeader(model, isActive, caseSuccess, imageUrl),
+            _buildEmbeddedHeader(
+                model, isActive, caseSuccess, chatLocked, imageUrl),
           const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
@@ -215,9 +256,12 @@ class _ChatPageUserState extends State<ChatPageUser>
               ),
             ),
           ),
-          caseSuccess
-              ? _buildEndedBanner()
-              : ChatInput(controller: _chatController, onSend: _sendMessage),
+          if (caseSuccess)
+            _buildEndedBanner()
+          else if (chatLocked)
+            _buildLockedBanner(appointmentDate, appointmentTime)
+          else
+            ChatInput(controller: _chatController, onSend: _sendMessage),
         ],
       ),
     );
@@ -225,7 +269,7 @@ class _ChatPageUserState extends State<ChatPageUser>
 
   // ── Header สำหรับ desktop panel (แทน AppBar) ──────────────
   Widget _buildEmbeddedHeader(Map<String, dynamic> model, bool isActive,
-      bool caseSuccess, String imageUrl) {
+      bool caseSuccess, bool chatLocked, String imageUrl) {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -263,7 +307,7 @@ class _ChatPageUserState extends State<ChatPageUser>
             ),
           ),
           const SizedBox(width: 8),
-          if (!caseSuccess) ...[
+          if (!caseSuccess && !chatLocked) ...[
             _iconBtn(
                 icon: Icons.video_call_outlined,
                 onTap: _showReminderBeforeJoin),
@@ -330,6 +374,70 @@ class _ChatPageUserState extends State<ChatPageUser>
                     fontSize: 13,
                     color: Color(0xFF8593A8),
                     fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // banner แสดงเมื่อรอถึงวันนัด (status == confirmed)
+  Widget _buildLockedBanner(String date, String time) {
+    final hasSchedule = date.isNotEmpty || time.isNotEmpty;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+          top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F6FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF0262EC).withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0262EC).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_clock_rounded,
+                  size: 18, color: Color(0xFF0262EC)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'รอถึงวันนัด เพื่อเปิดห้องสนทนา',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0262EC)),
+                  ),
+                  if (hasSchedule) ...
+                    [
+                      const SizedBox(height: 3),
+                      Text(
+                        [
+                          if (date.isNotEmpty) date,
+                          if (time.isNotEmpty) time,
+                        ].join(' • '),
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF5B6E8A)),
+                      ),
+                    ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

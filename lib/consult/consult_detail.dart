@@ -1,6 +1,4 @@
-import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_qr.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,7 +7,19 @@ import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class ConsultDetailPage extends StatefulWidget {
   final Map<String, dynamic> lawyer;
-  const ConsultDetailPage({super.key, required this.lawyer});
+  final String? category;
+  final String? subCategory;
+  final String? detail;
+  final String? budget;
+
+  const ConsultDetailPage({
+    super.key,
+    required this.lawyer,
+    this.category,
+    this.subCategory,
+    this.detail,
+    this.budget,
+  });
 
   @override
   State<ConsultDetailPage> createState() => _ConsultDetailPageState();
@@ -74,15 +84,17 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))
-                    ]
-                  ),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -4))
+                      ]),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(24),
@@ -198,7 +210,8 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.3)),
                         ),
                         child: const Icon(Icons.chevron_left_rounded,
                             color: Colors.white, size: 24),
@@ -223,7 +236,9 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                           shape: BoxShape.circle,
                           border: Border.all(
                             width: 1,
-                            color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                            color: isFavorite
+                                ? Colors.red
+                                : const Color(0xFFDBDBDB),
                           ),
                         ),
                         child: AnimatedSwitcher(
@@ -234,7 +249,9 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
                             isFavorite ? Icons.favorite : Icons.favorite_border,
                             key: ValueKey(isFavorite),
                             size: 18,
-                            color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                            color: isFavorite
+                                ? Colors.red
+                                : const Color(0xFFDBDBDB),
                           ),
                         ),
                       ),
@@ -516,6 +533,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
   //  Contact Card — ปุ่ม phone/video/chat → ChatPageUser (action เดิม)
   // ════════════════════════════════════════════════════════
 
+  // ignore: unused_element
   Widget _buildContactCard(Color color) {
     return _AnimatedCard(
       delay: 0.28,
@@ -656,7 +674,6 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
           Row(
             children: socials.asMap().entries.map((e) {
               final s = e.value;
-              final isLast = e.key == socials.length - 1;
               return Container(
                 margin: EdgeInsets.only(right: 15),
                 width: 50,
@@ -697,6 +714,7 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
     );
   }
 
+  // ignore: unused_element
   Widget _socialTile({required String icon, required VoidCallback onTap}) =>
       Expanded(
         child: GestureDetector(
@@ -741,6 +759,10 @@ class _ConsultDetailPageState extends State<ConsultDetailPage>
               builder: (_) => ConsultQrPage(
                 amount: int.parse('500'),
                 lawyer: widget.lawyer,
+                category: widget.category,
+                subCategory: widget.subCategory,
+                detail: widget.detail,
+                budget: widget.budget,
               ),
             ),
           );

@@ -1,14 +1,43 @@
 import 'package:LawyerOnline/menu.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
+// ── Step helper: แปลง jobStatus → currentStep สำหรับ ConsultStatusPage ────────────
+// เรียกใช้ที่ทุกหน้าที่นำทางไป ConsultStatusPage
+int consultStepFromJobStatus(String jobStatus, {String jobSource = 'urgent'}) {
+  if (jobSource == 'booking') {
+    switch (jobStatus) {
+      case 'pending':
+        return 1; // รอทนายยืนยัน
+      case 'confirmed':
+        return 2; // ยืนยันนัดแล้ว
+      case 'in_session':
+        return 3; // กำลังปรึกษา
+      case 'done':
+        return 4; // เสร็จสิ้น
+      default:
+        return 1;
+    }
+  }
+  // urgent
+  switch (jobStatus) {
+    case 'pending':
+      return 1;
+    case 'accepted':
+      return 3;
+    case 'done':
+      return 4;
+    default:
+      return 1;
+  }
+}
+
 class ConsultStatusPage extends StatefulWidget {
   final int currentStep;
-  final dynamic? lawyer;
+  final dynamic lawyer;
   final String? appointmentDate;
   final String? appointmentTime;
   final bool canOpenChat;
@@ -589,11 +618,11 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
   }
 
   Widget _bottomBar(int currentStep, BuildContext context) {
-    final canUsePrimaryAction = widget.canOpenChat && currentStep >= 3;
+    final canUsePrimaryAction = widget.canOpenChat && currentStep >= 2;
     final String primaryLabel =
-        currentStep == 3 ? 'เข้าสู่ห้องปรึกษา' : 'ให้คะแนนทนายความ';
+        currentStep < 4 ? 'เข้าสู่ห้องปรึกษา' : 'ให้คะแนนทนายความ';
     final IconData primaryIcon =
-        currentStep == 3 ? Icons.video_call_rounded : Icons.star_rate_rounded;
+        currentStep < 4 ? Icons.video_call_rounded : Icons.star_rate_rounded;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -611,7 +640,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
           if (canUsePrimaryAction) ...[
             GestureDetector(
               onTap: () {
-                currentStep == 3
+                currentStep < 4
                     ? Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(

@@ -20,6 +20,8 @@
 //    colorIndex      int      — index สีใน _kEventColors
 // ══════════════════════════════════════════════════════════
 
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+
 class AppointmentStore {
   // Singleton
   AppointmentStore._();
@@ -162,12 +164,34 @@ class AppointmentStore {
   // ─── ดึงเป็น flat list (ใช้ใน home.dart / HomeLawyerSection) ──
   List<Map<String, dynamic>> get list => appointments;
 
+  List<Map<String, dynamic>> listForLawyer(String lawyerCode) {
+    return [
+      ...appointments,
+      ...LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode),
+    ];
+  }
+
   // ─── ดึงเป็น Map<DateTime, List> (ใช้ใน calendar.dart) ──────
   Map<DateTime, List<dynamic>> get eventMap {
     final Map<DateTime, List<dynamic>> result = {};
     for (final appt in appointments) {
       final key = _parseDate(appt['appointmentDate'] as String);
       result.putIfAbsent(key, () => []).add(appt);
+    }
+    return result;
+  }
+
+  Map<DateTime, List<dynamic>> eventMapForLawyer(String lawyerCode) {
+    final Map<DateTime, List<dynamic>> result = {};
+    for (final appt in listForLawyer(lawyerCode)) {
+      final dateStr = appt['appointmentDate'] as String? ?? '';
+      if (dateStr.isEmpty) continue;
+      try {
+        final key = _parseDate(dateStr);
+        result.putIfAbsent(key, () => []).add(appt);
+      } catch (_) {
+        continue;
+      }
     }
     return result;
   }
@@ -180,8 +204,20 @@ class AppointmentStore {
 
   // ─── เช็คว่ามีนัดชนใน windowMinutes ──────────────────────
   bool hasConflictingAppointment({int windowMinutes = 60}) {
+    return _hasConflictingAppointmentIn(appointments,
+        windowMinutes: windowMinutes);
+  }
+
+  bool hasConflictingAppointmentForLawyer(String lawyerCode,
+      {int windowMinutes = 60}) {
+    return _hasConflictingAppointmentIn(listForLawyer(lawyerCode),
+        windowMinutes: windowMinutes);
+  }
+
+  bool _hasConflictingAppointmentIn(List<Map<String, dynamic>> source,
+      {int windowMinutes = 60}) {
     final now = DateTime.now();
-    for (final appt in appointments) {
+    for (final appt in source) {
       final dateStr = appt['appointmentDate'] as String? ?? '';
       final timeStr = appt['appointmentTime'] as String? ?? '';
       if (dateStr.isEmpty || timeStr.isEmpty) continue;
@@ -194,8 +230,8 @@ class AppointmentStore {
       final timeParts = timeStr.split(' - ');
       if (timeParts.length != 2) continue;
 
-      final startParts = timeParts[0].split('.');
-      final endParts = timeParts[1].split('.');
+      final startParts = timeParts[0].replaceAll(':', '.').split('.');
+      final endParts = timeParts[1].replaceAll(':', '.').split('.');
 
       final startTime = DateTime(date.year, date.month, date.day,
           int.parse(startParts[0]), int.parse(startParts[1]));

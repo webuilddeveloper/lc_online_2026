@@ -278,40 +278,40 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
       'imageUrl': lawyerModel['imageUrl'] ?? '',
       'appointmentDate': model['appointmentDate'],
       'appointmentTime': model['appointmentTime'],
-      'active': model['jobStatus'] == 'accepted',
+      'active': model['jobStatus'] == 'accepted' ||
+          model['jobStatus'] == 'in_session',
       'caseSuccess': model['jobStatus'] == 'done',
+      'chatLocked': model['jobStatus'] == 'confirmed',
+      'jobStatus': model['jobStatus'],
+      'jobSource': model['jobSource'],
     };
   }
 
   void _openCaseDetail(Map model) {
     final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+    if (jobStatus == 'rejected') {
+      _showRejectedCase(model);
+      return;
+    }
+    final jobSource = model['jobSource']?.toString() ?? 'urgent';
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ConsultStatusPage(
-          currentStep: _statusToStep(model['status']?.toString() ?? '1'),
+          currentStep:
+              consultStepFromJobStatus(jobStatus, jobSource: jobSource),
           lawyer: _lawyerForConsult(model['lawyerModel'] as Map?, model),
           appointmentDate: model['appointmentDate'],
           appointmentTime: model['appointmentTime'],
-          canOpenChat: jobStatus == 'accepted' || jobStatus == 'done',
+          canOpenChat: jobStatus == 'accepted' ||
+              jobStatus == 'confirmed' ||
+              jobStatus == 'in_session' ||
+              jobStatus == 'done',
           caseModel: Map<String, dynamic>.from(model),
         ),
       ),
     );
-  }
-
-  int _statusToStep(String status) {
-    switch (status) {
-      case '1':
-        return 1;
-      case '2':
-        return 2;
-      case '4':
-        return 4;
-      default:
-        return 3;
-    }
   }
 
   void _showRejectedCase(Map model) {
