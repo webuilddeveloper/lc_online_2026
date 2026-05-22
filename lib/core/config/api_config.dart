@@ -12,5 +12,5 @@ class ApiConfig {
   static const electionLcBaseUrl = 'http://122.155.223.63/td-election-lc-api/';
 
   // TODO: Replace this with the team's stable auth API host when ready.
-  static const authBaseUrl = 'https://b7d2-125-25-100-59.ngrok-free.app';
+  static const authBaseUrl = 'https://bf5c-180-180-58-183.ngrok-free.app';
 }
