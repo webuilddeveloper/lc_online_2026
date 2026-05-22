@@ -2,6 +2,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class NotificationSettingPage extends StatefulWidget {
   const NotificationSettingPage({Key? key}) : super(key: key);
@@ -118,9 +119,10 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         backAction: () => goBack(),
         isRightWidget: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: AppLayout(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           children: [
             buildSwitchTile(
               title: "enableNotification".tr(),
@@ -222,6 +224,7 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

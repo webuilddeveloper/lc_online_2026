@@ -7,6 +7,7 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key});
@@ -50,8 +51,9 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         isRightWidget: false,
       ),
       extendBodyBehindAppBar: true,
-      body: SafeArea(
-        child: Column(
+      body: AppLayout(
+        child: SafeArea(
+          child: Column(
           children: [
             Expanded(
               child: ListView(
@@ -312,6 +314,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -328,11 +331,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
             : reasons[selectedReason!];
       }
 
-      // เรียก API ยกเลิกบัญชี โดยส่ง email, code, และ reesonCancel
+      // เรียก API ยกเลิกบัญชี โดยส่ง email, code, และ reasonCancel
       await AuthService.cancelAccount(
         email: email,
         code: code,
-        reesonCancel: reasonCancel,
+        reasonCancel: reasonCancel,
         password: password,
       );
 

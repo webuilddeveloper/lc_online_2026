@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/booking/schedule-page.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -68,109 +69,111 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
     // ✅ ทำ AppBar โปร่งใส + icon สีขาว ให้กลืนกับ Hero gradient
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F6FF),
-      // ✅ extendBodyBehindAppBar = true ทำให้ body ขึ้นมาอยู่หลัง AppBar
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Center(
-          child: Text(
-            "รายละเอียดทนายความ",
-            style: const TextStyle(fontSize: 16, color: Colors.white),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context, false),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(15, 8, 0, 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+    return AppLayout(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF2F6FF),
+        // ✅ extendBodyBehindAppBar = true ทำให้ body ขึ้นมาอยู่หลัง AppBar
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          title: Center(
+            child: Text(
+              "รายละเอียดทนายความ",
+              style: const TextStyle(fontSize: 16, color: Colors.white),
             ),
-            child: const Icon(Icons.chevron_left_rounded,
-                color: Colors.white, size: 24),
           ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(0, 8, 15, 8),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                setState(() => isFavorite = !isFavorite);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  // color: isFavorite
-                  //     ? const Color(0xFFFFF0F0)
-                  //     : const Color(0xFFFAFAFA),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    width: 1,
-                    color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
-                  ),
-                ),
-                child: AnimatedSwitcher(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: GestureDetector(
+            onTap: () => Navigator.pop(context, false),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(15, 8, 0, 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
+              ),
+              child: const Icon(Icons.chevron_left_rounded,
+                  color: Colors.white, size: 24),
+            ),
+          ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.fromLTRB(0, 8, 15, 8),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => isFavorite = !isFavorite);
+                },
+                child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, animation) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: child,
-                    );
-                  },
-                  child: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    key: ValueKey(isFavorite),
-                    size: 18,
-                    color: isFavorite ? Colors.red : Color(0xFFDBDBDB),
+                  curve: Curves.easeOut,
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    // color: isFavorite
+                    //     ? const Color(0xFFFFF0F0)
+                    //     : const Color(0xFFFAFAFA),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      width: 1,
+                      color: isFavorite ? Colors.red : const Color(0xFFDBDBDB),
+                    ),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) {
+                      return ScaleTransition(
+                        scale: animation,
+                        child: child,
+                      );
+                    },
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      key: ValueKey(isFavorite),
+                      size: 18,
+                      color: isFavorite ? Colors.red : Color(0xFFDBDBDB),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                // Hero Header (ไม่ scroll)
-                _buildHeroHeader(lawyerColor),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  // Hero Header (ไม่ scroll)
+                  _buildHeroHeader(lawyerColor),
 
-                // ✅ Expanded ครอบ ScrollView เพื่อให้มี height ที่แน่นอน
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                      child: Column(
-                        children: [
-                          _buildStatsRow(),
-                          const SizedBox(height: 14),
-                          _buildSpecialtyCard(lawyerColor),
-                          const SizedBox(height: 14),
-                          _buildSocialCard(lawyerColor),
-                        ],
+                  // ✅ Expanded ครอบ ScrollView เพื่อให้มี height ที่แน่นอน
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                        child: Column(
+                          children: [
+                            _buildStatsRow(),
+                            const SizedBox(height: 14),
+                            _buildSpecialtyCard(lawyerColor),
+                            const SizedBox(height: 14),
+                            _buildSocialCard(lawyerColor),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          _buildBookingButton(lawyerColor),
-        ],
+            _buildBookingButton(lawyerColor),
+          ],
+        ),
       ),
     );
   }
