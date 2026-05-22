@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -187,27 +188,14 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _showSuccess() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF1D9E75)),
-            SizedBox(width: 8),
-            Text('สมัครสมาชิกแล้ว'),
-          ],
-        ),
-        content: const Text('บัญชีของคุณถูกสร้างเรียบร้อยแล้ว'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('เริ่มต้นใช้งาน', style: TextStyle(color: _blue)),
-          ),
-        ],
-      ),
+    // ignore: void_checks
+    return DialogService.showSuccess(
+      context,
+      title: "สมัครสมาชิกสำเร็จ",
+      message: "ท่านสมารถเข้าสู่ระบบได้แล้ว",
+      onClose: () {
+        Navigator.pop(context);
+      },
     );
   }
 

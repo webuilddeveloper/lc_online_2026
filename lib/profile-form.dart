@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -62,16 +63,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     return phone.length >= 9;
   }
 
-  Future pickImage() async {
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        profileImage = File(image.path);
-      });
-    }
-  }
-
   callRead() async {
     var userType = await storage.read(key: 'userType');
     var imageProfile = await storage.read(key: 'imageUrlSocial');
@@ -120,19 +111,19 @@ class _ProfileFormPageState extends State<ProfileFormPage>
               children: [
                 /// Profile Image
                 GestureDetector(
-                  onTap: pickImage,
+                  onTap:() => _showPickerImage(context),
                   child: Stack(
                     alignment: Alignment.bottomRight,
                     children: [
                       CircleAvatar(
                         radius: 45,
                         backgroundColor: const Color(0xFF0262EC),
-                        backgroundImage:
-                            (typeLogin == 'local' && profileImage == null)
-                                ? AssetImage(imageUrl)
-                                : profileImage != null
-                                    ? FileImage(profileImage!)
-                                    : NetworkImage(imageUrl),
+                        backgroundImage: NetworkImage(imageUrl),
+                            // (typeLogin == 'local' && profileImage == null)
+                            //     ? AssetImage(imageUrl)
+                            //     : profileImage != null
+                            //         ? FileImage(profileImage!)
+                            //         : NetworkImage(imageUrl),
                         child: imageUrl != ''
                             ? null
                             : profileImage == null
@@ -363,6 +354,93 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         );
       },
     );
+  }
+
+  void _showPickerImage(context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Container(
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text(
+                      'อัลบั้มรูปภาพ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Kanit',
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () {
+                      _imgFromGallery();
+                      Navigator.of(context).pop();
+                    }),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text(
+                    'กล้องถ่ายรูป',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Kanit',
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  onTap: () {
+                    _imgFromCamera();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Future pickImage() async {
+  //   final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  //   final imagePath = await uploadImageX(image!);
+
+  //   if (imagePath != null) {
+  //     setState(() async {
+  //       // profileImage = File(image.path);
+  //       imageUrl = imagePath;
+  //       print('============== ${imagePath}');
+  //     });
+  //   }
+  // }
+
+  _imgFromCamera() async {
+    // final ImagePicker picker = ImagePicker();
+    // Pick an image
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+    final imagePath = await uploadImageX(image!);
+
+    if (imagePath != null) {
+      setState(() async {
+        // profileImage = File(image.path);
+        imageUrl = imagePath;
+        print('============== ${imagePath}');
+      });
+    }
+  }
+
+  _imgFromGallery() async {
+    // Pick an image
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final imagePath = await uploadImageX(image!);
+
+    if (imagePath != null) {
+      setState(() async {
+        // profileImage = File(image.path);
+        imageUrl = imagePath;
+        print('============== ${imagePath}');
+      });
+    }
   }
 
   void goBack() {
