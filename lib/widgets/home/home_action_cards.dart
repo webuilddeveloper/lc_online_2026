@@ -491,7 +491,7 @@ Widget _actionCard({
         borderRadius: BorderRadius.circular(18),
         splashColor: Colors.white.withOpacity(0.15),
         highlightColor: Colors.white.withOpacity(0.08),
-        child: Ink(
+        child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: gradientColors,

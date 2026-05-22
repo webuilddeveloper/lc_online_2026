@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'dart:io';
