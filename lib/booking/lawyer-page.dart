@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/repositories/province_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -17,8 +18,11 @@ class LawyerPage extends StatefulWidget {
 }
 
 class _LawyerPageState extends State<LawyerPage> {
+  final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
   final ProvinceRepository _provinceRepository = const ApiProvinceRepository();
   int? _selectedIdx;
+  bool _isLoadingLawyers = false;
+  String? _lawyerLoadError;
   bool _isLoadingProvinces = false;
   String? _provinceLoadError;
 
@@ -28,7 +32,7 @@ class _LawyerPageState extends State<LawyerPage> {
   String _searchText = '';
   String _selectedProvince = 'ทั้งหมด'; // ← NEW
   static const _kPrimary = Color(0xFF0262EC);
-  final List<dynamic> _lawyers = [
+  List<dynamic> _lawyers = [
     {
       'code': '20260513101915-561-752',
       'name': 'ศักดิ์สิทธิ์ พิพากษ์',
@@ -250,9 +254,41 @@ class _LawyerPageState extends State<LawyerPage> {
     }
   }
 
+  Future<void> _loadLawyers() async {
+    setState(() {
+      _isLoadingLawyers = true;
+      _lawyerLoadError = null;
+      _lawyers = [];
+      _selectedIdx = null;
+    });
+
+    try {
+      final lawyers = await _lawyerRepository.searchLawyers(
+        topic: widget.topic,
+        subTopic: widget.subTopic,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLawyers = false;
+        _lawyers = lawyers.map((lawyer) => lawyer.toLegacyMap()).toList();
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLawyers = false;
+        _lawyerLoadError = 'Cannot load lawyer accounts';
+        _lawyers = [];
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _lawyers = [];
+    _loadLawyers();
     _callReadProvince();
   }
 
@@ -292,165 +328,185 @@ class _LawyerPageState extends State<LawyerPage> {
               ]),
             ),
             Expanded(
-              child: filtered.isEmpty
-                  ? _buildEmpty()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) {
-                        final l = filtered[i];
-                        final originalIdx = _lawyers.indexOf(l);
-                        final isSelected = _selectedIdx == originalIdx;
-                        final available = l['available'] as bool;
+              child: _isLoadingLawyers
+                  ? _buildLawyerLoading()
+                  : _lawyerLoadError != null
+                      ? _buildLawyerError()
+                      : filtered.isEmpty
+                          ? _buildEmpty()
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filtered.length,
+                              itemBuilder: (_, i) {
+                                final l = filtered[i];
+                                final originalIdx = _lawyers.indexOf(l);
+                                final isSelected = _selectedIdx == originalIdx;
+                                final available = l['available'] as bool;
 
-                        return GestureDetector(
-                          onTap: available
-                              ? () {
-                                  setState(() => _selectedIdx = originalIdx);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => LawyerDetailPage(
-                                        lawyer: l,
-                                        topic: widget.topic,
-                                        subTopic: widget.subTopic,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF0262EC)
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Opacity(
-                              opacity: available ? 1.0 : 0.5,
-                              child: Column(
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Avatar
-                                      (l['imageUrl'] ?? '') != ''
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                              child: Image.asset(
-                                                l['imageUrl'],
-                                                width: 55,
-                                                height: 55,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            )
-                                          : CircleAvatar(
-                                              radius: 30,
-                                              backgroundColor:
-                                                  Color(l['color'] as int)
-                                                      .withOpacity(0.15),
-                                              child: Text(
-                                                l['avatar'] as String,
-                                                style: TextStyle(
-                                                  color:
-                                                      Color(l['color'] as int),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 24,
-                                                ),
+                                return GestureDetector(
+                                  onTap: available
+                                      ? () {
+                                          setState(
+                                              () => _selectedIdx = originalIdx);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => LawyerDetailPage(
+                                                lawyer: l,
+                                                topic: widget.topic,
+                                                subTopic: widget.subTopic,
                                               ),
                                             ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(children: [
+                                          );
+                                        }
+                                      : null,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFF0262EC)
+                                            : Colors.transparent,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Opacity(
+                                      opacity: available ? 1.0 : 0.5,
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // Avatar
+                                              (l['imageUrl'] ?? '') != ''
+                                                  ? ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              30),
+                                                      child: Image.asset(
+                                                        l['imageUrl'],
+                                                        width: 55,
+                                                        height: 55,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    )
+                                                  : CircleAvatar(
+                                                      radius: 30,
+                                                      backgroundColor: Color(
+                                                              l['color'] as int)
+                                                          .withOpacity(0.15),
+                                                      child: Text(
+                                                        l['avatar'] as String,
+                                                        style: TextStyle(
+                                                          color: Color(
+                                                              l['color']
+                                                                  as int),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 24,
+                                                        ),
+                                                      ),
+                                                    ),
+                                              const SizedBox(width: 12),
                                               Expanded(
-                                                child: Text(
-                                                  l['name'] as String,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 15,
-                                                    color: Color(0xFF1A2340),
-                                                  ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          l['name'] as String,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            fontSize: 15,
+                                                            color: Color(
+                                                                0xFF1A2340),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      _badge(available),
+                                                    ]),
+                                                    const SizedBox(height: 2),
+                                                    Text(l['title'] as String,
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .grey[400],
+                                                            fontSize: 12)),
+                                                    const SizedBox(height: 4),
+                                                    Row(children: [
+                                                      const Icon(
+                                                          Icons.star_rounded,
+                                                          color:
+                                                              Color(0xFFFFC107),
+                                                          size: 14),
+                                                      const SizedBox(width: 2),
+                                                      Text('${l['rating']}',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  fontSize:
+                                                                      12)),
+                                                      Text(
+                                                          ' (${l['reviews']} รีวิว)',
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .grey[400],
+                                                              fontSize: 12)),
+                                                    ]),
+                                                  ],
                                                 ),
                                               ),
-                                              _badge(available),
-                                            ]),
-                                            const SizedBox(height: 2),
-                                            Text(l['title'] as String,
-                                                style: TextStyle(
-                                                    color: Colors.grey[400],
-                                                    fontSize: 12)),
-                                            const SizedBox(height: 4),
-                                            Row(children: [
-                                              const Icon(Icons.star_rounded,
-                                                  color: Color(0xFFFFC107),
-                                                  size: 14),
-                                              const SizedBox(width: 2),
-                                              Text('${l['rating']}',
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 12)),
-                                              Text(' (${l['reviews']} รีวิว)',
-                                                  style: TextStyle(
-                                                      color: Colors.grey[400],
-                                                      fontSize: 12)),
-                                            ]),
-                                          ],
-                                        ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Divider(
+                                              height: 1,
+                                              color: Color(0xFFEEF2F5)),
+                                          const SizedBox(height: 10),
+                                          Row(children: [
+                                            _chip(Icons.gavel_outlined,
+                                                l['specialty'] as String),
+                                            const SizedBox(width: 8),
+                                            _chip(Icons.history_outlined,
+                                                l['experience'] as String),
+                                          ]),
+                                          const SizedBox(height: 8),
+                                          Row(children: [
+                                            // ── Province chip ← NEW ──────────────
+                                            _chip(
+                                              Icons.location_city_outlined,
+                                              l['province'] as String,
+                                              highlight: _selectedProvince ==
+                                                  l['province'],
+                                            ),
+                                            const SizedBox(width: 8),
+                                            _chip(Icons.location_on_outlined,
+                                                l['distance'] as String),
+                                          ]),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Divider(
-                                      height: 1, color: Color(0xFFEEF2F5)),
-                                  const SizedBox(height: 10),
-                                  Row(children: [
-                                    _chip(Icons.gavel_outlined,
-                                        l['specialty'] as String),
-                                    const SizedBox(width: 8),
-                                    _chip(Icons.history_outlined,
-                                        l['experience'] as String),
-                                  ]),
-                                  const SizedBox(height: 8),
-                                  Row(children: [
-                                    // ── Province chip ← NEW ──────────────
-                                    _chip(
-                                      Icons.location_city_outlined,
-                                      l['province'] as String,
-                                      highlight:
-                                          _selectedProvince == l['province'],
                                     ),
-                                    const SizedBox(width: 8),
-                                    _chip(Icons.location_on_outlined,
-                                        l['distance'] as String),
-                                  ]),
-                                ],
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ],
         ),
@@ -663,6 +719,46 @@ class _LawyerPageState extends State<LawyerPage> {
                 size: 13, color: Color(0xFF0262EC)),
           ),
         ]),
+      );
+
+  Widget _buildLawyerLoading() => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0262EC)),
+        ),
+      );
+
+  Widget _buildLawyerError() => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFEBEE),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFC62828), size: 30),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _lawyerLoadError ?? 'Cannot load lawyer accounts',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: _loadLawyers,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Retry'),
+            ),
+          ]),
+        ),
       );
 
   Widget _buildEmpty() => Center(

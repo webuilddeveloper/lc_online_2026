@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_map.dart';
-import 'package:LawyerOnline/consult/consult_qr.dart';
 
 import 'package:flutter/material.dart';
 
@@ -416,9 +415,12 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                   context,
                   MaterialPageRoute(
                     // builder: (_) => ConsultQrPage(amount: _total),
-                    builder: (_) =>
-                        // ConsultQrPage(amount: int.parse(widget.wage)),
-                        ConsultMapPage(),
+                    builder: (_) => ConsultMapPage(
+                      category: widget.category,
+                      subCategory: widget.subCategory,
+                      detail: widget.detail,
+                      budget: widget.wage,
+                    ),
                   ),
                 );
               },

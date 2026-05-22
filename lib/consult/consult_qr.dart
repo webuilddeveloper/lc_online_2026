@@ -1,14 +1,28 @@
 import 'package:LawyerOnline/component/appbar.dart';
-import 'package:LawyerOnline/consult/consult_map.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user/user_case_adapter.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class ConsultQrPage extends StatelessWidget {
   final int amount;
   final dynamic lawyer;
+  final String? category;
+  final String? subCategory;
+  final String? detail;
+  final String? budget;
 
-  const ConsultQrPage({super.key, required this.amount, required this.lawyer});
+  const ConsultQrPage({
+    super.key,
+    required this.amount,
+    required this.lawyer,
+    this.category,
+    this.subCategory,
+    this.detail,
+    this.budget,
+  });
 
   String _generatePromptPayPayload(int amount) {
     final amountStr = amount.toDouble().toStringAsFixed(2);
@@ -20,6 +34,55 @@ class ConsultQrPage extends StatelessWidget {
   String _formatAmount(int amount) => amount
       .toString()
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+
+  Map<String, dynamic> _createUrgentJob() {
+    final lawyerMap = Map<String, dynamic>.from((lawyer as Map?) ?? {});
+    final profile = UserProfileStore.instance;
+    final clientCode = profile.code.trim();
+    final lawyerCode = lawyerMap['code']?.toString().trim() ?? '';
+
+    if (!profile.isLoggedIn || clientCode.isEmpty) {
+      throw ArgumentError(
+          'ไม่พบข้อมูลบัญชีผู้ใช้ กรุณาเข้าสู่ระบบใหม่ก่อนเปิดเคส');
+    }
+    if (lawyerCode.isEmpty) {
+      throw ArgumentError('ไม่พบรหัสบัญชีทนายความ กรุณาเลือกทนายความใหม่');
+    }
+
+    final topic = category?.trim().isNotEmpty == true
+        ? category!.trim()
+        : (lawyerMap['specialty']?.toString() ?? '');
+    final subTopic = subCategory?.trim().isNotEmpty == true
+        ? subCategory!.trim()
+        : (lawyerMap['title']?.toString() ?? topic);
+
+    return LawyerJobsStore.instance.createFromUrgent(
+      lawyerModel: lawyerMap,
+      topic: topic.isNotEmpty ? topic : 'เธ—เธฑเนเธงเนเธ',
+      subTopic:
+          subTopic.isNotEmpty ? subTopic : 'เธเธฃเธถเธเธฉเธฒเธ”เนเธงเธ',
+      detail: detail?.trim().isNotEmpty == true ? detail!.trim() : subTopic,
+      clientCode: clientCode,
+      clientName: profile.name.trim().isNotEmpty ? profile.name.trim() : null,
+      budget: budget?.trim().isNotEmpty == true
+          ? budget!.trim()
+          : '${amount.toString()} เธเธฒเธ—',
+    );
+  }
+
+  void _showCreateError(BuildContext context, Object error) {
+    final message = error is ArgumentError
+        ? error.message?.toString() ?? error.toString()
+        : error.toString();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,13 +297,53 @@ class ConsultQrPage extends StatelessWidget {
                 );
 
                 Future.delayed(const Duration(seconds: 2), () {
-                  Navigator.pop(context); // ปิด dialog
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ConsultStatusPage(lawyer: lawyer),
-                    ),
-                  );
+                  if (!context.mounted) return;
+
+                  try {
+                    final job = _createUrgentJob();
+                    final caseModel = UserCaseAdapter.fromJob(job);
+                    final lawyerModel = Map<String, dynamic>.from(
+                        (job['lawyerModel'] as Map?) ?? const {});
+                    final lawyerForConsult = {
+                      'id': job['id'],
+                      'jobId': job['id'],
+                      'code': lawyerModel['code'],
+                      'name': lawyerModel['name'] ?? '',
+                      'avatar': (lawyerModel['name'] as String? ?? 'ท')
+                          .characters
+                          .first,
+                      'title':
+                          (lawyerModel['skills'] as List?)?.isNotEmpty == true
+                              ? (lawyerModel['skills'] as List).first
+                              : lawyerModel['title'] ??
+                                  lawyerModel['experience'] ??
+                                  '',
+                      'rating':
+                          lawyerModel['scroll'] ?? lawyerModel['rating'] ?? 0,
+                      'imageUrl': lawyerModel['imageUrl'] ?? '',
+                      'active': false,
+                      'caseSuccess': false,
+                      'chatLocked': false,
+                      'jobStatus': job['status'],
+                      'jobSource': job['jobSource'],
+                    };
+
+                    Navigator.pop(context); // ปิด dialog
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ConsultStatusPage(
+                          currentStep: 1,
+                          lawyer: lawyerForConsult,
+                          canOpenChat: false,
+                          caseModel: caseModel,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    Navigator.pop(context); // เธเธดเธ” dialog
+                    _showCreateError(context, e);
+                  }
                   // Navigator.push(
                   //   context,
                   //   MaterialPageRoute(

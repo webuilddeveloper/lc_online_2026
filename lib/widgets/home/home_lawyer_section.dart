@@ -4,6 +4,8 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
@@ -11,9 +13,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 const _kPrimary = Color(0xFF0262EC);
 const _kAccent = Color(0xFF2F80ED);
-const _kCard = Colors.white;
 const _kText = Color(0xFF0D1B2A);
-const _kSub = Color(0xFF6B7A99);
 
 // ─── Lawyer Dashboard ─────────────────────────────────────────────
 // Mobile  → Column (เดิม ไม่เปลี่ยน)
@@ -21,32 +21,54 @@ const _kSub = Color(0xFF6B7A99);
 class HomeLawyerSection extends StatelessWidget {
   final List<dynamic> appointments;
   final List<dynamic> jobRequests;
+  final bool isLoadingAppointments;
+  final String? appointmentLoadError;
   final void Function(String id, String newStatus)? onJobStatusChanged;
 
   const HomeLawyerSection({
     super.key,
     required this.appointments,
     required this.jobRequests,
+    this.isLoadingAppointments = false,
+    this.appointmentLoadError,
     this.onJobStatusChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final activeJobs = [
-      ...jobRequests.where((j) => j['status'] == 'accepted'),
-      ...jobRequests.where((j) => j['status'] == 'pending'),
+    // urgent jobs เท่านั้นที่แสดงใน section "เคสด่วน"
+    final activeUrgentJobs = [
+      ...jobRequests.where((j) =>
+          (j['jobSource'] ?? 'urgent') == 'urgent' &&
+          j['status'] == 'accepted'),
+      ...jobRequests.where((j) =>
+          (j['jobSource'] ?? 'urgent') == 'urgent' && j['status'] == 'pending'),
     ];
+    // booking jobs ที่รอยืนยัน
+    final pendingBookings = jobRequests
+        .where((j) =>
+            (j['jobSource'] ?? 'urgent') == 'booking' &&
+            j['status'] == 'pending')
+        .toList();
+    final dueBookings = LawyerJobsStore.instance
+        .bookingsDueToday(UserProfileStore.instance.code);
 
     if (ResponsiveLayout.isDesktop(context)) {
-      return _buildDesktopLayout(context, activeJobs);
+      return _buildDesktopLayout(
+          context, activeUrgentJobs, pendingBookings, dueBookings);
     }
-    return _buildMobileLayout(context, activeJobs);
+    return _buildMobileLayout(
+        context, activeUrgentJobs, pendingBookings, dueBookings);
   }
 
   // ══════════════════════════════════════════════════════════
   //  DESKTOP: 2-column Row
   // ══════════════════════════════════════════════════════════
-  Widget _buildDesktopLayout(BuildContext context, List<dynamic> activeJobs) {
+  Widget _buildDesktopLayout(
+      BuildContext context,
+      List<dynamic> activeUrgentJobs,
+      List<dynamic> pendingBookings,
+      List<dynamic> dueBookings) {
     final hPad = RV.pagePadding(context);
 
     return Padding(
@@ -70,7 +92,11 @@ class HomeLawyerSection extends StatelessWidget {
                   padded: false,
                 ),
                 const SizedBox(height: 8),
-                if (appointments.isNotEmpty)
+                if (isLoadingAppointments)
+                  _loadingState()
+                else if ((appointmentLoadError ?? '').isNotEmpty)
+                  _emptyState(appointmentLoadError!)
+                else if (appointments.isNotEmpty)
                   _buildAppointmentListDesktop(context)
                 else
                   _emptyState('noAppointments'.tr()),
@@ -81,22 +107,49 @@ class HomeLawyerSection extends StatelessWidget {
 
           SizedBox(width: RV.cardGap(context) * 1.5),
 
-          // ── RIGHT: เคสด่วนจากลูกความ (flex 2) ────────────
+          // ── RIGHT: เคสด่วน + booking pending ────────────
           Expanded(
             flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (dueBookings.isNotEmpty) ...[
+                  _sectionHeader(
+                    context,
+                    title: 'นัดหมายวันนี้ (${dueBookings.length})',
+                    onMore: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+                    padded: false,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildTodayBookingList(context, dueBookings),
+                  const SizedBox(height: 20),
+                ],
+                // ── Section: นัดหมายรอยืนยัน ────────────────
+                if (pendingBookings.isNotEmpty) ...[
+                  _sectionHeader(
+                    context,
+                    title: 'นัดหมายรอยืนยัน (${pendingBookings.length})',
+                    onMore: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+                    padded: false,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildJobRequestListDesktop(context, pendingBookings),
+                  const SizedBox(height: 20),
+                ],
+
+                // ── Section: เคสด่วน ────────────────────────
                 _sectionHeader(
                   context,
-                  title: '${'urgentCases'.tr()} (${activeJobs.length})',
+                  title: '${'urgentCases'.tr()} (${activeUrgentJobs.length})',
                   onMore: () => Navigator.push(context,
                       MaterialPageRoute(builder: (_) => LawyerJobListPage())),
                   padded: false,
                 ),
                 const SizedBox(height: 8),
-                if (activeJobs.isNotEmpty)
-                  _buildJobRequestListDesktop(context, activeJobs)
+                if (activeUrgentJobs.isNotEmpty)
+                  _buildJobRequestListDesktop(context, activeUrgentJobs)
                 else
                   _emptyState('noUrgentCases'.tr()),
                 const SizedBox(height: 20),
@@ -317,9 +370,13 @@ class HomeLawyerSection extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  MOBILE: Column เดิม ไม่เปลี่ยน
+  //  MOBILE: Column
   // ══════════════════════════════════════════════════════════
-  Widget _buildMobileLayout(BuildContext context, List<dynamic> activeJobs) {
+  Widget _buildMobileLayout(
+      BuildContext context,
+      List<dynamic> activeUrgentJobs,
+      List<dynamic> pendingBookings,
+      List<dynamic> dueBookings) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -330,22 +387,51 @@ class HomeLawyerSection extends StatelessWidget {
           onMore: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
         ),
-        if (appointments.isNotEmpty)
+        if (isLoadingAppointments)
+          _loadingState()
+        else if ((appointmentLoadError ?? '').isNotEmpty)
+          _emptyState(appointmentLoadError!)
+        else if (appointments.isNotEmpty)
           _buildAppointmentListMobile(context)
         else
           _emptyState('noAppointments'.tr()),
         const SizedBox(height: 20),
 
-        // ── Job Requests ─────────────────────────────────────────
+        // ── Booking Requests รอยืนยัน ────────────────────────────
+        if (dueBookings.isNotEmpty) ...[
+          _sectionHeader(
+            context,
+            title: 'นัดหมายวันนี้ (${dueBookings.length})',
+            onMore: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+          ),
+          const SizedBox(height: 8),
+          _buildTodayBookingList(context, dueBookings),
+          const SizedBox(height: 20),
+        ],
+
+        if (pendingBookings.isNotEmpty) ...[
+          _sectionHeader(
+            context,
+            title: 'นัดหมายรอยืนยัน (${pendingBookings.length})',
+            onMore: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => LawyerJobListPage())),
+          ),
+          const SizedBox(height: 8),
+          _buildJobRequestListMobile(context, pendingBookings),
+          const SizedBox(height: 20),
+        ],
+
+        // ── Urgent Job Requests ──────────────────────────────────
         _sectionHeader(
           context,
-          title: '${'urgentCases'.tr()} (${activeJobs.length})',
+          title: '${'urgentCases'.tr()} (${activeUrgentJobs.length})',
           onMore: () => Navigator.push(
               context, MaterialPageRoute(builder: (_) => LawyerJobListPage())),
         ),
         const SizedBox(height: 8),
-        if (activeJobs.isNotEmpty)
-          _buildJobRequestListMobile(context, activeJobs)
+        if (activeUrgentJobs.isNotEmpty)
+          _buildJobRequestListMobile(context, activeUrgentJobs)
         else
           _emptyState('noUrgentCases'.tr()),
         const SizedBox(height: 20),
@@ -587,6 +673,130 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayBookingList(BuildContext context, List<dynamic> jobs) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        children: [
+          for (int i = 0; i < jobs.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: _todayBookingCard(context, jobs[i]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _todayBookingCard(BuildContext context, Map<String, dynamic> job) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F4FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.event_available_rounded,
+                    color: Color(0xFF7C3AED), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(job['clientName'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A2340))),
+                    const SizedBox(height: 2),
+                    Text('${job['date']} • ${job['time']}',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7C3AED))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              LawyerJobsStore.instance.startSession(job['id'] as String);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatPageLawyer(
+                    jobId: job['id'] as String,
+                    model: {
+                      'id': job['id'],
+                      'jobId': job['id'],
+                      'jobSource': job['jobSource'] ?? 'booking',
+                      'jobStatus': 'in_session',
+                      'name': job['clientName'] ?? '',
+                      'avatar': job['clientAvatar'] ?? '',
+                      'active': true,
+                      'caseSuccess': false,
+                      'clientColor': job['clientColor'],
+                    },
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('เริ่มปรึกษา',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Mobile: Job Request Cards (vertical — เดิม) ───────────────────
   Widget _buildJobRequestListMobile(BuildContext context, List<dynamic> jobs) {
     return Padding(
@@ -613,6 +823,7 @@ class HomeLawyerSection extends StatelessWidget {
     final barColors = _statusBarColors(status);
     final badge = _statusBadge(status);
     final isAccepted = status == 'accepted';
+    final isBooking = (job['jobSource'] ?? 'urgent') == 'booking';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -642,12 +853,17 @@ class HomeLawyerSection extends StatelessWidget {
                               title: "acceptJob".tr(),
                               message: "acceptJobConfirm".tr(),
                               onConfirm: () {
-                                LawyerJobsStore.instance
-                                    .acceptJob(job['id'] as String);
+                                if (isBooking) {
+                                  LawyerJobsStore.instance
+                                      .confirmBooking(job['id'] as String);
+                                } else {
+                                  LawyerJobsStore.instance
+                                      .acceptJob(job['id'] as String);
+                                }
                                 if (detailCtx.mounted) {
                                   Navigator.pop(detailCtx);
-                                  onJobStatusChanged?.call(
-                                      job['id'], 'accepted');
+                                  onJobStatusChanged?.call(job['id'],
+                                      isBooking ? 'confirmed' : 'accepted');
                                 }
                               },
                             );
