@@ -297,7 +297,7 @@ class _ChatPageUserState extends State<ChatPageUser>
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
+              padding: const EdgeInsets.fromLTRB(12, 20, 12, 25),
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];

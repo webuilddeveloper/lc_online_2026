@@ -285,7 +285,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 25),
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
