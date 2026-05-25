@@ -293,11 +293,11 @@ class _ChatPageUserState extends State<ChatPageUser>
           if (widget.embeddedMode)
             _buildEmbeddedHeader(
                 model, isActive, caseSuccess, chatLocked, imageUrl),
-          const SizedBox(height: 12),
+          // const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
@@ -305,9 +305,7 @@ class _ChatPageUserState extends State<ChatPageUser>
                 return ChatBubble(
                   text: msg['content'] ?? '',
                   isMe: isMe,
-                  avatarAsset: imageUrl.isNotEmpty
-                      ? imageUrl
-                      : 'assets/icons/profile.png',
+                  avatarAsset: imageUrl
                 );
               },
             ),

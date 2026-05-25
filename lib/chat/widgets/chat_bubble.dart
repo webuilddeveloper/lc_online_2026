@@ -9,7 +9,7 @@ class ChatBubble extends StatelessWidget {
     super.key,
     required this.text,
     required this.isMe,
-    this.avatarAsset = 'assets/icons/profile.png',
+    this.avatarAsset = '',
   });
 
   @override
@@ -23,14 +23,20 @@ class ChatBubble extends StatelessWidget {
           // ── Avatar ฝั่งตรงข้าม ──────────────────────────
           if (!isMe) ...[
             ClipRRect(
-              borderRadius: BorderRadius.circular(100),
-              child: Image.asset(
-                avatarAsset,
-                height: 36,
-                width: 36,
-                fit: BoxFit.cover,
-              ),
-            ),
+                borderRadius: BorderRadius.circular(100),
+                child: avatarAsset != ""
+                    ? Image.network(
+                        avatarAsset,
+                        height: 36,
+                        width: 36,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.asset(
+                        'assets/icons/profile.png',
+                        height: 36,
+                        width: 36,
+                        fit: BoxFit.cover,
+                      )),
             const SizedBox(width: 6),
           ],
 

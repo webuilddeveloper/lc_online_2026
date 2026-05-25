@@ -378,7 +378,7 @@ class _DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, statusBarHeight + 12, 16, 12),
-      margin: const EdgeInsets.only(bottom: 15),
+      // margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.only(
