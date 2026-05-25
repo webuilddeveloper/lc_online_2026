@@ -341,10 +341,44 @@ PreferredSizeWidget appBarChat({
   String? statusText,
   Widget? actions,
 }) {
-  return PreferredSize(
-    preferredSize: const Size.fromHeight(80),
-    child: Container(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+  return _DynamicAppBar(
+    onBack: onBack,
+    avatarWidget: avatarWidget,
+    name: name,
+    statusText: statusText,
+    actions: actions,
+  );
+}
+
+class _DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final VoidCallback onBack;
+  final Widget avatarWidget;
+  final String name;
+  final String? statusText;
+  final Widget? actions;
+
+  const _DynamicAppBar({
+    required this.onBack,
+    required this.avatarWidget,
+    required this.name,
+    this.statusText,
+    this.actions,
+  });
+
+  @override
+  Size get preferredSize {
+    // contentHeight + statusBar (ประมาณ) + bottom padding
+    return const Size.fromHeight(80);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final contentHeight = 80.0; // ความสูง row content
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, statusBarHeight + 12, 16, 12),
+      margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.only(
@@ -382,6 +416,7 @@ PreferredSizeWidget appBarChat({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, // ✅ ให้ Column หดตามเนื้อหา
               children: [
                 Text(
                   name,
@@ -395,7 +430,7 @@ PreferredSizeWidget appBarChat({
                 if (statusText != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    statusText,
+                    statusText!,
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF8593A8),
@@ -405,9 +440,9 @@ PreferredSizeWidget appBarChat({
               ],
             ),
           ),
-          if (actions != null) actions,
+          if (actions != null) actions!,
         ],
       ),
-    ),
-  );
+    );
+  }
 }

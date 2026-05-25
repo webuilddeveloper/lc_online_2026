@@ -1,11 +1,15 @@
+import 'package:LawyerOnline/chat_page.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:LawyerOnline/models/auth_session.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─── Home SliverAppBar ────────────────────────────────────────────
 class HomeAppBar extends StatefulWidget {
@@ -223,11 +227,16 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => NotificationPage()),
-                            ),
+                            onTap: () async => {
+                              openChat("20260512165120-625-478")
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //       builder: (_) => NotificationPage()
+                              //       // ChatPage()
+                              //       ),
+                              // ),
+                            },
                             borderRadius: BorderRadius.circular(12),
                             splashColor:
                                 const Color(0xFF1565C0).withOpacity(0.15),
@@ -324,6 +333,43 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  // ✅ Flutter สร้าง roomCode และ navigate ไปหน้าแชท
+  Future<void> openChat(String lawyerCode) async {
+    String myUserId = UserProfileStore.instance.code;
+
+    // สร้าง roomCode
+    List<String> ids = [myUserId, lawyerCode]..sort();
+    var roomCode;
+
+    print('------code------ ${UserProfileStore.instance.code}');
+    print('------lawyer code------ ${lawyerCode}');
+    print('------roomCode------ ${ids}');
+
+    var model = {
+      "members": ids,
+      "userA": UserProfileStore.instance.code,
+      "userB": lawyerCode
+    };
+
+    final result = await postObjectData("/m/chat/room/create", model);
+    if (result['status'] == 'S') {
+      setState(() {
+        roomCode = result['objectData']['roomCode'];
+        print(roomCode);
+        // เปิดหน้าแชท
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatPage(
+              roomCode: roomCode,
+              userId: myUserId,
+            ),
+          ),
+        );
+      });
+    }
   }
 }
 

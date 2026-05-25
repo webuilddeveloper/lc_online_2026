@@ -307,7 +307,7 @@ Future<dynamic> postObjectData(String url, dynamic criteria) async {
   var response = await http.post(Uri.parse(server + url),
       body: body, headers: _jsonHeaders());
   // ignore: avoid_print
-  print('_+_+_+_+__+ ${response.statusCode}');
+  print('_+_+_+_+__+ ${criteria}');
 
   if (response.statusCode == 200) {
     var data = json.decode(response.body);

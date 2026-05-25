@@ -3,10 +3,10 @@ import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget {
-  final String roomId;
+  final String roomCode;
   final String userId;
 
-  const ChatPage({required this.roomId, required this.userId, super.key});
+  const ChatPage({required this.roomCode, required this.userId, super.key});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -41,19 +41,13 @@ class _ChatPageState extends State<ChatPage> {
             .reversed
             .toList();
       });
+      _scrollToBottom();
     };
 
-    _chatService.onUserTyping = (userId, isTyping) {
-      setState(() {
-        _isTyping = isTyping;
-        _typingUser = userId;
-      });
-    };
-
-    // เชื่อมต่อและเข้า room
+    // เชื่อมต่อ → JoinRoom → LoadHistory ตามลำดับ
     await _chatService.connect();
-    await _chatService.joinRoom(widget.roomId, widget.userId);
-    await _chatService.loadHistory(widget.roomId);
+    await _chatService.joinRoom(widget.roomCode, widget.userId);
+    await _chatService.loadHistory(widget.roomCode); // ✅ เรียกหลัง joinRoom
   }
 
   void _scrollToBottom() {
@@ -70,7 +64,7 @@ class _ChatPageState extends State<ChatPage> {
     if (_textController.text.isEmpty) return;
 
     await _chatService.sendMessage(
-      widget.roomId,
+      widget.roomCode,
       widget.userId,
       _textController.text,
     );
@@ -79,7 +73,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    _chatService.leaveRoom(widget.roomId, widget.userId);
+    _chatService.leaveRoom(widget.roomCode, widget.userId);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -100,7 +94,8 @@ class _ChatPageState extends State<ChatPage> {
                 final msg = _messages[index];
                 final isMe = msg['senderId'] == widget.userId;
                 return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     padding: const EdgeInsets.all(12),
@@ -137,7 +132,7 @@ class _ChatPageState extends State<ChatPage> {
                     controller: _textController,
                     onChanged: (text) {
                       _chatService.typing(
-                        widget.roomId,
+                        widget.roomCode,
                         widget.userId,
                         text.isNotEmpty,
                       );

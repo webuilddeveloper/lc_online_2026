@@ -665,7 +665,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         'guest',
       );
       final user = session.user;
-
       // ── setUser → persist ทุก field + broadcast ให้ทุก widget ทราบทันที ──
       // ถ้า imageUrl ว่างใช้ default avatar แทน
       final userWithAvatar = user.imageUrl.isNotEmpty
@@ -678,13 +677,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         authToken: session.token,
       );
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MenuPage(userType: user.userType),
-        ),
-      );
+      // if (!mounted) return;
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => MenuPage(userType: user.userType),
+      //   ),
+      // );
     } catch (error) {
       setState(() {
         isLoading = false;

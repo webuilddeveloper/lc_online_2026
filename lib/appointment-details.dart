@@ -142,7 +142,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 children: [
                   // Desktop inline header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     child: Row(
                       children: [
                         _circleBtn(
@@ -178,7 +179,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                     child: Container(
                       decoration: const BoxDecoration(
                         color: _surface,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Stack(
@@ -189,7 +191,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                             slivers: [
                               _buildHero(),
                               SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
                                 sliver: SliverList(
                                   delegate: SliverChildListDelegate([
                                     _stagger(0, _buildDateTimeRow()),
@@ -355,7 +358,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             ),
 
             // Content
-             Positioned(
+            Positioned(
               left: 20,
               right: 20,
               bottom: 50,
@@ -458,7 +461,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               offset: const Offset(0, 0),
             ),
           ],
-          borderRadius:const BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(32),
             bottomRight: Radius.circular(32),
           ),
@@ -551,11 +554,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   Widget _buildDateTimeRow() {
     return Row(children: [
-      _pill(Icons.calendar_today_rounded, 'appointmentInfo.appointmentDate'.tr(),
-          appointmentModel['date'] as String, _blue),
+      _pill(
+          Icons.calendar_today_rounded,
+          'appointmentInfo.appointmentDate'.tr(),
+          appointmentModel['date'] as String,
+          _blue),
       const SizedBox(width: 10),
-      _pill(Icons.schedule_rounded, 'appointmentInfo.appointmentTime'.tr(), appointmentModel['time'] as String,
-          _green),
+      _pill(Icons.schedule_rounded, 'appointmentInfo.appointmentTime'.tr(),
+          appointmentModel['time'] as String, _green),
       const SizedBox(width: 10),
       _pill(Icons.videocam_rounded, 'appointmentInfo.serviceType'.tr(),
           'appointmentInfo.videoCall'.tr(), const Color(0xFF8B5CF6)),
@@ -771,13 +777,18 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
         children: [
           _cardTitle(Icons.info_outline_rounded, 'appointmentInfo.title'.tr()),
           const SizedBox(height: 14),
-          _infoRow('appointmentInfo.topic'.tr(), appointmentModel['topic'] as String),
+          _infoRow('appointmentInfo.topic'.tr(),
+              appointmentModel['topic'] as String),
           _divider(),
-          _infoRow('appointmentInfo.subTopic'.tr(), appointmentModel['subTopic'] as String),
+          _infoRow('appointmentInfo.subTopic'.tr(),
+              appointmentModel['subTopic'] as String),
           _divider(),
-          _infoRow('appointmentInfo.serviceType'.tr(), 'appointmentInfo.videoCall'.tr()),
+          _infoRow('appointmentInfo.serviceType'.tr(),
+              'appointmentInfo.videoCall'.tr()),
           _divider(),
-          _infoRow('appointmentInfo.appointmentCode'.tr(), '# ${appointmentModel['id']}', accent: true),
+          _infoRow('appointmentInfo.appointmentCode'.tr(),
+              '# ${appointmentModel['id']}',
+              accent: true),
         ],
       ),
     );
@@ -817,7 +828,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cardTitle(Icons.route_rounded, 'appointmentInfo.appointmentTimeline'.tr()),
+          _cardTitle(
+              Icons.route_rounded, 'appointmentInfo.appointmentTimeline'.tr()),
           const SizedBox(height: 20),
 
           // Horizontal stepper
@@ -976,7 +988,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   }
 
   String _shortLabel(int i) {
-    final s = ['appointmentInfo.requested'.tr(), 'appointmentInfo.pending'.tr(), 'appointmentInfo.confirmed'.tr(), 'appointmentInfo.consulting'.tr(), 'appointmentInfo.completed'.tr()];
+    final s = [
+      'appointmentInfo.requested'.tr(),
+      'appointmentInfo.pending'.tr(),
+      'appointmentInfo.confirmed'.tr(),
+      'appointmentInfo.consulting'.tr(),
+      'appointmentInfo.completed'.tr()
+    ];
     return s[i];
   }
 
@@ -1050,8 +1068,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               ),
             ),
             child: Text("appointmentInfo.preparation_guide".tr(),
-                style: const TextStyle(
-                    fontSize: 13, color: _slate, height: 1.65)),
+                style:
+                    const TextStyle(fontSize: 13, color: _slate, height: 1.65)),
           ),
         ],
       ),
@@ -1140,9 +1158,12 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) =>
-                                  ChatPageUser(model: widget.appointment)),
-                        )
+                            builder: (context) => ChatPageUser(
+                                model: widget.appointment,
+                                roomCode: "",
+                                userId: ""), // action เดิม
+                          ),
+                        ),
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -1416,9 +1437,12 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       color: const Color(0xFFE2E8F4),
                       borderRadius: BorderRadius.circular(2)),
                 ),
-                _menuTile(Icons.share_rounded, 'appointmentInfo.shareAppointment'.tr(), _blue),
-                _menuTile(Icons.picture_as_pdf_rounded, 'appointmentInfo.downloadPDF'.tr(), _green),
-                _menuTile(Icons.flag_outlined, 'appointmentInfo.reportIssue'.tr(), _amber),
+                _menuTile(Icons.share_rounded,
+                    'appointmentInfo.shareAppointment'.tr(), _blue),
+                _menuTile(Icons.picture_as_pdf_rounded,
+                    'appointmentInfo.downloadPDF'.tr(), _green),
+                _menuTile(Icons.flag_outlined,
+                    'appointmentInfo.reportIssue'.tr(), _amber),
                 const SizedBox(height: 8),
               ]),
             ),
@@ -1693,7 +1717,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
           ),
           const SizedBox(height: 20),
           Text('rating_appointment.successTitle'.tr(),
-              style:const TextStyle(
+              style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A2340))),

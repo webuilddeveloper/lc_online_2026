@@ -11,19 +11,24 @@ import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ChatPageLawyer extends StatefulWidget {
   final Map<String, dynamic> model;
   final String? jobId;
-  final bool embeddedMode; // ← ใหม่: true = ซ่อน AppBar (desktop panel)
+  final bool embeddedMode;
+  final String roomCode; // ✅ เพิ่ม
+  final String userId; // ✅ เพิ่ม
 
   const ChatPageLawyer({
     super.key,
     required this.model,
     this.jobId,
     this.embeddedMode = false,
+    this.roomCode = '', // ✅ เพิ่ม
+    this.userId = '', // ✅ เพิ่ม
   });
 
   @override
@@ -32,12 +37,16 @@ class ChatPageLawyer extends StatefulWidget {
 
 class _ChatPageLawyerState extends State<ChatPageLawyer>
     with AutoPopOnDesktopMixin {
+  final ChatService _chatService = ChatService(); // ✅ เพิ่ม
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<_ChatMessage> _messages = [];
+
+  // ✅ เปลี่ยนจาก List<_ChatMessage> → Map
+  List<Map<String, dynamic>> _messages = [];
+  bool _isTyping = false;
+  String _typingUser = "";
   late bool _caseSuccess;
 
-  // ── skip auto-pop เมื่อ embeddedMode (อยู่ใน 2-panel แล้ว) ──
   @override
   void didChangeDependencies() {
     if (!widget.embeddedMode) super.didChangeDependencies();
@@ -47,13 +56,47 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   void initState() {
     super.initState();
     _caseSuccess = widget.model['caseSuccess'] as bool? ?? false;
+    _setupChat(); // ✅ เพิ่ม
   }
 
-  void _sendMessage() {
-    final text = _chatController.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _messages.add(_ChatMessage(text: text, isMe: true)));
-    Future.delayed(const Duration(milliseconds: 100), () {
+  // ✅ เหมือน ChatPageUser
+  Future<void> _setupChat() async {
+    // ✅ ตัด connection เก่าทิ้งก่อนเสมอ
+    await _chatService.disconnect();
+
+    _chatService.onReceiveMessage = (message) {
+      setState(() => _messages.add(message));
+      _scrollToBottom();
+    };
+
+    _chatService.onLoadHistory = (history) {
+      setState(() {
+        _messages = history
+            .map((e) => e as Map<String, dynamic>)
+            .toList()
+            .reversed
+            .toList();
+      });
+      _scrollToBottom();
+    };
+
+    _chatService.onUserTyping = (userId, isTyping) {
+      if (userId != widget.userId) {
+        setState(() {
+          _isTyping = isTyping;
+          _typingUser = userId;
+        });
+      }
+    };
+
+    await _chatService.connect();
+    await _chatService.joinRoom(widget.roomCode, widget.userId);
+    await _chatService.loadHistory(widget.roomCode);
+    await _chatService.markAsRead(widget.roomCode, widget.userId);
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -62,11 +105,15 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         );
       }
     });
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      setState(() =>
-          _messages.add(_ChatMessage(text: 'รับทราบครับ 👍', isMe: false)));
-    });
+  }
+
+  // ✅ ใช้ ChatService จริง
+  void _sendMessage() {
+    final text = _chatController.text.trim();
+    if (text.isEmpty) return;
+    _chatService.sendMessage(widget.roomCode, widget.userId, text);
+    _chatController.clear();
+    _chatService.typing(widget.roomCode, widget.userId, false);
   }
 
   void _endConsultation() {
@@ -156,6 +203,11 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
 
   @override
   void dispose() {
+    _chatService.onReceiveMessage = null;
+    _chatService.onLoadHistory = null;
+    _chatService.onUserTyping = null;
+    _chatService.onMessageRead = null;
+    _chatService.leaveRoom(widget.roomCode, widget.userId); // ✅ เพิ่ม
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -188,24 +240,33 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
           )
         : null;
 
-    // ── AppBar: ซ่อนเมื่อ embeddedMode ──────────────────────
     final chatAppBar = widget.embeddedMode
         ? null
         : appBarChat(
             onBack: () => Navigator.pop(context),
-            avatarWidget: Container(
-              width: 44,
-              height: 44,
-              decoration:
-                  BoxDecoration(color: clientColor, shape: BoxShape.circle),
-              child: Center(
-                child: Text(model['avatar'] ?? '?',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18)),
-              ),
-            ),
+            avatarWidget: model['avatar'] != ""
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Image.network(
+                      model['avatar'],
+                      height: 44,
+                      width: 44,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                        color: clientColor, shape: BoxShape.circle),
+                    child: Center(
+                      child: Text(model['avatar'] ?? '?',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18)),
+                    ),
+                  ),
             name: model['name'] ?? '',
             statusText: _caseSuccess
                 ? null
@@ -218,7 +279,6 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
       appBar: chatAppBar as PreferredSizeWidget?,
       body: Column(
         children: [
-          // ── Desktop embedded header ────────────────────────
           if (widget.embeddedMode)
             _buildEmbeddedHeader(model, isActive, clientColor, actionButtons),
           const SizedBox(height: 12),
@@ -227,13 +287,34 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               itemCount: _messages.length,
-              itemBuilder: (_, i) => ChatBubble(
-                text: _messages[i].text,
-                isMe: _messages[i].isMe,
-                avatarAsset: 'assets/icons/profile.png',
-              ),
+              itemBuilder: (_, i) {
+                final msg = _messages[i];
+                final isMe = msg['senderId'] == widget.userId; // ✅
+                return ChatBubble(
+                  text: msg['content'] ?? '',
+                  isMe: isMe,
+                  avatarAsset: 'assets/icons/profile.png',
+                );
+              },
             ),
           ),
+
+          // ✅ Typing indicator
+          if (_isTyping)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "$_typingUser กำลังพิมพ์...",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8593A8),
+                  ),
+                ),
+              ),
+            ),
+
           _caseSuccess
               ? _buildEndedBanner()
               : ChatInput(controller: _chatController, onSend: _sendMessage),
@@ -332,9 +413,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.lock_outline_rounded,
+            const Icon(Icons.lock_outline_rounded,
                 size: 16, color: Color(0xFF8593A8)),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Text('conversationEnded'.tr(),
                 style: const TextStyle(
                     fontSize: 13,
@@ -346,9 +427,4 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     );
   }
 }
-
-class _ChatMessage {
-  final String text;
-  final bool isMe;
-  _ChatMessage({required this.text, required this.isMe});
-}
+// ✅ ลบ class _ChatMessage ออกแล้ว ไม่จำเป็นอีกต่อไป

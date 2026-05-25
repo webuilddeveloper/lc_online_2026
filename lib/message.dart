@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
@@ -28,11 +29,11 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> {
   String _userType = '';
-  List<Conversation> _conversations = [];
+  List<dynamic> _conversations = [];
   bool _isLoading = true;
 
   // ── Desktop: track conversation ที่ถูกเลือก ──────────────
-  Conversation? _selectedConv;
+  dynamic _selectedConv;
 
   @override
   void initState() {
@@ -48,12 +49,24 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> _load() async {
     await UserProfileStore.instance.load();
     final type = UserProfileStore.instance.userType;
+    final userId = UserProfileStore.instance.code;
     final convs = await chatRepository.getConversations(type);
+
+    final result = await postObjectData(
+        "/m/chat/readList", {'userType': type, 'reference': userId});
+    if (result['status'] == 'S') {
+      setState(() {
+        _conversations = result['objectData'];
+        print('----------123---------= ${result}');
+        // เปิดหน้าแชท
+      });
+    }
 
     if (!mounted) return;
     setState(() {
       _userType = type;
-      _conversations = convs;
+      // _conversations = convs;
+
       _isLoading = false;
       // auto-select รายการแรกบน desktop
       if (convs.isNotEmpty && !ResponsiveLayout.isMobile(context)) {
@@ -62,34 +75,97 @@ class _MessagePageState extends State<MessagePage> {
     });
   }
 
-  void _onTapConversation(Conversation conv, bool isDesktop) {
+  void _onTapConversation(dynamic conv, bool isDesktop) async {
     if (isDesktop) {
       setState(() => _selectedConv = conv);
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => _userType == 'lawyer'
-              ? ChatPageLawyer(
-                  model: {
-                    'name': conv.name,
-                    'avatar': conv.avatar,
-                    'clientColor': conv.clientColor,
-                    'active': !conv.caseSuccess,
-                    'caseSuccess': conv.caseSuccess,
-                  },
-                  jobId: conv.id,
-                )
-              : ChatPageUser(
-                  model: {
-                    'name': conv.name,
-                    'imageUrl': conv.avatar,
-                    'active': !conv.caseSuccess,
-                    'caseSuccess': conv.caseSuccess,
-                  },
-                ),
-        ),
-      ).then((_) => _load());
+      String myUserId = UserProfileStore.instance.code;
+      String lawyerCode = conv['user2Model']['code'];
+      var roomCode;
+
+      // สร้าง roomCode
+      List<String> ids = [myUserId, lawyerCode]..sort();
+
+      print('------code------ ${UserProfileStore.instance.code}');
+      print('------lawyer code------ ${conv['user2Model']['code']}');
+
+      var model = {
+        "members": ids,
+        "userA": UserProfileStore.instance.code,
+        "userB": lawyerCode
+      };
+
+      final result = await postObjectData("/m/chat/room/create", model);
+      if (result['status'] == 'S') {
+        setState(
+          () {
+            roomCode = result['objectData']['roomCode'];
+            print(roomCode);
+            // เปิดหน้าแชท
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (_) => ChatPage(
+            //       roomCode: roomCode,
+            //       userId: myUserId,
+            //     ),
+            //   ),
+            // );
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => _userType == 'lawyer'
+                    ? ChatPageLawyer(
+                        model: {
+                          'name': '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
+                          'avatar': conv['user2Model']['imageUrl'],
+                          // 'clientColor': conv.clientColor,
+                          'active': true,
+                          'caseSuccess': false,
+                        },
+                        // jobId: conv.id,
+                        roomCode: roomCode,
+                        userId: myUserId,
+                      )
+                    : ChatPageUser(
+                        model: {
+                          'name': '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
+                          'imageUrl': conv['user2Model']['imageUrl'],
+                          'active': true,
+                          'caseSuccess': false,
+                        },
+                        roomCode: roomCode,
+                        userId: myUserId,
+                      ),
+              ),
+            ).then((_) => _load());
+          },
+        );
+      }
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => _userType == 'lawyer'
+      //         ? ChatPageLawyer(
+      //             model: {
+      //               'name': conv.name,
+      //               'avatar': conv.avatar,
+      //               'clientColor': conv.clientColor,
+      //               'active': !conv.caseSuccess,
+      //               'caseSuccess': conv.caseSuccess,
+      //             },
+      //             jobId: conv.id,
+      //           )
+      //         : ChatPageUser(
+      //             model: {
+      //               'name': conv.name,
+      //               'imageUrl': conv.avatar,
+      //               'active': !conv.caseSuccess,
+      //               'caseSuccess': conv.caseSuccess,
+      //             },
+      //           ),
+      //   ),
+      // ).then((_) => _load());
     }
   }
 
@@ -220,6 +296,10 @@ class _MessagePageState extends State<MessagePage> {
             key: ValueKey(conv.id),
             model: model,
             embeddedMode: true,
+            roomCode: "",
+            userId: ""
+            // roomCode: roomCode,
+            // userId: myUserId,
           );
   }
 
@@ -234,7 +314,7 @@ class _MessagePageState extends State<MessagePage> {
       separatorBuilder: (_, __) => SizedBox(height: isDesktop ? 4 : 10),
       itemBuilder: (context, index) => _ConversationItem(
         conv: _conversations[index],
-        isSelected: isDesktop && _selectedConv?.id == _conversations[index].id,
+        isSelected: isDesktop && _selectedConv['code'] == _conversations[index]['code'],
         isDesktop: isDesktop,
         onTap: () => _onTapConversation(_conversations[index], isDesktop),
       ),
@@ -248,7 +328,7 @@ class _MessagePageState extends State<MessagePage> {
 //  - ใช้ MouseRegion + InkWell สำหรับ hover (desktop)
 // ══════════════════════════════════════════════════════════
 class _ConversationItem extends StatefulWidget {
-  final Conversation conv;
+  final dynamic conv;
   final bool isSelected;
   final bool isDesktop;
   final VoidCallback onTap;
@@ -318,48 +398,39 @@ class _ConversationItemState extends State<_ConversationItem> {
               // ── Avatar ─────────────────────────────────────
               Stack(
                 children: [
-                  conv.avatarIsImage
+                  conv['user2Model']['imageUrl'] != ""
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(100),
-                          child: Image.asset(
-                            conv.avatar,
+                          child: Image.network(
+                            conv['user2Model']['imageUrl'],
                             height: 48,
                             width: 48,
                             fit: BoxFit.cover,
                           ),
                         )
-                      : Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Color(conv.clientColor),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              conv.avatar,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              ),
-                            ),
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: Image.asset(
+                            "assets/images/profile-avatar.jpg",
+                            height: 48,
+                            width: 48,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                  if (!conv.caseSuccess)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00CC5E),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
+                  // if (!conv.caseSuccess)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00CC5E),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
                       ),
                     ),
+                  ),
                 ],
               ),
               const SizedBox(width: 12),
@@ -374,12 +445,12 @@ class _ConversationItemState extends State<_ConversationItem> {
                       children: [
                         Expanded(
                           child: Text(
-                            conv.name,
+                            '${conv['user2Model']['firstName']} ${conv['user2Model']['firstName']}',
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: conv.unreadCount > 0
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                              // fontWeight: conv.unreadCount > 0
+                              //     ? FontWeight.w700
+                              //     : FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -387,7 +458,7 @@ class _ConversationItemState extends State<_ConversationItem> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          conv.lastChatDate,
+                          conv['lastMessageTime'].toString(),
                           style: const TextStyle(
                               fontSize: 11, color: Color(0xFF8593A8)),
                         ),
@@ -399,35 +470,35 @@ class _ConversationItemState extends State<_ConversationItem> {
                       children: [
                         Expanded(
                           child: Text(
-                            conv.lastChat,
+                            conv['user2Model']['lastMessage'] ?? "",
                             style: TextStyle(
                               fontSize: 13,
-                              color: conv.unreadCount > 0
-                                  ? Colors.black
-                                  : const Color(0xFF8593A8),
-                              fontWeight: conv.unreadCount > 0
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
+                              // color: conv['user2Model']['unreadCount'] > 0
+                              //     ? Colors.black
+                              //     : const Color(0xFF8593A8),
+                              // fontWeight: conv.unreadCount > 0
+                              //     ? FontWeight.w600
+                              //     : FontWeight.w400,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (conv.unreadCount > 0)
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0262EC),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              conv.unreadCount.toString(),
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.white),
-                            ),
-                          ),
+                        // if (conv.unreadCount > 0)
+                        //   Container(
+                        //     width: 20,
+                        //     height: 20,
+                        //     decoration: BoxDecoration(
+                        //       color: const Color(0xFF0262EC),
+                        //       borderRadius: BorderRadius.circular(100),
+                        //     ),
+                        //     alignment: Alignment.center,
+                        //     child: Text(
+                        //       conv.unreadCount.toString(),
+                        //       style: const TextStyle(
+                        //           fontSize: 12, color: Colors.white),
+                        //     ),
+                        //   ),
                       ],
                     ),
                   ],

@@ -4,7 +4,8 @@ class ApiConfig {
   static const versionName = '4.1.8';
   static const versionNumber = 418;
 
-  static const apiBaseUrl = 'https://lc.we-builds.com/lc-api/';
+  // static const apiBaseUrl = 'https://lc.we-builds.com/lc-api/';
+  static const apiBaseUrl = 'https://bf5c-180-180-58-183.ngrok-free.app';
   static const documentUploadUrl =
       'https://lc.we-builds.com/lc-document/upload';
   static const lineNotifyUrl = 'https://notify-api.line.me/api/notify';
@@ -12,5 +13,5 @@ class ApiConfig {
   static const electionLcBaseUrl = 'http://122.155.223.63/td-election-lc-api/';
 
   // TODO: Replace this with the team's stable auth API host when ready.
-  static const authBaseUrl = 'https://b7d2-125-25-100-59.ngrok-free.app';
+  static const authBaseUrl = 'https://bf5c-180-180-58-183.ngrok-free.app';
 }

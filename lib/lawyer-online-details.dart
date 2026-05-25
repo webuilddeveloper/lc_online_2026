@@ -182,15 +182,17 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))
-                    ]
-                  ),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -4))
+                      ]),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(24),
@@ -292,7 +294,8 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white.withOpacity(0.3)),
                 ),
-                child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 24),
+                child: const Icon(Icons.chevron_left_rounded,
+                    color: Colors.white, size: 24),
               ),
             ),
           ),
@@ -617,11 +620,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               accent: const Color(0xFF0262EC),
               bg: const Color(0xFFEEF4FF),
               onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChatPageUser(model: model), // action เดิม
-                  )),
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatPageUser(
+                      model: model, roomCode: "", userId: ""), // action เดิม
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -630,11 +634,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               accent: const Color(0xFF34C759),
               bg: const Color(0xFFEEFAF1),
               onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChatPageUser(model: model), // action เดิม
-                  )),
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatPageUser(
+                      model: model, roomCode: "", userId: ""), // action เดิม
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             _contactTile(
@@ -643,11 +648,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
               accent: const Color(0xFFFF6B35),
               bg: const Color(0xFFFFF2EE),
               onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChatPageUser(model: model), // action เดิม
-                  )),
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatPageUser(
+                      model: model, roomCode: "", userId: ""), // action เดิม
+                ),
+              ),
             ),
           ]),
         ]),
