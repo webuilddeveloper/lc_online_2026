@@ -36,7 +36,7 @@ class ChatBubble extends StatelessWidget {
 
           // ── Bubble ──────────────────────────────────────
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 4),
+            margin: const EdgeInsets.symmetric(vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.7,
