@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/consult/consult_detail.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,16 +11,30 @@ import 'package:latlong2/latlong.dart';
 enum _Phase { searching, found }
 
 class ConsultMapPage extends StatefulWidget {
-  const ConsultMapPage({super.key});
+  final String? category;
+  final String? subCategory;
+  final String? detail;
+  final String? budget;
+
+  const ConsultMapPage({
+    super.key,
+    this.category,
+    this.subCategory,
+    this.detail,
+    this.budget,
+  });
   @override
   State<ConsultMapPage> createState() => _ConsultMapPageState();
 }
 
 class _ConsultMapPageState extends State<ConsultMapPage>
     with TickerProviderStateMixin {
+  final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
   int selectedIndex = 0;
   _Phase _phase = _Phase.searching;
   bool _isReassigning = false;
+  bool _isLoadingLawyers = false;
+  String? _lawyerLoadError;
 
   final MapController _mapController = MapController();
   LatLng _userLocation = const LatLng(13.7563, 100.5018);
@@ -49,8 +64,9 @@ class _ConsultMapPageState extends State<ConsultMapPage>
   late Map<String, dynamic> _assignedLawyer;
 
   // Full lawyer pool (used by tab 2 list and random assign)
-  final _lawyers = <Map<String, dynamic>>[
+  List<Map<String, dynamic>> _lawyers = <Map<String, dynamic>>[
     {
+      'code': '20260513101915-561-752',
       'name': 'ศักดิ์สิทธิ์ พิพากษ์',
       'title': 'ทนายความอาวุโส',
       'specialty': 'Criminal lawyer, Corporate lawyer',
@@ -67,6 +83,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       "imageUrl": "assets/images/lawyer-avatar-1.png",
     },
     {
+      'code': 'MOCK-LAWYER-002',
       'name': 'พิมพ์ใจ รักษาธรรม',
       'title': 'ทนายความ',
       'specialty': 'กฎหมายครอบครัว, มรดก',
@@ -83,6 +100,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       "imageUrl": "assets/images/lawyer-avatar-2.png",
     },
     {
+      'code': 'MOCK-LAWYER-003',
       'name': 'ธนากร นิติบัณฑิต',
       'title': 'ที่ปรึกษากฎหมาย',
       'specialty': 'กฎหมายธุรกิจ, สัญญา',
@@ -99,6 +117,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       "imageUrl": "assets/images/lawyer-avatar-3.png",
     },
     {
+      'code': 'MOCK-LAWYER-004',
       'name': 'วีระ ศักดิ์สิทธิ์กุล',
       'title': 'ทนายความอาวุโส',
       'specialty': 'คดีแรงงาน, ประกันสังคม',
@@ -115,6 +134,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       "imageUrl": "assets/images/lawyer-avatar-5.png",
     },
     {
+      'code': 'MOCK-LAWYER-005',
       'name': 'อรุณี ยุติธรรม',
       'title': 'ทนายความ',
       'specialty': 'กฎหมายที่ดิน, ทรัพย์สิน',
@@ -136,12 +156,55 @@ class _ConsultMapPageState extends State<ConsultMapPage>
   @override
   void initState() {
     super.initState();
-    _assignedLawyer = Map.from(_lawyers[0]);
+    _lawyers = [];
+    _assignedLawyer = {};
+    _loadLawyers();
     _initPulse();
     _initSlide();
     _initCard();
     _tryGps();
     _startSequence();
+  }
+
+  Future<void> _loadLawyers() async {
+    if (mounted) {
+      setState(() {
+        _isLoadingLawyers = true;
+        _lawyerLoadError = null;
+        _lawyers = [];
+        _assignedLawyer = {};
+      });
+    }
+
+    try {
+      final lawyers = await _lawyerRepository.searchLawyers(
+        topic: widget.category ?? '',
+        subTopic: widget.subCategory ?? '',
+      );
+      if (!mounted) return;
+
+      final legacyLawyers = lawyers
+          .map((lawyer) => Map<String, dynamic>.from(lawyer.toLegacyMap()))
+          .toList(growable: false);
+
+      setState(() {
+        _isLoadingLawyers = false;
+        _lawyers = legacyLawyers;
+        _assignedLawyer =
+            legacyLawyers.isNotEmpty ? Map.from(legacyLawyers.first) : {};
+        _lawyerLoadError =
+            legacyLawyers.isEmpty ? 'Cannot find lawyer accounts' : null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingLawyers = false;
+        _lawyerLoadError = 'Cannot load lawyer accounts';
+        _lawyers = [];
+        _assignedLawyer = {};
+      });
+    }
   }
 
   void _initPulse() {
@@ -196,7 +259,10 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       _p1.stop();
       _p2.stop();
       _p3.stop();
-      _assignedLawyer = Map.from(_pickRandom(null));
+      final lawyer = _pickRandom(null);
+      if (lawyer.isNotEmpty) {
+        _assignedLawyer = Map.from(lawyer);
+      }
       setState(() => _phase = _Phase.found);
       _slideAnim.forward().then((_) => _cardAnim.forward());
     });
@@ -204,18 +270,25 @@ class _ConsultMapPageState extends State<ConsultMapPage>
 
   Map<String, dynamic> _pickRandom(String? excludeName) {
     final pool = _lawyers.where((l) => l['name'] != excludeName).toList();
+    if (pool.isEmpty) {
+      return {};
+    }
     return pool[Random().nextInt(pool.length)];
   }
 
   void _onReassign() async {
     if (_isReassigning) return;
+    if (_lawyers.length < 2 || _assignedLawyer.isEmpty) return;
     setState(() => _isReassigning = true);
     _cardAnim.reverse();
     await Future.delayed(const Duration(milliseconds: 350));
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
-    final current = _assignedLawyer['name'] as String;
-    _assignedLawyer = Map.from(_pickRandom(current));
+    final current = _assignedLawyer['name'] as String? ?? '';
+    final nextLawyer = _pickRandom(current);
+    if (nextLawyer.isNotEmpty) {
+      _assignedLawyer = Map.from(nextLawyer);
+    }
     setState(() => _isReassigning = false);
     _cardAnim.forward(from: 0);
   }
@@ -451,6 +524,24 @@ class _ConsultMapPageState extends State<ConsultMapPage>
 
   // ══════════════ ACCEPTED PANEL ══════════════
   Widget _acceptedPanel() {
+    if (_isLoadingLawyers) {
+      return _lawyerStatusPanel(
+        icon: Icons.person_search_rounded,
+        title: 'Loading lawyer accounts',
+        message: 'Please wait while we read active lawyer accounts.',
+        isLoading: true,
+      );
+    }
+
+    if (_lawyerLoadError != null || _assignedLawyer.isEmpty) {
+      return _lawyerStatusPanel(
+        icon: Icons.error_outline_rounded,
+        title: 'Cannot assign a lawyer',
+        message: _lawyerLoadError ?? 'No lawyer accounts are available.',
+        onRetry: _loadLawyers,
+      );
+    }
+
     final l = _assignedLawyer;
     final color = Color(l['color'] as int);
 
@@ -621,8 +712,13 @@ class _ConsultMapPageState extends State<ConsultMapPage>
                     : () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) =>
-                                ConsultDetailPage(lawyer: _assignedLawyer))),
+                            builder: (_) => ConsultDetailPage(
+                                  lawyer: _assignedLawyer,
+                                  category: widget.category,
+                                  subCategory: widget.subCategory,
+                                  detail: widget.detail,
+                                  budget: widget.budget,
+                                ))),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   height: 50,
@@ -647,6 +743,70 @@ class _ConsultMapPageState extends State<ConsultMapPage>
           ]),
         ),
         const SizedBox(height: 28),
+      ]),
+    );
+  }
+
+  Widget _lawyerStatusPanel({
+    required IconData icon,
+    required String title,
+    required String message,
+    bool isLoading = false,
+    VoidCallback? onRetry,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+              color: Color(0x22000000), blurRadius: 20, offset: Offset(0, -4))
+        ],
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+              color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+        ),
+        const SizedBox(height: 22),
+        if (isLoading)
+          const SizedBox(
+            width: 34,
+            height: 34,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0262EC)),
+            ),
+          )
+        else
+          Icon(icon, color: const Color(0xFFC62828), size: 36),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1A2340),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey[500], fontSize: 13),
+        ),
+        if (onRetry != null) ...[
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Retry'),
+          ),
+        ],
       ]),
     );
   }
@@ -754,17 +914,65 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       );
 
   // ══════════════ LIST VIEW (tab 2) ══════════════
-  Widget _listView() => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        itemCount: _lawyers.length,
-        itemBuilder: (_, i) => _lawyerCard(_lawyers[i]),
+  Widget _listView() {
+    if (_isLoadingLawyers) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0262EC)),
+        ),
+      );
+    }
+
+    if (_lawyerLoadError != null || _lawyers.isEmpty) {
+      return _lawyerListStatus();
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      itemCount: _lawyers.length,
+      itemBuilder: (_, i) => _lawyerCard(_lawyers[i]),
+    );
+  }
+
+  Widget _lawyerListStatus() => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.error_outline_rounded,
+                color: Color(0xFFC62828), size: 36),
+            const SizedBox(height: 12),
+            Text(
+              _lawyerLoadError ?? 'No lawyer accounts are available.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: _loadLawyers,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Retry'),
+            ),
+          ]),
+        ),
       );
 
   Widget _lawyerCard(Map<String, dynamic> l) {
     final color = Color(l['color'] as int);
     return GestureDetector(
-      onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => ConsultDetailPage(lawyer: l))),
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ConsultDetailPage(
+                    lawyer: l,
+                    category: widget.category,
+                    subCategory: widget.subCategory,
+                    detail: widget.detail,
+                    budget: widget.budget,
+                  ))),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),

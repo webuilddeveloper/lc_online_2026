@@ -3,7 +3,6 @@ import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/law_type_all_page.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
-import 'package:LawyerOnline/menu.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
@@ -13,19 +12,6 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────
-int _statusToStep(String status) {
-  switch (status) {
-    case '1':
-      return 1;
-    case '2':
-      return 2;
-    case '4':
-      return 4;
-    default:
-      return 3;
-  }
-}
-
 dynamic _buildLawyerForConsult(Map? m, Map caseModel) {
   if (m == null) return null;
   return {
@@ -41,8 +27,12 @@ dynamic _buildLawyerForConsult(Map? m, Map caseModel) {
     'imageUrl': m['imageUrl'] ?? '',
     'appointmentDate': caseModel['appointmentDate'],
     'appointmentTime': caseModel['appointmentTime'],
-    'active': caseModel['jobStatus'] == 'accepted',
+    'active': caseModel['jobStatus'] == 'accepted' ||
+        caseModel['jobStatus'] == 'in_session',
     'caseSuccess': caseModel['jobStatus'] == 'done',
+    'chatLocked': caseModel['jobStatus'] == 'confirmed',
+    'jobStatus': caseModel['jobStatus'],
+    'jobSource': caseModel['jobSource'],
   };
 }
 
@@ -62,6 +52,8 @@ class HomeUserSection extends StatelessWidget {
   final List<dynamic> lawyers;
   final List<dynamic> newLawyers;
   final bool isGuest;
+  final bool isLoadingLawyers;
+  final String? lawyerLoadError;
 
   const HomeUserSection({
     super.key,
@@ -70,6 +62,8 @@ class HomeUserSection extends StatelessWidget {
     required this.lawyers,
     required this.newLawyers,
     this.isGuest = false,
+    this.isLoadingLawyers = false,
+    this.lawyerLoadError,
   });
 
   void _guardedNavigate(BuildContext context, Widget page) {
@@ -147,7 +141,11 @@ class HomeUserSection extends StatelessWidget {
           title: 'lawyersForYou'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
-        if (lawyers.isNotEmpty)
+        if (isLoadingLawyers)
+          _loadingState()
+        else if ((lawyerLoadError ?? '').isNotEmpty)
+          _emptyState(lawyerLoadError!)
+        else if (lawyers.isNotEmpty)
           _buildLawyerList(context, lawyers)
         else
           _emptyState('noLawyers'.tr()),
@@ -159,7 +157,11 @@ class HomeUserSection extends StatelessWidget {
           title: 'trendingLawyers'.tr(),
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
-        if (newLawyers.isNotEmpty)
+        if (isLoadingLawyers)
+          _loadingState()
+        else if ((lawyerLoadError ?? '').isNotEmpty)
+          _emptyState(lawyerLoadError!)
+        else if (newLawyers.isNotEmpty)
           _buildLawyerList(context, newLawyers)
         else
           _emptyState('noTrendingLawyers'.tr()),
@@ -231,6 +233,19 @@ class HomeUserSection extends StatelessWidget {
     );
   }
 
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
   Widget _caseStatusItem(BuildContext context, Map model) {
     final status = model['status']?.toString() ?? '1';
     final s = _statusStyle(status);
@@ -261,14 +276,23 @@ class HomeUserSection extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+        if (jobStatus == 'rejected') {
+          _showRejectedCase(context, model);
+          return;
+        }
+        final jobSource = model['jobSource']?.toString() ?? 'urgent';
         _guardedNavigate(
           context,
           ConsultStatusPage(
-            currentStep: _statusToStep(status),
+            currentStep:
+                consultStepFromJobStatus(jobStatus, jobSource: jobSource),
             lawyer: _buildLawyerForConsult(lawyerModel, model),
             appointmentDate: model['appointmentDate'],
             appointmentTime: model['appointmentTime'],
-            canOpenChat: jobStatus == 'accepted' || jobStatus == 'done',
+            canOpenChat: jobStatus == 'accepted' ||
+                jobStatus == 'confirmed' ||
+                jobStatus == 'in_session' ||
+                jobStatus == 'done',
             caseModel: Map<String, dynamic>.from(model),
           ),
         );

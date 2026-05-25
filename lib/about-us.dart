@@ -3,6 +3,7 @@ import 'package:LawyerOnline/terms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class AboutUsPage extends StatelessWidget {
   const AboutUsPage({super.key});
@@ -17,9 +18,10 @@ class AboutUsPage extends StatelessWidget {
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
-        children: [
+      body: AppLayout(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
+          children: [
           /// App Info Card
           Container(
             padding: const EdgeInsets.all(25),
@@ -189,6 +191,7 @@ class AboutUsPage extends StatelessWidget {
             ),
           )
         ],
+      ),
       ),
     );
   }

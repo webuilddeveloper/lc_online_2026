@@ -1,11 +1,12 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
+import 'package:LawyerOnline/repositories/booking_case_repository.dart';
+import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 // ══════════════════════════════════════════════════════════
@@ -25,23 +26,39 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     with TickerProviderStateMixin {
   String _activeTab = 'all';
   late AnimationController _entryCtrl;
+  final LawyerAppointmentRepository _appointmentRepository =
+      const ApiLawyerAppointmentRepository();
+  final BookingCaseRepository _caseRepository =
+      const ApiBookingCaseRepository();
+  List<Map<String, dynamic>> _apiJobs = const [];
+  bool _isLoadingApiJobs = false;
 
   static const _kPrimary = Color(0xFF0262EC);
 
-  List<Map<String, dynamic>> get _jobs =>
-      LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code);
+  List<Map<String, dynamic>> get _jobs => _mergeJobs(
+        _apiJobs,
+        LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
+      );
+
+  bool _isBooking(Map<String, dynamic> job) =>
+      (job['jobSource'] ?? 'urgent') == 'booking';
+
+  bool _isUrgent(Map<String, dynamic> job) => !_isBooking(job);
 
   @override
   void initState() {
     super.initState();
+    LawyerJobsStore.instance.addListener(_onJobUpdated);
     _entryCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
+    _loadApiJobs();
   }
 
   @override
   void dispose() {
+    LawyerJobsStore.instance.removeListener(_onJobUpdated);
     _entryCtrl.dispose();
     super.dispose();
   }
@@ -49,23 +66,44 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   List<Map<String, dynamic>> get _filtered {
     switch (_activeTab) {
       case 'pending':
-        return _jobs.where((j) => j['status'] == 'pending').toList();
+        return _jobs
+            .where((j) => _isUrgent(j) && j['status'] == 'pending')
+            .toList();
       case 'accepted':
-        return _jobs.where((j) => j['status'] == 'accepted').toList();
+        return _jobs
+            .where((j) => _isUrgent(j) && j['status'] == 'accepted')
+            .toList();
+      case 'booking':
+        return _jobs
+            .where((j) =>
+                _isBooking(j) &&
+                (j['status'] == 'pending' ||
+                    j['status'] == 'confirmed' ||
+                    j['status'] == 'in_session'))
+            .toList();
       case 'done':
         return _jobs
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .toList();
       case 'all':
-        const order = {'accepted': 0, 'pending': 1, 'rejected': 2, 'done': 3};
+        const order = {
+          'in_session': 0,
+          'accepted': 1,
+          'confirmed': 2,
+          'pending': 3,
+          'rejected': 4,
+          'done': 5
+        };
         return [..._jobs]..sort((a, b) =>
             (order[a['status']] ?? 9).compareTo(order[b['status']] ?? 9));
       default:
         const orderDef = {
-          'accepted': 0,
-          'pending': 1,
-          'rejected': 2,
-          'done': 3
+          'in_session': 0,
+          'accepted': 1,
+          'confirmed': 2,
+          'pending': 3,
+          'rejected': 4,
+          'done': 5
         };
         return [..._jobs]..sort((a, b) =>
             (orderDef[a['status']] ?? 9).compareTo(orderDef[b['status']] ?? 9));
@@ -76,6 +114,94 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   void _onJobUpdated() {
     if (!mounted) return;
     setState(() {});
+    _loadApiJobs();
+  }
+
+  Future<void> _loadApiJobs() async {
+    final lawyerCode = UserProfileStore.instance.code.trim();
+    if (lawyerCode.isEmpty || _isLoadingApiJobs) return;
+    _isLoadingApiJobs = true;
+    try {
+      final snapshot =
+          await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      if (!mounted) return;
+      setState(() => _apiJobs = snapshot.bookingJobs);
+    } finally {
+      _isLoadingApiJobs = false;
+    }
+  }
+
+  List<Map<String, dynamic>> _mergeJobs(
+    List<Map<String, dynamic>> apiJobs,
+    List<Map<String, dynamic>> localJobs,
+  ) {
+    final byId = <String, Map<String, dynamic>>{};
+    for (final job in apiJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    for (final job in localJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    return byId.values.toList(growable: false);
+  }
+
+  Future<void> _setJobStatus(Map<String, dynamic> job, String status) async {
+    final jobId = job['id']?.toString() ?? '';
+    final isApiCase = job['isApiCase'] == true;
+    final isBooking = _isBooking(job);
+
+    if (!isApiCase) {
+      if (isBooking && status == 'confirmed') {
+        LawyerJobsStore.instance.confirmBooking(jobId);
+      } else if (status == 'accepted') {
+        LawyerJobsStore.instance.acceptJob(jobId);
+      } else {
+        LawyerJobsStore.instance.updateStatus(jobId, status);
+      }
+      return;
+    }
+
+    final updatedJob = Map<String, dynamic>.from(job)..['status'] = status;
+    if (mounted) {
+      setState(() {
+        _apiJobs = _apiJobs.map((item) {
+          return item['id'] == jobId ? updatedJob : item;
+        }).toList(growable: false);
+      });
+    }
+
+    final rawCase = job['rawCase'];
+    final payload = rawCase is Map
+        ? Map<String, dynamic>.from(rawCase)
+        : <String, dynamic>{'code': job['caseCode'] ?? jobId};
+    payload['caseStatus'] = _caseStatusFromJobStatus(status);
+    if ((payload['code']?.toString() ?? '').isEmpty && jobId.isNotEmpty) {
+      payload['code'] = jobId;
+    }
+
+    try {
+      await _caseRepository.updateCase(payload);
+      _loadApiJobs();
+    } catch (_) {
+      if (mounted) _showSnackbar('เกิดข้อผิดพลาด กรุณาลองใหม่', false);
+    }
+  }
+
+  int _caseStatusFromJobStatus(String status) {
+    switch (status) {
+      case 'confirmed':
+        return 2;
+      case 'in_session':
+        return 3;
+      case 'done':
+        return 4;
+      case 'rejected':
+        return 5;
+      default:
+        return 1;
+    }
   }
 
   void _showSnackbar(String msg, bool success) {
@@ -98,31 +224,37 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
-      appBar: isDesktop ? null : appBar(
-        title: 'คำขอจากลูกความ',
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => Navigator.pop(context),
-        rightAction: () {},
-      ),
+      backgroundColor:
+          isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
+      appBar: isDesktop
+          ? null
+          : appBar(
+              title: 'คำขอจากลูกความ',
+              backBtn: true,
+              rightBtn: false,
+              backAction: () => Navigator.pop(context),
+              rightAction: () {},
+            ),
       body: AppLayout(
         child: Container(
-          decoration: isDesktop ? BoxDecoration(
-            color: const Color(0xFFF2F6FF),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ) : null,
+          decoration: isDesktop
+              ? BoxDecoration(
+                  color: const Color(0xFFF2F6FF),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                )
+              : null,
           child: Column(
             children: [
               if (isDesktop)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   child: Row(
                     children: [
                       GestureDetector(
@@ -136,9 +268,11 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
-                            border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+                            border: Border.all(
+                                width: 1, color: const Color(0xFFDBDBDB)),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 18, color: Color(0xFF0F172A)),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -154,84 +288,86 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                   ),
                 ),
               // ── Pending alert ──────────────────────────────
-          if (pending > 0)
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(children: [
+              if (pending > 0)
                 Container(
-                  width: 36,
-                  height: 36,
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.notifications_active_rounded,
-                      color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'มี $pending คำขอที่รอการตอบรับ',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13),
+                  child: Row(children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      Text(
-                        'กรุณาตอบรับด่วน',
-                        style: TextStyle(
-                            color: Colors.white.withOpacity(0.8), fontSize: 11),
+                      child: const Icon(Icons.notifications_active_rounded,
+                          color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'มี $pending คำขอที่รอการตอบรับ',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13),
+                          ),
+                          Text(
+                            'กรุณาตอบรับด่วน',
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 11),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ),
-              ]),
-            ),
 
-          // ── Tab bar ────────────────────────────────────
-          _buildTabBar(),
+              // ── Tab bar ────────────────────────────────────
+              _buildTabBar(),
 
-          // ── List ───────────────────────────────────────
-          Expanded(
-            child: filtered.isEmpty
-                ? _buildEmpty()
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                    itemCount: filtered.length,
-                    itemBuilder: (_, i) {
-                      final item = filtered[i];
-                      final delay = (i * 0.1).clamp(0.0, 0.6);
-                      return AnimatedBuilder(
-                        animation: _entryCtrl,
-                        builder: (_, child) {
-                          final t = Curves.easeOutCubic.transform(
-                            ((_entryCtrl.value - delay) / (1 - delay))
-                                .clamp(0.0, 1.0),
-                          );
-                          return Opacity(
-                            opacity: t,
-                            child: Transform.translate(
-                                offset: Offset(0, 20 * (1 - t)), child: child),
+              // ── List ───────────────────────────────────────
+              Expanded(
+                child: filtered.isEmpty
+                    ? _buildEmpty()
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final item = filtered[i];
+                          final delay = (i * 0.1).clamp(0.0, 0.6);
+                          return AnimatedBuilder(
+                            animation: _entryCtrl,
+                            builder: (_, child) {
+                              final t = Curves.easeOutCubic.transform(
+                                ((_entryCtrl.value - delay) / (1 - delay))
+                                    .clamp(0.0, 1.0),
+                              );
+                              return Opacity(
+                                opacity: t,
+                                child: Transform.translate(
+                                    offset: Offset(0, 20 * (1 - t)),
+                                    child: child),
+                              );
+                            },
+                            child: _buildJobCard(item),
                           );
                         },
-                        child: _buildJobCard(item),
-                      );
-                    },
-                  ),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
@@ -251,14 +387,29 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       {
         'key': 'pending',
         'label': 'รอตอบรับ',
-        'count': _jobs.where((j) => j['status'] == 'pending').length,
+        'count':
+            _jobs.where((j) => _isUrgent(j) && j['status'] == 'pending').length,
         'color': const Color(0xFFD97706),
       },
       {
         'key': 'accepted',
         'label': 'รับแล้ว',
-        'count': _jobs.where((j) => j['status'] == 'accepted').length,
+        'count': _jobs
+            .where((j) => _isUrgent(j) && j['status'] == 'accepted')
+            .length,
         'color': const Color.fromARGB(255, 2, 156, 23),
+      },
+      {
+        'key': 'booking',
+        'label': 'นัดหมาย',
+        'count': _jobs
+            .where((j) =>
+                _isBooking(j) &&
+                (j['status'] == 'pending' ||
+                    j['status'] == 'confirmed' ||
+                    j['status'] == 'in_session'))
+            .length,
+        'color': const Color(0xFF7C3AED),
       },
       {
         'key': 'done',
@@ -346,8 +497,9 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     final status = job['status'] as String;
     final clientColor = Color(job['clientColor'] as int);
     final isPending = status == 'pending';
-    final isAccepted = status == 'accepted';
-    final isRejected = status == 'rejected';
+    final isAccepted = status == 'accepted' || status == 'in_session';
+    final isBooking = _isBooking(job);
+    final isBookingConfirmed = isBooking && status == 'confirmed';
 
     return GestureDetector(
       onTap: () {
@@ -356,8 +508,19 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
           MaterialPageRoute(
             builder: (_) => LawyerJobDetailPage(
               job: job,
-              onAccept: isPending ? () {} : null,
-              onReject: isPending ? () {} : null,
+              onAccept: isPending
+                  ? () {
+                      _setJobStatus(
+                        job,
+                        isBooking ? 'confirmed' : 'accepted',
+                      );
+                    }
+                  : null,
+              onReject: isPending
+                  ? () {
+                      _setJobStatus(job, 'rejected');
+                    }
+                  : null,
             ),
           ),
         ).then((_) => _onJobUpdated());
@@ -542,8 +705,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           title: "ปฏิเสธคำขอ",
                           message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
                           onConfirm: () {
-                            LawyerJobsStore.instance
-                                .rejectJob(job['id'] as String);
+                            _setJobStatus(job, 'rejected');
                             if (mounted) {
                               setState(() {});
                               _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
@@ -559,7 +721,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           border: Border.all(
                               color: const Color(0xFFEF4444).withOpacity(0.3)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.close_rounded,
@@ -586,8 +748,11 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                           title: "รับงาน",
                           message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
                           onConfirm: () {
-                            LawyerJobsStore.instance
-                                .acceptJob(job['id'] as String);
+                            if (isBooking) {
+                              _setJobStatus(job, 'confirmed');
+                            } else {
+                              _setJobStatus(job, 'accepted');
+                            }
                             if (mounted) {
                               setState(() {});
                               _showSnackbar('รับงานสำเร็จแล้ว!', true);
@@ -609,12 +774,12 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                                 offset: const Offset(0, 3))
                           ],
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_rounded,
+                            const Icon(Icons.check_rounded,
                                 color: Colors.white, size: 16),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Text('รับงาน',
                                 style: TextStyle(
                                     color: Colors.white,
@@ -638,7 +803,12 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ChatPageLawyer(model: {
+                      builder: (_) =>
+                          ChatPageLawyer(jobId: job['id'] as String?, model: {
+                        'id': job['id'],
+                        'jobId': job['id'],
+                        'jobSource': job['jobSource'] ?? 'urgent',
+                        'jobStatus': job['status'],
                         'name': job['clientName'] ?? '',
                         'avatar': job['clientAvatar'] ?? '',
                         'imageUrl': '', // เพิ่ม default imageUrl
@@ -680,6 +850,35 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                 ),
               ),
             ],
+            if (isBookingConfirmed) ...[
+              const Divider(height: 1, color: Color(0xFFF0F4F8)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F4FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF7C3AED)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock_clock_rounded,
+                          color: Color(0xFF7C3AED), size: 16),
+                      SizedBox(width: 8),
+                      Text('รอถึงวันนัดหมายเพื่อเริ่มปรึกษา',
+                          style: TextStyle(
+                              color: Color(0xFF7C3AED),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -700,6 +899,18 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         Icons.check_circle_outline_rounded,
         'รับแล้ว'
       ),
+      'confirmed': (
+        const Color(0xFF7C3AED),
+        const Color(0xFFF8F4FF),
+        Icons.event_available_rounded,
+        'ยืนยันนัดแล้ว'
+      ),
+      'in_session': (
+        const Color(0xFF059669),
+        const Color(0xFFECFDF5),
+        Icons.headset_mic_rounded,
+        'กำลังปรึกษา'
+      ),
       'rejected': (
         const Color(0xFFEF4444),
         const Color(0xFFFFF2F2),
@@ -713,7 +924,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         'เสร็จสิ้น'
       ),
     };
-    final cfg = configs[status]!;
+    final cfg = configs[status] ?? configs['pending']!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -795,36 +1006,42 @@ class LawyerJobDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = job['status'] as String;
     final isPending = status == 'pending';
-    final isAccepted = status == 'accepted';
+    final isAccepted = status == 'accepted' || status == 'in_session';
     final clientColor = Color(job['clientColor'] as int);
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
-      appBar: isDesktop ? null : appBar(
-        title: 'รายละเอียดคำขอ',
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => Navigator.pop(context),
-        rightAction: () {},
-      ),
+      backgroundColor:
+          isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFF2F6FF),
+      appBar: isDesktop
+          ? null
+          : appBar(
+              title: 'รายละเอียดคำขอ',
+              backBtn: true,
+              rightBtn: false,
+              backAction: () => Navigator.pop(context),
+              rightAction: () {},
+            ),
       body: AppLayout(
         child: Container(
-          decoration: isDesktop ? BoxDecoration(
-            color: const Color(0xFFF2F6FF),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ) : null,
+          decoration: isDesktop
+              ? BoxDecoration(
+                  color: const Color(0xFFF2F6FF),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                )
+              : null,
           child: Column(
             children: [
               if (isDesktop)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   child: Row(
                     children: [
                       GestureDetector(
@@ -838,9 +1055,11 @@ class LawyerJobDetailPage extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
-                            border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+                            border: Border.all(
+                                width: 1, color: const Color(0xFFDBDBDB)),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 18, color: Color(0xFF0F172A)),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -856,39 +1075,39 @@ class LawyerJobDetailPage extends StatelessWidget {
                   ),
                 ),
               Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              child: Column(children: [
-                // ── Status info ─────────────────────────
-                _buildStatusCard(status),
-                const SizedBox(height: 14),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  child: Column(children: [
+                    // ── Status info ─────────────────────────
+                    _buildStatusCard(status),
+                    const SizedBox(height: 14),
 
-                // ── Client Card ─────────────────────────
-                _buildClientCard(clientColor),
-                const SizedBox(height: 14),
+                    // ── Client Card ─────────────────────────
+                    _buildClientCard(clientColor),
+                    const SizedBox(height: 14),
 
-                // ── Case Detail ─────────────────────────
-                _buildDetailCard(clientColor),
-                const SizedBox(height: 14),
+                    // ── Case Detail ─────────────────────────
+                    _buildDetailCard(clientColor),
+                    const SizedBox(height: 14),
 
-                // ── Schedule ────────────────────────────
-                if ((job['date'] as String).isNotEmpty) ...[
-                  _buildScheduleCard(),
-                  const SizedBox(height: 14),
-                ],
-              ]),
-            ),
+                    // ── Schedule ────────────────────────────
+                    if ((job['date'] as String).isNotEmpty) ...[
+                      _buildScheduleCard(),
+                      const SizedBox(height: 14),
+                    ],
+                  ]),
+                ),
+              ),
+
+              // ── Bottom Buttons ─────────────────────────────
+              if (isPending)
+                _buildPendingButtons(context)
+              else if (isAccepted)
+                _buildAcceptedButton(context),
+            ],
           ),
-
-          // ── Bottom Buttons ─────────────────────────────
-          if (isPending)
-            _buildPendingButtons(context)
-          else if (isAccepted)
-            _buildAcceptedButton(context),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
@@ -1064,6 +1283,18 @@ class LawyerJobDetailPage extends StatelessWidget {
         'รับงานแล้ว',
         'คุณได้รับงานนี้แล้ว สามารถติดต่อลูกความได้เลย'
       ),
+      'confirmed': (
+        const Color(0xFF7C3AED),
+        Icons.event_available_rounded,
+        'ยืนยันนัดหมายแล้ว',
+        'รอถึงวันนัดหมายเพื่อเริ่มการปรึกษา'
+      ),
+      'in_session': (
+        const Color(0xFF059669),
+        Icons.headset_mic_rounded,
+        'กำลังปรึกษา',
+        'เริ่มห้องปรึกษาแล้ว สามารถพูดคุยกับลูกความได้'
+      ),
       'rejected': (
         const Color(0xFFEF4444),
         Icons.cancel_outlined,
@@ -1077,7 +1308,7 @@ class LawyerJobDetailPage extends StatelessWidget {
         'การปรึกษาเสร็จสิ้นแล้ว'
       ),
     };
-    final cfg = configs[status]!;
+    final cfg = configs[status] ?? configs['pending']!;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1112,6 +1343,7 @@ class LawyerJobDetailPage extends StatelessWidget {
   }
 
   Widget _buildPendingButtons(BuildContext context) {
+    final isBooking = (job['jobSource'] ?? 'urgent') == 'booking';
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, 10, 16, MediaQuery.of(context).padding.bottom + 14),
@@ -1129,7 +1361,7 @@ class LawyerJobDetailPage extends StatelessWidget {
                 title: "ปฏิเสธคำขอ",
                 message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
                 onConfirm: () {
-                  LawyerJobsStore.instance.rejectJob(job['id'] as String);
+                  onReject?.call();
                   if (context.mounted) Navigator.pop(context);
                 },
               );
@@ -1143,7 +1375,7 @@ class LawyerJobDetailPage extends StatelessWidget {
                     color: const Color(0xFFEF4444).withOpacity(0.4),
                     width: 1.5),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 18),
@@ -1169,7 +1401,11 @@ class LawyerJobDetailPage extends StatelessWidget {
                 title: "รับงาน",
                 message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
                 onConfirm: () {
-                  LawyerJobsStore.instance.acceptJob(job['id'] as String);
+                  if (isBooking) {
+                    onAccept?.call();
+                  } else {
+                    onAccept?.call();
+                  }
                   if (context.mounted) Navigator.pop(context);
                 },
               );
@@ -1190,9 +1426,9 @@ class LawyerJobDetailPage extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline_rounded,
+                  const Icon(Icons.check_circle_outline_rounded,
                       color: Colors.white, size: 18),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text('รับงานนี้',
                       style: TextStyle(
                           color: Colors.white,

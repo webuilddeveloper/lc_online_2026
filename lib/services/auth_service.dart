@@ -36,6 +36,7 @@ class AuthService {
   static const String _cancelUrl = '$_baseUrl/m/register/cancel';
   static const String _changePasswordUrl = '$_baseUrl/m/register/change';
   static const String _updateProfileUrl = '$_baseUrl/m/register/update';
+  static const String _createCaseUrl = '$_baseUrl/m/case/create';
 
   static const Map<String, String> _headers = {
     'Accept': 'application/json',
@@ -174,14 +175,14 @@ class AuthService {
   static Future<void> cancelAccount({
     required String email,
     required String code,
-    required String reesonCancel,
+    required String reasonCancel,
     String? password,
   }) async {
     try {
       final Map<String, dynamic> bodyMap = {
         'email': email,
         'code': code,
-        'reesonCancel': reesonCancel,
+        'reasonCancel': reasonCancel,
       };
 
       if (password != null && password.isNotEmpty) {
@@ -328,6 +329,39 @@ class AuthService {
       rethrow;
     } catch (e) {
       debugPrint('[AuthService.updateProfile] error: $e');
+      rethrow;
+    }
+  }
+//api case
+  static Future<void> createCase(Map<String, dynamic> requestBody) async {
+    try {
+      final body = json.encode(requestBody);
+
+      debugPrint('[AuthService.createCase] url=$_createCaseUrl');
+      debugPrint('[AuthService.createCase] body=$body');
+
+      final response = await http.post(
+        Uri.parse(_createCaseUrl),
+        body: body,
+        headers: _headers,
+      );
+
+      debugPrint(
+          '[AuthService.createCase] status=${response.statusCode} body=${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Server error ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      if (data['status'] != 'S') {
+        throw Exception(data['message']?.toString() ?? 'Create case failed');
+      }
+
+      debugPrint('[AuthService.createCase] success');
+      return;
+    } catch (e) {
+      debugPrint('[AuthService.createCase] error: $e');
       rethrow;
     }
   }

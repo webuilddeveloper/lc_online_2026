@@ -30,10 +30,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
-import 'package:LawyerOnline/models/lawyer/appointment_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_model.dart';
+import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
+import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
-import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart'; // ← UserProfileStore
@@ -43,13 +45,7 @@ import 'package:easy_localization/easy_localization.dart';
 // final isUrgentCase = LawyerProfileStore.instance.isUrgentCaseEnabled;
 
 // ─── Palette & theme constants ───────────────────────────────────────
-const _kPrimary = Color(0xFF0262EC); // deep navy
-const _kAccent = Color(0xFF2F80ED); // bright blue
-const _kGold = Color(0xFFF5A623); // justice-gold accent
-const _kSurface = Color(0xFFF4F6FB); // cool light background
 const _kCard = Colors.white;
-const _kText = Color(0xFF0D1B2A);
-const _kSub = Color(0xFF6B7A99);
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key, this.userType, this.onProfileTap});
@@ -65,7 +61,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {"code": "0", "imageUrl": "assets/images/banner1.png"},
     {"code": "1", "imageUrl": "assets/images/banner2.png"},
   ];
-  int _currentBanner = 0;
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
@@ -322,7 +317,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   ];
 
   // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
-  List<dynamic> get appointmentList => AppointmentStore.instance.list;
+  final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
+  final LawyerAppointmentRepository _appointmentRepository =
+      const ApiLawyerAppointmentRepository();
+  final BookingCaseRepository _caseRepository =
+      const ApiBookingCaseRepository();
+
+  List<dynamic> _lawyersForYou = const [];
+  List<dynamic> _trendingLawyers = const [];
+  List<Map<String, dynamic>> _lawyerAppointments = const [];
+  List<Map<String, dynamic>> _apiBookingJobs = const [];
+  bool _isLoadingLawyers = false;
+  bool _isLoadingAppointments = false;
+  String? _lawyerLoadError;
+  String? _appointmentLoadError;
+
+  List<dynamic> get appointmentList => _lawyerAppointments;
+  List<Map<String, dynamic>> get _lawyerJobRequests => _mergeJobs(
+        _apiBookingJobs,
+        LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
+      );
 
   // ─── law categories ───────────────────────────────────────────────
   final List<Map<String, dynamic>> _lawCategories = [
@@ -357,7 +371,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
 // ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง — delegate ไป AppointmentStore
   bool _hasConflictingAppointment() =>
-      AppointmentStore.instance.hasConflictingAppointment();
+      CaseAppointmentMapper.hasConflictingAppointment(_lawyerAppointments);
 
 // ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
   void _startUrgentCaseTimer() {
@@ -471,6 +485,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     callRead();
     // ← listen UserProfileStore เพื่อ rebuild ทันทีที่ profile เปลี่ยน
     UserProfileStore.instance.addListener(_onProfileChanged);
+    LawyerJobsStore.instance.addListener(_onJobsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
       _fadeCtrl.forward();
@@ -482,6 +497,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void dispose() {
     UserProfileStore.instance.removeListener(_onProfileChanged); // ←
     _urgentCaseTimer?.cancel();
+    LawyerJobsStore.instance.removeListener(_onJobsChanged);
     _fadeCtrl.dispose();
     super.dispose();
   }
@@ -496,6 +512,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       userType = store.userType;
       typeLogin = store.typeLogin;
     });
+    _loadRealHomeData();
+  }
+
+  void _onJobsChanged() {
+    if (!mounted) return;
+    if (UserProfileStore.instance.userType == 'lawyer') {
+      _loadLawyerAppointments();
+    }
   }
 
   Future<void> requestPermissions() async {
@@ -520,6 +544,201 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       imageUrl = store.imageUrl;
       typeLogin = store.typeLogin;
     });
+    _loadRealHomeData();
+  }
+
+  Future<void> _loadRealHomeData() async {
+    _loadHomeLawyers();
+    if (UserProfileStore.instance.userType == 'lawyer') {
+      _loadLawyerAppointments();
+    } else if (mounted) {
+      setState(() {
+        _lawyerAppointments = const [];
+        _apiBookingJobs = const [];
+        _appointmentLoadError = null;
+        _isLoadingAppointments = false;
+      });
+    }
+  }
+
+  Future<void> _loadHomeLawyers() async {
+    if (_isLoadingLawyers) return;
+    setState(() {
+      _isLoadingLawyers = true;
+      _lawyerLoadError = null;
+    });
+    try {
+      final lawyers = await _lawyerRepository.searchLawyers();
+      final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
+      if (!mounted) return;
+      setState(() {
+        _lawyersForYou = mapped.take(10).toList(growable: false);
+        _trendingLawyers = [...mapped]..sort((a, b) =>
+            ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
+        _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
+        _isLoadingLawyers = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _lawyersForYou = const [];
+        _trendingLawyers = const [];
+        _lawyerLoadError = 'genericError'.tr();
+        _isLoadingLawyers = false;
+      });
+    }
+  }
+
+  Future<void> _loadLawyerAppointments() async {
+    final lawyerCode = UserProfileStore.instance.code.trim();
+    if (lawyerCode.isEmpty) return;
+    final localAppointments =
+        LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+    if (_isLoadingAppointments) {
+      if (localAppointments.isNotEmpty && mounted) {
+        setState(() {
+          _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+            _lawyerAppointments,
+            localAppointments,
+          );
+        });
+      }
+      return;
+    }
+    setState(() {
+      if (localAppointments.isNotEmpty) {
+        _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+          _lawyerAppointments,
+          localAppointments,
+        );
+      }
+      _isLoadingAppointments = true;
+      _appointmentLoadError = null;
+    });
+    try {
+      final realAppointments =
+          await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      if (!mounted) return;
+      setState(() {
+        _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+          realAppointments.appointments,
+          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode),
+        );
+        _apiBookingJobs = realAppointments.bookingJobs;
+        _isLoadingAppointments = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      final fallbackAppointments =
+          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+      setState(() {
+        _lawyerAppointments = fallbackAppointments;
+        _apiBookingJobs = const [];
+        _appointmentLoadError =
+            fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
+        _isLoadingAppointments = false;
+      });
+    }
+  }
+
+  Map<String, dynamic> _homeLawyerMap(LawyerModel lawyer) {
+    final legacy = lawyer.toLegacyMap();
+    final specialty = lawyer.specialty.trim();
+    return {
+      ...legacy,
+      'title': lawyer.title.trim().isNotEmpty ? lawyer.title : 'Lawyer',
+      'scroll': lawyer.rating,
+      'cost': lawyer.price > 0 ? lawyer.price.toString() : 'Free',
+      'costUnit': '/hr',
+      'imageUrl': lawyer.imageUrl.trim().isNotEmpty
+          ? lawyer.imageUrl
+          : 'assets/images/lawyer-avatar-1.png',
+      'experience':
+          lawyer.experience.trim().isNotEmpty ? lawyer.experience : '-',
+      'skills': specialty.isNotEmpty && specialty != '-' ? [specialty] : [],
+    };
+  }
+
+  List<Map<String, dynamic>> _mergeJobs(
+    List<Map<String, dynamic>> apiJobs,
+    List<Map<String, dynamic>> localJobs,
+  ) {
+    final byId = <String, Map<String, dynamic>>{};
+    for (final job in apiJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    for (final job in localJobs) {
+      final id = job['id']?.toString() ?? '';
+      if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
+    }
+    return byId.values.toList(growable: false);
+  }
+
+  Future<void> _handleLawyerJobStatusChanged(
+    Map<String, dynamic> job,
+    String newStatus,
+  ) async {
+    final jobId = job['id']?.toString() ?? '';
+    final isApiCase = job['isApiCase'] == true;
+    final isBooking = (job['jobSource'] ?? 'urgent') == 'booking';
+
+    if (!isApiCase) {
+      LawyerJobsStore.instance.updateStatus(jobId, newStatus);
+      return;
+    }
+
+    final updatedJob = Map<String, dynamic>.from(job)..['status'] = newStatus;
+    final updatedAppointments = newStatus == 'confirmed' ||
+            newStatus == 'in_session' ||
+            newStatus == 'done'
+        ? [LawyerJobsStore.bookingJobToAppointment(updatedJob)]
+        : <Map<String, dynamic>>[];
+    setState(() {
+      _apiBookingJobs = _apiBookingJobs.map((item) {
+        return item['id'] == jobId ? updatedJob : item;
+      }).toList(growable: false);
+      _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+        _lawyerAppointments,
+        updatedAppointments,
+      );
+    });
+
+    if (!isBooking) return;
+
+    final rawCase = job['rawCase'];
+    final payload = rawCase is Map
+        ? Map<String, dynamic>.from(rawCase)
+        : <String, dynamic>{'code': job['caseCode'] ?? jobId};
+    payload['caseStatus'] = _caseStatusFromJobStatus(newStatus);
+    if ((payload['code']?.toString() ?? '').isEmpty && jobId.isNotEmpty) {
+      payload['code'] = jobId;
+    }
+
+    try {
+      await _caseRepository.updateCase(payload);
+      _loadLawyerAppointments();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('genericError'.tr())),
+      );
+    }
+  }
+
+  int _caseStatusFromJobStatus(String status) {
+    switch (status) {
+      case 'confirmed':
+        return 2;
+      case 'in_session':
+        return 3;
+      case 'done':
+        return 4;
+      case 'rejected':
+        return 5;
+      default:
+        return 1;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -625,9 +844,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   cases: UserCaseAdapter.fromJobs(LawyerJobsStore.instance
                       .jobsForClient(UserProfileStore.instance.code)),
                   lawCategories: _lawCategories,
-                  lawyers: lawyerOnlineList,
-                  newLawyers: newLawyerOnlineList,
+                  lawyers: _lawyersForYou,
+                  newLawyers: _trendingLawyers,
                   isGuest: typeLogin == 'null',
+                  isLoadingLawyers: _isLoadingLawyers,
+                  lawyerLoadError: _lawyerLoadError,
                 ),
               ),
 
@@ -637,11 +858,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeLawyerSection(
                   appointments: appointmentList,
-                  jobRequests: LawyerJobsStore.instance
-                      .jobsForLawyer(UserProfileStore.instance.code),
-                  onJobStatusChanged: (id, newStatus) {
-                    LawyerJobsStore.instance.updateStatus(id, newStatus);
-                  },
+                  isLoadingAppointments: _isLoadingAppointments,
+                  appointmentLoadError: _appointmentLoadError,
+                  jobRequests: _lawyerJobRequests,
+                  onJobStatusChanged: _handleLawyerJobStatusChanged,
                 ),
               ),
 

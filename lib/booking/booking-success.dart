@@ -1,7 +1,6 @@
-import 'package:LawyerOnline/consult/consult_status.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -45,6 +44,10 @@ class BookingSuccessPage extends StatefulWidget {
 class _BookingSuccessPageState extends State<BookingSuccessPage>
     with TickerProviderStateMixin {
   bool _jobCreated = false;
+  bool _isCreatingCase = false;
+  String? _jobCreateError;
+  final BookingCaseRepository _caseRepository =
+      const ApiBookingCaseRepository();
 
   late AnimationController _checkCtrl;
   late AnimationController _contentCtrl;
@@ -61,7 +64,6 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
 
   @override
   void initState() {
-    print('>>>>>><<<<<>>>> ======= ${widget.lawyer}');
     super.initState();
     _createPendingJob();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
@@ -120,28 +122,85 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
     HapticFeedback.heavyImpact();
   }
 
-  void _createPendingJob() {
+  Future<void> _createPendingJob() async {
     if (_jobCreated || widget.lawyer == null) return;
-    _jobCreated = true;
 
     final lawyer = Map<String, dynamic>.from(widget.lawyer as Map);
     final profile = UserProfileStore.instance;
-    final clientCode = profile.code.isNotEmpty
-        ? profile.code
-        : LawyerJobsStore.mockSeedClientCode;
-    final clientName = profile.name.isNotEmpty ? profile.name : null;
+    final clientCode = profile.code.trim();
+    final lawyerCode = lawyer['code']?.toString().trim() ?? '';
 
-    LawyerJobsStore.instance.createFromBooking(
-      lawyerModel: lawyer,
-      topic: widget.topic,
-      subTopic: widget.subTopic,
-      appointmentDate: widget.appointmentDate,
-      appointmentTime: widget.appointmentTime,
-      clientCode: clientCode,
-      clientName: clientName,
-      bookingCode: widget.bookingCode,
-      budget: lawyer['cost']?.toString(),
-    );
+    if (!profile.isLoggedIn || clientCode.isEmpty) {
+      _jobCreateError = 'ไม่พบข้อมูลบัญชีผู้ใช้ กรุณาเข้าสู่ระบบใหม่ก่อนจอง';
+      _showJobCreateError();
+      return;
+    }
+
+    if (lawyerCode.isEmpty) {
+      _jobCreateError = 'ไม่พบรหัสบัญชีทนายความ กรุณาเลือกทนายความใหม่';
+      _showJobCreateError();
+      return;
+    }
+
+    _isCreatingCase = true;
+    try {
+      final timeWindow = _parseAppointmentTime(widget.appointmentTime);
+      await _caseRepository.createCase(
+        BookingCaseDraft(
+          clientCode: clientCode,
+          clientName: profile.name.trim(),
+          lawyerCode: lawyerCode,
+          lawyerName: lawyer['name']?.toString() ?? '',
+          topicTitle: widget.topic,
+          subTopicTitle: widget.subTopic,
+          caseDate: widget.appointmentDate,
+          startTime: timeWindow.$1,
+          endTime: timeWindow.$2,
+          price:
+              lawyer['price']?.toString() ?? lawyer['cost']?.toString() ?? '',
+          details: widget.subTopic,
+        ),
+      );
+
+      LawyerJobsStore.instance.createFromBooking(
+        lawyerModel: lawyer,
+        topic: widget.topic,
+        subTopic: widget.subTopic,
+        appointmentDate: widget.appointmentDate,
+        appointmentTime: widget.appointmentTime,
+        clientCode: clientCode,
+        clientName: profile.name.trim(),
+        bookingCode: widget.bookingCode,
+        budget: lawyer['cost']?.toString(),
+      );
+      _jobCreated = true;
+    } catch (e) {
+      _jobCreateError = e.toString();
+      _showJobCreateError();
+    } finally {
+      _isCreatingCase = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  (String, String) _parseAppointmentTime(String raw) {
+    final normalized = raw.replaceAll('–', '-');
+    final parts = normalized.split('-').map((part) => part.trim()).toList();
+    if (parts.length != 2) return (raw.trim(), '');
+    return (parts[0], parts[1]);
+  }
+
+  void _showJobCreateError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _jobCreateError == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_jobCreateError!),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
   }
 
   @override
@@ -155,9 +214,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   @override
   Widget build(BuildContext context) {
     final lawyer = widget.lawyer;
-    final lawyerColor = Color(0xFF0262EC
-        // lawyer?['color'] as int? ?? 0xFF0262EC
-        );
+    const lawyerColor = Color(0xFF0262EC);
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -202,7 +259,11 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                     // ── Notice ─────────────────────────────
                     _buildAnimatedItem(
                       delay: 0.2,
-                      child: _buildNoticeCard(),
+                      child: _isCreatingCase
+                          ? _buildCreatingCaseCard()
+                          : _jobCreateError == null
+                              ? _buildNoticeCard()
+                              : _buildErrorCard(_jobCreateError!),
                     ),
                   ],
                 ),
@@ -684,6 +745,85 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.brown[400],
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreatingCaseCard() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F6FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kPrimary.withOpacity(0.2)),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'กำลังบันทึกคำขอไปยังระบบ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A2340),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.error_outline_rounded,
+                size: 16, color: Color(0xFFEF4444)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('สร้างคำขอไม่สำเร็จ',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF991B1B))),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF7F1D1D),
                     height: 1.5,
                   ),
                 ),

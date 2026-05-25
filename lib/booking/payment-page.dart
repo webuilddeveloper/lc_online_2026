@@ -2,6 +2,7 @@ import 'package:LawyerOnline/booking/booking-success.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -84,33 +85,106 @@ class _PaymentPageState extends State<PaymentPage> {
                         const SizedBox(height: 20),
 
                         // QR Code
+                        // GestureDetector(
+                        //   onTap: () => DialogService.showAutoClose(
+                        //     context,
+                        //     title: "ชำระเงินสำเร็จ",
+                        //     message: "ระบบได้รับยอดเงินเรียบร้อยแล้ว",
+                        //     seconds: 3,
+                        //     isBtn: false,
+                        //     onClose: () {
+                        //       Navigator.pop(context);
+                        //       Navigator.push(
+                        //         context,
+                        //         MaterialPageRoute(
+                        //           builder: (_) => BookingSuccessPage(
+                        //             lawyer: widget.lawyer,
+                        //             topic: widget.topic,
+                        //             subTopic: widget.subTopic,
+                        //             appointmentDate: DateFormat('dd/MM/yyyy')
+                        //                 .format(widget.date!)
+                        //                 .toString(),
+                        //             appointmentTime: widget.time,
+                        //             bookingCode:
+                        //                 'BK-${DateTime.now().millisecondsSinceEpoch}',
+                        //           ),
+                        //         ),
+                        //       );
+                        //     },
+                        //   ),
+
                         GestureDetector(
-                          onTap: () => DialogService.showAutoClose(
-                            context,
-                            title: "ชำระเงินสำเร็จ",
-                            message: "ระบบได้รับยอดเงินเรียบร้อยแล้ว",
-                            seconds: 3,
-                            isBtn: false,
-                            onClose: () {
+                          onTap: () async {
+                            // 1. โชว์หน้าต่าง Loading ระหว่างรอ API
+                            DialogService.showLoading(context);
+                            try {
+                              // 2. เรียก API ส่งข้อมูลนัดหมายไปยัง Server
+                              await AuthService.createCase({
+                                // สมมติฐานข้อมูลที่เรามีอยู่ (อันไหนไม่มีอาจจะต้องรับเพิ่มจากหน้าก่อนๆ)
+                                'topicTitle': widget.topic,
+                                'subTopicTitle': widget.subTopic,
+                                'lawyerCode':
+                                    widget.lawyer?['code']?.toString() ?? '',
+                                'lawyerName':
+                                    widget.lawyer?['name']?.toString() ?? '',
+                                'caseDate': DateFormat('yyyy-MM-dd')
+                                    .format(widget.date!),
+                                'startTime': widget.time
+                                    .split(' - ')
+                                    .first, // เช่น 10:00
+                                'endTime':
+                                    widget.time.split(' - ').last, // เช่น 11:00
+                                'hour': '1',
+                                'price':
+                                    widget.lawyer?['price']?.toString() ?? '0',
+                                'isPay': true,
+                                'payType': 'promptpay',
+                                'caseStatus': 1, // 1 = รอทนายรับเคส
+                                'caseType': 1, // 1 = นัดหมายล่วงหน้า
+                                // ... (เติมตัวแปรให้ครบตามที่ API ต้องการ)
+                              });
+                              // 3. เอา Loading ออกเมื่อส่งสำเร็จ
                               Navigator.pop(context);
-                              Navigator.push(
+                              // 4. แสดง Pop-up สำเร็จ (ของเดิม)
+                              DialogService.showAutoClose(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => BookingSuccessPage(
-                                    lawyer: widget.lawyer,
-                                    topic: widget.topic,
-                                    subTopic: widget.subTopic,
-                                    appointmentDate: DateFormat('dd/MM/yyyy')
-                                        .format(widget.date!)
-                                        .toString(),
-                                    appointmentTime: widget.time,
-                                    bookingCode:
-                                        'BK-${DateTime.now().millisecondsSinceEpoch}',
-                                  ),
-                                ),
+                                title: "ชำระเงินสำเร็จ",
+                                message:
+                                    "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+                                seconds: 3,
+                                isBtn: false,
+                                onClose: () {
+                                  // โค้ดเปลี่ยนหน้าไป BookingSuccessPage เดิม...
+                                  Navigator.pop(context);
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BookingSuccessPage(
+                                        lawyer: widget.lawyer,
+                                        topic: widget.topic,
+                                        subTopic: widget.subTopic,
+                                        appointmentDate:
+                                            DateFormat('dd/MM/yyyy')
+                                                .format(widget.date!)
+                                                .toString(),
+                                        appointmentTime: widget.time,
+                                        bookingCode:
+                                            'BK-${DateTime.now().millisecondsSinceEpoch}',
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
-                            },
-                          ),
+                            } catch (e) {
+                              // 5. กรณีมี Error ให้ดึง Loading ออกแล้วโชว์ข้อความ
+                              Navigator.pop(context);
+                              DialogService.showError(
+                                context,
+                                title: "เกิดข้อผิดพลาด",
+                                message: e.toString(),
+                              );
+                            }
+                          },
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(

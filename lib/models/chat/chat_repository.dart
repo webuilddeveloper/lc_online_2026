@@ -80,7 +80,10 @@ class MockChatRepository implements ChatRepository {
       // ✅ ดึงจาก LawyerJobsStore — เฉพาะงานที่รับแล้วหรือจบแล้ว
       return LawyerJobsStore.instance
           .jobsForLawyer(UserProfileStore.instance.code)
-          .where((j) => j['status'] == 'accepted' || j['status'] == 'done')
+          .where((j) =>
+              j['status'] == 'accepted' ||
+              j['status'] == 'in_session' ||
+              j['status'] == 'done')
           .map((j) => Conversation(
                 id: j['id'] as String,
                 name: j['clientName'] as String,

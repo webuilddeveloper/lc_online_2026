@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
-
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
 
@@ -15,8 +15,9 @@ class PrivacyPolicyPage extends StatelessWidget {
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
+      body: AppLayout(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(15, 20, 15, 40),
         children: [
           Container(
             padding: const EdgeInsets.all(20),
@@ -48,6 +49,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
           )
         ],
+      ),
       ),
     );
   }
