@@ -644,22 +644,22 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: _specialtyError && !selected
                     ? _errorColor
                     : (selected ? _blue : _border),
-                width: selected ? 1.5 : 1,
+                width: 1,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (selected) ...[
-                  const Icon(Icons.check_rounded,
-                      size: 14, color: Colors.white),
-                  const SizedBox(width: 5),
-                ],
+                // if (selected) ...[
+                //   const Icon(Icons.check_rounded,
+                //       size: 14, color: Colors.white),
+                //   const SizedBox(width: 5),
+                // ],
                 Text(
                   option,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: FontWeight.normal,
                     color: selected ? Colors.white : const Color(0xFF444444),
                   ),
                 ),
