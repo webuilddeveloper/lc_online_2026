@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/widgets/home/home_app_bar.dart';
 import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
 import 'package:LawyerOnline/widgets/home/home_lawyer_section.dart';
@@ -317,7 +318,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   ];
 
   // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
-  final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
+  // final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
   final LawyerAppointmentRepository _appointmentRepository =
       const ApiLawyerAppointmentRepository();
   final BookingCaseRepository _caseRepository =
@@ -325,14 +326,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   List<dynamic> _lawyersForYou = const [];
   List<dynamic> _trendingLawyers = const [];
-  List<Map<String, dynamic>> _lawyerAppointments = const [];
+  List<dynamic> _lawyerAppointments = const [];
   List<Map<String, dynamic>> _apiBookingJobs = const [];
   bool _isLoadingLawyers = false;
   bool _isLoadingAppointments = false;
   String? _lawyerLoadError;
   String? _appointmentLoadError;
 
-  List<dynamic> get appointmentList => _lawyerAppointments;
+  List<dynamic> appointmentList = const [];
   List<Map<String, dynamic>> get _lawyerJobRequests => _mergeJobs(
         _apiBookingJobs,
         LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
@@ -369,104 +370,106 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String name = "";
   String typeLogin = "";
 
+  List<dynamic> caseList = [];
+
 // ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง — delegate ไป AppointmentStore
-  bool _hasConflictingAppointment() =>
-      CaseAppointmentMapper.hasConflictingAppointment(_lawyerAppointments);
+  // bool _hasConflictingAppointment() =>
+  //     CaseAppointmentMapper.hasConflictingAppointment(_lawyerAppointments);
 
 // ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
   void _startUrgentCaseTimer() {
     _urgentCaseTimer?.cancel();
     _urgentCaseTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
       if (!mounted) return;
-      if (LawyerProfileStore.instance.isUrgentCaseEnabled &&
-          _hasConflictingAppointment()) {
-        // setUrgentCase เรียก notifyListeners() เอง ไม่ต้อง setState
-        await LawyerProfileStore.instance.setUrgentCase(false);
+      // if (LawyerProfileStore.instance.isUrgentCaseEnabled &&
+      //     _hasConflictingAppointment()) {
+      //   // setUrgentCase เรียก notifyListeners() เอง ไม่ต้อง setState
+      //   await LawyerProfileStore.instance.setUrgentCase(false);
 
-        // แจ้งเตือน
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.notifications_active_rounded,
-                    color: Colors.orange, size: 28),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'ปิดรับเคสด่วนแล้ว',
-                    style: GoogleFonts.prompt(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                        fontSize: 17),
-                  ),
-                ),
-              ],
-            ),
-            content: Text(
-              'คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง\nระบบปิดรับเคสด่วนให้อัตโนมัติแล้ว',
-              style: GoogleFonts.prompt(fontSize: 14),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(
-                  'รับทราบ',
-                  style: GoogleFonts.prompt(
-                      color: const Color(0xFF0262EC),
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        );
-      }
+      //   // แจ้งเตือน
+      //   showDialog(
+      //     context: context,
+      //     barrierDismissible: false,
+      //     builder: (ctx) => AlertDialog(
+      //       shape:
+      //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      //       title: Row(
+      //         children: [
+      //           const Icon(Icons.notifications_active_rounded,
+      //               color: Colors.orange, size: 28),
+      //           const SizedBox(width: 8),
+      //           Expanded(
+      //             child: Text(
+      //               'ปิดรับเคสด่วนแล้ว',
+      //               style: GoogleFonts.prompt(
+      //                   fontWeight: FontWeight.bold,
+      //                   color: Colors.orange,
+      //                   fontSize: 17),
+      //             ),
+      //           ),
+      //         ],
+      //       ),
+      //       content: Text(
+      //         'คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง\nระบบปิดรับเคสด่วนให้อัตโนมัติแล้ว',
+      //         style: GoogleFonts.prompt(fontSize: 14),
+      //       ),
+      //       actions: [
+      //         TextButton(
+      //           onPressed: () => Navigator.pop(ctx),
+      //           child: Text(
+      //             'รับทราบ',
+      //             style: GoogleFonts.prompt(
+      //                 color: const Color(0xFF0262EC),
+      //                 fontWeight: FontWeight.bold),
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   );
+      // }
     });
   }
 
   void _toggleUrgentCase(bool value) {
     if (value == true) {
       // ถ้ากำลังพยายามเปิดรับเคส
-      bool hasConflict = _hasConflictingAppointment();
+      // bool hasConflict = _hasConflictingAppointment();
 
-      if (hasConflict) {
-        // มีคิวชนใน 1 ชั่วโมง แจ้งเตือนและไม่อนุญาตให้เปิด
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded,
-                    color: Colors.orange, size: 28),
-                const SizedBox(width: 8),
-                Text("ไม่สามารถเปิดรับเคสด่วนได้",
-                    style: GoogleFonts.prompt(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                        fontSize: 18)),
-              ],
-            ),
-            content: Text(
-                "คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง หรือกำลังอยู่ในช่วงเวลาของเคสอื่นอยู่ โปรดดำเนินการให้เสร็จสิ้นก่อนเปิดรับเคสด่วน",
-                style: GoogleFonts.prompt(fontSize: 14)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("ตกลง",
-                    style: GoogleFonts.prompt(
-                        color: const Color(0xFF0262EC),
-                        fontWeight: FontWeight.bold)),
-              )
-            ],
-          ),
-        );
-        return;
-      }
+      // if (hasConflict) {
+      //   // มีคิวชนใน 1 ชั่วโมง แจ้งเตือนและไม่อนุญาตให้เปิด
+      //   showDialog(
+      //     context: context,
+      //     builder: (context) => AlertDialog(
+      //       shape:
+      //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      //       title: Row(
+      //         children: [
+      //           const Icon(Icons.warning_amber_rounded,
+      //               color: Colors.orange, size: 28),
+      //           const SizedBox(width: 8),
+      //           Text("ไม่สามารถเปิดรับเคสด่วนได้",
+      //               style: GoogleFonts.prompt(
+      //                   fontWeight: FontWeight.bold,
+      //                   color: Colors.orange,
+      //                   fontSize: 18)),
+      //         ],
+      //       ),
+      //       content: Text(
+      //           "คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง หรือกำลังอยู่ในช่วงเวลาของเคสอื่นอยู่ โปรดดำเนินการให้เสร็จสิ้นก่อนเปิดรับเคสด่วน",
+      //           style: GoogleFonts.prompt(fontSize: 14)),
+      //       actions: [
+      //         TextButton(
+      //           onPressed: () => Navigator.pop(context),
+      //           child: Text("ตกลง",
+      //               style: GoogleFonts.prompt(
+      //                   color: const Color(0xFF0262EC),
+      //                   fontWeight: FontWeight.bold)),
+      //         )
+      //       ],
+      //     ),
+      //   );
+      //   return;
+      // }
     }
 
     // store จะเรียก notifyListeners() เอง → ListenableBuilder rebuild อัตโนมัติ
@@ -483,6 +486,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     callRead();
+    callReadCase();
+    // _callReadLawyer();
     // ← listen UserProfileStore เพื่อ rebuild ทันทีที่ profile เปลี่ยน
     UserProfileStore.instance.addListener(_onProfileChanged);
     LawyerJobsStore.instance.addListener(_onJobsChanged);
@@ -492,6 +497,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
     _startUrgentCaseTimer();
   }
+
+  // Future<void> _callReadLawyer() async {
+  //   final param = await postDio("${server}m/register/read", {'category': 'guest'});
+
+  //   setState(() {
+  //     _lawyersForYou = param['objectDate'];
+  //      _isLoadingLawyers = false;
+  //   });
+  // }
 
   @override
   void dispose() {
@@ -548,7 +562,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _loadRealHomeData() async {
-    _loadHomeLawyers();
+    if (UserProfileStore.instance.userType == 'user') {
+      _loadHomeLawyers();
+    }
+
     if (UserProfileStore.instance.userType == 'lawyer') {
       _loadLawyerAppointments();
     } else if (mounted) {
@@ -568,16 +585,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       _lawyerLoadError = null;
     });
     try {
-      final lawyers = await _lawyerRepository.searchLawyers();
-      final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
+      dynamic model = {"limit": 10, "userType": "lawyer"};
+      final param = await postDio("${server}/m/register/read", model);
+
+      setState(() {
+        print('------------------- ${param['objectData']}');
+        // _lawyersForYou = param['objectDate'];
+        _isLoadingLawyers = false;
+      });
+      // final lawyers = await _lawyerRepository.searchLawyers();
+      // final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
+      final resulte = param['objectData'] ?? [];
       if (!mounted) return;
       setState(() {
-        _lawyersForYou = mapped.take(10).toList(growable: false);
-        _trendingLawyers = [...mapped]..sort((a, b) =>
+        _lawyersForYou = resulte.take(10).toList(growable: false);
+        _trendingLawyers = [...resulte]..sort((a, b) =>
             ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
         _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
         _isLoadingLawyers = false;
       });
+      // print('------------------- ${mapped}');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -590,74 +617,73 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _loadLawyerAppointments() async {
-    final lawyerCode = UserProfileStore.instance.code.trim();
-    if (lawyerCode.isEmpty) return;
-    final localAppointments =
-        LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
-    if (_isLoadingAppointments) {
-      if (localAppointments.isNotEmpty && mounted) {
-        setState(() {
-          _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-            _lawyerAppointments,
-            localAppointments,
-          );
-        });
-      }
-      return;
-    }
-    setState(() {
-      if (localAppointments.isNotEmpty) {
-        _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-          _lawyerAppointments,
-          localAppointments,
-        );
-      }
-      _isLoadingAppointments = true;
-      _appointmentLoadError = null;
-    });
+    final lawyerCode = UserProfileStore.instance.code;
+    // if (lawyerCode.isEmpty) return;
+    // final localAppointments =
+    //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+    // if (_isLoadingAppointments) {
+    //   // if (localAppointments.isNotEmpty && mounted) {
+    //   //   setState(() {
+    //   //     _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+    //   //       _lawyerAppointments,
+    //   //       localAppointments,
+    //   //     );
+    //   //   });
+    //   // }
+    //   return;
+    // }
+    // setState(() {
+    //   if (localAppointments.isNotEmpty) {
+    //     _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+    //       _lawyerAppointments,
+    //       localAppointments,
+    //     );
+    //   }
+    //   _isLoadingAppointments = true;
+    //   _appointmentLoadError = null;
+    // });
     try {
-      final realAppointments =
-          await _appointmentRepository.readScheduleForLawyer(lawyerCode);
-      if (!mounted) return;
+      // final realAppointments =
+      //     await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      // if (!mounted) return;
+      final param = await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
       setState(() {
-        _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-          realAppointments.appointments,
-          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode),
-        );
-        _apiBookingJobs = realAppointments.bookingJobs;
+        appointmentList = param['objectData'];
+        _lawyerAppointments = param['objectData'];
         _isLoadingAppointments = false;
       });
     } catch (_) {
-      if (!mounted) return;
-      final fallbackAppointments =
-          LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+      // if (!mounted) return;
+      // final fallbackAppointments =
+      //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
       setState(() {
-        _lawyerAppointments = fallbackAppointments;
-        _apiBookingJobs = const [];
-        _appointmentLoadError =
-            fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
+        // _lawyerAppointments = fallbackAppointments;
+        // _apiBookingJobs = const [];
+        // _appointmentLoadError =
+        //     fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
         _isLoadingAppointments = false;
       });
     }
   }
 
-  Map<String, dynamic> _homeLawyerMap(LawyerModel lawyer) {
-    final legacy = lawyer.toLegacyMap();
-    final specialty = lawyer.specialty.trim();
-    return {
-      ...legacy,
-      'title': lawyer.title.trim().isNotEmpty ? lawyer.title : 'Lawyer',
-      'scroll': lawyer.rating,
-      'cost': lawyer.price > 0 ? lawyer.price.toString() : 'Free',
-      'costUnit': '/hr',
-      'imageUrl': lawyer.imageUrl.trim().isNotEmpty
-          ? lawyer.imageUrl
-          : 'assets/images/lawyer-avatar-1.png',
-      'experience':
-          lawyer.experience.trim().isNotEmpty ? lawyer.experience : '-',
-      'skills': specialty.isNotEmpty && specialty != '-' ? [specialty] : [],
-    };
-  }
+  // Map<String, dynamic> _homeLawyerMap(LawyerModel lawyer) {
+  //   final legacy = lawyer.toLegacyMap();
+  //   final specialty = lawyer.specialty.trim();
+  //   return {
+  //     ...legacy,
+  //     'title': lawyer.title.trim().isNotEmpty ? lawyer.title : 'Lawyer',
+  //     'scroll': lawyer.rating,
+  //     'cost': lawyer.price > 0 ? lawyer.price.toString() : 'Free',
+  //     'costUnit': '/hr',
+  //     'userType': 'lawyer',
+  //     'imageUrl': lawyer.imageUrl.trim().isNotEmpty
+  //         ? lawyer.imageUrl
+  //         : 'assets/images/lawyer-avatar-1.png',
+  //     'experience':
+  //         lawyer.experience.trim().isNotEmpty ? lawyer.experience : '-',
+  //     'skills': specialty.isNotEmpty && specialty != '-' ? [specialty] : [],
+  //   };
+  // }
 
   List<Map<String, dynamic>> _mergeJobs(
     List<Map<String, dynamic>> apiJobs,
@@ -676,7 +702,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _handleLawyerJobStatusChanged(
-    Map<String, dynamic> job,
+    dynamic job,
     String newStatus,
   ) async {
     final jobId = job['id']?.toString() ?? '';
@@ -684,7 +710,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final isBooking = (job['jobSource'] ?? 'urgent') == 'booking';
 
     if (!isApiCase) {
-      LawyerJobsStore.instance.updateStatus(jobId, newStatus);
+      // LawyerJobsStore.instance.updateStatus(jobId, newStatus);
       return;
     }
 
@@ -698,10 +724,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       _apiBookingJobs = _apiBookingJobs.map((item) {
         return item['id'] == jobId ? updatedJob : item;
       }).toList(growable: false);
-      _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-        _lawyerAppointments,
-        updatedAppointments,
-      );
+      // _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
+      //   _lawyerAppointments,
+      //   updatedAppointments,
+      // );
     });
 
     if (!isBooking) return;
@@ -739,6 +765,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       default:
         return 1;
     }
+  }
+
+  Future<void> callReadCase() async {
+    final userCode = UserProfileStore.instance.code;
+    try {
+      final param =
+          await postDio("${server}/m/case/read", {"userCode": userCode});
+      setState(() {
+        caseList = param['objectData'];
+        if (userType == 'lawyer') {
+          _loadLawyerAppointments();
+        }
+      });
+    } catch (_) {}
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -841,8 +881,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ListenableBuilder(
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeUserSection(
-                  cases: UserCaseAdapter.fromJobs(LawyerJobsStore.instance
-                      .jobsForClient(UserProfileStore.instance.code)),
+                  cases: caseList,
+                  // UserCaseAdapter.fromJobs(LawyerJobsStore.instance
+                  //     .jobsForClient(UserProfileStore.instance.code)),
                   lawCategories: _lawCategories,
                   lawyers: _lawyersForYou,
                   newLawyers: _trendingLawyers,
@@ -857,7 +898,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ListenableBuilder(
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeLawyerSection(
-                  appointments: appointmentList,
+                  // appointments: appointmentList,
                   isLoadingAppointments: _isLoadingAppointments,
                   appointmentLoadError: _appointmentLoadError,
                   jobRequests: _lawyerJobRequests,
@@ -874,3 +915,4 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // ─── Action Card ─────────────────────────────────────────────────
 }
+

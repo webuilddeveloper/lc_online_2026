@@ -157,7 +157,7 @@ class CaseAppointmentMapper {
   }
 
   static Map<DateTime, List<dynamic>> eventMapFromAppointments(
-    List<Map<String, dynamic>> appointments,
+    List<dynamic> appointments,
   ) {
     final result = <DateTime, List<dynamic>>{};
     for (final appointment in appointments) {
@@ -171,8 +171,8 @@ class CaseAppointmentMapper {
     return result;
   }
 
-  static List<Map<String, dynamic>> mergeAppointments(
-    List<Map<String, dynamic>> primary,
+  static List<dynamic> mergeAppointments(
+    List<dynamic> primary,
     List<Map<String, dynamic>> secondary,
   ) {
     final result = <Map<String, dynamic>>[];

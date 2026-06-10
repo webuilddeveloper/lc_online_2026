@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -18,57 +20,47 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // ── Controllers ───────────────────────────────────────────────────────────────
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _confirmCtrl = TextEditingController();
-  final TextEditingController _barNumCtrl = TextEditingController();
+  final TextEditingController lawyerNoCtrl = TextEditingController();
+  final TextEditingController idCardCtrl = TextEditingController();
 
-  // ── Scroll ────────────────────────────────────────────────────────────────────
-  // ใช้ ScrollController + GlobalKey เพื่อ scroll ไปตำแหน่ง error
   final ScrollController _scrollCtrl = ScrollController();
   final GlobalKey _nameKey = GlobalKey();
   final GlobalKey _phoneKey = GlobalKey();
-  final GlobalKey _barNumKey = GlobalKey();
+  final GlobalKey lawyerNoKey = GlobalKey();
   final GlobalKey _specialtyKey = GlobalKey();
   final GlobalKey _emailKey = GlobalKey();
   final GlobalKey _passwordKey = GlobalKey();
   final GlobalKey _confirmKey = GlobalKey();
+  final GlobalKey _idCardKey = GlobalKey();
 
-  // ── State ─────────────────────────────────────────────────────────────────────
   String _userType = 'client';
   bool _pwVisible = false;
   bool _cfVisible = false;
   bool _agreeTerms = false;
   bool _isLoading = false;
-  File? _profileImage;
+  XFile? profileImage;
   int _pwStrength = 0;
 
-  // Error state สำหรับแต่ละ field
   String? _nameError;
   String? _phoneError;
   String? _emailError;
   String? _passwordError;
   String? _confirmError;
-  String? _barNumError;
-  bool _specialtyError = false; // ใช้ bool เพราะเป็น chip ไม่ใช่ TextField
+  String? lawyerNoError;
+  String? idCardError;
+  bool _specialtyError = false;
+  String _imageUrl = '';
+  String provinceTitle = '';
+  String provinceCode = '';
 
-  // ── Specialty multi-select ────────────────────────────────────────────────────
-  final List<String> _specialtyOptions = [
-    'กฎหมายแรงงาน',
-    'กฎหมายแพ่งและพาณิชย์',
-    'คดีอาญา',
-    'กฎหมายครอบครัว',
-    'อสังหาริมทรัพย์',
-    'กฎหมายธุรกิจ',
-    'คดีไซเบอร์',
-    'ประกันภัยและผู้บริโภค',
-    'หนี้สินและการเงิน',
-    'อื่นๆ',
-  ];
-  final Set<String> _selectedSpecialties = {};
+  List<dynamic> _specialtyOptions = [];
+  Set<String> _selectedSpecialties = {};
+  List<dynamic> provinceList = [];
 
   final ImagePicker _picker = ImagePicker();
 
@@ -77,12 +69,9 @@ class _RegisterPageState extends State<RegisterPage> {
   static const Color _border = Color(0xFFECEDF0);
   static const Color _errorColor = Color(0xFFD32F2F);
 
-  // ── Validation helpers ────────────────────────────────────────────────────────
   bool _isEmailValid(String e) =>
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
-
   bool _isPhoneValid(String p) => p.replaceAll(RegExp(r'\D'), '').length >= 9;
-
   bool _isBarNumValid(String b) => RegExp(r'^\d+/\d{4}$').hasMatch(b.trim());
 
   int _calcStrength(String pw) {
@@ -124,47 +113,77 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // ── Scroll to key ─────────────────────────────────────────────────────────────
-  // เรียกฟังก์ชันนี้พร้อม GlobalKey ของ field ที่ error
-  // จะ scroll หน้าจอลงไปให้ field นั้นอยู่ที่ประมาณ 30% จากบนจอ
   void _scrollToKey(GlobalKey key) {
     final ctx = key.currentContext;
     if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      alignment: 0.3,
-    );
+    Scrollable.ensureVisible(ctx,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.3);
   }
 
-  // ── Image ─────────────────────────────────────────────────────────────────────
-  Future<void> _pickImage() async {
-    final XFile? img = await _picker.pickImage(source: ImageSource.gallery);
-    if (img != null) setState(() => _profileImage = File(img.path));
+  _imgFromCamera() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    setState(() {
+      profileImage = image!;
+    });
+    _upload();
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────────
+  _imgFromGallery() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      profileImage = image!;
+    });
+    _upload();
+  }
+
+  void _upload() async {
+    if (profileImage == null) return;
+    uploadImageX(profileImage!).then((res) {
+      setState(() {
+        _imageUrl = res;
+      });
+    }).catchError((err) {
+      print(err);
+    });
+  }
+
+  Future<void> _callReadSubTopic() async {
+    final param = await postDio("${server}/m/topic/subTopic/read", {});
+    setState(() {
+      _specialtyOptions = [...param['objectData']];
+    });
+  }
+
+  Future<void> _callReadProvince() async {
+    final param = await postDio("${serverLC}route/province/read", {});
+
+    setState(() {
+      provinceList = [
+        {"code": "0", "title": "เลือกจังหวัด"},
+        ...param['objectData']
+      ];
+    });
+    print(provinceList);
+  }
+
   Future<void> _submit() async {
-    // ล้าง error ทั้งหมดก่อน validate ใหม่
     setState(() {
       _nameError = null;
       _phoneError = null;
       _emailError = null;
       _passwordError = null;
       _confirmError = null;
-      _barNumError = null;
+      lawyerNoError = null;
       _specialtyError = false;
     });
 
-    // ตรวจ terms ก่อน (ใช้ dialog เพราะไม่มี field)
     if (!_agreeTerms) {
       _showError('agreeTermsRequired'.tr());
       return;
     }
 
-    // validate ทุก field พร้อมกัน
-    // เก็บ GlobalKey แรกที่ error ไว้เพื่อ scroll ไป
     GlobalKey? firstErrorKey;
 
     if (_nameCtrl.text.trim().isEmpty) {
@@ -181,14 +200,13 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     if (_userType == 'lawyer') {
-      if (_barNumCtrl.text.trim().isEmpty) {
-        _barNumError = 'barNumberRequired'.tr();
-        firstErrorKey ??= _barNumKey;
-      } else if (!_isBarNumValid(_barNumCtrl.text)) {
-        _barNumError = 'barNumberInvalid'.tr();
-        firstErrorKey ??= _barNumKey;
+      if (lawyerNoCtrl.text.trim().isEmpty) {
+        lawyerNoError = 'lawyerNoRequired'.tr();
+        firstErrorKey ??= lawyerNoKey;
+      } else if (!_isBarNumValid(lawyerNoCtrl.text)) {
+        lawyerNoError = 'lawyerNoInvalid'.tr();
+        firstErrorKey ??= lawyerNoKey;
       }
-
       if (_selectedSpecialties.isEmpty) {
         _specialtyError = true;
         firstErrorKey ??= _specialtyKey;
@@ -219,14 +237,13 @@ class _RegisterPageState extends State<RegisterPage> {
       firstErrorKey ??= _confirmKey;
     }
 
-    if (firstErrorKey != null) {
-      setState(() {});
-      // รอให้ setState render เสร็จก่อน แล้วค่อย scroll
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToKey(firstErrorKey!);
-      });
-      return;
-    }
+    // if (firstErrorKey != null) {
+    //   setState(() {});
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     _scrollToKey(firstErrorKey!);
+    //   });
+    //   return;
+    // }
 
     final fullName = _nameCtrl.text.trim();
     final parts = fullName.split(RegExp(r'\s+'));
@@ -234,24 +251,30 @@ class _RegisterPageState extends State<RegisterPage> {
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
     final userType = _userType == 'lawyer' ? 'lawyer' : 'user';
 
+    print(_selectedSpecialties.toList());
+    print('======------====== ${lawyerNoCtrl.text}');
+
     setState(() => _isLoading = true);
     try {
       await AuthService.register(
-        firstName: firstName,
-        lastName: lastName,
-        userType: userType,
-        phone: _phoneCtrl.text.trim(),
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-        confirmPassword: _confirmCtrl.text,
-      );
+          firstName: firstName,
+          lastName: lastName,
+          userType: userType,
+          phone: _phoneCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+          confirmPassword: _confirmCtrl.text,
+          lawyerNo: lawyerNoCtrl.text,
+          idCard: idCardCtrl.text,
+          imageUrl: _imageUrl,
+          expertiseList: _selectedSpecialties.toList(),
+          provinceCode: provinceCode,
+          provinceTitle: provinceTitle);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showSuccess();
     } on EmailDuplicateException {
-      // ── AuthService ตรวจ server message แล้ว throw EmailDuplicateException ────
-      // จับ type ได้แน่นอน ไม่ต้อง parse string ที่อาจดักพลาด
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -261,7 +284,6 @@ class _RegisterPageState extends State<RegisterPage> {
         _scrollToKey(_emailKey);
       });
     } on PhoneDuplicateException {
-      // ── AuthService ตรวจ server message แล้ว throw PhoneDuplicateException ────
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -273,9 +295,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-
       final raw = error.toString().toLowerCase();
-
       String friendlyMsg;
       if (raw.contains('network') ||
           raw.contains('connection') ||
@@ -299,237 +319,497 @@ class _RegisterPageState extends State<RegisterPage> {
         content: Text(msg),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ok'.tr(), style: const TextStyle(color: _blue)),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('ok'.tr(), style: const TextStyle(color: _blue))),
         ],
       ),
     );
   }
 
   void _showSuccess() {
-    // เก็บ context ของ page ไว้ก่อน (ไม่ใช่ context ของ dialog)
     final pageContext = context;
-
-    showDialog(
-      context: pageContext,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF1D9E75)),
-            SizedBox(width: 8),
-            Text('registerSuccess'.tr()),
-          ],
-        ),
-        content: Text('registerSuccessMessage'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(pageContext); // ปิด dialog
-              Navigator.pushAndRemoveUntil(
-                pageContext,
-                MaterialPageRoute(builder: (_) => LoginPage()),
-                (route) => false, // ล้าง stack ทั้งหมด
-              );
-            },
-            child:
-                Text('getStarted'.tr(), style: const TextStyle(color: _blue)),
-          ),
-        ],
-      ),
+    DialogService.showSuccess(
+      context,
+      title: "registerSuccess".tr(),
+      message: "registerSuccessMessage".tr(),
+      onClose: () {
+        Navigator.pushAndRemoveUntil(pageContext,
+            MaterialPageRoute(builder: (_) => LoginPage()), (route) => false);
+      },
     );
   }
 
-  // ── BUILD ─────────────────────────────────────────────────────────────────────
+  // ── Specialty Dialog ──────────────────────────────────────────────────────────
+  void _showSpecialtyDialog() {
+    final Set<String> tempSelected = Set.from(_selectedSpecialties);
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10))
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Header ──
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 16, 16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE8F0FE),
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(28),
+                            topRight: Radius.circular(28)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                                color: _blue,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.gavel_rounded,
+                                color: Colors.white, size: 18),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('ความเชี่ยวชาญ',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: _blue)),
+                                Text('เลือกได้มากกว่า 1 อย่าง',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: _blue.withOpacity(0.7))),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                  color: Colors.white, shape: BoxShape.circle),
+                              child: Icon(Icons.close_rounded,
+                                  size: 18, color: Colors.grey.shade500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Selected Badge ──
+                    if (tempSelected.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _blue.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _blue.withOpacity(0.15)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle_rounded,
+                                size: 15, color: _blue),
+                            const SizedBox(width: 8),
+                            Text('เลือกแล้ว ${tempSelected.length} รายการ',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: _blue,
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+
+                    // ── Options ──
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _specialtyOptions
+                              .where((o) => o['code'] != '0')
+                              .map((option) {
+                            final selected =
+                                tempSelected.contains(option['code']);
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  if (selected) {
+                                    tempSelected.remove(option['code']);
+                                  } else {
+                                    tempSelected.add(option['code']);
+                                  }
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? _blue
+                                      : const Color(0xFFF5F7FA),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: selected
+                                          ? _blue
+                                          : const Color(0xFFE0E3EA)),
+                                  boxShadow: selected
+                                      ? [
+                                          BoxShadow(
+                                              color: _blue.withOpacity(0.25),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3))
+                                        ]
+                                      : [],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (selected) ...[
+                                      const Icon(Icons.check_rounded,
+                                          size: 13, color: Colors.white),
+                                      const SizedBox(width: 5),
+                                    ],
+                                    Flexible(
+                                      child: Text(
+                                        option['title'],
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: selected
+                                              ? Colors.white
+                                              : const Color(0xFF444444),
+                                          fontWeight: selected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+
+                    // ── Footer ──
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setDialogState(() => tempSelected.clear()),
+                              child: Container(
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F7FA),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: const Color(0xFFE0E3EA)),
+                                ),
+                                child: Center(
+                                  child: Text('ล้างทั้งหมด',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedSpecialties.clear();
+                                  _selectedSpecialties.addAll(tempSelected);
+                                  if (_selectedSpecialties.isNotEmpty)
+                                    _specialtyError = false;
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              child: Container(
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: _blue,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: _blue.withOpacity(0.35),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4))
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.check_rounded,
+                                          color: Colors.white, size: 17),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'เสร็จสิ้น${tempSelected.isNotEmpty ? " (${tempSelected.length})" : ""}',
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _callReadSubTopic();
+    _callReadProvince();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isWide = ResponsiveLayout.isDesktop(context);
 
     final personalInfoCard = _buildCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: _buildAvatarPicker()),
+          const SizedBox(height: 24),
+          _sectionLabel('whoAreYou'.tr()),
+          const SizedBox(height: 8),
+          _buildTypeSelector(),
+          const SizedBox(height: 20),
+          _sectionLabel('fullName'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _nameKey,
+            controller: _nameCtrl,
+            hint: 'fullNameHint'.tr(),
+            icon: Icons.person_outline_rounded,
+            errorText: _nameError,
+            onChanged: (_) => setState(() => _nameError = null),
+          ),
+          const SizedBox(height: 14),
+          _sectionLabel('phone'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _phoneKey,
+            controller: _phoneCtrl,
+            hint: '08X-XXX-XXXX',
+            icon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            maxLength: 10,
+            errorText: _phoneError,
+            onChanged: (_) => setState(() => _phoneError = null),
+          ),
+          const SizedBox(height: 14),
+          _sectionLabel('idCard'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _idCardKey,
+            controller: idCardCtrl,
+            hint: 'idCardHint'.tr(),
+            icon: Icons.assignment_ind_outlined,
+            errorText: idCardError,
+            onChanged: (_) => setState(() => idCardError = null),
+          ),
+          if (_userType == 'lawyer') ...[
+            const SizedBox(height: 14),
+            _sectionLabel('จังหวัด'.tr()),
+            const SizedBox(height: 6),
+            SizedBox(
+              // height: 43,
+              child: dropdownCustom(
+                label: "จังหวัดที่เลือก",
+                list: provinceList,
+                isRequired: true,
+                valueSelect: provinceCode,
+                onChanged: (value) {
+                  setState(() {
+                    provinceCode = value!;
+                    provinceTitle = provinceList
+                        .firstWhere((x) => x['code'] == value)['title'];
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
+            _sectionLabel('lawyerNo'.tr()),
+            const SizedBox(height: 6),
+            _buildTextField(
+              key: lawyerNoKey,
+              controller: lawyerNoCtrl,
+              hint: 'lawyerNoHint'.tr(),
+              icon: Icons.badge_outlined,
+              errorText: lawyerNoError,
+              onChanged: (_) => setState(() => lawyerNoError = null),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              key: _specialtyKey,
               children: [
-                Center(child: _buildAvatarPicker()),
-                const SizedBox(height: 24),
-
-                _sectionLabel('whoAreYou'.tr()),
-                const SizedBox(height: 8),
-                _buildTypeSelector(),
-                const SizedBox(height: 20),
-
-                _sectionLabel('fullName'.tr()),
-                const SizedBox(height: 6),
-                _buildTextField(
-                  key: _nameKey, // ผูก GlobalKey
-                  controller: _nameCtrl,
-                  hint: 'fullNameHint'.tr(),
-                  icon: Icons.person_outline_rounded,
-                  errorText: _nameError,
-                  onChanged: (_) => setState(() => _nameError = null),
-                ),
-                const SizedBox(height: 14),
-
-                _sectionLabel('phone'.tr()),
-                const SizedBox(height: 6),
-                _buildTextField(
-                  key: _phoneKey,
-                  controller: _phoneCtrl,
-                  hint: '08X-XXX-XXXX',
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 10,
-                  errorText: _phoneError,
-                  onChanged: (_) => setState(() => _phoneError = null),
-                ),
-
-                // ── lawyer-only fields ─────────────────────────────────────────
-                if (_userType == 'lawyer') ...[
-                  const SizedBox(height: 14),
-                  _sectionLabel('barNumber'.tr()),
-                  const SizedBox(height: 6),
-                  _buildTextField(
-                    key: _barNumKey,
-                    controller: _barNumCtrl,
-                    hint: 'barNumberHint'.tr(),
-                    icon: Icons.badge_outlined,
-                    errorText: _barNumError,
-                    onChanged: (_) => setState(() => _barNumError = null),
+                _sectionLabel('specialty'.tr()),
+                const SizedBox(width: 8),
+                if (_selectedSpecialties.isNotEmpty)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: _blue, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${_selectedSpecialties.length}',
+                        style: GoogleFonts.prompt(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
                   ),
-                  const SizedBox(height: 18),
-
-                  // ── MULTI-SELECT SPECIALTY ──────────────────────────────────
-                  Row(
-                    key: _specialtyKey, // ผูก GlobalKey ที่แถว label
-                    children: [
-                      _sectionLabel('specialty'.tr()),
-                      const SizedBox(width: 8),
-                      if (_selectedSpecialties.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: _blue,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${_selectedSpecialties.length}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // แสดง error text ใต้ label ถ้ายังไม่ได้เลือก
-                  if (_specialtyError)
-                    Row(
-                      children: [
-                        Icon(Icons.error_outline_rounded,
-                            size: 13, color: _errorColor),
-                        SizedBox(width: 4),
-                        Text(
-                          'specialtyRequired'.tr(),
-                          style:
-                              const TextStyle(fontSize: 11, color: _errorColor),
-                        ),
-                      ],
-                    ),
-                  Text(
-                    'specialtyMultiple'.tr(),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildSpecialtyChips(),
-                ],
               ],
             ),
+            const SizedBox(height: 4),
+            if (_specialtyError)
+              Row(
+                children: [
+                  Icon(Icons.error_outline_rounded,
+                      size: 13, color: _errorColor),
+                  const SizedBox(width: 4),
+                  Text('specialtyRequired'.tr(),
+                      style:
+                          GoogleFonts.prompt(fontSize: 11, color: _errorColor)),
+                ],
+              ),
+            Text('specialtyMultiple'.tr(),
+                style: GoogleFonts.prompt(
+                    fontSize: 11, color: Colors.grey.shade500)),
+            const SizedBox(height: 10),
+            _buildSpecialtyChips(),
+          ],
+        ],
+      ),
     );
 
     final accountInfoCard = _buildCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionLabel('myAccount'.tr()),
-                const SizedBox(height: 14),
-                _sectionLabel('email'.tr()),
-                const SizedBox(height: 6),
-                _buildTextField(
-                  key: _emailKey,
-                  controller: _emailCtrl,
-                  hint: 'example@email.com',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                  onChanged: (_) => setState(() => _emailError = null),
-                ),
-                const SizedBox(height: 14),
-                _sectionLabel('password'.tr()),
-                const SizedBox(height: 6),
-                _buildTextField(
-                  key: _passwordKey,
-                  controller: _passwordCtrl,
-                  hint: 'passwordHint'.tr(),
-                  icon: Icons.lock_outline_rounded,
-                  obscure: !_pwVisible,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _pwVisible
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => _pwVisible = !_pwVisible),
-                  ),
-                  errorText: _passwordError,
-                  onChanged: (v) => setState(() {
-                    _pwStrength = _calcStrength(v);
-                    _passwordError = null;
-                    if (_confirmCtrl.text.isNotEmpty &&
-                        _confirmCtrl.text != v) {
-                      _confirmError = 'passwordMismatch'.tr();
-                    } else {
-                      _confirmError = null;
-                    }
-                  }),
-                ),
-                if (_passwordCtrl.text.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  _buildStrengthBar(),
-                ],
-                const SizedBox(height: 14),
-                _sectionLabel('confirmPassword'.tr()),
-                const SizedBox(height: 6),
-                _buildTextField(
-                  key: _confirmKey,
-                  controller: _confirmCtrl,
-                  hint: 'confirmPasswordHint'.tr(),
-                  icon: Icons.lock_outline_rounded,
-                  obscure: !_cfVisible,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _cfVisible
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => _cfVisible = !_cfVisible),
-                  ),
-                  errorText: _confirmError,
-                  onChanged: (v) => setState(() {
-                    _confirmError = v.isNotEmpty && v != _passwordCtrl.text
-                        ? 'passwordMismatch'.tr()
-                        : null;
-                  }),
-                ),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('myAccount'.tr()),
+          const SizedBox(height: 14),
+          _sectionLabel('email'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _emailKey,
+            controller: _emailCtrl,
+            hint: 'example@email.com',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            errorText: _emailError,
+            onChanged: (_) => setState(() => _emailError = null),
+          ),
+          const SizedBox(height: 14),
+          _sectionLabel('password'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _passwordKey,
+            controller: _passwordCtrl,
+            hint: 'passwordHint'.tr(),
+            icon: Icons.lock_outline_rounded,
+            obscure: !_pwVisible,
+            suffix: IconButton(
+              icon: Icon(
+                  _pwVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.grey,
+                  size: 20),
+              onPressed: () => setState(() => _pwVisible = !_pwVisible),
             ),
+            errorText: _passwordError,
+            onChanged: (v) => setState(() {
+              _pwStrength = _calcStrength(v);
+              _passwordError = null;
+              if (_confirmCtrl.text.isNotEmpty && _confirmCtrl.text != v) {
+                _confirmError = 'passwordMismatch'.tr();
+              } else {
+                _confirmError = null;
+              }
+            }),
+          ),
+          if (_passwordCtrl.text.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _buildStrengthBar(),
+          ],
+          const SizedBox(height: 14),
+          _sectionLabel('confirmPassword'.tr()),
+          const SizedBox(height: 6),
+          _buildTextField(
+            key: _confirmKey,
+            controller: _confirmCtrl,
+            hint: 'confirmPasswordHint'.tr(),
+            icon: Icons.lock_outline_rounded,
+            obscure: !_cfVisible,
+            suffix: IconButton(
+              icon: Icon(
+                  _cfVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.grey,
+                  size: 20),
+              onPressed: () => setState(() => _cfVisible = !_cfVisible),
+            ),
+            errorText: _confirmError,
+            onChanged: (v) => setState(() {
+              _confirmError = v.isNotEmpty && v != _passwordCtrl.text
+                  ? 'passwordMismatch'.tr()
+                  : null;
+            }),
+          ),
+        ],
+      ),
     );
 
     final termsCard = _buildCard(
@@ -560,20 +840,15 @@ class _RegisterPageState extends State<RegisterPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 5,
-                    child: personalInfoCard,
-                  ),
+                  Expanded(flex: 5, child: personalInfoCard),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 4,
-                    child: Column(
-                      children: [
-                        accountInfoCard,
-                        const SizedBox(height: 16),
-                        termsCard,
-                      ],
-                    ),
+                    child: Column(children: [
+                      accountInfoCard,
+                      const SizedBox(height: 16),
+                      termsCard
+                    ]),
                   ),
                 ],
               )
@@ -591,100 +866,203 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: _buildSubmitButton(),
               ),
             ),
-          const SizedBox(height: 16),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('alreadyHaveAccount'.tr(),
-                  style:
-                      const TextStyle(fontSize: 13, color: Color(0xFF8C8C8C))),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Text('loginLink'.tr(),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('alreadyHaveAccount'.tr(),
                     style: const TextStyle(
-                        fontSize: 13,
-                        color: _blue,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-        ],
-      ),
+                        fontSize: 13, color: Color(0xFF8C8C8C))),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Text('loginLink'.tr(),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: _blue,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ── Multi-select Specialty Chips ──────────────────────────────────────────────
+  dropdownCustom({
+    required String label,
+    bool isRequired = false,
+    required List<dynamic> list,
+    required String? valueSelect,
+    required Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: list.any((e) => e['code'] == valueSelect) ? valueSelect : null,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+              color: Colors.grey, size: 20),
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: label,
+            hintStyle:
+                GoogleFonts.prompt(fontSize: 14, color: Color(0xFF9E9E9E)),
+            prefixIcon: const Icon(Icons.location_on_outlined,
+                color: Colors.grey, size: 20),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _blue, width: 1.5),
+            ),
+            fillColor: const Color(0xFFFAFAFA),
+            filled: true,
+          ),
+          style: GoogleFonts.prompt(fontSize: 14, color: Color(0xFF1A1A2E)),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          items: list.map<DropdownMenuItem<String>>((e) {
+            return DropdownMenuItem<String>(
+              value: e['code'],
+              child: Text(
+                e['title'],
+                style:
+                    GoogleFonts.prompt(fontSize: 14, color: Color(0xFF1A1A2E)),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  // ── Specialty Chips ───────────────────────────────────────────────────────────
   Widget _buildSpecialtyChips() {
+    if (_selectedSpecialties.isEmpty) {
+      return GestureDetector(
+        onTap: () => _showSpecialtyDialog(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: _specialtyError
+                ? _errorColor.withOpacity(0.04)
+                : const Color(0xFFFAFAFA),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _specialtyError ? _errorColor : _border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: _specialtyError
+                      ? _errorColor.withOpacity(0.1)
+                      : const Color(0xFFE8F0FE),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.add_rounded,
+                    size: 18, color: _specialtyError ? _errorColor : _blue),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'เลือกความเชี่ยวชาญอย่างน้อย 1 อย่าง',
+                style: GoogleFonts.prompt(
+                    fontSize: 13,
+                    color: _specialtyError
+                        ? _errorColor
+                        : const Color(0xFF8C8C8C)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: _specialtyOptions.map((option) {
-        final selected = _selectedSpecialties.contains(option);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (selected) {
-                _selectedSpecialties.remove(option);
-              } else {
-                _selectedSpecialties.add(option);
-                _specialtyError = false; // clear error ทันทีที่เลือก
-              }
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      children: [
+        ..._selectedSpecialties.map((code) {
+          final option = _specialtyOptions.firstWhere(
+            (o) => o['code'] == code,
+            orElse: () => {'code': code, 'title': code},
+          );
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: selected ? _blue : const Color(0xFFFAFAFA),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                // chip เปลี่ยนเป็น border แดงเมื่อ specialtyError
-                color: _specialtyError && !selected
-                    ? _errorColor
-                    : (selected ? _blue : _border),
-                width: 1,
-              ),
-            ),
+                color: _blue, borderRadius: BorderRadius.circular(20)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // if (selected) ...[
-                //   const Icon(Icons.check_rounded,
-                //       size: 14, color: Colors.white),
-                //   const SizedBox(width: 5),
-                // ],
-                Text(
-                  option,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.normal,
-                    color: selected ? Colors.white : const Color(0xFF444444),
-                  ),
+                Text(option['title'],
+                    style: GoogleFonts.prompt(
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500)),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _selectedSpecialties.remove(code)),
+                  child: const Icon(Icons.close_rounded,
+                      size: 14, color: Colors.white),
                 ),
               ],
             ),
+          );
+        }),
+        GestureDetector(
+          onTap: () => _showSpecialtyDialog(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F0FE),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _blue.withOpacity(0.3)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_rounded, size: 15, color: _blue),
+                SizedBox(width: 4),
+                Text('เพิ่ม',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: _blue,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
-        );
-      }).toList(),
+        ),
+      ],
     );
   }
 
   // ── Avatar Picker ─────────────────────────────────────────────────────────────
   Widget _buildAvatarPicker() {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: () => _showPickerImage(context),
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
           CircleAvatar(
             radius: 45,
             backgroundColor: const Color(0xFFE8F0FE),
-            backgroundImage: _profileImage != null
-                ? FileImage(_profileImage!) as ImageProvider
-                : null,
-            child: _profileImage == null
+            backgroundImage: _imageUrl != '' ? NetworkImage(_imageUrl) : null,
+            child: _imageUrl == ''
                 ? const Icon(Icons.person_rounded, size: 45, color: _blue)
                 : null,
           ),
@@ -720,7 +1098,7 @@ class _RegisterPageState extends State<RegisterPage> {
         onTap: () => setState(() {
           _userType = value;
           _selectedSpecialties.clear();
-          _barNumError = null;
+          lawyerNoError = null;
           _specialtyError = false;
         }),
         child: AnimatedContainer(
@@ -730,9 +1108,7 @@ class _RegisterPageState extends State<RegisterPage> {
             color: selected ? const Color(0xFFE8F0FE) : const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? _blue : _border,
-              width: selected ? 1.5 : 1,
-            ),
+                color: selected ? _blue : _border, width: selected ? 1.5 : 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,12 +1152,11 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // ── Check Row ─────────────────────────────────────────────────────────────────
-  Widget _buildCheckRow({
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-    required String label,
-    String? linkLabel,
-  }) {
+  Widget _buildCheckRow(
+      {required bool value,
+      required ValueChanged<bool?> onChanged,
+      required String label,
+      String? linkLabel}) {
     return Row(
       children: [
         Checkbox(
@@ -796,15 +1171,15 @@ class _RegisterPageState extends State<RegisterPage> {
             onTap: () => onChanged(!value),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Color(0xFF555555)),
+                style:
+                    GoogleFonts.prompt(fontSize: 13, color: Color(0xFF555555)),
                 children: [
                   TextSpan(text: label),
                   if (linkLabel != null)
                     TextSpan(
-                      text: linkLabel,
-                      style: const TextStyle(
-                          color: _blue, fontWeight: FontWeight.w600),
-                    ),
+                        text: linkLabel,
+                        style: const TextStyle(
+                            color: _blue, fontWeight: FontWeight.w600)),
                   TextSpan(text: 'privacyPolicy'.tr()),
                 ],
               ),
@@ -841,8 +1216,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2.5),
-                )
+                      color: Colors.white, strokeWidth: 2.5))
               : Text('register'.tr(),
                   style: const TextStyle(
                       color: Colors.white,
@@ -872,14 +1246,12 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _sectionLabel(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 13, color: _blue, fontWeight: FontWeight.w500),
-      );
+  Widget _sectionLabel(String text) => Text(text,
+      style: GoogleFonts.prompt(
+          fontSize: 13, color: _blue, fontWeight: FontWeight.w500));
 
   Widget _buildTextField({
-    Key? key, // รับ GlobalKey เพื่อให้ scroll มาหาได้
+    Key? key,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
@@ -892,7 +1264,7 @@ class _RegisterPageState extends State<RegisterPage> {
     String? errorText,
   }) {
     return Column(
-      key: key, // ผูก key ที่ Column ครอบทั้ง TextField + error text
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
@@ -938,14 +1310,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   size: 13, color: _errorColor),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  errorText,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      color: _errorColor,
-                      fontWeight: FontWeight.w400),
-                ),
-              ),
+                  child: Text(errorText,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: _errorColor,
+                          fontWeight: FontWeight.w400))),
             ],
           ),
         ],
@@ -953,15 +1322,53 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  void _showPickerImage(context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('อัลบั้มรูปภาพ',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Kanit',
+                        fontWeight: FontWeight.normal)),
+                onTap: () {
+                  _imgFromGallery();
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('กล้องถ่ายรูป',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Kanit',
+                        fontWeight: FontWeight.normal)),
+                onTap: () {
+                  _imgFromCamera();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
-    _scrollCtrl.dispose(); // dispose ScrollController ด้วย
+    _scrollCtrl.dispose();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
-    _barNumCtrl.dispose();
+    lawyerNoCtrl.dispose();
     super.dispose();
   }
 

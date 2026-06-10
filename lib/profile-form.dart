@@ -42,7 +42,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  File? profileImage;
+  XFile? profileImage;
   final ImagePicker picker = ImagePicker();
 
   static const Color _blue = Color(0xFF0262EC);
@@ -53,6 +53,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   String get _typeLogin => UserProfileStore.instance.typeLogin;
   String get _code => UserProfileStore.instance.code;
   String get _storedImageUrl => UserProfileStore.instance.imageUrl;
+  String _imageUrl = '';
 
   @override
   void initState() {
@@ -109,13 +110,52 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     );
   }
 
-  Future<void> pickImage() async {
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+  // Future<void> pickImage() async {
+  //   final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  //   if (image != null) {
+  //     setState(() {
+  //       profileImage = XFile(image.path);
+  //     });
+  //   }
+  // }
+
+  _imgFromCamera() async {
+    final ImagePicker _picker = ImagePicker();
+    // Pick an image
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+
+    setState(() {
+      profileImage = image!;
+    });
+    _upload();
+  }
+
+  _imgFromGallery() async {
+    // XFile image = await ImagePicker.pickImage(
+    //   source: ImageSource.gallery,
+    //   imageQuality: 100,
+    // );
+
+    final ImagePicker _picker = ImagePicker();
+    // Pick an image
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      profileImage = image!;
+    });
+    _upload();
+  }
+
+  void _upload() async {
+    if (profileImage == null) return;
+
+    uploadImageX(profileImage!).then((res) {
       setState(() {
-        profileImage = File(image.path);
+        _imageUrl = res;
       });
-    }
+    }).catchError((err) {
+      print(err);
+    });
   }
 
   @override
@@ -152,23 +192,18 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                   children: [
                     /// Profile Image
                     GestureDetector(
-                      onTap: pickImage,
+                      onTap: _showPickerImage(context),
                       child: Stack(
                         alignment: Alignment.bottomRight,
                         children: [
                           CircleAvatar(
                             radius: 45,
                             backgroundColor: _blue,
-                            backgroundImage: profileImage != null
-                                ? FileImage(profileImage!) as ImageProvider
-                                : _storedImageUrl.isEmpty
-                                    ? null
-                                    : _typeLogin == 'local'
-                                        ? AssetImage(_storedImageUrl)
-                                            as ImageProvider
-                                        : NetworkImage(_storedImageUrl),
+                            backgroundImage: _imageUrl == ''
+                                ? NetworkImage(_imageUrl)
+                                : null,
                             child:
-                                _storedImageUrl.isEmpty && profileImage == null
+                                _imageUrl == ''
                                     ? const Icon(Icons.person,
                                         size: 45, color: Colors.white)
                                     : null,
@@ -470,5 +505,50 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       DialogService.showError(context,
           title: 'errorTitle'.tr(), message: errorMsg);
     }
+  }
+
+  _showPickerImage(context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Container(
+            child: new Wrap(
+              children: <Widget>[
+                new ListTile(
+                    leading: new Icon(Icons.photo_library),
+                    title: new Text(
+                      'อัลบั้มรูปภาพ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Kanit',
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    onTap: () {
+                      _imgFromGallery();
+                      Navigator.of(context).pop();
+                    }),
+                new ListTile(
+                  leading: new Icon(Icons.photo_camera),
+                  title: new Text(
+                    'กล้องถ่ายรูป',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Kanit',
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  onTap: () {
+                    _imgFromCamera();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

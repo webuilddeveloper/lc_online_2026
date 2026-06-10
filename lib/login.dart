@@ -681,13 +681,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         authToken: session.token,
       );
 
-      // if (!mounted) return;
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => MenuPage(userType: user.userType),
-      //   ),
-      // );
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MenuPage(userType: user.userType),
+        ),
+      );
     } catch (error) {
       setState(() {
         isLoading = false;

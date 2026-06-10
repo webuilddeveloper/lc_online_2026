@@ -37,7 +37,7 @@ class ChatBubble extends StatelessWidget {
                         width: 36,
                         fit: BoxFit.cover,
                       )),
-            const SizedBox(width: 6),
+            const SizedBox(width: 10),
           ],
 
           // ── Bubble ──────────────────────────────────────
@@ -69,7 +69,7 @@ class ChatBubble extends StatelessWidget {
               text,
               style: TextStyle(
                 color: isMe ? Colors.white : const Color(0xFF1A2340),
-                fontSize: 14,
+                fontSize: 13,
                 height: 1.4,
               ),
             ),

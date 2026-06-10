@@ -44,7 +44,7 @@ class _ChatPageUserState extends State<ChatPageUser>
   @override
   void initState() {
     super.initState();
-    LawyerJobsStore.instance.addListener(_handleStoreChanged);
+    // LawyerJobsStore.instance.addListener(_handleStoreChanged);
     _setupChat();
   }
 
@@ -125,7 +125,7 @@ class _ChatPageUserState extends State<ChatPageUser>
             widget.model['id']?.toString() ??
             '';
         if (jobId.isNotEmpty) {
-          LawyerJobsStore.instance.updateStatus(jobId, 'done');
+          // LawyerJobsStore.instance.updateStatus(jobId, 'done');
         }
         final lawyer = {
           'name': widget.model['name'] ?? '',
@@ -254,7 +254,7 @@ class _ChatPageUserState extends State<ChatPageUser>
             onBack: () => Navigator.pop(context),
             avatarWidget: ClipRRect(
               borderRadius: BorderRadius.circular(100),
-              child: Image.asset(
+              child: Image.network(
                 imageUrl.isNotEmpty ? imageUrl : 'assets/icons/profile.png',
                 height: 44,
                 width: 44,
@@ -295,7 +295,7 @@ class _ChatPageUserState extends State<ChatPageUser>
                 model, isActive, caseSuccess, chatLocked, imageUrl),
           // const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(12, 20, 12, 25),
               itemCount: _messages.length,
@@ -308,6 +308,7 @@ class _ChatPageUserState extends State<ChatPageUser>
                   avatarAsset: imageUrl
                 );
               },
+              separatorBuilder: (context, index) => _messages[index]['senderId'] != _messages[index+1]['senderId'] ? const SizedBox(height: 10,) : const SizedBox(),
             ),
           ),
           if (caseSuccess)

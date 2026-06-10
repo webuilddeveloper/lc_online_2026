@@ -3,6 +3,7 @@ import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +23,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<Map<String, dynamic>> _tabs = [
+  final List<dynamic> _tabs = [
     {"label": "ทั้งหมด", "status": null},
     {"label": "รอทนาย", "status": "1"},
     {"label": "กำลังปรึกษา", "status": "3"},
@@ -33,7 +34,8 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
   @override
   void initState() {
     super.initState();
-    LawyerJobsStore.instance.addListener(_onJobsChanged);
+    // LawyerJobsStore.instance.addListener(_onJobsChanged);
+    callReadCase();
     _tabController = TabController(length: _tabs.length, vsync: this);
   }
 
@@ -48,10 +50,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
     if (mounted) setState(() {});
   }
 
-  List<dynamic> get _caseList => LawyerJobsStore.instance.jobs.isEmpty
-      ? widget.caseList
-      : UserCaseAdapter.fromJobs(LawyerJobsStore.instance
-          .jobsForClient(UserProfileStore.instance.code));
+  List<dynamic> _caseList = [];
 
   List<dynamic> _filteredList(String? status) {
     if (status == null) return _caseList;
@@ -90,6 +89,16 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
       default:
         return Icons.info_outline_rounded;
     }
+  }
+
+  Future<void> callReadCase() async {
+    try {
+      final param = await postDio("${server}/m/case/read", {});
+      setState(() {
+        _caseList = param['objectData'];
+       print('=-=-=-=-=-=-=-=-=-=-= ${param}');
+      });
+    } catch (_) {}
   }
 
   @override
@@ -300,7 +309,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
       MaterialPageRoute(
         builder: (context) => ConsultStatusPage(
           currentStep:
-              consultStepFromJobStatus(jobStatus, jobSource: jobSource),
+              consultStepFromJobStatus(model['caseStatus'], jobSource: model['caseType']),
           lawyer: _lawyerForConsult(model['lawyerModel'] as Map?, model),
           appointmentDate: model['appointmentDate'],
           appointmentTime: model['appointmentTime'],

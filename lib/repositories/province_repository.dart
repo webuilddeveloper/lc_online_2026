@@ -20,11 +20,11 @@ class ApiProvinceRepository implements ProvinceRepository {
   @override
   Future<List<ProvinceModel>> readProvinces() async {
     final result = await postDio('${server}route/province/read', {});
-    if (result is! List) {
+    if (result['objectData'] is! List) {
       throw const ProvinceRepositoryException('Invalid province response');
     }
 
-    return result
+    return result['objectData']
         .whereType<Map>()
         .map((item) => ProvinceModel.fromJson(Map<String, dynamic>.from(item)))
         .where((province) => province.title.isNotEmpty)

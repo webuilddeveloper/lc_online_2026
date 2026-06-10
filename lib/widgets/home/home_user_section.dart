@@ -1,3 +1,5 @@
+import 'package:LawyerOnline/appointment-details-lawyer.dart';
+import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/case-status-all.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/law_type_all_page.dart';
@@ -246,8 +248,8 @@ class HomeUserSection extends StatelessWidget {
     );
   }
 
-  Widget _caseStatusItem(BuildContext context, Map model) {
-    final status = model['status']?.toString() ?? '1';
+  Widget _caseStatusItem(BuildContext context, dynamic model) {
+    final status = model['caseStatus'];
     final s = _statusStyle(status);
     final lawyerModel = model['lawyerModel'] as Map?;
     final lawyerName = lawyerModel?['name'] ?? '';
@@ -275,27 +277,35 @@ class HomeUserSection extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        final jobStatus = model['jobStatus']?.toString() ?? 'pending';
-        if (jobStatus == 'rejected') {
-          _showRejectedCase(context, model);
-          return;
+        if (status == 0) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      AppointmentDetails(appointment: model)));
+        } else {
+          final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+          if (jobStatus == 'rejected') {
+            _showRejectedCase(context, model);
+            return;
+          }
+          final jobSource = model['jobSource']?.toString() ?? 'urgent';
+          _guardedNavigate(
+            context,
+            ConsultStatusPage(
+              currentStep: consultStepFromJobStatus(model['caseStatus'],
+                  jobSource: model['caseType']),
+              lawyer: _buildLawyerForConsult(lawyerModel, model),
+              appointmentDate: model['appointmentDate'],
+              appointmentTime: model['appointmentTime'],
+              canOpenChat: jobStatus == 'accepted' ||
+                  jobStatus == 'confirmed' ||
+                  jobStatus == 'in_session' ||
+                  jobStatus == 'done',
+              caseModel: Map<String, dynamic>.from(model),
+            ),
+          );
         }
-        final jobSource = model['jobSource']?.toString() ?? 'urgent';
-        _guardedNavigate(
-          context,
-          ConsultStatusPage(
-            currentStep:
-                consultStepFromJobStatus(jobStatus, jobSource: jobSource),
-            lawyer: _buildLawyerForConsult(lawyerModel, model),
-            appointmentDate: model['appointmentDate'],
-            appointmentTime: model['appointmentTime'],
-            canOpenChat: jobStatus == 'accepted' ||
-                jobStatus == 'confirmed' ||
-                jobStatus == 'in_session' ||
-                jobStatus == 'done',
-            caseModel: Map<String, dynamic>.from(model),
-          ),
-        );
       },
       child: Container(
         width: cardW,
@@ -317,28 +327,33 @@ class HomeUserSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(width: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset(lawyerImage,
-                width: 48, height: 48, fit: BoxFit.cover),
-          ),
+          // const SizedBox(width: 12),
+          // ClipRRect(
+          //   borderRadius: BorderRadius.circular(10),
+          //   child: Image.network(lawyerImage,
+          //       width: 48, height: 48, fit: BoxFit.cover),
+          // ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(lawyerName,
+                Text(model['lawyerName'],
                     style: GoogleFonts.prompt(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: _kText,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text(category,
+                Text(model['topicTitle'],
+                    style: GoogleFonts.prompt(fontSize: 11, color: _kText),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(model['subTopicTitle'],
                     style: GoogleFonts.prompt(fontSize: 11, color: _kSub),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
@@ -353,9 +368,18 @@ class HomeUserSection extends StatelessWidget {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(s.icon, size: 11, color: s.color),
                     const SizedBox(width: 4),
-                    Text(statusText,
+                    Text(
+                        model['caseStatus'] == 1
+                            ? 'รอทนายยืนยัน'
+                            : model['caseStatus'] == 2
+                                ? 'รอปรึกษาทนาย'
+                                : model['caseStatus'] == 3
+                                    ? 'กำลังปรึกาาทนายความ'
+                                    : model['caseStatus'] == 4
+                                        ? 'เสร็จสิ้น'
+                                        : 'ยกเลิกเคสแล้ว',
                         style: GoogleFonts.prompt(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: s.color,
                           fontWeight: FontWeight.w600,
                         )),
@@ -467,7 +491,7 @@ class HomeUserSection extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(18)),
               child: Stack(children: [
-                Image.asset(model['imageUrl'] ?? '',
+                Image.network(model['imageUrl'] ?? '',
                     height: 100, width: double.infinity, fit: BoxFit.cover),
                 Positioned(
                   bottom: 0,
@@ -498,9 +522,7 @@ class HomeUserSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isFree
-                          ? 'free'.tr()
-                          : '฿${model['cost']}${model['costUnit']}',
+                      isFree ? 'free'.tr() : '฿${model['cost']}',
                       style: GoogleFonts.prompt(
                         color: Colors.white,
                         fontSize: 9,
@@ -516,7 +538,7 @@ class HomeUserSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(model['name'] ?? '',
+                  Text('${model['firstName']} ${model['lastName']}',
                       style: GoogleFonts.prompt(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -542,14 +564,24 @@ class HomeUserSection extends StatelessWidget {
                         style: GoogleFonts.prompt(fontSize: 10, color: _kSub)),
                   ]),
                   const SizedBox(height: 6),
-                  Text(
-                    (model['skills'] as List?)?.isNotEmpty == true
-                        ? (model['skills'] as List).first
-                        : '',
-                    style: GoogleFonts.prompt(fontSize: 9.5, color: _kAccent),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  // for (var i = 0; i < model['expertiseData'].length < 3 ? 3; i++)
+                  ListView.builder(
+                    physics: ClampingScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: model['expertiseData'].length > 3
+                        ? 3
+                        : model['expertiseData'].length,
+                    itemBuilder: (context, index) {
+                      return Text(
+                        model['expertiseData'][index]['title'],
+                        style:
+                            GoogleFonts.prompt(fontSize: 9.5, color: _kAccent),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                  )
                 ],
               ),
             ),
@@ -568,21 +600,21 @@ class _StatusStyle {
   const _StatusStyle(this.color, this.bg, this.icon);
 }
 
-_StatusStyle _statusStyle(String status) {
+_StatusStyle _statusStyle(int status) {
   switch (status) {
-    case '1':
+    case 1:
       return _StatusStyle(const Color(0xFF0262EC), const Color(0xFFEBF2FF),
           Icons.pending_outlined);
-    case '2':
+    case 2:
       return _StatusStyle(const Color(0xFFD97706), const Color(0xFFFFF8EC),
           Icons.hourglass_top_rounded);
-    case '3':
+    case 3:
       return _StatusStyle(const Color(0xFF059669), const Color(0xFFECFDF5),
           Icons.chat_bubble_outline_rounded);
-    case '4':
+    case 4:
       return _StatusStyle(const Color(0xFF6B7A99), const Color(0xFFF4F6FB),
           Icons.check_circle_outline_rounded);
-    case '5':
+    case 0:
       return _StatusStyle(const Color(0xFFEF4444), const Color(0xFFFFF1F2),
           Icons.cancel_outlined);
     default:

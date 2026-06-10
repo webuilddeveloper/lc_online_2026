@@ -384,10 +384,10 @@ class DialogService {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.check_circle_outline,
+                  Icon(
+                    Icons.help_outline_outlined,
                     size: 60,
-                    color: Color.fromARGB(255, 3, 212, 14),
+                    color: Colors.orange.shade600,
                   ),
                   const SizedBox(height: 10),
                   Text(

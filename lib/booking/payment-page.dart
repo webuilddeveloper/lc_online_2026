@@ -2,7 +2,9 @@ import 'package:LawyerOnline/booking/booking-success.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -10,16 +12,23 @@ import 'package:qr_flutter/qr_flutter.dart';
 class PaymentPage extends StatefulWidget {
   final dynamic lawyer;
   final String topic;
+  final String topicTitle;
   final DateTime? date;
   final String time;
   final String subTopic;
+  final String subTopicTitle;
+  final String details;
 
   const PaymentPage(
       {required this.lawyer,
       required this.topic,
+      required this.topicTitle,
       required this.date,
       required this.time,
-      required this.subTopic});
+      required this.subTopic,
+      required this.subTopicTitle,
+      required this.details,
+    });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -116,74 +125,77 @@ class _PaymentPageState extends State<PaymentPage> {
                         GestureDetector(
                           onTap: () async {
                             // 1. โชว์หน้าต่าง Loading ระหว่างรอ API
-                            DialogService.showLoading(context);
-                            try {
-                              // 2. เรียก API ส่งข้อมูลนัดหมายไปยัง Server
-                              await AuthService.createCase({
-                                // สมมติฐานข้อมูลที่เรามีอยู่ (อันไหนไม่มีอาจจะต้องรับเพิ่มจากหน้าก่อนๆ)
-                                'topicTitle': widget.topic,
-                                'subTopicTitle': widget.subTopic,
-                                'lawyerCode':
-                                    widget.lawyer?['code']?.toString() ?? '',
-                                'lawyerName':
-                                    widget.lawyer?['name']?.toString() ?? '',
-                                'caseDate': DateFormat('yyyy-MM-dd')
-                                    .format(widget.date!),
-                                'startTime': widget.time
-                                    .split(' - ')
-                                    .first, // เช่น 10:00
-                                'endTime':
-                                    widget.time.split(' - ').last, // เช่น 11:00
-                                'hour': '1',
-                                'price':
-                                    widget.lawyer?['price']?.toString() ?? '0',
-                                'isPay': true,
-                                'payType': 'promptpay',
-                                'caseStatus': 1, // 1 = รอทนายรับเคส
-                                'caseType': 1, // 1 = นัดหมายล่วงหน้า
-                                // ... (เติมตัวแปรให้ครบตามที่ API ต้องการ)
-                              });
-                              // 3. เอา Loading ออกเมื่อส่งสำเร็จ
-                              Navigator.pop(context);
-                              // 4. แสดง Pop-up สำเร็จ (ของเดิม)
-                              DialogService.showAutoClose(
-                                context,
-                                title: "ชำระเงินสำเร็จ",
-                                message:
-                                    "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
-                                seconds: 3,
-                                isBtn: false,
-                                onClose: () {
-                                  // โค้ดเปลี่ยนหน้าไป BookingSuccessPage เดิม...
-                                  Navigator.pop(context);
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BookingSuccessPage(
-                                        lawyer: widget.lawyer,
-                                        topic: widget.topic,
-                                        subTopic: widget.subTopic,
-                                        appointmentDate:
-                                            DateFormat('dd/MM/yyyy')
-                                                .format(widget.date!)
-                                                .toString(),
-                                        appointmentTime: widget.time,
-                                        bookingCode:
-                                            'BK-${DateTime.now().millisecondsSinceEpoch}',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            } catch (e) {
-                              // 5. กรณีมี Error ให้ดึง Loading ออกแล้วโชว์ข้อความ
-                              Navigator.pop(context);
-                              DialogService.showError(
-                                context,
-                                title: "เกิดข้อผิดพลาด",
-                                message: e.toString(),
-                              );
-                            }
+                            
+                            send();
+                            // try {
+                            //   // 2. เรียก API ส่งข้อมูลนัดหมายไปยัง Server
+                            //   await AuthService.createCase({
+                            //     // สมมติฐานข้อมูลที่เรามีอยู่ (อันไหนไม่มีอาจจะต้องรับเพิ่มจากหน้าก่อนๆ)
+                            //     'topic': widget.topic,
+                            //     'topicTitle': widget.topicTitle,
+                            //     'subTopic': widget.subTopic,
+                            //     'subTopicTitle': widget.subTopicTitle,
+                            //     'lawyerCode':
+                            //         widget.lawyer?['code']?.toString() ?? '',
+                            //     'lawyerName':
+                            //         widget.lawyer?['name']?.toString() ?? '',
+                            //     'caseDate': DateFormat('yyyy-MM-dd')
+                            //         .format(widget.date!),
+                            //     'startTime': widget.time
+                            //         .split(' - ')
+                            //         .first, // เช่น 10:00
+                            //     'endTime':
+                            //         widget.time.split(' - ').last, // เช่น 11:00
+                            //     'hour': '1',
+                            //     'price':
+                            //         widget.lawyer?['price']?.toString() ?? '0',
+                            //     'isPay': true,
+                            //     'payType': 'promptpay',
+                            //     'caseStatus': 1, // 1 = รอทนายรับเคส
+                            //     'caseType': 1, // 1 = นัดหมายล่วงหน้า
+                            //     // ... (เติมตัวแปรให้ครบตามที่ API ต้องการ)
+                            //   });
+                            //   // 3. เอา Loading ออกเมื่อส่งสำเร็จ
+                            //   Navigator.pop(context);
+                            //   // 4. แสดง Pop-up สำเร็จ (ของเดิม)
+                            //   DialogService.showAutoClose(
+                            //     context,
+                            //     title: "ชำระเงินสำเร็จ",
+                            //     message:
+                            //         "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+                            //     seconds: 3,
+                            //     isBtn: false,
+                            //     onClose: () {
+                            //       // โค้ดเปลี่ยนหน้าไป BookingSuccessPage เดิม...
+                            //       Navigator.pop(context);
+                            //       Navigator.pushReplacement(
+                            //         context,
+                            //         MaterialPageRoute(
+                            //           builder: (_) => BookingSuccessPage(
+                            //             lawyer: widget.lawyer,
+                            //             topic: widget.topic,
+                            //             subTopic: widget.subTopic,
+                            //             appointmentDate:
+                            //                 DateFormat('dd/MM/yyyy')
+                            //                     .format(widget.date!)
+                            //                     .toString(),
+                            //             appointmentTime: widget.time,
+                            //             bookingCode:
+                            //                 'BK-${DateTime.now().millisecondsSinceEpoch}',
+                            //           ),
+                            //         ),
+                            //       );
+                            //     },
+                            //   );
+                            // } catch (e) {
+                            //   // 5. กรณีมี Error ให้ดึง Loading ออกแล้วโชว์ข้อความ
+                            //   Navigator.pop(context);
+                            //   DialogService.showError(
+                            //     context,
+                            //     title: "เกิดข้อผิดพลาด",
+                            //     message: e.toString(),
+                            //   );
+                            // }
                           },
                           child: Container(
                             padding: const EdgeInsets.all(12),
@@ -209,7 +221,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             style: TextStyle(
                                 fontSize: 13, color: Colors.grey[400])),
                         const SizedBox(height: 4),
-                        Text(cost,
+                        Text(widget.lawyer['cost'],
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w900,
@@ -301,35 +313,6 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
             ),
           ),
-          // Padding(
-          //   padding: EdgeInsets.fromLTRB(
-          //       16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
-          //   child: primaryButton(
-          //     label: 'ยืนยันการชำระเงิน',
-          //     enabled: _isPaid,
-          //     onTap: () => Navigator.pushReplacement(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (_) => BookingSuccessPage(
-          //           lawyer: widget.lawyer,
-          //           topic: 'ครอบครัวและมรดก',
-          //           subTopic: 'ฟ้องหย่า / แบ่งสินสมรส',
-          //           appointmentDate: '28 มีนาคม 2569',
-          //           appointmentTime: '10:00 - 11:00',
-          //           bookingCode: 'BK-2026-00123',
-          //         ),
-          //       ),
-          //     ),
-          //     // Navigator.push(
-          //     //   context,
-          //     //   MaterialPageRoute(
-          //     //     builder: (_) => PaymentPage(
-          //     //       lawyer: widget.lawyer,
-          //     //     ),
-          //     //   ),
-          //     // ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -347,6 +330,76 @@ class _PaymentPageState extends State<PaymentPage> {
                 color: Color(0xFF1A2340))),
       ],
     );
+  }
+
+  Future<void> send() async {
+    final userCode = UserProfileStore.instance.code;
+    final firstName = UserProfileStore.instance.firstName;
+    final lastName = UserProfileStore.instance.lastName;
+    dynamic model = {
+      // สมมติฐานข้อมูลที่เรามีอยู่ (อันไหนไม่มีอาจจะต้องรับเพิ่มจากหน้าก่อนๆ)
+      'topic': widget.topic,
+      'topicTitle': widget.topicTitle,
+      'subTopic': widget.subTopic,
+      'subTopicTitle': widget.subTopicTitle,
+      'details': widget.details,
+      'lawyer': widget.lawyer?['code']?.toString() ?? '',
+      'lawyerName':
+          '${widget.lawyer?['firstName']} ${widget.lawyer?['lastName']}',
+      'caseDate': DateFormat('yyyy-MM-dd').format(widget.date!),
+      'startTime': widget.time.split('-').first, // เช่น 10:00
+      'endTime': widget.time.split('-').last, // เช่น 11:00
+      'hour': '1',
+      'price': widget.lawyer?['cost']?.toString() ?? '0',
+      'isPay': true,
+      'payType': 'Qr Code PromptPay',
+      'payDate': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      'caseStatus': 1, // 1 = รอทนายรับเคส
+      'caseType': 1, // 1 = นัดหมายล่วงหน้า
+      'userCode': userCode,
+      'userName': '${firstName} ${lastName}'
+      // ... (เติมตัวแปรให้ครบตามที่ API ต้องการ)
+    };
+    
+    DialogService.showLoading(context);
+    try {
+      final param = await postDio("${server}/m/case/create", model);
+      Navigator.pop(context);
+      if (param['status'] == 'S') {
+        DialogService.showAutoClose(
+          context,
+          title: "ชำระเงินสำเร็จ",
+          message: "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+          seconds: 3,
+          isBtn: false,
+          onClose: () {
+            // โค้ดเปลี่ยนหน้าไป BookingSuccessPage เดิม...
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BookingSuccessPage(
+                  lawyer: widget.lawyer,
+                  topic: widget.topicTitle,
+                  subTopic: widget.subTopicTitle,
+                  appointmentDate:
+                      DateFormat('dd/MM/yyyy').format(widget.date!).toString(),
+                  appointmentTime: widget.time,
+                  bookingCode: 'BK-${DateTime.now().millisecondsSinceEpoch}',
+                ),
+              ),
+            );
+          },
+        );
+      }
+      
+    } catch (_) {
+      Navigator.pop(context);
+      DialogService.showError(
+        context,
+        title: "เกิดข้อผิดพลาด",
+        message: _.toString(),
+      );
+    }
   }
 
   void goBack() async {

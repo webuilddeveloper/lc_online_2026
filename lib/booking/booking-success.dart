@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
@@ -65,7 +66,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
   @override
   void initState() {
     super.initState();
-    _createPendingJob();
+    // _createPendingJob();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
     // Check animation
@@ -484,7 +485,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
             child: (lawyer['imageUrl'] ?? "") != ""
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(30),
-                    child: Image.asset(
+                    child: Image.network(
                       lawyer['imageUrl'],
                       width: 55,
                       height: 55,
@@ -516,7 +517,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(lawyer['name'] as String? ?? '',
+              Text('${lawyer['firstName']} ${lawyer['lastName']}',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -524,7 +525,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                   )),
               const SizedBox(height: 3),
               Text(
-                lawyer['title'] as String? ?? 'ทนายความ',
+                'ทนายความ',
                 style: TextStyle(fontSize: 11, color: Colors.grey[500]),
               ),
               const SizedBox(height: 6),
@@ -533,7 +534,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                     color: Color(0xFFFFC107), size: 13),
                 const SizedBox(width: 3),
                 Text(
-                  '${lawyer['scroll'] ?? ''} · ${lawyer['experience'] ?? ''}',
+                  '${lawyer['rateAverage'] ?? '-'} · ${lawyer['experience'] ?? '-'}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF1A2340),
@@ -925,7 +926,13 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => MenuPage(),
+                ),
+                (_) => false,
+              );
+              // Navigator.popUntil(context, (route) => route.isFirst);
             },
             child: Container(
               height: 50,

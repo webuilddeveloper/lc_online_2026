@@ -1,14 +1,18 @@
 import 'package:LawyerOnline/booking/schedule-page.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as storage;
 import 'package:url_launcher/url_launcher.dart';
 
 class LawyerDetailPage extends StatefulWidget {
   final dynamic lawyer;
-  final String topic;
-  final String subTopic;
+  final dynamic topic;
+  final dynamic subTopic;
 
   const LawyerDetailPage({
     super.key,
@@ -27,23 +31,13 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
   late AnimationController _entryCtrl;
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
+  final storage = FlutterSecureStorage();
+  bool isLoadingLawyers = true;
 
   @override
   void initState() {
     super.initState();
-    _entryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..forward();
-
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    callReadIsLike();
   }
 
   @override
@@ -53,16 +47,67 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
     super.dispose();
   }
 
+  Future<void> callReadIsLike() async {
+    // final type = await storage.read(key: 'typeLogin');
+    String myUserId = UserProfileStore.instance.code;
+
+    try {
+      dynamic criteria = {
+        "referenceLawyer": widget.lawyer['code'],
+        "reference": myUserId
+      };
+      final param =
+          await postDio("${server}/m/favoriteLawyer/isLike", criteria);
+      setState(() {
+        print('----------is Like--------- ${param['objectData']}');
+        isFavorite = param['objectData']['isLike'];
+        isLoadingLawyers = false;
+        // _lawyersForYou = param['objectDate'];
+        _entryCtrl = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 900),
+        )..forward();
+
+        _pulseCtrl = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 2200),
+        )..repeat(reverse: true);
+
+        _pulseAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
+          CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+        );
+      });
+    } catch (_) {}
+  }
+
+  Future<void> like() async {
+    final type = await storage.read(key: 'typeLogin');
+    String myUserId = UserProfileStore.instance.code;
+    try {
+      dynamic criteria = {
+        "referenceLawyer": widget.lawyer['code'],
+        "reference": myUserId
+      };
+      final param = await postDio("${server}/m/favoriteLawyer/like", criteria);
+      setState(() {
+        print('----------is Like--------- ${param['objectData']}');
+        isFavorite = param['objectData']['isLike'];
+        isLoadingLawyers = false;
+        // _lawyersForYou = param['objectDate'];
+      });
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
-    final lawyerColor = widget.lawyer['rating'] == 5
+    final lawyerColor = widget.lawyer['rateAverage'] == 5
         ? Color(0xFF1565C0)
         // Color(widget.lawyer['color'] as int)
-        : widget.lawyer['rating'] >= 4
+        : widget.lawyer['rateAverage'] >= 4
             ? Color.fromARGB(255, 2, 168, 209)
-            : widget.lawyer['rating'] >= 3
+            : widget.lawyer['rateAverage'] >= 3
                 ? Color(0xFFFDD835)
-                : widget.lawyer['rating'] >= 2
+                : widget.lawyer['rateAverage'] >= 2
                     ? Color(0xFFEF6C00)
                     : Color(0xFFD32F2F);
 
@@ -103,7 +148,8 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  setState(() => isFavorite = !isFavorite);
+                  // setState(() => isFavorite = !isFavorite);
+                  like();
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
@@ -142,37 +188,54 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
             ),
           ],
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Column(
+        body: isLoadingLawyers
+            ? _loadingState()
+            : Column(
                 children: [
-                  // Hero Header (ไม่ scroll)
-                  _buildHeroHeader(lawyerColor),
-
-                  // ✅ Expanded ครอบ ScrollView เพื่อให้มี height ที่แน่นอน
                   Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                        child: Column(
-                          children: [
-                            _buildStatsRow(),
-                            const SizedBox(height: 14),
-                            _buildSpecialtyCard(lawyerColor),
-                            const SizedBox(height: 14),
-                            _buildSocialCard(lawyerColor),
-                          ],
+                    child: Column(
+                      children: [
+                        // Hero Header (ไม่ scroll)
+                        _buildHeroHeader(lawyerColor),
+
+                        // ✅ Expanded ครอบ ScrollView เพื่อให้มี height ที่แน่นอน
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                              child: Column(
+                                children: [
+                                  _buildStatsRow(),
+                                  const SizedBox(height: 14),
+                                  _buildSpecialtyCard(lawyerColor),
+                                  const SizedBox(height: 14),
+                                  widget.lawyer['isPro']
+                                      ? _buildSocialCard(lawyerColor)
+                                      : Container(),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
+                  _buildBookingButton(lawyerColor),
                 ],
               ),
-            ),
-            _buildBookingButton(lawyerColor),
-          ],
+      ),
+    );
+  }
+
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );
@@ -186,7 +249,7 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
     // คำนวณความสูงให้รวม status bar + AppBar height
     final topPadding = MediaQuery.of(context).padding.top;
     final appBarH = kToolbarHeight;
-    final heroH = 220.0 + topPadding;
+    final heroH = 200.0 + topPadding;
 
     return AnimatedBuilder(
       animation: _entryCtrl,
@@ -267,91 +330,95 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Avatar column
-                Column(children: [
-                  ScaleTransition(
-                    scale: _pulseAnim,
-                    child: Stack(children: [
-                      // Glow ring
-                      Container(
-                        width: 106,
-                        height: 106,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.28),
+                Column(
+                  children: [
+                    ScaleTransition(
+                      scale: _pulseAnim,
+                      child: Stack(children: [
+                        // Glow ring
+                        Container(
+                          width: 106,
+                          height: 106,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.28),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        top: 5,
-                        left: 5,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(43),
-                          child: Container(
-                            width: 96,
-                            height: 96,
-                            color: Colors.white.withOpacity(0.2),
-                            child: widget.lawyer['imageUrl'] != null
-                                ? Image.asset(
-                                    widget.lawyer['imageUrl'] as String,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      widget.lawyer['avatar'] as String? ?? 'ท',
-                                      style: const TextStyle(
-                                        fontSize: 38,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800,
+                        Positioned(
+                          top: 5,
+                          left: 5,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(100),
+                            child: Container(
+                              width: 96,
+                              height: 96,
+                              color: Colors.white.withOpacity(0.2),
+                              child: widget.lawyer['imageUrl'] != null
+                                  ? Image.network(
+                                      widget.lawyer['imageUrl'] as String,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        widget.lawyer['avatar'] as String? ??
+                                            'ท',
+                                        style: const TextStyle(
+                                          fontSize: 38,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                            ),
                           ),
                         ),
-                      ),
-                      // Online dot
-                      Positioned(
-                        bottom: 7,
-                        right: 7,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF34C759),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
+                        // Online dot
+                        Positioned(
+                          bottom: 7,
+                          right: 7,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF34C759),
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: Colors.white, width: 2.5),
+                            ),
                           ),
                         ),
-                      ),
-                    ]),
-                  ),
-                  const SizedBox(height: 6),
-                  // Verified badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.88),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
+                      ]),
                     ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.verified_rounded, size: 11, color: color),
-                      const SizedBox(width: 3),
-                      Text(
-                        'ยืนยันแล้ว',
-                        style: TextStyle(
-                            fontSize: 9,
-                            color: color,
-                            fontWeight: FontWeight.w700),
-                      ),
-                    ]),
-                  ),
-                ]),
+                    // const SizedBox(height: 6),
+                    // // Verified badge
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //       horizontal: 8, vertical: 4),
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.white.withOpacity(0.88),
+                    //     borderRadius: BorderRadius.circular(20),
+                    //     boxShadow: [
+                    //       BoxShadow(
+                    //         color: color.withOpacity(0.2),
+                    //         blurRadius: 6,
+                    //         offset: const Offset(0, 2),
+                    //       )
+                    //     ],
+                    //   ),
+                    //   child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    //     Icon(Icons.verified_rounded, size: 11, color: color),
+                    //     const SizedBox(width: 3),
+                    //     Text(
+                    //       'ยืนยันแล้ว',
+                    //       style: TextStyle(
+                    //           fontSize: 9,
+                    //           color: color,
+                    //           fontWeight: FontWeight.w700),
+                    //     ),
+                    //   ]),
+                    // ),
+                  ],
+                ),
                 const SizedBox(width: 16),
 
                 // Name / title / rating / badges
@@ -359,27 +426,38 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.lawyer['name'] as String,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.4,
-                          shadows: [
-                            Shadow(
-                                color: Colors.black26,
-                                blurRadius: 8,
-                                offset: Offset(0, 2))
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              "${widget.lawyer['firstName']} ${widget.lawyer['lastName']}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                overflow: TextOverflow.ellipsis,
+                                shadows: [
+                                  Shadow(
+                                      color: Colors.black26,
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2))
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(Icons.verified_rounded,
+                              size: 12, color: Colors.white),
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        widget.lawyer['title'] as String? ??
-                            (widget.lawyer['specialty'] as String? ?? '')
-                                .split(', ')
-                                .first,
+                        // widget.lawyer['title'] as String? ??
+                        //     (widget.lawyer['specialty'] as String? ?? '')
+                        //         .split(', ')
+                        //         .first,
+                        "${widget.lawyer['experienceYears'] <= 4 ? "ทนายความ" : "ทนายความอาวุโส"}",
                         style: TextStyle(
                             color: Colors.white.withOpacity(0.8), fontSize: 12),
                         maxLines: 2,
@@ -405,7 +483,7 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                                     color: Color(0xFFFFC107), size: 14),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${widget.lawyer['rating']}',
+                                  '${widget.lawyer['rateAverage']}',
                                   style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w800,
@@ -451,13 +529,13 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                         ],
                       ),
 
-                      const SizedBox(height: 10),
-                      Wrap(spacing: 6, runSpacing: 6, children: [
-                        _heroBadge(Icons.work_history_rounded,
-                            widget.lawyer['experience'] as String? ?? '-'),
-                        _heroBadge(Icons.people_outline_rounded,
-                            '${widget.lawyer['reviews']}+ รีวิว'),
-                      ]),
+                      // const SizedBox(height: 10),
+                      // Wrap(spacing: 6, runSpacing: 6, children: [
+                      //   // _heroBadge(Icons.work_history_rounded,
+                      //   //     "${widget.lawyer['experienceYears']} ปี"),
+                      //   _heroBadge(Icons.people_outline_rounded,
+                      //       '${widget.lawyer['review'].length} รีวิว'),
+                      // ]),
                     ],
                   ),
                 ),
@@ -503,10 +581,9 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         child: Row(children: [
           _statItem('🏆', '148+', 'คดีชนะ'),
           _vertDiv(),
-          _statItem('📅', widget.lawyer['experience'] as String? ?? '-',
-              'ประสบการณ์'),
+          _statItem('📅', "${widget.lawyer['experienceYears']}", 'ประสบการณ์'),
           _vertDiv(),
-          _statItem('⭐', '${widget.lawyer['reviews']}+', 'รีวิว'),
+          _statItem('⭐', '${widget.lawyer['review'].length}', 'รีวิว'),
         ]),
       ),
     );
@@ -536,9 +613,11 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
   // ════════════════════════════════════════════════════════
 
   Widget _buildSpecialtyCard(Color color) {
-    final specialties = (widget.lawyer['specialty'] as String? ?? '')
-        .split(', ')
-      ..removeWhere((s) => s.trim().isEmpty);
+    // ✅ null-safe + cast ให้ถูกต้อง
+    final expertiseList = ((widget.lawyer['expertiseData'] ?? []) as List)
+        .whereType<Map>()
+        .where((s) => (s['title']?.toString() ?? '').isNotEmpty)
+        .toList();
 
     return _AnimatedCard(
       delay: 0.2,
@@ -549,29 +628,35 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _sectionTitle(Icons.gavel_rounded, 'ความเชี่ยวชาญ', color),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: specialties
-                .map((s) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [
-                          color.withOpacity(0.1),
-                          color.withOpacity(0.05),
-                        ]),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: color.withOpacity(0.25)),
-                      ),
-                      child: Text(s,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: color,
-                              fontWeight: FontWeight.w600)),
-                    ))
-                .toList(),
-          ),
+          expertiseList.isEmpty
+              ? Text('ไม่มีข้อมูลความเชี่ยวชาญ',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[400]))
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: expertiseList
+                      .map((s) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [
+                                color.withOpacity(0.1),
+                                color.withOpacity(0.05),
+                              ]),
+                              borderRadius: BorderRadius.circular(20),
+                              border:
+                                  Border.all(color: color.withOpacity(0.25)),
+                            ),
+                            child: Text(
+                              s['title']?.toString() ?? '',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: color,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ))
+                      .toList(),
+                ),
         ]),
       ),
     );
@@ -686,8 +771,10 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
             MaterialPageRoute(
               builder: (_) => SchedulePage(
                 lawyer: widget.lawyer,
-                topic: widget.topic,
-                subTopic: widget.subTopic,
+                topic: widget.topic['code'],
+                topicTitle: widget.topic['title'],
+                subTopic: widget.subTopic['code'],
+                subTopicTitle: widget.subTopic['title'],
               ),
             ),
           );

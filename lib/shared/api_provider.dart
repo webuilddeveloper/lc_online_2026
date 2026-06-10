@@ -29,6 +29,7 @@ const serverUpload = ApiConfig.documentUploadUrl;
 const serverLineNoti = ApiConfig.lineNotifyUrl;
 const serverOTP = ApiConfig.otpBaseUrl;
 const serverElectionLc = ApiConfig.electionLcBaseUrl;
+const serverLC = ApiConfig.apiLC;
 // const serverElectionLc = 'http://lawyerselection2565.com/election-api/';
 
 const newsElectionLcApi = '${serverElectionLc}m/news/read';
@@ -440,7 +441,7 @@ Future<dynamic> postDio(String url, dynamic criteria) async {
     // if (response.statusCode == 200) {
     //   response.data['objectData']['status2'] = 'S';
     // }
-    return Future.value(response.data['objectData']);
+    return Future.value(response.data);
     // ignore: unused_catch_clause
   } on DioError catch (e) {
     return null;

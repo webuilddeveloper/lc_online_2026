@@ -17,7 +17,7 @@ class LawyerJobsStore extends ChangeNotifier {
   static const String mockSeedClientCode = '20260518113453-846-867';
   static const String mockSeedLawyerCode = '20260513101915-561-752';
 
-  static const Map<String, dynamic> _primaryLawyerModel = {
+  static const dynamic _primaryLawyerModel = {
     'code': mockSeedLawyerCode,
     'name': 'ศักดิ์สิทธิ์ พิพากษ์',
     'title': 'ทนายความอาวุโส',
@@ -33,101 +33,101 @@ class LawyerJobsStore extends ChangeNotifier {
 
   // jobSource: 'urgent' = ลูกความส่งตรง (เคสด่วน), 'booking' = จองล่วงหน้า
   static final List<Map<String, dynamic>> mockSeedJobs = [
-    {
-      'id': 'REQ-2026-001',
-      'clientCode': mockSeedClientCode,
-      'lawyerCode': mockSeedLawyerCode,
-      'lawyerModel': _primaryLawyerModel,
-      'clientName': 'สมชาย ใจดี',
-      'clientAvatar': 'ส',
-      'clientColor': 0xFF0262EC,
-      'topic': 'ครอบครัวและมรดก',
-      'subTopic': 'ฟ้องหย่า / แบ่งสินสมรส',
-      'detail':
-          'ต้องการปรึกษาเรื่องการฟ้องหย่าและการแบ่งทรัพย์สินสมรส มีบ้านและที่ดิน 2 แปลง ต้องการคำแนะนำเบื้องต้น',
-      'date': '28 มี.ค. 2569',
-      'time': '10:00 - 11:00',
-      'status': 'pending',
-      'requestedAt': '2 ชั่วโมงที่แล้ว',
-      'jobSource': 'urgent',
-      'budget': 'ฟรี',
-    },
-    {
-      'id': 'REQ-2026-002',
-      'clientCode': mockSeedClientCode,
-      'lawyerCode': mockSeedLawyerCode,
-      'lawyerModel': _primaryLawyerModel,
-      'clientName': 'วิภา รักสงบ',
-      'clientAvatar': 'ว',
-      'clientColor': 0xFFE11D48,
-      'topic': 'หนี้สินและการเงิน',
-      'subTopic': 'หนี้กู้ยืมเงิน / ดอกเบี้ย',
-      'detail':
-          'โดนเพื่อนยืมเงิน 200,000 บาท ไม่คืน มีสัญญากู้ยืมเงิน อยากดำเนินคดีเพื่อเรียกคืน',
-      'date': '30 มี.ค. 2569',
-      'time': '14:00 - 15:00',
-      'status': 'pending',
-      'requestedAt': '5 ชั่วโมงที่แล้ว',
-      'jobSource': 'urgent',
-      'budget': '500 บาท',
-    },
-    {
-      'id': 'REQ-2026-003',
-      'clientCode': mockSeedClientCode,
-      'lawyerCode': mockSeedLawyerCode,
-      'lawyerModel': _primaryLawyerModel,
-      'clientName': 'ประสิทธิ์ มั่งมี',
-      'clientAvatar': 'ป',
-      'clientColor': 0xFF059669,
-      'topic': 'ธุรกิจและบริษัท',
-      'subTopic': 'ตรวจร่างสัญญา',
-      'detail':
-          'ต้องการให้ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท กังวลเรื่องเงื่อนไขการรับประกัน',
-      'date': '02 เม.ย. 2569',
-      'time': '09:00 - 10:00',
-      'status': 'accepted',
-      'requestedAt': '1 วันที่แล้ว',
-      'jobSource': 'urgent',
-      'budget': '1,000 บาท',
-    },
-    {
-      'id': 'REQ-2026-004',
-      'clientCode': mockSeedClientCode,
-      'lawyerCode': mockSeedLawyerCode,
-      'lawyerModel': _primaryLawyerModel,
-      'clientName': 'นงลักษณ์ สุขสม',
-      'clientAvatar': 'น',
-      'clientColor': 0xFF7C3AED,
-      'topic': 'ทรัพย์สินและที่ดิน',
-      'subTopic': 'เช่าบ้าน / ขับไล่ผู้เช่า',
-      'detail':
-          'ผู้เช่าค้างค่าเช่า 3 เดือน ไม่ยอมออก ต้องการดำเนินการทางกฎหมาย',
-      'date': '15 มี.ค. 2569',
-      'time': '11:00 - 12:00',
-      'status': 'done',
-      'requestedAt': '2 สัปดาห์ที่แล้ว',
-      'jobSource': 'urgent',
-      'budget': '800 บาท',
-    },
-    {
-      'id': 'REQ-2026-005',
-      'clientCode': mockSeedClientCode,
-      'lawyerCode': mockSeedLawyerCode,
-      'lawyerModel': _primaryLawyerModel,
-      'clientName': 'อนันต์ ชัยชนะ',
-      'clientAvatar': 'อ',
-      'clientColor': 0xFFD97706,
-      'topic': 'อาญาและอาชญากรรม',
-      'subTopic': 'หมิ่นประมาท',
-      'detail':
-          'ถูกโพสต์หมิ่นประมาทบน Facebook ทำให้เสียชื่อเสียง ต้องการฟ้องร้อง',
-      'date': '',
-      'time': '',
-      'status': 'rejected',
-      'requestedAt': '3 วันที่แล้ว',
-      'jobSource': 'urgent',
-      'budget': 'ฟรี',
-    },
+    // {
+    //   'id': 'REQ-2026-001',
+    //   'clientCode': mockSeedClientCode,
+    //   'lawyerCode': mockSeedLawyerCode,
+    //   'lawyerModel': _primaryLawyerModel,
+    //   'clientName': 'สมชาย ใจดี',
+    //   'clientAvatar': 'ส',
+    //   'clientColor': 0xFF0262EC,
+    //   'topic': 'ครอบครัวและมรดก',
+    //   'subTopic': 'ฟ้องหย่า / แบ่งสินสมรส',
+    //   'detail':
+    //       'ต้องการปรึกษาเรื่องการฟ้องหย่าและการแบ่งทรัพย์สินสมรส มีบ้านและที่ดิน 2 แปลง ต้องการคำแนะนำเบื้องต้น',
+    //   'date': '28 มี.ค. 2569',
+    //   'time': '10:00 - 11:00',
+    //   'status': 'pending',
+    //   'requestedAt': '2 ชั่วโมงที่แล้ว',
+    //   'jobSource': 'urgent',
+    //   'budget': 'ฟรี',
+    // },
+    // {
+    //   'id': 'REQ-2026-002',
+    //   'clientCode': mockSeedClientCode,
+    //   'lawyerCode': mockSeedLawyerCode,
+    //   'lawyerModel': _primaryLawyerModel,
+    //   'clientName': 'วิภา รักสงบ',
+    //   'clientAvatar': 'ว',
+    //   'clientColor': 0xFFE11D48,
+    //   'topic': 'หนี้สินและการเงิน',
+    //   'subTopic': 'หนี้กู้ยืมเงิน / ดอกเบี้ย',
+    //   'detail':
+    //       'โดนเพื่อนยืมเงิน 200,000 บาท ไม่คืน มีสัญญากู้ยืมเงิน อยากดำเนินคดีเพื่อเรียกคืน',
+    //   'date': '30 มี.ค. 2569',
+    //   'time': '14:00 - 15:00',
+    //   'status': 'pending',
+    //   'requestedAt': '5 ชั่วโมงที่แล้ว',
+    //   'jobSource': 'urgent',
+    //   'budget': '500 บาท',
+    // },
+    // {
+    //   'id': 'REQ-2026-003',
+    //   'clientCode': mockSeedClientCode,
+    //   'lawyerCode': mockSeedLawyerCode,
+    //   'lawyerModel': _primaryLawyerModel,
+    //   'clientName': 'ประสิทธิ์ มั่งมี',
+    //   'clientAvatar': 'ป',
+    //   'clientColor': 0xFF059669,
+    //   'topic': 'ธุรกิจและบริษัท',
+    //   'subTopic': 'ตรวจร่างสัญญา',
+    //   'detail':
+    //       'ต้องการให้ตรวจสอบสัญญาซื้อขายกิจการ มูลค่า 5 ล้านบาท กังวลเรื่องเงื่อนไขการรับประกัน',
+    //   'date': '02 เม.ย. 2569',
+    //   'time': '09:00 - 10:00',
+    //   'status': 'accepted',
+    //   'requestedAt': '1 วันที่แล้ว',
+    //   'jobSource': 'urgent',
+    //   'budget': '1,000 บาท',
+    // },
+    // {
+    //   'id': 'REQ-2026-004',
+    //   'clientCode': mockSeedClientCode,
+    //   'lawyerCode': mockSeedLawyerCode,
+    //   'lawyerModel': _primaryLawyerModel,
+    //   'clientName': 'นงลักษณ์ สุขสม',
+    //   'clientAvatar': 'น',
+    //   'clientColor': 0xFF7C3AED,
+    //   'topic': 'ทรัพย์สินและที่ดิน',
+    //   'subTopic': 'เช่าบ้าน / ขับไล่ผู้เช่า',
+    //   'detail':
+    //       'ผู้เช่าค้างค่าเช่า 3 เดือน ไม่ยอมออก ต้องการดำเนินการทางกฎหมาย',
+    //   'date': '15 มี.ค. 2569',
+    //   'time': '11:00 - 12:00',
+    //   'status': 'done',
+    //   'requestedAt': '2 สัปดาห์ที่แล้ว',
+    //   'jobSource': 'urgent',
+    //   'budget': '800 บาท',
+    // },
+    // {
+    //   'id': 'REQ-2026-005',
+    //   'clientCode': mockSeedClientCode,
+    //   'lawyerCode': mockSeedLawyerCode,
+    //   'lawyerModel': _primaryLawyerModel,
+    //   'clientName': 'อนันต์ ชัยชนะ',
+    //   'clientAvatar': 'อ',
+    //   'clientColor': 0xFFD97706,
+    //   'topic': 'อาญาและอาชญากรรม',
+    //   'subTopic': 'หมิ่นประมาท',
+    //   'detail':
+    //       'ถูกโพสต์หมิ่นประมาทบน Facebook ทำให้เสียชื่อเสียง ต้องการฟ้องร้อง',
+    //   'date': '',
+    //   'time': '',
+    //   'status': 'rejected',
+    //   'requestedAt': '3 วันที่แล้ว',
+    //   'jobSource': 'urgent',
+    //   'budget': 'ฟรี',
+    // },
   ];
 
   final List<Map<String, dynamic>> jobs = [];
@@ -275,35 +275,35 @@ class LawyerJobsStore extends ChangeNotifier {
     return jobs.where((job) => job['clientCode'] == safeClientCode).toList();
   }
 
-  void updateStatus(String id, String newStatus) {
-    final job = jobs.firstWhere((j) => j['id'] == id, orElse: () => {});
-    if (job.isNotEmpty) {
-      job['status'] = newStatus;
-      notifyListeners();
-    }
-  }
+  // void updateStatus(String id, String newStatus) {
+  //   final job = jobs.firstWhere((j) => j['id'] == id, orElse: () => {});
+  //   if (job.isNotEmpty) {
+  //     job['status'] = newStatus;
+  //     notifyListeners();
+  //   }
+  // }
 
-  void acceptJob(String id) {
-    HapticFeedback.mediumImpact();
-    updateStatus(id, 'accepted');
-  }
+  // void acceptJob(String id) {
+  //   HapticFeedback.mediumImpact();
+  //   updateStatus(id, 'accepted');
+  // }
 
-  // ยืนยันการจอง (booking) — ต่างจาก acceptJob ของ urgent
-  void confirmBooking(String id) {
-    HapticFeedback.mediumImpact();
-    updateStatus(id, 'confirmed');
-  }
+  // // ยืนยันการจอง (booking) — ต่างจาก acceptJob ของ urgent
+  // void confirmBooking(String id) {
+  //   HapticFeedback.mediumImpact();
+  //   updateStatus(id, 'confirmed');
+  // }
 
-  void rejectJob(String id) {
-    HapticFeedback.lightImpact();
-    updateStatus(id, 'rejected');
-  }
+  // void rejectJob(String id) {
+  //   HapticFeedback.lightImpact();
+  //   updateStatus(id, 'rejected');
+  // }
 
-  // เริ่ม session เมื่อถึงวันนัด
-  void startSession(String id) {
-    HapticFeedback.mediumImpact();
-    updateStatus(id, 'in_session');
-  }
+  // // เริ่ม session เมื่อถึงวันนัด
+  // void startSession(String id) {
+  //   HapticFeedback.mediumImpact();
+  //   updateStatus(id, 'in_session');
+  // }
 
   // ── Query helpers ────────────────────────────────────────
 

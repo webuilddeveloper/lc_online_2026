@@ -1,11 +1,13 @@
+import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 
 class AppointmentDetailsLawyer extends StatefulWidget {
-  AppointmentDetailsLawyer({Key? key, this.model, this.userType});
+  AppointmentDetailsLawyer({Key? key, this.model});
 
   dynamic model;
-  String? userType;
 
   @override
   State<AppointmentDetailsLawyer> createState() =>
@@ -22,20 +24,39 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  bool isLoadingLawyers = true;
+  dynamic userModel = const {};
+
+  Future<void> callReadUser() async {
+    try {
+      final param = await postDio(
+          "${server}/m/register/read", {"code": widget.model['userCode']});
+      setState(() {
+        userModel = param['objectData'][0];
+        isLoadingLawyers = false;
+        _animController = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 500),
+        );
+        _fadeAnim =
+            CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+        _slideAnim = Tween<Offset>(
+          begin: const Offset(0, 0.06),
+          end: Offset.zero,
+        ).animate(
+            CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+        _animController.forward();
+        // _specialtyOptions = [...param['objectData']];
+      });
+    } catch (_) {
+      isLoadingLawyers = false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-    _animController.forward();
+    callReadUser();
   }
 
   @override
@@ -44,11 +65,72 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
     super.dispose();
   }
 
-  bool get isLawyer => widget.userType == 'lawyer';
+  void _onTapConversation(dynamic conv) async {
+    setState(() {
+      // appointmentList = param['objectData'];
+      // _lawyerAppointments = param['objectData'];
+      // _isLoadingAppointments = false;
+    });
+    String myUserId = UserProfileStore.instance.code;
+    dynamic lawyerModel = {};
+
+    await postDio("${server}/m/register/read", {"code": conv['lawyer']}).then(
+      (paramLawyer) => {
+        setState(
+          () {
+            lawyerModel = paramLawyer['objectData'][0];
+          },
+        ),
+      },
+    );
+
+    List<String> ids = [userModel['code'], lawyerModel['code']]..sort();
+    var model = {
+      "members": ids,
+      "userA": userModel['code'],
+      "userB": lawyerModel['code']
+    };
+    var roomCode;
+    await postObjectData("/m/chat/room/create", model).then(
+      (result) async => {
+        if (result['status'] == 'S')
+          {
+            setState(() {
+              roomCode = result['objectData']['roomCode'];
+            }),
+            await postObjectData("/m/case/update", {
+              "code": widget.model['code'],
+              "messageRoomCode": roomCode
+            }).then(
+              (res) => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => ChatPageLawyer(
+                            model: {
+                              'code': widget.model['code'],
+                              'name':
+                                  '${userModel['firstName']} ${userModel['lastName']}',
+                              'avatar': userModel['imageUrl'],
+                              // 'clientColor': conv.clientColor,
+                              'active': true,
+                              'caseSuccess': false,
+                            },
+                            // jobId: conv.id,
+                            roomCode: roomCode,
+                            userId: myUserId,
+                          )),
+                ),
+              },
+            ),
+          }
+      },
+    );
+  }
 
   // สถานะการนัดหมาย (mock: '1' = รอยืนยัน, '2' = ยืนยันแล้ว)
-  String get appointmentStatus => widget.model?['appointmentStatus'] ?? '1';
-  String get paymentStatus => widget.model?['paymentStatus'] ?? '1';
+  int get appointmentStatus => widget.model?['caseStatus'] ?? 1;
+  String get paymentStatus => widget.model?['isPay'] ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -61,27 +143,49 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
         backAction: () => goBack(),
         rightAction: () {},
       ),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
-            children: [
-              _buildClientHeader(),
-              const SizedBox(height: 16),
-              _buildStatusRow(),
-              const SizedBox(height: 16),
-              _buildAppointmentCard(),
-              const SizedBox(height: 16),
-              _buildCaseCard(),
-              // const SizedBox(height: 16),
-              // _buildPaymentCard(),
-            ],
-          ),
+      body: isLoadingLawyers
+          ? _loadingState()
+          : FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+                  children: [
+                    _buildClientHeader(),
+                    const SizedBox(height: 16),
+                    if (widget.model?['caseStatus'] == 0) ...[
+                      _buildCancelCard(),
+                      const SizedBox(height: 16),
+                    ],
+                    _buildStatusRow(),
+                    const SizedBox(height: 16),
+                    _buildAppointmentCard(),
+                    const SizedBox(height: 16),
+                    _buildCaseCard(),
+                    const SizedBox(height: 16),
+                    _buildPaymentCard(),
+                    // appointmentStatus == 3
+                    //     ? _buildAcceptedButton(context)
+                    //     : const SizedBox()
+                  ],
+                ),
+              ),
+            ),
+      bottomNavigationBar: widget.model['caseStatus'] == 1 || widget.model['caseStatus'] == 3 ? _buildBottomActions() : const SizedBox(),
+    );
+  }
+
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      bottomNavigationBar: isLawyer ? _buildBottomActions() : const SizedBox(),
     );
   }
 
@@ -106,26 +210,40 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
       ),
       child: Row(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.4), width: 2),
-            ),
-            child: const Center(
-              child: Icon(Icons.person_rounded, color: Colors.white, size: 28),
-            ),
-          ),
+          userModel['imageUrl'] != ""
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(43),
+                  child: Container(
+                    width: 45,
+                    height: 45,
+                    color: Colors.white.withOpacity(0.2),
+                    child: Image.network(
+                      userModel['imageUrl'] ?? '',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              : Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.white.withOpacity(0.4), width: 2),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.person_rounded,
+                        color: Colors.white, size: 28),
+                  ),
+                ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.model?['clientName'] ?? 'ลูกความ',
+                  widget.model?['userName'] ?? 'ลูกความ',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -140,7 +258,9 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                         color: Colors.white70, size: 13),
                     const SizedBox(width: 5),
                     Text(
-                      widget.model?['caseType'] ?? '',
+                      widget.model?['caseType'] == 1
+                          ? 'นัดหมายล่วงหน้า'
+                          : 'เคสด่วน',
                       style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -158,8 +278,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
     );
   }
 
-  Widget _appointmentBadge(String status) {
-    final isConfirmed = status != '1';
+  Widget _appointmentBadge(int status) {
+    // final isConfirmed = status != '1';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -174,13 +294,21 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
             width: 7,
             height: 7,
             decoration: BoxDecoration(
-              color: isConfirmed ? _kSuccess : Colors.amber,
+              color: status == 2 ? _kSuccess : Colors.amber,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 5),
           Text(
-            isConfirmed ? 'ยืนยันแล้ว' : 'รอยืนยัน',
+            status == 2
+                ? 'ยืนยันแล้ว'
+                : status == 1
+                    ? 'รอยืนยัน'
+                    : status == 0
+                        ? 'ยกเลิกแล้ว'
+                        : status == 3
+                            ? 'กำลังปรึกษา'
+                            : 'เสร็จสิ้น',
             style: const TextStyle(
                 color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
           ),
@@ -191,7 +319,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
 
   // ── Status Row: Payment + Appointment ──────────────────
   Widget _buildStatusRow() {
-    final isPaid = paymentStatus != '1';
+    final isPaid = widget.model?['isPay'];
     final isConfirmed = appointmentStatus != '1';
 
     return Row(
@@ -282,13 +410,13 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
         _infoRow(
           icon: Icons.calendar_today_outlined,
           label: 'วันที่นัดหมาย',
-          value: widget.model?['appointmentDate'] ?? '-',
+          value: widget.model?['caseDate'] ?? '-',
         ),
         _divider(),
         _infoRow(
           icon: Icons.access_time_rounded,
           label: 'ช่วงเวลา',
-          value: widget.model?['appointmentTime'] ?? '-',
+          value: '${widget.model?['startTime']}-${widget.model?['endTime']}',
         ),
       ],
     );
@@ -298,26 +426,20 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   Widget _buildCaseCard() {
     return _infoCard(
       icon: Icons.gavel_rounded,
-      title: 'ข้อมูลคดี',
+      title: 'รายละเอียด',
       iconBg: const Color(0xFFFFF3EE),
       iconColor: const Color(0xFFED6B2D),
       children: [
         _infoRow(
           icon: Icons.folder_outlined,
-          label: 'ประเภทคดี',
-          value: widget.model?['caseType'] ?? '-',
+          label: 'ประเภทหัวข้อ',
+          value: widget.model?['topicTitle'] ?? '-',
         ),
         _divider(),
         _infoRow(
           icon: Icons.subdirectory_arrow_right_rounded,
-          label: 'ประเภทคดีย่อย',
-          value: widget.model?['subCaseType'] ?? '-',
-        ),
-        _divider(),
-        _infoRow(
-          icon: Icons.title_rounded,
-          label: 'หัวข้อคดี',
-          value: widget.model?['title'] ?? '-',
+          label: 'หัวข้อ',
+          value: widget.model?['subTopicTitle'] ?? '-',
         ),
         _divider(),
         _infoRowMultiLine(
@@ -331,7 +453,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
 
   // ── Card: การชำระเงิน ────────────────────────────────────
   Widget _buildPaymentCard() {
-    final isPaid = paymentStatus != '1';
+    final isPaid = widget.model?['isPay'];
     return _infoCard(
       icon: Icons.account_balance_wallet_outlined,
       title: 'การชำระเงิน',
@@ -343,6 +465,34 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           label: 'สถานะ',
           value: isPaid ? 'ชำระเงินสำเร็จ' : 'รอชำระเงิน',
           valueColor: isPaid ? _kSuccess : Colors.orange,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCancelCard() {
+    return _infoCard(
+      icon: Icons.cancel_outlined,
+      title: 'รายละเอียดการยกเลิก',
+      iconBg: const Color.fromARGB(255, 255, 238, 238),
+      iconColor: Colors.red,
+      children: [
+        _infoRow(
+          icon: Icons.calendar_today,
+          label: 'วันที่ยกเลิก',
+          value: widget.model?['topicTitle'] ?? '-',
+        ),
+        _divider(),
+        _infoRow(
+          icon: Icons.alarm,
+          label: 'เวลาที่ยกเลิก',
+          value: widget.model?['subTopicTitle'] ?? '-',
+        ),
+        _divider(),
+        _infoRowMultiLine(
+          icon: Icons.notes_rounded,
+          label: 'เหตุการยกเลิก',
+          value: widget.model?['reasonCancel'] ?? '-',
         ),
       ],
     );
@@ -513,79 +663,129 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // ปุ่มไม่อนุมัติ
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _showConfirmDialog(isApprove: false),
+      child: widget.model['caseStatus'] == 3
+          ? GestureDetector(
+              onTap: () {
+                _onTapConversation(widget.model);
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (_) => ChatPageLawyer(
+                //       // jobId: userModel['code']?.toString(),
+                //       model: {
+                //         'name':
+                //             '${userModel['firstName']} ${userModel['lastName']}',
+                //         'avatar': userModel['imageUrl'] ?? '',
+                //         'active': true,
+                //         'caseSuccess': false,
+                //         'clientColor': userModel['clientColor'],
+                //       },
+                //     ),
+                //   ),
+                // );
+              },
               child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0EE),
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: _kDanger.withOpacity(0.3), width: 1.5),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.close_rounded, color: _kDanger, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'ปฏิเสธ',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _kDanger,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // ปุ่มยืนยัน
-          Expanded(
-            flex: 2,
-            child: GestureDetector(
-              onTap: () => _showConfirmDialog(isApprove: true),
-              child: Container(
-                height: 50,
+                height: 52,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
-                  ),
+                      colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: _kPrimary.withOpacity(0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
+                        color: _kPrimary.withOpacity(0.4),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4))
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.check_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'ยืนยันนัดหมาย',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
+                  children: [
+                    Icon(Icons.headset_mic_rounded,
+                        color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text('เริ่มปรึกษา / แชทกับลูกความ',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15)),
                   ],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
+            )
+          : Row(
+              children: [
+                // ปุ่มไม่อนุมัติ
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _showConfirmDialog(isApprove: false),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0EE),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: _kDanger.withOpacity(0.3), width: 1.5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.close_rounded, color: _kDanger, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'ปฏิเสธ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _kDanger,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // ปุ่มยืนยัน
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: () => _showConfirmDialog(isApprove: true),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _kPrimary.withOpacity(0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_rounded,
+                              color: Colors.white, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'ยืนยันนัดหมาย',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
     );
   }
 

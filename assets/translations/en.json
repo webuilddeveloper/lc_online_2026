@@ -42,7 +42,7 @@
   "free": "Free",
   "accepted": "Accepted",
   "pending": "Pending",
-  "paid": "Confirmed",
+  "paid": "Payment received.",
   "awaitingPayment": "Awaiting Payment",
   "acceptJob": "Accept",
   "acceptJobConfirm": "Are you sure you want to accept this request?",
@@ -521,6 +521,10 @@
       "4": "F", "5": "Sa", "6": "Su"
     }
   },
-  "lawyerProfile": "Lawyer Profile"
+  "lawyerProfile": "Lawyer Profile",
+  "idCard": "ID Card No.",
+  "idCardHint": "Enter your IDCard",
+  "lawyerNoHint": "Enter your Lawyer Number",
+  "lawyerNo": "Lawyer No"
 
 }

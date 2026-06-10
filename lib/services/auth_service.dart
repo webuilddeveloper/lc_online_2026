@@ -101,7 +101,7 @@ class AuthService {
     }
   }
 
-  static Future<UserModel> register({
+  static Future<dynamic> register({
     required String firstName,
     required String lastName,
     required String userType,
@@ -111,6 +111,11 @@ class AuthService {
     required String confirmPassword,
     String imageUrl = '',
     String category = 'guest',
+    List<String> expertiseList = const [],
+    String idCard = '',
+    String lawyerNo = '',
+    String provinceCode = '',
+    String provinceTitle = ''
   }) async {
     try {
       final body = json.encode({
@@ -123,6 +128,12 @@ class AuthService {
         'password': password,
         'confirmPassword': confirmPassword,
         'category': category,
+        'expertiseList': expertiseList,
+        'idcard': idCard,
+        'lawyerNo': lawyerNo,
+        'provinceCode': provinceCode,
+        'province': provinceTitle
+
       });
 
       debugPrint('[AuthService.register] url=$_registerUrl');
@@ -142,7 +153,9 @@ class AuthService {
       }
 
       final data = json.decode(response.body);
+      print('=-=-=-=-==-=-=-=-=-= ${data}');
       if (data['status'] != 'S') {
+        
         final rawMsg = data['message']?.toString() ?? '';
         final msg = rawMsg.toLowerCase();
         if (msg.contains('email')) {

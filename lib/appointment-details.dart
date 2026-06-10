@@ -1,7 +1,9 @@
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -78,36 +80,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     ('steps.completed.title', 'steps.completed.desc'),
   ];
 
+  dynamic lawyerModel = const {};
+  bool isLoadingLawyers = true;
+
   @override
   void initState() {
     super.initState();
-
-    _scrollCtrl = ScrollController()
-      ..addListener(() {
-        setState(() => _scrollOffset = _scrollCtrl.offset);
-      });
-
-    _enterCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..forward();
-
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
-
-    _anims = List.generate(7, (i) {
-      final start = i * 0.09;
-      return CurvedAnimation(
-        parent: _enterCtrl,
-        curve: Interval(
-          start.clamp(0, 0.8),
-          (start + 0.45).clamp(0, 1.0),
-          curve: Curves.easeOutExpo,
-        ),
-      );
-    });
+    callReadUser();
   }
 
   @override
@@ -117,6 +96,98 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     _scrollCtrl.dispose();
     super.dispose();
   }
+
+  Future<void> callReadUser() async {
+    try {
+      final param = await postDio(
+          "${server}/m/register/read", {"code": widget.appointment['lawyer']});
+      setState(() {
+        lawyerModel = param['objectData'][0];
+        isLoadingLawyers = false;
+        // _specialtyOptions = [...param['objectData']];
+        _scrollCtrl = ScrollController()
+          ..addListener(() {
+            setState(() => _scrollOffset = _scrollCtrl.offset);
+          });
+
+        _enterCtrl = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1000),
+        )..forward();
+
+        _pulseCtrl = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1600),
+        )..repeat(reverse: true);
+
+        _anims = List.generate(7, (i) {
+          final start = i * 0.09;
+          return CurvedAnimation(
+            parent: _enterCtrl,
+            curve: Interval(
+              start.clamp(0, 0.8),
+              (start + 0.45).clamp(0, 1.0),
+              curve: Curves.easeOutExpo,
+            ),
+          );
+        });
+      });
+    } catch (_) {
+      isLoadingLawyers = false;
+    }
+  }
+
+  Future<void> updateStatusRejectCase(reasonCancel, caseStatus) async {
+    DialogService.showLoading(context);
+    try {
+      dynamic model = {
+        "code": widget.appointment['code'],
+        "caseStatus": caseStatus,
+        "reasonCancel": reasonCancel,
+        "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
+      };
+      print(model);
+      final param = await postDio("${server}/m/case/update", model);
+      if (param['status'] == 'S') {
+        Navigator.pop(context);
+        DialogService.showSuccess(
+          context,
+          title: "ยกเลิกนัดหมายแล้ว",
+          message:
+              "คุณได้ทำการยกเลิกนัดหมายทนายความกับ คุณ${lawyerModel['firstName']} ${lawyerModel['lastName']} เรียบร้อยแล้ว",
+          onClose: () {
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => MenuPage(pageIndex: 0)), (route) => false);
+          },
+        );
+      }
+      // // final lawyers = await _lawyerRepository.searchLawyers();
+      // // final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
+      // final resulte = param['objectData'] ?? [];
+      // if (!mounted) return;
+      // setState(() {
+      //   _lawyersForYou = resulte.take(10).toList(growable: false);
+      //   _trendingLawyers = [...resulte]..sort((a, b) =>
+      //       ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
+      //   _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
+      //   _isLoadingLawyers = false;
+      // });
+      // print('------------------- ${mapped}');
+    } catch (_) {
+      // if (!mounted) return;
+      // setState(() {
+      //   _lawyersForYou = const [];
+      //   _trendingLawyers = const [];
+      //   _lawyerLoadError = 'genericError'.tr();
+      //   _isLoadingLawyers = false;
+      // });
+    }
+  }
+
+  
 
   // ── Shorthand getters ────────────────────────────────────
   Map<String, dynamic> get appointmentModel => widget.appointment;
@@ -137,133 +208,140 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     return Scaffold(
       backgroundColor: _isDesktop ? const Color(0xFFE9F2F9) : _surface,
       body: AppLayout(
-        child: _isDesktop
-            ? Column(
-                children: [
-                  // Desktop inline header
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    child: Row(
-                      children: [
-                        _circleBtn(
-                          icon: Icons.arrow_back_ios_new_rounded,
-                          color: _ink,
-                          bg: Colors.white,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const SizedBox(width: 14),
-                        Text(
-                          'appointmentInfo.title'.tr(),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: _ink,
-                          ),
-                        ),
-                        const Spacer(),
-                        _circleBtn(
-                          icon: Icons.more_horiz_rounded,
-                          color: _ink,
-                          bg: Colors.white,
-                          onTap: _showMenu,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Desktop content area
-                  Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: _surface,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        children: [
-                          CustomScrollView(
-                            controller: _scrollCtrl,
-                            physics: const ClampingScrollPhysics(),
-                            slivers: [
-                              _buildHero(),
-                              SliverPadding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                                sliver: SliverList(
-                                  delegate: SliverChildListDelegate([
-                                    _stagger(0, _buildDateTimeRow()),
-                                    _gap(14),
-                                    _stagger(1, _buildLawyerCard()),
-                                    _gap(14),
-                                    _stagger(2, _buildInfoCard()),
-                                    if (appointmentModel['status'] == 3 &&
-                                        appointmentModel['rating'] != null) ...[
-                                      _gap(14),
-                                      _stagger(4, _buildRatingCard()),
-                                    ],
-                                    _gap(14),
-                                    _stagger(5, _buildNoteCard()),
-                                  ]),
-                                ),
+        child: isLoadingLawyers
+            ? _loadingState()
+            : _isDesktop
+                ? Column(
+                    children: [
+                      // Desktop inline header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        child: Row(
+                          children: [
+                            _circleBtn(
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              color: _ink,
+                              bg: Colors.white,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pop(context);
+                              },
+                            ),
+                            const SizedBox(width: 14),
+                            Text(
+                              'appointmentInfo.title'.tr(),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: _ink,
                               ),
-                            ],
-                          ),
-                          // Bottom CTA
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: _stagger(6, _buildBottomCTA()),
-                          ),
-                        ],
+                            ),
+                            const Spacer(),
+                            _circleBtn(
+                              icon: Icons.more_horiz_rounded,
+                              color: _ink,
+                              bg: Colors.white,
+                              onTap: _showMenu,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              )
-            : Stack(
-                children: [
-                  CustomScrollView(
-                    controller: _scrollCtrl,
-                    physics: const ClampingScrollPhysics(),
-                    slivers: [
-                      _buildHero(),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 100),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            _stagger(0, _buildDateTimeRow()),
-                            _gap(14),
-                            _stagger(1, _buildLawyerCard()),
-                            _gap(14),
-                            _stagger(2, _buildInfoCard()),
-                            if (appointmentModel['status'] == 3 &&
-                                appointmentModel['rating'] != null) ...[
-                              _gap(14),
-                              _stagger(4, _buildRatingCard()),
+                      // Desktop content area
+                      Expanded(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: _surface,
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              CustomScrollView(
+                                controller: _scrollCtrl,
+                                physics: const ClampingScrollPhysics(),
+                                slivers: [
+                                  _buildHero(),
+                                  SliverPadding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        20, 0, 20, 100),
+                                    sliver: SliverList(
+                                      delegate: SliverChildListDelegate([
+                                        _stagger(0, _buildDateTimeRow()),
+                                        _gap(14),
+                                        _stagger(1, _buildLawyerCard()),
+                                        _gap(14),
+                                        _stagger(2, _buildInfoCard()),
+                                        if (appointmentModel['status'] == 3 &&
+                                            appointmentModel['rating'] !=
+                                                null) ...[
+                                          _gap(14),
+                                          _stagger(4, _buildRatingCard()),
+                                        ],
+                                        _gap(14),
+                                        _stagger(5, _buildNoteCard()),
+                                      ]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // Bottom CTA
+                              appointmentModel['caseStatus'] != 0
+                                  ? Positioned(
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: _stagger(6, _buildBottomCTA()),
+                                    )
+                                  : const SizedBox()
                             ],
-                            _gap(14),
-                            _stagger(5, _buildNoteCard()),
-                          ]),
+                          ),
                         ),
                       ),
                     ],
+                  )
+                : Stack(
+                    children: [
+                      CustomScrollView(
+                        controller: _scrollCtrl,
+                        physics: const ClampingScrollPhysics(),
+                        slivers: [
+                          _buildHero(),
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(15, 0, 15, 100),
+                            sliver: SliverList(
+                              delegate: SliverChildListDelegate([
+                                _stagger(0, _buildDateTimeRow()),
+                                _gap(14),
+                                _stagger(1, _buildLawyerCard()),
+                                _gap(14),
+                                _stagger(2, _buildInfoCard()),
+                                // if (appointmentModel['caseStatus'] == 4 &&
+                                //     appointmentModel['rating'] != null) ...[
+                                //   _gap(14),
+                                //   _stagger(4, _buildRatingCard()),
+                                // ],
+                                _gap(14),
+                                _stagger(5, _buildNoteCard()),
+                              ]),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Floating AppBar
+                      _buildFloatingAppBar(),
+                      // Bottom CTA
+                      appointmentModel['caseStatus'] != 0
+                          ? Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: _stagger(6, _buildBottomCTA()),
+                            )
+                          : const SizedBox()
+                    ],
                   ),
-                  // Floating AppBar
-                  _buildFloatingAppBar(),
-                  // Bottom CTA
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _stagger(6, _buildBottomCTA()),
-                  ),
-                ],
-              ),
       ),
     );
   }
@@ -504,12 +582,12 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   ),
                 ),
               ),
-              _circleBtn(
-                icon: Icons.more_horiz_rounded,
-                color: showTitle ? Colors.black : _ink,
-                bg: showTitle ? Color(0xFFFAFAFA) : Colors.white,
-                onTap: _showMenu,
-              ),
+              // _circleBtn(
+              //   icon: Icons.more_horiz_rounded,
+              //   color: showTitle ? Colors.black : _ink,
+              //   bg: showTitle ? Color(0xFFFAFAFA) : Colors.white,
+              //   onTap: _showMenu,
+              // ),
             ],
           ),
         ),
@@ -557,11 +635,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       _pill(
           Icons.calendar_today_rounded,
           'appointmentInfo.appointmentDate'.tr(),
-          appointmentModel['date'] as String,
+          appointmentModel['caseDate'] as String,
           _blue),
       const SizedBox(width: 10),
-      _pill(Icons.schedule_rounded, 'appointmentInfo.appointmentTime'.tr(),
-          appointmentModel['time'] as String, _green),
+      _pill(
+          Icons.schedule_rounded,
+          'appointmentInfo.appointmentTime'.tr(),
+          "${appointmentModel['startTime']} - ${appointmentModel['endTime']}",
+          _green),
       const SizedBox(width: 10),
       _pill(Icons.videocam_rounded, 'appointmentInfo.serviceType'.tr(),
           'appointmentInfo.videoCall'.tr(), const Color(0xFF8B5CF6)),
@@ -622,15 +703,15 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   width: 64,
                   height: 64,
                   color: lawyerColor.withOpacity(0.15),
-                  child: appointmentModel['imageUrl'] != null
-                      ? Image.asset(appointmentModel['imageUrl'] as String,
+                  child: lawyerModel['imageUrl'] != null
+                      ? Image.network(lawyerModel['imageUrl'] as String,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) =>
                               _avatarText(lawyerColor))
                       : _avatarText(lawyerColor),
                 ),
               ),
-              if (isActive)
+              if (lawyerModel['isActive'] ?? true)
                 Positioned(
                   right: 2,
                   bottom: 2,
@@ -661,7 +742,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    appointmentModel['name'] as String,
+                    '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
                     style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -677,7 +758,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      appointmentModel['title'] as String,
+                      // lawyerModel['title'] as String,
+                      'ทนายความ',
                       style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -691,13 +773,13 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                         (i) => const Icon(Icons.star_rounded,
                             size: 13, color: Color(0xFFFFC107))),
                     const SizedBox(width: 5),
-                    const Text('4.8',
+                    Text('${lawyerModel['rateAverage']}',
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: _ink)),
                     const SizedBox(width: 4),
-                    Text('(60)',
+                    Text('(${lawyerModel['review'] ?? '0'})',
                         style: TextStyle(
                             fontSize: 10, color: _slate.withOpacity(0.6))),
                   ]),
@@ -728,6 +810,168 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
           //   ],
           // ),
         ],
+      ),
+    );
+  }
+
+  void showReasonCancelDialog(BuildContext context) {
+    final TextEditingController reasonCancelController =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.fromLTRB(
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: _buildFormContent(
+                  context,
+                  reasonCancelController,
+                  setState, // ✅ ส่ง setState ลงไป
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFormContent(
+    BuildContext context,
+    TextEditingController reasonCancelController,
+    StateSetter setState, // ✅ รับ setState มาใช้
+  ) {
+    final hasText = reasonCancelController.text.trim().isNotEmpty;
+
+    return Container(
+      key: const ValueKey('form'),
+      color: Colors.white,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('เหตุผลการยกเลิก',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2340))),
+              const SizedBox(height: 4),
+              Text('กรุณาใส่เหตุผลในการยกเลิกนัดหมาย',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: reasonCancelController,
+                maxLines: 3,
+                maxLength: 300,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                // ✅ trigger rebuild ทุกครั้งที่พิมพ์
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'กรอกเหตุผล...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: const Color(0xFFEEF2F5),
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF0262EC), width: 1.5)),
+                  counterStyle:
+                      TextStyle(color: Colors.grey[400], fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFEEF2F5), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Text('ยกเลิก',
+                            style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: hasText
+                        ? () => updateStatusRejectCase(
+                            reasonCancelController.text, 0)
+                        : null, // ✅ ปิดปุ่มเมื่อไม่มีข้อความ
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: hasText
+                            ? const LinearGradient(
+                                colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
+                            : null,
+                        color: hasText ? null : const Color(0xFFCDD5E0),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: hasText
+                            ? [
+                                BoxShadow(
+                                    color: const Color(0xFF0262EC)
+                                        .withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4))
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded,
+                              color: hasText ? Colors.white : Colors.grey[400],
+                              size: 16),
+                          const SizedBox(width: 6),
+                          Text('ส่งเหตุผล',
+                              style: TextStyle(
+                                  color:
+                                      hasText ? Colors.white : Colors.grey[400],
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -778,17 +1022,17 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
           _cardTitle(Icons.info_outline_rounded, 'appointmentInfo.title'.tr()),
           const SizedBox(height: 14),
           _infoRow('appointmentInfo.topic'.tr(),
-              appointmentModel['topic'] as String),
+              appointmentModel['topicTitle'] as String),
           _divider(),
           _infoRow('appointmentInfo.subTopic'.tr(),
-              appointmentModel['subTopic'] as String),
+              appointmentModel['subTopicTitle'] as String),
           _divider(),
           _infoRow('appointmentInfo.serviceType'.tr(),
               'appointmentInfo.videoCall'.tr()),
           _divider(),
-          _infoRow('appointmentInfo.appointmentCode'.tr(),
-              '# ${appointmentModel['id']}',
-              accent: true),
+          // _infoRow('appointmentInfo.appointmentCode'.tr(),
+          //     '# ${appointmentModel['id']}',
+          //     accent: true),
         ],
       ),
     );
@@ -1095,7 +1339,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
           ),
         ],
       ),
-      child: status == 3
+      child: appointmentModel['caseStatus'] == 4
           ? Row(
               children: [
                 Expanded(
@@ -1149,7 +1393,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                 ),
               ],
             )
-          : status == 2
+          : appointmentModel['caseStatus'] == 3
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1200,7 +1444,19 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: _showCancelDialog,
+                      onTap: () {
+                        DialogService.showConfirmRejectJob(
+                          context,
+                          title: "ปฏิเสธคำขอ",
+                          message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+                          onConfirm: () {
+                            // widget.onReject?.call();
+                            // if (context.mounted) Navigator.pop(context);
+                            // updateStatusRejectCase(widget.job['code'], 0);
+                            showReasonCancelDialog(context);
+                          },
+                        );
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         height: 50,
@@ -1477,6 +1733,101 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     Navigator.pop(context, false);
   }
 
+  String _ratingLabel(double rating) {
+    switch (rating.toInt()) {
+      case 1:
+        return 'rating_appointment.terrible'.tr();
+      case 2:
+        return 'rating_appointment.fair'.tr();
+      case 3:
+        return 'rating_appointment.good'.tr();
+      case 4:
+        return 'rating_appointment.very_good'.tr();
+      case 5:
+        return 'rating_appointment.excellent'.tr();
+      default:
+        return 'rating_appointment.prompt'.tr();
+    }
+  }
+
+  Widget _buildSuccessContent(BuildContext context) {
+    return Container(
+      key: const ValueKey('success'),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+                color: Color(0xFFE8F5E9), shape: BoxShape.circle),
+            child: const Icon(Icons.check_rounded,
+                color: Color(0xFF2E7D32), size: 44),
+          ),
+          const SizedBox(height: 20),
+          Text('rating_appointment.successTitle'.tr(),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A2340))),
+          const SizedBox(height: 8),
+          Text(
+            'rating_appointment.successDescription'.tr(),
+            textAlign: TextAlign.center,
+            style:
+                TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.6),
+          ),
+          const SizedBox(height: 28),
+          GestureDetector(
+            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                      color: const Color(0xFF0262EC).withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.home_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('returns.returnHome'.tr(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
   void showRatingDialog(BuildContext context) {
     double rating = 0;
     bool submitted = false;
@@ -1508,7 +1859,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   ),
                   child: submitted
                       ? _buildSuccessContent(context)
-                      : _buildFormContent(
+                      : _buildFormRating(
                           context,
                           rating,
                           commentController,
@@ -1524,7 +1875,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     );
   }
 
-  Widget _buildFormContent(
+  Widget _buildFormRating(
     BuildContext context,
     double rating,
     TextEditingController commentController,
@@ -1678,88 +2029,6 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  String _ratingLabel(double rating) {
-    switch (rating.toInt()) {
-      case 1:
-        return 'rating_appointment.terrible'.tr();
-      case 2:
-        return 'rating_appointment.fair'.tr();
-      case 3:
-        return 'rating_appointment.good'.tr();
-      case 4:
-        return 'rating_appointment.very_good'.tr();
-      case 5:
-        return 'rating_appointment.excellent'.tr();
-      default:
-        return 'rating_appointment.prompt'.tr();
-    }
-  }
-
-  Widget _buildSuccessContent(BuildContext context) {
-    return Container(
-      key: const ValueKey('success'),
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-                color: Color(0xFFE8F5E9), shape: BoxShape.circle),
-            child: const Icon(Icons.check_rounded,
-                color: Color(0xFF2E7D32), size: 44),
-          ),
-          const SizedBox(height: 20),
-          Text('rating_appointment.successTitle'.tr(),
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A2340))),
-          const SizedBox(height: 8),
-          Text(
-            'rating_appointment.successDescription'.tr(),
-            textAlign: TextAlign.center,
-            style:
-                TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.6),
-          ),
-          const SizedBox(height: 28),
-          GestureDetector(
-            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
-            child: Container(
-              height: 50,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                      color: const Color(0xFF0262EC).withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.home_rounded, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text('returns.returnHome'.tr(),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15)),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

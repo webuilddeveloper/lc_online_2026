@@ -166,7 +166,7 @@ class MockChatRepository implements ChatRepository {
   @override
   Future<void> endConversation(String conversationId) async {
     // อัปเดต LawyerJobsStore
-    LawyerJobsStore.instance.updateStatus(conversationId, 'done');
+    // LawyerJobsStore.instance.updateStatus(conversationId, 'done');
   }
 }
 

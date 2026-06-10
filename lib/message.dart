@@ -289,7 +289,7 @@ class _MessagePageState extends State<MessagePage> {
         ? ChatPageLawyer(
             key: ValueKey(conv.id),
             model: model,
-            jobId: conv.id,
+            // jobId: conv.id,
             embeddedMode: true,
           )
         : ChatPageUser(

@@ -2,6 +2,8 @@ import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,88 +31,18 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   late Animation<double> _pulseAnim;
 
   // ── Data (เหมือนเดิม) ────────────────────────────────────
-  List<Map<String, dynamic>> lawyerOnlineList = [
-    {
-      "code": "20260513101915-561-752",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.8,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "experience": "11+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
-      "price": 500,
-      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
-    },
-    {
-      "code": "1",
-      "name": "ธนากร นิติศักดิ์",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.1,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-2.png",
-      "experience": "19+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
-      "price": 500,
-      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
-    },
-    {
-      "code": "2",
-      "name": "พงษ์ภพ ยุติธรรม",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 3.9,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-3.png",
-      "experience": "10+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
-      "price": 500,
-      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
-    },
-    {
-      "code": "3",
-      "name": "อาริย์ ศิษย์กฎหมาย",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 3.0,
-      "cost": "200",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-4.png",
-      "experience": "12+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
-      "price": 500,
-      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
-    },
-    {
-      "code": "4",
-      "name": "Sachin K",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.9,
-      "cost": "1000",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-5.png",
-      "experience": "20+ years",
-      "clientReviews": "60+",
-      "casesWon": "148+",
-      "price": 500,
-      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
-    },
-  ];
+  List<dynamic> lawyerOnlineList = [];
 
   dynamic model = {};
   String code = "";
   bool isFavorite = false;
   String typeLogin = "";
   final storage = FlutterSecureStorage();
+  bool isLoadingLawyers = true;
 
   // ── สีตาม rating (เหมือน LawyerDetailPage) ──────────────
   Color get _lawyerColor {
-    final r = (model['scroll'] ?? 0) as num;
+    final r = (model['rateAverage'] ?? 0) as num;
     if (r >= 4.8) return const Color(0xFF1565C0);
     if (r >= 4.0) return const Color(0xFF02A8D1);
     if (r >= 3.0) return const Color(0xFFFDD835);
@@ -146,15 +78,72 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   }
 
   // ── Logic เดิมทุกอย่าง ──────────────────────────────────
-  void callRead() async {
-    code = widget.code ?? "0";
-    final result = lawyerOnlineList.where((x) => x['code'] == code);
-    model = result.isNotEmpty ? result.first : lawyerOnlineList.first;
-    final type = await storage.read(key: 'typeLogin');
+  // void callRead() async {
+  //   code = widget.code ?? "0";
+  //   final result = lawyerOnlineList.where((x) => x['code'] == code);
+  //   model = result.isNotEmpty ? result.first : lawyerOnlineList.first;
+  //   final type = await storage.read(key: 'typeLogin');
 
+  //   setState(() {
+  //     typeLogin = type.toString();
+  //   });
+  // }
+
+  Future<void> callRead() async {
+    final type = await storage.read(key: 'typeLogin');
     setState(() {
       typeLogin = type.toString();
     });
+    try {
+      dynamic criteria = {"code": widget.code};
+      final param = await postDio("${server}/m/register/read", criteria);
+      setState(() {
+        print('------------------- ${param['objectData']}');
+        model = param['objectData'][0];
+        callReadIsLike(model['code']);
+        // _lawyersForYou = param['objectDate'];
+      });
+    } catch (_) {}
+  }
+
+  Future<void> callReadIsLike(lawyerCode) async {
+    final type = await storage.read(key: 'typeLogin');
+    String myUserId = UserProfileStore.instance.code;
+    setState(() {
+      typeLogin = type.toString();
+    });
+    try {
+      dynamic criteria = {"referenceLawyer": lawyerCode, "reference": myUserId};
+      final param =
+          await postDio("${server}/m/favoriteLawyer/isLike", criteria);
+      setState(() {
+        print('----------is Like--------- ${param['objectData']}');
+        isFavorite = param['objectData']['isLike'];
+        isLoadingLawyers = false;
+        // _lawyersForYou = param['objectDate'];
+      });
+    } catch (_) {}
+  }
+
+  Future<void> like() async {
+    final type = await storage.read(key: 'typeLogin');
+    String myUserId = UserProfileStore.instance.code;
+    setState(() {
+      typeLogin = type.toString();
+    });
+    try {
+      dynamic criteria = {
+        "referenceLawyer": model['code'],
+        "reference": myUserId
+      };
+      final param = await postDio("${server}/m/favoriteLawyer/like", criteria);
+      setState(() {
+        print('----------is Like--------- ${param['objectData']}');
+        isFavorite = param['objectData']['isLike'];
+        isLoadingLawyers = false;
+        // _lawyersForYou = param['objectDate'];
+      });
+    } catch (_) {}
   }
 
   void goBack(value) async {
@@ -176,51 +165,106 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
       body: AppLayout(
         child: SizedBox(
           height: MediaQuery.of(context).size.height,
-          child: Column(
-            children: [
-              _buildHeroHeader(color),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            offset: Offset(0, -4))
-                      ]),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-                        child: Column(
-                          children: [
-                            _buildStatsRow(color),
-                            const SizedBox(height: 14),
-                            _buildSkillsCard(color),
-                            const SizedBox(height: 14),
-                            // _buildContactCard(color),
-                            // const SizedBox(height: 14),
-                            _buildSocialCard(color),
-                          ],
+          child:
+              // isLoadingLawyers ?
+              // _loadingState() :
+              //  Column(
+              //   children: [
+              //     _buildHeroHeader(color),
+              //     Expanded(
+              //       child: Container(
+              //         decoration: const BoxDecoration(
+              //             color: Colors.white,
+              //             borderRadius: BorderRadius.only(
+              //               topLeft: Radius.circular(24),
+              //               topRight: Radius.circular(24),
+              //             ),
+              //             boxShadow: [
+              //               BoxShadow(
+              //                   color: Colors.black12,
+              //                   blurRadius: 10,
+              //                   offset: Offset(0, -4))
+              //             ]),
+              //         child: ClipRRect(
+              //           borderRadius: const BorderRadius.only(
+              //             topLeft: Radius.circular(24),
+              //             topRight: Radius.circular(24),
+              //           ),
+              //           child: SingleChildScrollView(
+              //             physics: const BouncingScrollPhysics(),
+              //             child: Padding(
+              //               padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+              //               child: Column(
+              //                 children: [
+              //                   _buildStatsRow(color),
+              //                   const SizedBox(height: 14),
+              //                   _buildSkillsCard(color),
+              //                   const SizedBox(height: 14),
+              //                   // _buildContactCard(color),
+              //                   // const SizedBox(height: 14),
+              //                   model['isPro'] ?
+              //                   _buildSocialCard(color) : const SizedBox(),
+              //                 ],
+              //               ),
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //     _buildBookingButton(color),
+              //   ],
+              // ),
+
+              isLoadingLawyers
+                  ? _loadingState()
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              // Hero Header (ไม่ scroll)
+                              _buildHeroHeader(color),
+
+                              // ✅ Expanded ครอบ ScrollView เพื่อให้มี height ที่แน่นอน
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 0, 16, 32),
+                                    child: Column(
+                                      children: [
+                                        _buildStatsRow(color),
+                                        const SizedBox(height: 14),
+                                        _buildSkillsCard(color),
+                                        const SizedBox(height: 14),
+                                        model['isPro']
+                                            ? _buildSocialCard(color)
+                                            : Container(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        _buildBookingButton(color),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-              _buildBookingButton(color),
-            ],
-          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );
@@ -232,7 +276,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
 
   Widget _buildHeroHeader(Color color) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final heroH = 220.0 + topPadding;
+    final heroH = 200.0 + topPadding;
 
     return AnimatedBuilder(
       animation: _entryCtrl,
@@ -305,9 +349,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
             child: GestureDetector(
               onTap: () {
                 typeLogin != 'null'
-                    ? setState(() {
-                        isFavorite = !isFavorite;
-                      })
+                    ? like()
                     : Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -367,12 +409,12 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                         top: 5,
                         left: 5,
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(43),
+                          borderRadius: BorderRadius.circular(100),
                           child: Container(
                             width: 96,
                             height: 96,
                             color: Colors.white.withOpacity(0.2),
-                            child: Image.asset(
+                            child: Image.network(
                               model['imageUrl'] ?? '',
                               fit: BoxFit.cover,
                             ),
@@ -394,31 +436,6 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                       ),
                     ]),
                   ),
-                  const SizedBox(height: 6),
-                  // Verified badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.88),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                            color: color.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2))
-                      ],
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.verified_rounded, size: 11, color: color),
-                      const SizedBox(width: 3),
-                      Text('ยืนยันแล้ว',
-                          style: TextStyle(
-                              fontSize: 9,
-                              color: color,
-                              fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
                 ]),
                 const SizedBox(width: 16),
                 // Info
@@ -426,20 +443,30 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        model['name'] ?? '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.4,
-                          shadows: [
-                            Shadow(
-                                color: Colors.black26,
-                                blurRadius: 8,
-                                offset: Offset(0, 2))
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${model['firstName']} ${model['lastName']}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                overflow: TextOverflow.ellipsis,
+                                letterSpacing: -0.4,
+                                shadows: [
+                                  Shadow(
+                                      color: Colors.black26,
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2))
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(Icons.verified_rounded,
+                              size: 12, color: Colors.white),
+                        ],
                       ),
                       const SizedBox(height: 3),
                       // cost
@@ -454,37 +481,72 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                       ),
                       const SizedBox(height: 10),
                       // Rating pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.4)),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.star_rounded,
-                              color: Color(0xFFFFC107), size: 14),
-                          const SizedBox(width: 4),
-                          Text('${model['scroll'] ?? ''}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13)),
-                          Text(' / 5.0',
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.65),
-                                  fontSize: 11)),
-                        ]),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded,
+                                    color: Color(0xFFFFC107), size: 14),
+                                const SizedBox(width: 4),
+                                Text('${model['rateAverage'] ?? ''}',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13)),
+                                Text(' / 5.0',
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.65),
+                                        fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on,
+                                    color: Colors.red.shade600, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${model['province']}',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      Wrap(spacing: 6, runSpacing: 6, children: [
-                        _heroBadge(Icons.work_history_rounded,
-                            model['experience'] ?? '-'),
-                        _heroBadge(Icons.people_outline_rounded,
-                            '${model['clientReviews'] ?? ''} รีวิว'),
-                      ]),
+                      // const SizedBox(height: 10),
+                      // Wrap(spacing: 6, runSpacing: 6, children: [
+                      //   _heroBadge(Icons.work_history_rounded,
+                      //       model['experience'] ?? '-'),
+                      //   _heroBadge(Icons.people_outline_rounded,
+                      //       '${model['review'] ?? ''} รีวิว'),
+                      // ]),
                     ],
                   ),
                 ),
@@ -528,9 +590,9 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
         child: Row(children: [
           _statItem('🏆', model['casesWon'] ?? '-', 'คดีชนะ'),
           _vertDiv(),
-          _statItem('📅', model['experience'] ?? '-', 'ประสบการณ์'),
+          _statItem('📅', "${model['experienceYears']}", 'ประสบการณ์'),
           _vertDiv(),
-          _statItem('⭐', model['clientReviews'] ?? '-', 'รีวิว'),
+          _statItem('⭐', "${model['review'].length}", 'รีวิว'),
         ]),
       ),
     );
@@ -560,7 +622,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   // ════════════════════════════════════════════════════════
 
   Widget _buildSkillsCard(Color color) {
-    final skills = List<String>.from(model['skills'] ?? []);
+    final skills = List<dynamic>.from(model['expertiseData'] ?? []);
 
     return _AnimCard(
       delay: 0.2,
@@ -586,7 +648,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: color.withOpacity(0.25)),
                       ),
-                      child: Text(s,
+                      child: Text(s['title'],
                           style: TextStyle(
                               fontSize: 12,
                               color: color,

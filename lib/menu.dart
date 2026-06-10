@@ -271,8 +271,8 @@ class _BottomNavItem extends StatelessWidget {
           curve: Curves.easeOutCubic,
           // ลบ width/height: double.infinity ออก ← ให้ขนาดพอดีกับเนื้อหา
           padding: item.isLogo
-              ? const EdgeInsets.symmetric(horizontal: 30, vertical: 8)
-              : const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 8)
+              : const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFFF8F9FD).withOpacity(0.9)
@@ -289,7 +289,7 @@ class _BottomNavItem extends StatelessWidget {
             ],
           ),
           child: Stack(
-            clipBehavior: Clip.none,
+            // clipBehavior: Clip.none,
             children: [
               Image.asset(
                 item.icon,

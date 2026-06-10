@@ -2,11 +2,12 @@ import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/repositories/province_repository.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 
 class LawyerPage extends StatefulWidget {
-  final String topic;
-  final String subTopic;
+  final dynamic topic;
+  final dynamic subTopic;
 
   const LawyerPage({
     required this.topic,
@@ -33,106 +34,106 @@ class _LawyerPageState extends State<LawyerPage> {
   String _selectedProvince = 'ทั้งหมด'; // ← NEW
   static const _kPrimary = Color(0xFF0262EC);
   List<dynamic> _lawyers = [
-    {
-      'code': '20260513101915-561-752',
-      'name': 'ศักดิ์สิทธิ์ พิพากษ์',
-      'title': 'ทนายความอาวุโส',
-      'specialty': 'Criminal lawyer, Corporate lawyer',
-      'experience': '11+ ปี',
-      'experienceYears': 11,
-      'rating': 5.0,
-      'reviews': 60,
-      'price': 500,
-      'distance': '1.2 กม.',
-      'distanceKm': 1.2,
-      'eta': '~3 นาที',
-      'available': true,
-      'office': 'สำนักงาน ศักดิ์สิทธิ์',
-      'avatar': 'ศ',
-      'color': 0xFF1565C0,
-      'imageUrl': 'assets/images/lawyer-avatar-1.png',
-      'province': 'กรุงเทพมหานครฯ', // ← NEW
-    },
-    {
-      'code': 'MOCK-LAWYER-002',
-      'name': 'พิมพ์ใจ รักษาธรรม',
-      'title': 'ทนายความ',
-      'specialty': 'กฎหมายครอบครัว, มรดก',
-      'experience': '12 ปี',
-      'experienceYears': 12,
-      'rating': 4.8,
-      'reviews': 198,
-      'price': 500,
-      'distance': '2.5 กม.',
-      'distanceKm': 2.5,
-      'eta': '~5 นาที',
-      'available': true,
-      'office': 'สำนักงานกฎหมาย พิมพ์ใจ',
-      'avatar': 'พ',
-      'color': 0xFF6A1B9A,
-      'imageUrl': 'assets/images/lawyer-avatar-2.png',
-      'province': 'เชียงใหม่', // ← NEW
-    },
-    {
-      'code': 'MOCK-LAWYER-003',
-      'name': 'ธนากร นิติบัณฑิต',
-      'title': 'ที่ปรึกษากฎหมาย',
-      'specialty': 'กฎหมายธุรกิจ, สัญญา',
-      'experience': '9 ปี',
-      'experienceYears': 9,
-      'rating': 3.0,
-      'reviews': 145,
-      'price': 500,
-      'distance': '3.1 กม.',
-      'distanceKm': 3.1,
-      'eta': '~7 นาที',
-      'available': false,
-      'office': 'บริษัท นิติธนากร จำกัด',
-      'avatar': 'ธ',
-      'color': 0xFF2E7D32,
-      'imageUrl': 'assets/images/lawyer-avatar-3.png',
-      'province': 'ขอนแก่น', // ← NEW
-    },
-    {
-      'code': 'MOCK-LAWYER-004',
-      'name': 'วีระ ศักดิ์สิทธิ์กุล',
-      'title': 'ทนายความอาวุโส',
-      'specialty': 'คดีแรงงาน, ประกันสังคม',
-      'experience': '22 ปี',
-      'experienceYears': 22,
-      'rating': 2.0,
-      'reviews': 427,
-      'price': 500,
-      'distance': '4.0 กม.',
-      'distanceKm': 4.0,
-      'eta': '~8 นาที',
-      'available': true,
-      'office': 'สำนักงาน วีระ ลอว์',
-      'avatar': 'ว',
-      'color': 0xFFBF360C,
-      'imageUrl': 'assets/images/lawyer-avatar-5.png',
-      'province': 'กรุงเทพมหานคร', // ← NEW
-    },
-    {
-      'code': 'MOCK-LAWYER-005',
-      'name': 'อรุณี ยุติธรรม',
-      'title': 'ทนายความ',
-      'specialty': 'กฎหมายที่ดิน, ทรัพย์สิน',
-      'experience': '7 ปี',
-      'experienceYears': 7,
-      'rating': 4.5,
-      'reviews': 89,
-      'price': 500,
-      'distance': '5.3 กม.',
-      'distanceKm': 5.3,
-      'eta': '~10 นาที',
-      'available': true,
-      'office': 'สำนักงานกฎหมาย อรุณี',
-      'avatar': 'อ',
-      'color': 0xFF00695C,
-      'imageUrl': 'assets/images/lawyer-avatar-4.png',
-      'province': 'ชลบุรี', // ← NEW
-    },
+    // {
+    //   'code': '20260513101915-561-752',
+    //   'name': 'ศักดิ์สิทธิ์ พิพากษ์',
+    //   'title': 'ทนายความอาวุโส',
+    //   'specialty': 'Criminal lawyer, Corporate lawyer',
+    //   'experience': '11+ ปี',
+    //   'experienceYears': 11,
+    //   'rating': 5.0,
+    //   'reviews': 60,
+    //   'price': 500,
+    //   'distance': '1.2 กม.',
+    //   'distanceKm': 1.2,
+    //   'eta': '~3 นาที',
+    //   'available': true,
+    //   'office': 'สำนักงาน ศักดิ์สิทธิ์',
+    //   'avatar': 'ศ',
+    //   'color': 0xFF1565C0,
+    //   'imageUrl': 'assets/images/lawyer-avatar-1.png',
+    //   'province': 'กรุงเทพมหานครฯ', // ← NEW
+    // },
+    // {
+    //   'code': 'MOCK-LAWYER-002',
+    //   'name': 'พิมพ์ใจ รักษาธรรม',
+    //   'title': 'ทนายความ',
+    //   'specialty': 'กฎหมายครอบครัว, มรดก',
+    //   'experience': '12 ปี',
+    //   'experienceYears': 12,
+    //   'rating': 4.8,
+    //   'reviews': 198,
+    //   'price': 500,
+    //   'distance': '2.5 กม.',
+    //   'distanceKm': 2.5,
+    //   'eta': '~5 นาที',
+    //   'available': true,
+    //   'office': 'สำนักงานกฎหมาย พิมพ์ใจ',
+    //   'avatar': 'พ',
+    //   'color': 0xFF6A1B9A,
+    //   'imageUrl': 'assets/images/lawyer-avatar-2.png',
+    //   'province': 'เชียงใหม่', // ← NEW
+    // },
+    // {
+    //   'code': 'MOCK-LAWYER-003',
+    //   'name': 'ธนากร นิติบัณฑิต',
+    //   'title': 'ที่ปรึกษากฎหมาย',
+    //   'specialty': 'กฎหมายธุรกิจ, สัญญา',
+    //   'experience': '9 ปี',
+    //   'experienceYears': 9,
+    //   'rating': 3.0,
+    //   'reviews': 145,
+    //   'price': 500,
+    //   'distance': '3.1 กม.',
+    //   'distanceKm': 3.1,
+    //   'eta': '~7 นาที',
+    //   'available': false,
+    //   'office': 'บริษัท นิติธนากร จำกัด',
+    //   'avatar': 'ธ',
+    //   'color': 0xFF2E7D32,
+    //   'imageUrl': 'assets/images/lawyer-avatar-3.png',
+    //   'province': 'ขอนแก่น', // ← NEW
+    // },
+    // {
+    //   'code': 'MOCK-LAWYER-004',
+    //   'name': 'วีระ ศักดิ์สิทธิ์กุล',
+    //   'title': 'ทนายความอาวุโส',
+    //   'specialty': 'คดีแรงงาน, ประกันสังคม',
+    //   'experience': '22 ปี',
+    //   'experienceYears': 22,
+    //   'rating': 2.0,
+    //   'reviews': 427,
+    //   'price': 500,
+    //   'distance': '4.0 กม.',
+    //   'distanceKm': 4.0,
+    //   'eta': '~8 นาที',
+    //   'available': true,
+    //   'office': 'สำนักงาน วีระ ลอว์',
+    //   'avatar': 'ว',
+    //   'color': 0xFFBF360C,
+    //   'imageUrl': 'assets/images/lawyer-avatar-5.png',
+    //   'province': 'กรุงเทพมหานคร', // ← NEW
+    // },
+    // {
+    //   'code': 'MOCK-LAWYER-005',
+    //   'name': 'อรุณี ยุติธรรม',
+    //   'title': 'ทนายความ',
+    //   'specialty': 'กฎหมายที่ดิน, ทรัพย์สิน',
+    //   'experience': '7 ปี',
+    //   'experienceYears': 7,
+    //   'rating': 4.5,
+    //   'reviews': 89,
+    //   'price': 500,
+    //   'distance': '5.3 กม.',
+    //   'distanceKm': 5.3,
+    //   'eta': '~10 นาที',
+    //   'available': true,
+    //   'office': 'สำนักงานกฎหมาย อรุณี',
+    //   'avatar': 'อ',
+    //   'color': 0xFF00695C,
+    //   'imageUrl': 'assets/images/lawyer-avatar-4.png',
+    //   'province': 'ชลบุรี', // ← NEW
+    // },
   ];
 
   // ── All provinces derived from data ───────────────────
@@ -145,10 +146,11 @@ class _LawyerPageState extends State<LawyerPage> {
     // Filter: search text
     if (_searchText.isNotEmpty) {
       list = list.where((l) {
-        final name = (l['name'] as String).toLowerCase();
-        final specialty = (l['specialty'] as String).toLowerCase();
+        final name = ("${l['firstName']} ${l['lastName']}").toLowerCase();
+        // final specialty = (l['specialty'] as String).toLowerCase();
         final q = _searchText.toLowerCase();
-        return name.contains(q) || specialty.contains(q);
+        return name.contains(q);
+        //  || specialty.contains(q);
       }).toList();
     }
 
@@ -167,8 +169,8 @@ class _LawyerPageState extends State<LawyerPage> {
     // Sort
     switch (_sortBy) {
       case 'rating':
-        list.sort(
-            (a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
+        list.sort((a, b) =>
+            (b['rateAverage'] as double).compareTo(a['rateAverage'] as double));
         break;
       case 'experience':
         list.sort((a, b) => (b['experienceYears'] as int)
@@ -261,18 +263,20 @@ class _LawyerPageState extends State<LawyerPage> {
       _lawyers = [];
       _selectedIdx = null;
     });
-
     try {
-      final lawyers = await _lawyerRepository.searchLawyers(
-        topic: widget.topic,
-        subTopic: widget.subTopic,
-      );
+      dynamic model = {
+        "limit": 10,
+        "userType": "lawyer",
+        "subTopic": widget.subTopic['title'],
+      };
+      final param = await postDio("${server}/m/register/read", model);
+      // final resulte = param['objectData'] ?? [];
       if (!mounted) return;
-
       setState(() {
         _isLoadingLawyers = false;
-        _lawyers = lawyers.map((lawyer) => lawyer.toLegacyMap()).toList();
+        _lawyers = param['objectData'] ?? [];
       });
+      print('------------------- ${param}');
     } catch (_) {
       if (!mounted) return;
 
@@ -282,6 +286,33 @@ class _LawyerPageState extends State<LawyerPage> {
         _lawyers = [];
       });
     }
+    // setState(() {
+    //   _isLoadingLawyers = true;
+    //   _lawyerLoadError = null;
+    //   _lawyers = [];
+    //   _selectedIdx = null;
+    // });
+
+    // try {
+    //   final lawyers = await _lawyerRepository.searchLawyers(
+    //     topic: widget.topic,
+    //     subTopic: widget.subTopic,
+    //   );
+    //   if (!mounted) return;
+
+    //   setState(() {
+    //     _isLoadingLawyers = false;
+    //     _lawyers = lawyers.map((lawyer) => lawyer.toLegacyMap()).toList();
+    //   });
+    // } catch (_) {
+    //   if (!mounted) return;
+
+    //   setState(() {
+    //     _isLoadingLawyers = false;
+    //     _lawyerLoadError = 'Cannot load lawyer accounts';
+    //     _lawyers = [];
+    //   });
+    // }
   }
 
   @override
@@ -341,7 +372,10 @@ class _LawyerPageState extends State<LawyerPage> {
                                 final l = filtered[i];
                                 final originalIdx = _lawyers.indexOf(l);
                                 final isSelected = _selectedIdx == originalIdx;
-                                final available = l['available'] as bool;
+                                final available =
+                                    ((l['isAvailable'] ?? 'T') == 'T'
+                                        ? true
+                                        : false);
 
                                 return GestureDetector(
                                   onTap: available
@@ -395,7 +429,7 @@ class _LawyerPageState extends State<LawyerPage> {
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               30),
-                                                      child: Image.asset(
+                                                      child: Image.network(
                                                         l['imageUrl'],
                                                         width: 55,
                                                         height: 55,
@@ -428,7 +462,7 @@ class _LawyerPageState extends State<LawyerPage> {
                                                     Row(children: [
                                                       Expanded(
                                                         child: Text(
-                                                          l['name'] as String,
+                                                          "${l['firstName']} ${l['lastName']}",
                                                           style:
                                                               const TextStyle(
                                                             fontWeight:
@@ -442,34 +476,44 @@ class _LawyerPageState extends State<LawyerPage> {
                                                       _badge(available),
                                                     ]),
                                                     const SizedBox(height: 2),
-                                                    Text(l['title'] as String,
+                                                    Text( "${l['experienceYears'] <= 4 ? "ทนายความ" : "ทนายความอาวุโส"}",
                                                         style: TextStyle(
                                                             color: Colors
                                                                 .grey[400],
                                                             fontSize: 12)),
                                                     const SizedBox(height: 4),
-                                                    Row(children: [
-                                                      const Icon(
-                                                          Icons.star_rounded,
-                                                          color:
-                                                              Color(0xFFFFC107),
-                                                          size: 14),
-                                                      const SizedBox(width: 2),
-                                                      Text('${l['rating']}',
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Icon(
+                                                            Icons.star_rounded,
+                                                            color: Color(
+                                                                0xFFFFC107),
+                                                            size: 14),
+                                                        const SizedBox(
+                                                            width: 2),
+                                                        Text(
+                                                          '${l['rateAverage']}',
                                                           style:
                                                               const TextStyle(
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600,
-                                                                  fontSize:
-                                                                      12)),
-                                                      Text(
-                                                          ' (${l['reviews']} รีวิว)',
+                                                                  fontSize: 12),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        Text(
+                                                          ' (${l['review'].length} รีวิว)',
                                                           style: TextStyle(
                                                               color: Colors
                                                                   .grey[400],
-                                                              fontSize: 12)),
-                                                    ]),
+                                                              fontSize: 10),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -477,15 +521,18 @@ class _LawyerPageState extends State<LawyerPage> {
                                           ),
                                           const SizedBox(height: 12),
                                           const Divider(
-                                              height: 1,
-                                              color: Color(0xFFEEF2F5)),
+                                            height: 1,
+                                            color: Color(0xFFEEF2F5),
+                                          ),
                                           const SizedBox(height: 10),
                                           Row(children: [
-                                            _chip(Icons.gavel_outlined,
-                                                l['specialty'] as String),
+                                            _chip(
+                                                Icons.gavel_outlined,
+                                                l['expertiseData'][0]['title']
+                                                    as String),
                                             const SizedBox(width: 8),
                                             _chip(Icons.history_outlined,
-                                                l['experience'] as String),
+                                                "${l['experienceYears'] ?? 0}"),
                                           ]),
                                           const SizedBox(height: 8),
                                           Row(children: [
@@ -498,7 +545,7 @@ class _LawyerPageState extends State<LawyerPage> {
                                             ),
                                             const SizedBox(width: 8),
                                             _chip(Icons.location_on_outlined,
-                                                l['distance'] as String),
+                                                "${l['distance'] ?? "-"}"),
                                           ]),
                                         ],
                                       ),

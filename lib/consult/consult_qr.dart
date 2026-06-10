@@ -301,7 +301,7 @@ class ConsultQrPage extends StatelessWidget {
 
                   try {
                     final job = _createUrgentJob();
-                    final caseModel = UserCaseAdapter.fromJob(job);
+                    dynamic caseModel = {};
                     final lawyerModel = Map<String, dynamic>.from(
                         (job['lawyerModel'] as Map?) ?? const {});
                     final lawyerForConsult = {

@@ -269,7 +269,7 @@ class _PostFormState extends State<PostForm> with TickerProviderStateMixin {
     setState(() {
       provinceList = [
         {"code": "0", "title": "เลือกจังหวัด"},
-        ...param
+        ...param['objectData']
       ];
     });
   }

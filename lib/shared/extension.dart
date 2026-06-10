@@ -142,6 +142,13 @@ dateStringToDateStringFormatV2(String date, {String type = '/'}) {
   return result;
 }
 
+DateTime timeStringToDateTime(String time) {
+  final parts = time.split(':');
+  final hour = int.parse(parts[0]);
+  final minute = int.parse(parts[1]);
+  return DateTime(0, 0, 0, hour, minute);
+}
+
 // List<Identity> toListModel(List<dynamic> model) {
 //   var list = new List<Identity>();
 //   model.forEach((element) {

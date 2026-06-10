@@ -4,6 +4,8 @@ import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,7 +19,6 @@ import 'package:easy_localization/easy_localization.dart';
 
 class ChatPageLawyer extends StatefulWidget {
   final Map<String, dynamic> model;
-  final String? jobId;
   final bool embeddedMode;
   final String roomCode; // ✅ เพิ่ม
   final String userId; // ✅ เพิ่ม
@@ -25,7 +26,6 @@ class ChatPageLawyer extends StatefulWidget {
   const ChatPageLawyer({
     super.key,
     required this.model,
-    this.jobId,
     this.embeddedMode = false,
     this.roomCode = '', // ✅ เพิ่ม
     this.userId = '', // ✅ เพิ่ม
@@ -45,7 +45,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
   String _typingUser = "";
-  late bool _caseSuccess;
+  // bool _caseSuccess;
 
   @override
   void didChangeDependencies() {
@@ -55,11 +55,46 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   @override
   void initState() {
     super.initState();
-    _caseSuccess = widget.model['caseSuccess'] as bool? ?? false;
+    // _caseSuccess = widget.model['caseSuccess'] as bool? ?? false;
     _setupChat(); // ✅ เพิ่ม
   }
 
   // ✅ เหมือน ChatPageUser
+  // Future<void> _setupChat() async {
+  //   // ✅ ตัด connection เก่าทิ้งก่อนเสมอ
+  //   await _chatService.disconnect();
+
+  //   _chatService.onReceiveMessage = (message) {
+  //     setState(() => _messages.add(message));
+  //     _scrollToBottom();
+  //   };
+
+  //   _chatService.onLoadHistory = (history) {
+  //     setState(() {
+  //       _messages = history
+  //           .map((e) => e as Map<String, dynamic>)
+  //           .toList()
+  //           .reversed
+  //           .toList();
+  //     });
+  //     _scrollToBottom();
+  //   };
+
+  //   _chatService.onUserTyping = (userId, isTyping) {
+  //     if (userId != widget.userId) {
+  //       setState(() {
+  //         _isTyping = isTyping;
+  //         _typingUser = userId;
+  //       });
+  //     }
+  //   };
+
+  //   await _chatService.connect();
+  //   await _chatService.joinRoom(widget.roomCode, widget.userId);
+  //   await _chatService.loadHistory(widget.roomCode);
+  //   await _chatService.markAsRead(widget.roomCode, widget.userId);
+  // }
+
   Future<void> _setupChat() async {
     // ✅ ตัด connection เก่าทิ้งก่อนเสมอ
     await _chatService.disconnect();
@@ -120,23 +155,78 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     DialogService.showConfirm(
       context,
       title: 'endConsultTitle'.tr(),
-      message: 'endConsultMessageLawyer'.tr(),
+      message: 'endConsultMessageUser'.tr(),
       onConfirm: () {
-        if (widget.jobId != null)
-          LawyerJobsStore.instance.updateStatus(widget.jobId!, 'done');
-        setState(() => _caseSuccess = true);
-        DialogService.showSuccess(
-          context,
-          title: 'successTitle'.tr(),
-          message: 'endConsultSuccessMessage'.tr(),
-          onClose: () => Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 0)),
-            (route) => false,
-          ),
-        );
+        updateStatusCase();
+        // final jobId = widget.model['jobId']?.toString() ??
+        //     widget.model['id']?.toString() ??
+        //     '';
+        // if (jobId.isNotEmpty) {
+        //   // LawyerJobsStore.instance.updateStatus(jobId, 'done');
+        // }
+        // final lawyer = {
+        //   'name': widget.model['name'] ?? '',
+        //   'avatar': (widget.model['name'] as String? ?? 'ท').characters.first,
+        //   'title': widget.model['title'] ??
+        //       (widget.model['skills'] != null &&
+        //               (widget.model['skills'] as List).isNotEmpty
+        //           ? (widget.model['skills'] as List).first
+        //           : widget.model['experience'] ?? ''),
+        //   'rating': widget.model['rating'] ?? widget.model['scroll'] ?? 0,
+        //   'imageUrl': widget.model['imageUrl'] ?? '',
+        // };
+        // Navigator.pushAndRemoveUntil(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (_) => ConsultStatusPage(
+        //       currentStep: 4,
+        //       lawyer: lawyer,
+        //       appointmentDate: widget.model['appointmentDate'],
+        //       appointmentTime: widget.model['appointmentTime'],
+        //     ),
+        //   ),
+        //   (route) => route.isFirst,
+        // );
       },
     );
+  }
+
+  Future<void> updateStatusCase() async {
+    DialogService.showLoading(context);
+    final lawyerCode = UserProfileStore.instance.code;
+    try {
+      dynamic model = {"code": widget.model['code'], "caseStatus": 4};
+      final param = await postDio("${server}/m/case/update", model);
+      setState(() {
+        if (param['status'] == 'S') {
+          DialogService.showSuccess(
+            context,
+            title: 'successTitle'.tr(),
+            message: 'endConsultSuccessMessage'.tr(),
+            onClose: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 0)),
+              (route) => false,
+            ),
+          );
+        }
+        // appointmentList = param['objectData'];
+        // _lawyerAppointments = param['objectData'];
+        // _isLoadingAppointments = false;
+        print('>>>>>>>>>>>>>>>>>> ${param}');
+      });
+    } catch (_) {
+      // if (!mounted) return;
+      // final fallbackAppointments =
+      //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+      setState(() {
+        // _lawyerAppointments = fallbackAppointments;
+        // _apiBookingJobs = const [];
+        // _appointmentLoadError =
+        //     fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
+        // _isLoadingAppointments = false;
+      });
+    }
   }
 
   void _showReminderBeforeJoin() {
@@ -217,11 +307,12 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   Widget build(BuildContext context) {
     final model = widget.model;
     final isActive = model['active'] as bool? ?? true;
+    final caseSuccess = model['caseSuccess'] as bool? ?? false;
     final clientColor = model['clientColor'] != null
         ? Color(model['clientColor'] as int)
         : const Color(0xFF0262EC);
 
-    final actionButtons = !_caseSuccess
+    final actionButtons = !caseSuccess
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -268,7 +359,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                     ),
                   ),
             name: model['name'] ?? '',
-            statusText: _caseSuccess
+            statusText: caseSuccess
                 ? null
                 : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
             actions: actionButtons,
@@ -280,12 +371,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
       body: Column(
         children: [
           if (widget.embeddedMode)
-            _buildEmbeddedHeader(model, isActive, clientColor, actionButtons),
+            _buildEmbeddedHeader(
+                model, isActive, clientColor, actionButtons, caseSuccess),
           // const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 25),
+              padding: const EdgeInsets.fromLTRB(12, 20, 12, 25),
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
@@ -296,6 +388,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                   avatarAsset: widget.model['avatar'],
                 );
               },
+              separatorBuilder: (context, index) => _messages[index]
+                          ['senderId'] !=
+                      _messages[index + 1]['senderId']
+                  ? const SizedBox(
+                      height: 10,
+                    )
+                  : const SizedBox(),
             ),
           ),
 
@@ -315,7 +414,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               ),
             ),
 
-          _caseSuccess
+          caseSuccess
               ? _buildEndedBanner()
               : ChatInput(controller: _chatController, onSend: _sendMessage),
         ],
@@ -323,8 +422,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     );
   }
 
-  Widget _buildEmbeddedHeader(Map<String, dynamic> model, bool isActive,
-      Color clientColor, Widget? actions) {
+  Widget _buildEmbeddedHeader(
+    Map<String, dynamic> model,
+    bool isActive,
+    Color clientColor,
+    Widget? actions,
+    bool caseSuccess,
+  ) {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -358,7 +462,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                         fontSize: 15, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
-                if (!_caseSuccess)
+                if (caseSuccess)
                   Text(isActive ? 'activeNow'.tr() : 'notActive'.tr(),
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF8593A8))),

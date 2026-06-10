@@ -1,6 +1,9 @@
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
+import 'package:LawyerOnline/lawyer-job-details.dart';
 import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:LawyerOnline/menu.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
@@ -14,20 +17,17 @@ const _kPrimary = Color(0xFF0262EC);
 const _kAccent = Color(0xFF2F80ED);
 const _kText = Color(0xFF0D1B2A);
 
-// ─── Lawyer Dashboard ─────────────────────────────────────────────
-// Mobile  → Column (เดิม ไม่เปลี่ยน)
-// Desktop → Row 2-column: LEFT=appointments, RIGHT=job requests
-class HomeLawyerSection extends StatelessWidget {
-  final List<dynamic> appointments;
+class HomeLawyerSection extends StatefulWidget {
+  // final List<dynamic> appointments;
   final List<dynamic> jobRequests;
   final bool isLoadingAppointments;
   final String? appointmentLoadError;
-  final Future<void> Function(Map<String, dynamic> job, String newStatus)?
+  final Future<void> Function(dynamic job, String newStatus)?
       onJobStatusChanged;
 
   const HomeLawyerSection({
     super.key,
-    required this.appointments,
+    // required this.appointments,
     required this.jobRequests,
     this.isLoadingAppointments = false,
     this.appointmentLoadError,
@@ -35,22 +35,35 @@ class HomeLawyerSection extends StatelessWidget {
   });
 
   @override
+  State<HomeLawyerSection> createState() => _HomeLawyerSectionState();
+}
+
+class _HomeLawyerSectionState extends State<HomeLawyerSection> {
+  List<dynamic> appointmentsList = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLawyerappointmentsList();
+    // appointmentsList = widget.appointments;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // urgent jobs เท่านั้นที่แสดงใน section "เคสด่วน"
     final activeUrgentJobs = [
-      ...jobRequests.where((j) =>
+      ...widget.jobRequests.where((j) =>
           (j['jobSource'] ?? 'urgent') == 'urgent' &&
           j['status'] == 'accepted'),
-      ...jobRequests.where((j) =>
+      ...widget.jobRequests.where((j) =>
           (j['jobSource'] ?? 'urgent') == 'urgent' && j['status'] == 'pending'),
     ];
-    // booking jobs ที่รอยืนยัน
-    final pendingBookings = jobRequests
+    final pendingBookings = widget.jobRequests
         .where((j) =>
             (j['jobSource'] ?? 'urgent') == 'booking' &&
             j['status'] == 'pending')
         .toList();
-    final dueBookings = jobRequests.where(_isConfirmedBookingDueToday).toList();
+    final dueBookings =
+        widget.jobRequests.where(_isConfirmedBookingDueToday).toList();
 
     if (ResponsiveLayout.isDesktop(context)) {
       return _buildDesktopLayout(
@@ -76,7 +89,7 @@ class HomeLawyerSection extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  DESKTOP: 2-column Row
+  //  DESKTOP
   // ══════════════════════════════════════════════════════════
   Widget _buildDesktopLayout(
       BuildContext context,
@@ -90,7 +103,6 @@ class HomeLawyerSection extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── LEFT: รายการนัดหมาย (flex 3) ─────────────────
           Expanded(
             flex: 3,
             child: Column(
@@ -98,7 +110,8 @@ class HomeLawyerSection extends StatelessWidget {
               children: [
                 _sectionHeader(
                   context,
-                  title: '${'appointmentList'.tr()} (${appointments.length})',
+                  title:
+                      '${'appointmentList'.tr()} (${appointmentsList.length})',
                   onMore: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -106,22 +119,19 @@ class HomeLawyerSection extends StatelessWidget {
                   padded: false,
                 ),
                 const SizedBox(height: 8),
-                if (isLoadingAppointments)
+                if (widget.isLoadingAppointments)
                   _loadingState()
-                else if ((appointmentLoadError ?? '').isNotEmpty)
-                  _emptyState(appointmentLoadError!)
-                else if (appointments.isNotEmpty)
+                else if ((widget.appointmentLoadError ?? '').isNotEmpty)
+                  _emptyState(widget.appointmentLoadError!)
+                else if (appointmentsList.isNotEmpty)
                   _buildAppointmentListDesktop(context)
                 else
-                  _emptyState('noAppointments'.tr()),
+                  _emptyState('noappointmentsList'.tr()),
                 const SizedBox(height: 20),
               ],
             ),
           ),
-
           SizedBox(width: RV.cardGap(context) * 1.5),
-
-          // ── RIGHT: เคสด่วน + booking pending ────────────
           Expanded(
             flex: 2,
             child: Column(
@@ -139,7 +149,6 @@ class HomeLawyerSection extends StatelessWidget {
                   _buildTodayBookingList(context, dueBookings),
                   const SizedBox(height: 20),
                 ],
-                // ── Section: นัดหมายรอยืนยัน ────────────────
                 if (pendingBookings.isNotEmpty) ...[
                   _sectionHeader(
                     context,
@@ -152,8 +161,6 @@ class HomeLawyerSection extends StatelessWidget {
                   _buildJobRequestListDesktop(context, pendingBookings),
                   const SizedBox(height: 20),
                 ],
-
-                // ── Section: เคสด่วน ────────────────────────
                 _sectionHeader(
                   context,
                   title: '${'urgentCases'.tr()} (${activeUrgentJobs.length})',
@@ -175,71 +182,130 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
-  // ── Desktop: Appointment cards — vertical list ─────────────────────
   Widget _buildAppointmentListDesktop(BuildContext context) {
     final gap = RV.cardGap(context);
-    // สร้าง Row ทีละคู่ — ไม่พึ่ง LayoutBuilder เพื่อหลีก unbounded width ใน IntrinsicHeight
     final rows = <Widget>[];
-    for (int i = 0; i < appointments.length; i += 2) {
-      final left = appointments[i];
-      final right = i + 1 < appointments.length ? appointments[i + 1] : null;
+    for (int i = 0; i < appointmentsList.length; i += 2) {
+      final left = appointmentsList[i];
+      final right =
+          i + 1 < appointmentsList.length ? appointmentsList[i + 1] : null;
       rows.add(
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _appointmentCardDesktop(
-                context,
-                left,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AppointmentDetailsLawyer(model: left),
-                  ),
-                ),
-              ),
+              child: _appointmentCardDesktop(context, left,
+                  onTap: () => _navigateFromAppointment(context, left)),
             ),
             SizedBox(width: gap),
             Expanded(
               child: right != null
-                  ? _appointmentCardDesktop(
-                      context,
-                      right,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AppointmentDetailsLawyer(model: right),
-                        ),
-                      ),
-                    )
+                  ? _appointmentCardDesktop(context, right,
+                      onTap: () => _navigateFromAppointment(context, right))
                   : const SizedBox.shrink(),
             ),
           ],
         ),
       );
-      if (i + 2 < appointments.length) rows.add(SizedBox(height: gap));
+      if (i + 2 < appointmentsList.length) rows.add(SizedBox(height: gap));
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: rows,
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
   }
 
-  // ── Desktop appointment card: fullwidth แนวตั้ง ────────────────────
+  Future<void> _loadLawyerappointmentsList() async {
+    final lawyerCode = UserProfileStore.instance.code;
+
+    if (lawyerCode.isEmpty) return;
+    try {
+      final param = await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
+
+      if (param['status'] == 'S') {
+        // final allCases = List<dynamic>.from(param['objectData'] ?? []);
+        // final filtered = allCases.where((x) => x['caseStatus'] == 2).toList();
+        // for (var i = 0; i < filtered.length; i++) {
+
+        // }
+        appointmentsList = param['objectData'];
+      }
+
+      
+      // print('-=-=-=-=-=--appointmentList=-=-=-=--= ${filtered}');
+      setState(() {
+        // _lawyerappointmentsList = param['objectData'];
+        // _isLoadingAppointments = false;
+      });
+    } catch (_) {
+      // if (!mounted) return;
+      // final fallbackappointmentsList =
+      //     LawyerJobsStore.instance.bookingappointmentsListForLawyer(lawyerCode);
+      setState(() {
+        // _lawyerappointmentsList = fallbackappointmentsList;
+        // _apiBookingJobs = const [];
+        // _appointmentLoadError =
+        //     fallbackappointmentsList.isEmpty ? 'genericError'.tr() : null;
+        // _isLoadingAppointments = false;
+      });
+    }
+  }
+
+  void _navigateFromAppointment(BuildContext context, dynamic appt) {
+    final caseStatus = (appt['caseStatus'] ?? '').toString();
+    if (caseStatus == '1') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (detailCtx) => LawyerJobDetailPage(
+            job: appt,
+            onAccept: () {
+              // LawyerJobsStore.instance.acceptJob(appt['code'] as String);
+              // if (detailCtx.mounted) {
+              //   Navigator.pop(detailCtx);
+              //   widget.onJobStatusChanged?.call(appt, 'accepted');
+              // }
+              print('1');
+            },
+            onReject: () {
+              // DialogService.showConfirmRejectJob(
+              //   detailCtx,
+              //   title: "rejectJob".tr(),
+              //   message: "rejectJobConfirm".tr(),
+              //   onConfirm: () {
+              //     LawyerJobsStore.instance.rejectJob(appt['code'] as String);
+              //     if (detailCtx.mounted) {
+              //       Navigator.pop(detailCtx);
+              //       widget.onJobStatusChanged?.call(appt, 'rejected');
+              //     }
+              //   },
+              // );
+              print('2');
+            },
+          ),
+        ),
+      ).then((value) => {
+            _loadLawyerappointmentsList()
+            // print(value)
+            // if (value) rippleController.reverse()
+          });
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => AppointmentDetailsLawyer(model: appt)),
+      );
+    }
+  }
+
   Widget _appointmentCardDesktop(BuildContext context, Map model,
       {VoidCallback? onTap}) {
     final isPaid = (model['paymentStatus'] ?? '') == '1';
+    final statusCfg = _caseStatusConfig((model['caseStatus'] ?? '').toString());
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Container(
-        // border อยู่นอก Material เพื่อให้ครอบ gradient ได้
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Colors.black.withOpacity(0.20),
-            width: 1.5,
-          ),
+          border: Border.all(color: Colors.black.withOpacity(0.20), width: 1.5),
         ),
         child: Material(
           color: Colors.transparent,
@@ -265,59 +331,67 @@ class HomeLawyerSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Row 1: icon + name + badge ──────────────────────
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.event_rounded,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                              size: 30),
+                    Row(children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.person_rounded,
-                            size: 16,
-                            color: Color.fromARGB(255, 255, 255, 255)),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            model['clientName'] ?? '',
-                            style: GoogleFonts.prompt(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        child: const Icon(Icons.event_rounded,
+                            color: Colors.white, size: 30),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.person_rounded,
+                          size: 16, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          model['clientName'] ?? '',
+                          style: GoogleFonts.prompt(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 8),
-                        // badge — fixed width ไม่ overflow
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isPaid
-                                ? Colors.white.withOpacity(0.25)
-                                : Colors.orange.withOpacity(0.85),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            isPaid ? 'paid'.tr() : 'awaitingPayment'.tr(),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Color(statusCfg['color'] as int)
+                              .withOpacity(0.90),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(statusCfg['label'] as String,
                             style: GoogleFonts.prompt(
                                 color: Colors.white,
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600),
-                          ),
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isPaid
+                              ? Colors.white.withOpacity(0.25)
+                              : Colors.orange.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
-                    ),
+                        child: Text(
+                          isPaid ? 'paid'.tr() : 'awaitingPayment'.tr(),
+                          style: GoogleFonts.prompt(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ]),
                     const SizedBox(height: 6),
-                    // ── Row 2: title ─────────────────────────────────────
                     Text(model['title'] ?? '',
                         style: GoogleFonts.prompt(
                             color: Colors.white,
@@ -333,39 +407,35 @@ class HomeLawyerSection extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 6),
-                    // ── Row 3: date + time inline ─────────────────────────
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_rounded,
-                            size: 10, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Text(model['appointmentDate'] ?? '',
+                    Row(children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(model['appointmentDate'] ?? '',
+                          style: GoogleFonts.prompt(
+                              fontSize: 11, color: Colors.white70)),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.access_time_rounded,
+                          size: 10, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(model['appointmentTime'] ?? '',
                             style: GoogleFonts.prompt(
-                                fontSize: 11, color: Colors.white70)),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.access_time_rounded,
-                            size: 10, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(model['appointmentTime'] ?? '',
-                              style: GoogleFonts.prompt(
-                                  fontSize: 11, color: Colors.white70),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
-                    ),
+                                fontSize: 11, color: Colors.white70),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
                   ],
-                ), // Column
-              ), // Padding
-            ), // Ink
-          ), // InkWell
-        ), // Material
-      ), // Container (shadow)
-    ); // MouseRegion
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  // ── Desktop: Job request list (vertical, ไม่ต้อง padding ซ้ำ) ──────
   Widget _buildJobRequestListDesktop(BuildContext context, List<dynamic> jobs) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -384,7 +454,7 @@ class HomeLawyerSection extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  MOBILE: Column
+  //  MOBILE
   // ══════════════════════════════════════════════════════════
   Widget _buildMobileLayout(
       BuildContext context,
@@ -394,24 +464,21 @@ class HomeLawyerSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Appointments ─────────────────────────────────────────
         _sectionHeader(
           context,
-          title: '${'appointmentList'.tr()} (${appointments.length})',
+          title: '${'appointmentList'.tr()} (${appointmentsList.length})',
           onMore: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
         ),
-        if (isLoadingAppointments)
+        if (widget.isLoadingAppointments)
           _loadingState()
-        else if ((appointmentLoadError ?? '').isNotEmpty)
-          _emptyState(appointmentLoadError!)
-        else if (appointments.isNotEmpty)
+        else if ((widget.appointmentLoadError ?? '').isNotEmpty)
+          _emptyState(widget.appointmentLoadError!)
+        else if (appointmentsList.isNotEmpty)
           _buildAppointmentListMobile(context)
         else
-          _emptyState('noAppointments'.tr()),
+          _emptyState('noappointmentsList'.tr()),
         const SizedBox(height: 20),
-
-        // ── Booking Requests รอยืนยัน ────────────────────────────
         if (dueBookings.isNotEmpty) ...[
           _sectionHeader(
             context,
@@ -423,7 +490,6 @@ class HomeLawyerSection extends StatelessWidget {
           _buildTodayBookingList(context, dueBookings),
           const SizedBox(height: 20),
         ],
-
         if (pendingBookings.isNotEmpty) ...[
           _sectionHeader(
             context,
@@ -435,8 +501,6 @@ class HomeLawyerSection extends StatelessWidget {
           _buildJobRequestListMobile(context, pendingBookings),
           const SizedBox(height: 20),
         ],
-
-        // ── Urgent Job Requests ──────────────────────────────────
         _sectionHeader(
           context,
           title: '${'urgentCases'.tr()} (${activeUrgentJobs.length})',
@@ -453,86 +517,61 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
-  // ── Section header ────────────────────────────────────────────────
-  // padded: true  → มี horizontal padding 18 (mobile default)
-  // padded: false → ไม่มี padding (desktop จัดการ padding จาก parent)
-  Widget _sectionHeader(
-    BuildContext context, {
-    required String title,
-    VoidCallback? onMore,
-    bool padded = true,
-  }) {
+  Widget _sectionHeader(BuildContext context,
+      {required String title, VoidCallback? onMore, bool padded = true}) {
     final content = Row(
       children: [
-        Text(
-          title,
-          style: GoogleFonts.prompt(
-            fontSize: RV.titleSize(context) - 1,
-            fontWeight: FontWeight.w700,
-            color: _kText,
-          ),
-        ),
+        Text(title,
+            style: GoogleFonts.prompt(
+              fontSize: RV.titleSize(context) - 1,
+              fontWeight: FontWeight.w700,
+              color: _kText,
+            )),
         const Spacer(),
         if (onMore != null)
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
               onTap: onMore,
-              child: Text(
-                'viewAll'.tr(),
-                style: GoogleFonts.prompt(
-                  fontSize: 12,
-                  color: _kAccent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text('viewAll'.tr(),
+                  style: GoogleFonts.prompt(
+                      fontSize: 12,
+                      color: _kAccent,
+                      fontWeight: FontWeight.w500)),
             ),
           ),
       ],
     );
 
     if (!padded) return content;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
-      child: content,
-    );
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 6), child: content);
   }
 
-  // ── Mobile: Appointment Cards (horizontal scroll — เดิม) ──────────
   Widget _buildAppointmentListMobile(BuildContext context) {
     return SizedBox(
       height: 220,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none, // ให้ shadow วาดออกนอก bounds ได้
-        padding: const EdgeInsets.fromLTRB(
-            18, 4, 48, 12), // bottom 12 = พื้นที่ shadow
-        itemCount: appointments.length,
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.fromLTRB(18, 4, 48, 12),
+        itemCount: appointmentsList.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, i) => _appointmentCardMobile(
           context,
-          appointments[i],
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AppointmentDetailsLawyer(model: appointments[i]),
-            ),
-          ),
+          appointmentsList[i],
+          onTap: () => _navigateFromAppointment(context, appointmentsList[i]),
         ),
       ),
     );
   }
 
-  // ── Mobile appointment card (เดิม — ไม่เปลี่ยน) ──────────────────
   Widget _appointmentCardMobile(BuildContext context, Map model,
       {VoidCallback? onTap}) {
-    final isPaid = (model['paymentStatus'] ?? '') == '1';
+    final statusCfg = _caseStatusConfig((model['caseStatus'] ?? '').toString());
 
-    // ใช้ LayoutBuilder เพื่อให้ width ถูกต้อง ไม่พึ่ง size.width โดยตรง
     return LayoutBuilder(
       builder: (ctx, constraints) {
-        // fallback: ถ้า constraints ไม่มีข้อมูล ใช้ screen width
         final screenW = MediaQuery.of(context).size.width;
         final cardW = (screenW - 18 * 2 - 14) / 2;
 
@@ -542,10 +581,8 @@ class HomeLawyerSection extends StatelessWidget {
             width: cardW,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: Colors.black.withOpacity(0.20),
-                width: 0.5,
-              ),
+              border:
+                  Border.all(color: Colors.black.withOpacity(0.20), width: 0.5),
             ),
             child: Material(
               color: Colors.transparent,
@@ -564,7 +601,6 @@ class HomeLawyerSection extends StatelessWidget {
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
-                    // ไม่ใส่ boxShadow ใน Ink — shadow อยู่ที่ Container ด้านนอกแล้ว
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
@@ -589,48 +625,65 @@ class HomeLawyerSection extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
-                                color: isPaid
-                                    ? Colors.white.withOpacity(0.25)
-                                    : Colors.orange.withOpacity(0.85),
+                                color: Color(statusCfg['color'] as int)
+                                    .withOpacity(0.90),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(
-                                isPaid ? 'paid'.tr() : 'awaitingPayment'.tr(),
-                                style: GoogleFonts.prompt(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600),
-                              ),
+                              child: Text(statusCfg['label'] as String,
+                                  style: GoogleFonts.prompt(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600)),
                             ),
                           ],
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: model['isPay']
+                                  ? Colors.white.withOpacity(0.25)
+                                  : Colors.orange.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              model['isPay']
+                                  ? 'paid'.tr()
+                                  : 'awaitingPayment'.tr(),
+                              style: GoogleFonts.prompt(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ),
                         Row(children: [
                           const Icon(Icons.person_rounded,
                               size: 11, color: Colors.white60),
                           const SizedBox(width: 4),
                           Expanded(
-                            child: Text(
-                              model['clientName'] ?? '',
-                              style: GoogleFonts.prompt(
-                                  color: Colors.white60,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            child: Text(model['userName'] ?? '',
+                                style: GoogleFonts.prompt(
+                                    color: Colors.white60,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
                           ),
                         ]),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(model['subCaseType'] ?? '',
+                            Text(model['subTopicTitle'] ?? '',
                                 style: GoogleFonts.prompt(
                                     color: Colors.white70,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis),
-                            Text(model['title'] ?? '',
+                            Text(model['topicTitle'] ?? '',
                                 style: GoogleFonts.prompt(
                                     color: Colors.white,
                                     fontSize: 13,
@@ -646,7 +699,7 @@ class HomeLawyerSection extends StatelessWidget {
                               const Icon(Icons.calendar_today_rounded,
                                   size: 10, color: Colors.white70),
                               const SizedBox(width: 4),
-                              Text(model['appointmentDate'] ?? '',
+                              Text(model['caseDate'] ?? '',
                                   style: GoogleFonts.prompt(
                                       fontSize: 12, color: Colors.white70)),
                             ]),
@@ -655,11 +708,9 @@ class HomeLawyerSection extends StatelessWidget {
                               const Icon(Icons.access_time_rounded,
                                   size: 10, color: Colors.white70),
                               const SizedBox(width: 4),
-                              Text(model['appointmentTime'] ?? '',
+                              Text('${model['startTime']}-${model['endTime']}',
                                   style: GoogleFonts.prompt(
-                                      fontSize: 12,
-                                      color: const Color.fromARGB(
-                                          179, 255, 255, 255))),
+                                      fontSize: 12, color: Colors.white70)),
                             ]),
                           ],
                         ),
@@ -669,7 +720,7 @@ class HomeLawyerSection extends StatelessWidget {
                 ),
               ),
             ),
-          ), // Container (shadow)
+          ),
         );
       },
     );
@@ -679,10 +730,8 @@ class HomeLawyerSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
       child: Center(
-        child: Text(
-          message,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-        ),
+        child: Text(message,
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
       ),
     );
   }
@@ -692,10 +741,9 @@ class HomeLawyerSection extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2)),
       ),
     );
   }
@@ -728,48 +776,46 @@ class HomeLawyerSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F4FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.event_available_rounded,
-                    color: Color(0xFF7C3AED), size: 22),
+          Row(children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F4FF),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(job['clientName'] ?? '',
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A2340))),
-                    const SizedBox(height: 2),
-                    Text('${job['date']} • ${job['time']}',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF7C3AED))),
-                  ],
-                ),
+              child: const Icon(Icons.event_available_rounded,
+                  color: Color(0xFF7C3AED), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(job['clientName'] ?? '',
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A2340))),
+                  const SizedBox(height: 2),
+                  Text('${job['date']} • ${job['time']}',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7C3AED))),
+                ],
               ),
-            ],
-          ),
+            ),
+          ]),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: () {
-              LawyerJobsStore.instance.startSession(job['id'] as String);
+              // LawyerJobsStore.instance.startSession(job['id'] as String);
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ChatPageLawyer(
-                    jobId: job['id'] as String,
+                    // jobId: job['id'] as String,
                     model: {
                       'id': job['id'],
                       'jobId': job['id'],
@@ -811,16 +857,13 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
-  // ── Mobile: Job Request Cards (vertical — เดิม) ───────────────────
   Widget _buildJobRequestListMobile(BuildContext context, List<dynamic> jobs) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          18, 0, 18, 8), // bottom 8 ให้ shadow การ์ดสุดท้ายไม่โดนตัด
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
       child: Column(
         children: [
           for (int i = 0; i < jobs.length; i++) ...[
             if (i > 0) const SizedBox(height: 10),
-            // ห่อด้วย Padding เพื่อให้ shadow ซ้ายขวาไม่โดน clip
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: _urgentJobCard(context, jobs[i]),
@@ -831,7 +874,6 @@ class HomeLawyerSection extends StatelessWidget {
     );
   }
 
-  // ── Urgent job card (shared — ไม่เปลี่ยน UI เลย) ─────────────────
   Widget _urgentJobCard(BuildContext context, Map<String, dynamic> job) {
     final status = job['status'] as String;
     final barColors = _statusBarColors(status);
@@ -845,9 +887,7 @@ class HomeLawyerSection extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color.fromARGB(255, 221, 221, 221),
-            width: 1,
-          ),
+              color: const Color.fromARGB(255, 221, 221, 221), width: 1),
         ),
         child: Material(
           color: Colors.white,
@@ -859,52 +899,57 @@ class HomeLawyerSection extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (detailCtx) => LawyerJobDetailPage(
-                    job: job,
-                    onAccept: isPending
-                        ? () {
-                            DialogService.showConfirmAcceptJob(
-                              detailCtx,
-                              title: "acceptJob".tr(),
-                              message: "acceptJobConfirm".tr(),
-                              onConfirm: () {
-                                if (isBooking) {
-                                  if (job['isApiCase'] != true) {
-                                    LawyerJobsStore.instance
-                                        .confirmBooking(job['id'] as String);
-                                  }
-                                } else {
-                                  LawyerJobsStore.instance
-                                      .acceptJob(job['id'] as String);
-                                }
-                                if (detailCtx.mounted) {
-                                  Navigator.pop(detailCtx);
-                                  onJobStatusChanged?.call(
-                                    job,
-                                    isBooking ? 'confirmed' : 'accepted',
-                                  );
-                                }
-                              },
-                            );
-                          }
-                        : null,
-                    onReject: isPending
-                        ? () {
-                            DialogService.showConfirmRejectJob(
-                              detailCtx,
-                              title: "rejectJob".tr(),
-                              message: "rejectJobConfirm".tr(),
-                              onConfirm: () {
-                                LawyerJobsStore.instance
-                                    .rejectJob(job['id'] as String);
-                                if (detailCtx.mounted) {
-                                  Navigator.pop(detailCtx);
-                                  onJobStatusChanged?.call(job, 'rejected');
-                                }
-                              },
-                            );
-                          }
-                        : null,
-                  ),
+                      job: job,
+                      onAccept: () {
+                        print('1');
+                      },
+                      // isPending
+                      //     ? () {
+                      //         DialogService.showConfirmAcceptJob(
+                      //           detailCtx,
+                      //           title: "acceptJob".tr(),
+                      //           message: "acceptJobConfirm".tr(),
+                      //           onConfirm: () {
+                      //             if (isBooking) {
+                      //               if (job['isApiCase'] != true) {
+                      //                 LawyerJobsStore.instance
+                      //                     .confirmBooking(job['id'] as String);
+                      //               }
+                      //             } else {
+                      //               LawyerJobsStore.instance
+                      //                   .acceptJob(job['id'] as String);
+                      //             }
+                      //             if (detailCtx.mounted) {
+                      //               Navigator.pop(detailCtx);
+                      //               widget.onJobStatusChanged?.call(job,
+                      //                   isBooking ? 'confirmed' : 'accepted');
+                      //             }
+                      //           },
+                      //         );
+                      //       }
+                      //     : null,
+                      onReject: () {
+                        print('2');
+                      }
+                      // isPending
+                      //     ? () {
+                      //         DialogService.showConfirmRejectJob(
+                      //           detailCtx,
+                      //           title: "rejectJob".tr(),
+                      //           message: "rejectJobConfirm".tr(),
+                      //           onConfirm: () {
+                      //             LawyerJobsStore.instance
+                      //                 .rejectJob(job['id'] as String);
+                      //             if (detailCtx.mounted) {
+                      //               Navigator.pop(detailCtx);
+                      //               widget.onJobStatusChanged
+                      //                   ?.call(job, 'rejected');
+                      //             }
+                      //           },
+                      //         );
+                      //       }
+                      //     : null,
+                      ),
                 ),
               );
             },
@@ -913,14 +958,10 @@ class HomeLawyerSection extends StatelessWidget {
             highlightColor: const Color(0xFF0262EC).withOpacity(0.04),
             child: Ink(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                // ไม่ใส่ boxShadow ใน Ink — shadow อยู่ที่ Container ด้านนอกแล้ว
-              ),
+                  color: Colors.white, borderRadius: BorderRadius.circular(16)),
               child: IntrinsicHeight(
                 child: Row(
                   children: [
-                    // ── color bar ───────────────────────────────────────
                     Container(
                       width: 8,
                       decoration: BoxDecoration(
@@ -941,7 +982,6 @@ class HomeLawyerSection extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ── header ──────────────────────────────────
                             Row(children: [
                               Container(
                                 width: 44,
@@ -951,14 +991,11 @@ class HomeLawyerSection extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    job['clientAvatar'],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  child: Text(job['clientAvatar'],
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold)),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -968,10 +1005,9 @@ class HomeLawyerSection extends StatelessWidget {
                                   children: [
                                     Text(job['clientName'],
                                         style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1A2340),
-                                        )),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1A2340))),
                                     const SizedBox(height: 2),
                                     Row(children: [
                                       Icon(Icons.access_time,
@@ -988,7 +1024,6 @@ class HomeLawyerSection extends StatelessWidget {
                               badge,
                             ]),
                             const SizedBox(height: 14),
-                            // ── topic badge ─────────────────────────────
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
@@ -1004,23 +1039,20 @@ class HomeLawyerSection extends StatelessWidget {
                                   const SizedBox(width: 5),
                                   Text(job['topic'],
                                       style: const TextStyle(
-                                        color: _kPrimary,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      )),
+                                          color: _kPrimary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // ── subtopic + details btn ──────────────────
                             Row(children: [
                               Expanded(
                                 child: Text(job['subTopic'],
                                     style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A2340),
-                                    ),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1A2340)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis),
                               ),
@@ -1037,10 +1069,9 @@ class HomeLawyerSection extends StatelessWidget {
                                   children: [
                                     Text('viewDetails'.tr(),
                                         style: const TextStyle(
-                                          color: _kPrimary,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        )),
+                                            color: _kPrimary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700)),
                                     const SizedBox(width: 4),
                                     const Icon(Icons.arrow_forward_ios,
                                         size: 10, color: _kPrimary),
@@ -1048,7 +1079,6 @@ class HomeLawyerSection extends StatelessWidget {
                                 ),
                               ),
                             ]),
-                            // ── appointment box (accepted only) ─────────
                             if (isAccepted &&
                                 (job['date'] as String? ?? '').isNotEmpty) ...[
                               const SizedBox(height: 10),
@@ -1076,14 +1106,11 @@ class HomeLawyerSection extends StatelessWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          '${job['date']} • ${job['time']}',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF1A2340),
-                                          ),
-                                        ),
+                                        Text('${job['date']} • ${job['time']}',
+                                            style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF1A2340))),
                                         const SizedBox(height: 2),
                                         Text('consultingPeriod'.tr(),
                                             style: TextStyle(
@@ -1100,17 +1127,51 @@ class HomeLawyerSection extends StatelessWidget {
                       ),
                     ),
                   ],
-                ), // Row
-              ), // IntrinsicHeight
-            ), // Ink
-          ), // InkWell
-        ), // Material
-      ), // Container (shadow)
-    ); // MouseRegion
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
-// ─── Status helpers (เดิม ไม่เปลี่ยน) ────────────────────────────────
+// ─── Helpers (top-level) ──────────────────────────────────────────────
+Map<String, dynamic> _caseStatusConfig(String status) {
+  switch (status) {
+    case '0':
+      return {'label': 'ยกเลิกเคส', 'color': 0xFF9E9E9E};
+    case '1':
+      return {'label': 'รอทนายรับเคส', 'color': 0xFFD97706};
+    case '2':
+      return {'label': 'รอปรึกษา', 'color': 0xFF0262EC};
+    case '3':
+      return {'label': 'กำลังปรึกษา', 'color': 0xFF059669};
+    case '4':
+      return {'label': 'เสร็จสิ้น', 'color': 0xFF6366F1};
+    default:
+      return {'label': 'ไม่ทราบสถานะ', 'color': 0xFF9E9E9E};
+  }
+}
+
+Map<String, dynamic> _appointmentToJob(dynamic appt) => {
+      'id': appt['code'] ?? '',
+      'jobSource': 'booking',
+      'status': 'pending',
+      'clientName': appt['clientName'] ?? '',
+      'clientAvatar': ((appt['clientName'] ?? '') as String).isNotEmpty
+          ? (appt['clientName'] as String).substring(0, 1)
+          : '?',
+      'clientColor': 0xFF0262EC,
+      'topic': appt['title'] ?? '',
+      'subTopic': appt['subCaseType'] ?? '',
+      'requestedAt': appt['appointmentDate'] ?? '',
+      'date': appt['appointmentDate'] ?? '',
+      'time': appt['appointmentTime'] ?? '',
+      'isApiCase': true,
+    };
+
 List<Color> _statusBarColors(String status) {
   switch (status) {
     case 'accepted':

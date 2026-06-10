@@ -4,18 +4,33 @@ import 'package:LawyerOnline/component/button.dart';
 import 'package:flutter/material.dart';
 
 class SummaryPage extends StatelessWidget {
-  final String topic;
   final dynamic lawyer;
   final DateTime? date;
   final String time;
-  final String subTopic;
+  final String topic;        // code
+  final String topicTitle;   // title
+  final String subTopic;     // code
+  final String subTopicTitle; // title
+  final String details;
+  Color get _lawyerColor {
+    final r = (lawyer['rateAverage'] ?? 0) as num;
+    if (r >= 4.8) return const Color(0xFF1565C0);
+    if (r >= 4.0) return const Color(0xFF02A8D1);
+    if (r >= 3.0) return const Color(0xFFFDD835);
+    if (r >= 2.0) return const Color(0xFFEF6C00);
+    return const Color(0xFFD32F2F);
+  }
 
-  const SummaryPage(
-      {required this.topic,
-      required this.lawyer,
-      required this.date,
-      required this.time,
-      required this.subTopic});
+  SummaryPage({
+    required this.topic,
+    required this.lawyer,
+    required this.date,
+    required this.time,
+    required this.subTopic,
+    required this.topicTitle,
+    required this.subTopicTitle,
+    required this.details
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +56,7 @@ class SummaryPage extends StatelessWidget {
 
     final cost = lawyer?['price'].toString() ?? 'ฟรี';
     final isFree = cost == 0;
+    
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -98,7 +114,7 @@ class SummaryPage extends StatelessWidget {
                       (lawyer?['imageUrl'] ?? "") != ""
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(30),
-                              child: Image.asset(
+                              child: Image.network(
                                 lawyer?['imageUrl'],
                                 width: 55,
                                 height: 55,
@@ -107,12 +123,12 @@ class SummaryPage extends StatelessWidget {
                             )
                           : CircleAvatar(
                               radius: 30,
-                              backgroundColor: Color(lawyer?['color'] as int)
+                              backgroundColor: _lawyerColor
                                   .withOpacity(0.15),
                               child: Text(
                                 lawyer?['avatar'] as String,
                                 style: TextStyle(
-                                    color: Color(lawyer?['color'] as int),
+                                    color: _lawyerColor,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 24),
                               ),
@@ -122,13 +138,13 @@ class SummaryPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(lawyer?['name'] ?? '',
+                            Text('${lawyer?['firstName']} ${lawyer?['lastName']}',
                                 style: const TextStyle(
                                     color: Colors.black,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16)),
                             const SizedBox(height: 2),
-                            Text(lawyer['title'] ?? 'ทนายความอาวุโส',
+                            Text('ทนายความอาวุโส',
                                 style: const TextStyle(
                                     color: Colors.black, fontSize: 12)),
                             const SizedBox(height: 6),
@@ -136,7 +152,7 @@ class SummaryPage extends StatelessWidget {
                               const Icon(Icons.star_rounded,
                                   color: Color(0xFFFFC107), size: 14),
                               const SizedBox(width: 3),
-                              Text('${lawyer?['rating'] ?? lawyer?['scroll']}',
+                              Text('${lawyer?['rateAverage']}',
                                   style: const TextStyle(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w600,
@@ -165,10 +181,10 @@ class SummaryPage extends StatelessWidget {
                     child: Column(
                       children: [
                         _summaryRow(
-                            Icons.label_outline_rounded, 'หัวข้อ', topic),
+                            Icons.label_outline_rounded, 'หัวข้อ', topicTitle),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(Icons.label_outline_rounded, 'หัวข้อย่อย',
-                            subTopic),
+                          subTopicTitle),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
                             Icons.calendar_today_outlined, 'วันที่', dateStr),
@@ -180,6 +196,9 @@ class SummaryPage extends StatelessWidget {
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
                             Icons.videocam_outlined, 'รูปแบบ', 'วิดีโอคอล'),
+                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
+                        _summaryRow(
+                            Icons.comment, 'รายละเอียดเพิ่มเติม', details ?? '-'),
                       ],
                     ),
                   ),
@@ -206,7 +225,7 @@ class SummaryPage extends StatelessWidget {
                               Text('ค่าบริการ',
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.grey[500])),
-                              Text(cost,
+                              Text(isFree ? 'ฟรี' : lawyer['cost'],
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -224,7 +243,7 @@ class SummaryPage extends StatelessWidget {
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF1A2340))),
                               Text(
-                                isFree ? 'ฟรี' : cost,
+                                isFree ? 'ฟรี' : lawyer['cost'],
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
@@ -250,9 +269,13 @@ class SummaryPage extends StatelessWidget {
                   builder: (_) => PaymentPage(
                     lawyer: lawyer,
                     topic: topic,
+                    topicTitle: topicTitle,
                     subTopic: subTopic,
+                    subTopicTitle: subTopicTitle,
                     time: time,
                     date: date,
+                    details: details,
+                    
                   ),
                 ),
               ),

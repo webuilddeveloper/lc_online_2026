@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> {
 
     var value = await postDio('${mainBannerApi}read', {'skip': 0, 'limit': 10});
     setState(() {
-      mockBannerList = value;
+      mockBannerList = value['objectData'];
     });
   }
 

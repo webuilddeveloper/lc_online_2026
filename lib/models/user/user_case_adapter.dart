@@ -1,17 +1,15 @@
 class UserCaseAdapter {
   const UserCaseAdapter._();
 
-  static List<Map<String, dynamic>> fromJobs(List<Map<String, dynamic>> jobs) {
+  static List<dynamic> fromJobs(List<dynamic> jobs) {
     return jobs.map(fromJob).toList();
   }
 
-  static Map<String, dynamic> fromJob(Map<String, dynamic> job) {
+  static dynamic fromJob(dynamic job) {
     final jobStatus = job['status']?.toString() ?? 'pending';
     final jobSource = (job['jobSource'] ?? 'urgent').toString();
     final userStatus = _toUserStatus(jobStatus, jobSource);
-    final lawyer = Map<String, dynamic>.from(
-      (job['lawyerModel'] as Map?) ?? const <String, dynamic>{},
-    );
+    final lawyer = job['lawyerModel'];
     final lawyerCode =
         job['lawyerCode']?.toString() ?? lawyer['code']?.toString() ?? '';
     if (lawyerCode.isNotEmpty) lawyer['code'] = lawyerCode;

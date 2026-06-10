@@ -40,7 +40,7 @@ class _CalendarPageState extends State<CalendarPage>
 
   final LawyerAppointmentRepository _appointmentRepository =
       const ApiLawyerAppointmentRepository();
-  List<Map<String, dynamic>> _appointments = const [];
+  List<dynamic> _appointments = const [];
   bool _isLoadingAppointments = false;
   String? _appointmentLoadError;
 
