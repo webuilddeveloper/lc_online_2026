@@ -1,7 +1,10 @@
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class AppointmentDetailsLawyer extends StatefulWidget {
@@ -882,7 +885,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(ctx);
-                        _showResultDialog(isApprove: isApprove);
+                        showReasonCancelDialog(context);
                       },
                       child: Container(
                         height: 46,
@@ -918,6 +921,220 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
       ),
     );
   }
+
+  void showReasonCancelDialog(BuildContext context) {
+    final TextEditingController reasonCancelController =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.fromLTRB(
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: _buildFormContent(
+                  context,
+                  reasonCancelController,
+                  setState, // ✅ ส่ง setState ลงไป
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+   Widget _buildFormContent(
+    BuildContext context,
+    TextEditingController reasonCancelController,
+    StateSetter setState, // ✅ รับ setState มาใช้
+  ) {
+    final hasText = reasonCancelController.text.trim().isNotEmpty;
+
+    return Container(
+      key: const ValueKey('form'),
+      color: Colors.white,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('เหตุผลการยกเลิก',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2340))),
+              const SizedBox(height: 4),
+              Text('กรุณาใส่เหตุผลในการยกเลิกนัดหมาย',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: reasonCancelController,
+                maxLines: 3,
+                maxLength: 300,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                // ✅ trigger rebuild ทุกครั้งที่พิมพ์
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'กรอกเหตุผล...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: const Color(0xFFEEF2F5),
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF0262EC), width: 1.5)),
+                  counterStyle:
+                      TextStyle(color: Colors.grey[400], fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFEEF2F5), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Text('ยกเลิก',
+                            style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: hasText
+                        ? () => updateStatusRejectCase(
+                            reasonCancelController.text, 0)
+                        : null, // ✅ ปิดปุ่มเมื่อไม่มีข้อความ
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: hasText
+                            ? const LinearGradient(
+                                colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
+                            : null,
+                        color: hasText ? null : const Color(0xFFCDD5E0),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: hasText
+                            ? [
+                                BoxShadow(
+                                    color: const Color(0xFF0262EC)
+                                        .withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4))
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded,
+                              color: hasText ? Colors.white : Colors.grey[400],
+                              size: 16),
+                          const SizedBox(width: 6),
+                          Text('ส่งเหตุผล',
+                              style: TextStyle(
+                                  color:
+                                      hasText ? Colors.white : Colors.grey[400],
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateStatusRejectCase(reasonCancel, caseStatus) async {
+    DialogService.showLoading(context);
+    try {
+      dynamic model = {
+        "code": widget.model['code'],
+        "caseStatus": caseStatus,
+        "reasonCancel": reasonCancel,
+        "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
+      };
+      print(model);
+      final param = await postDio("${server}/m/case/update", model);
+      if (param['status'] == 'S') {
+        Navigator.pop(context);
+        // DialogService.showSuccess(
+        //   context,
+        //   title: "ยกเลิกนัดหมายแล้ว",
+        //   message:
+        //       "คุณได้ทำการยกเลิกนัดหมายทนายความกับ คุณ${widget.model['userName']}} เรียบร้อยแล้ว",
+        //   onClose: () {
+        //     Navigator.pushAndRemoveUntil(
+        //         context,
+        //         MaterialPageRoute(
+        //             builder: (_) => MenuPage(pageIndex: 0)), (route) => false);
+        //   },
+        // );
+        _showResultDialog(isApprove: false);
+      }
+      // // final lawyers = await _lawyerRepository.searchLawyers();
+      // // final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
+      // final resulte = param['objectData'] ?? [];
+      // if (!mounted) return;
+      // setState(() {
+      //   _lawyersForYou = resulte.take(10).toList(growable: false);
+      //   _trendingLawyers = [...resulte]..sort((a, b) =>
+      //       ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
+      //   _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
+      //   _isLoadingLawyers = false;
+      // });
+      // print('------------------- ${mapped}');
+    } catch (_) {
+      // if (!mounted) return;
+      // setState(() {
+      //   _lawyersForYou = const [];
+      //   _trendingLawyers = const [];
+      //   _lawyerLoadError = 'genericError'.tr();
+      //   _isLoadingLawyers = false;
+      // });
+    }
+  }
+
 
   // ── Result Dialog ───────────────────────────────────────
   void _showResultDialog({required bool isApprove}) {
@@ -1006,6 +1223,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
               GestureDetector(
                 onTap: () {
                   Navigator.pop(ctx);
+                  goBack();
                   goBack();
                 },
                 child: Container(

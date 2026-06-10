@@ -6,6 +6,8 @@
 //   all_events_section.dart    — รายการนัดหมายทั้งหมด
 // ─────────────────────────────────────────────────────────────────────────────
 
+import 'dart:convert';
+
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
@@ -222,11 +224,25 @@ class _CalendarPageState extends State<CalendarPage>
   int getHashCode(DateTime key) =>
       key.day * 1000000 + key.month * 10000 + key.year;
 
-  void _navigateToEvent(Map ev) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AppointmentDetailsLawyer(model: ev)),
+  void _navigateToEvent(dynamic ev) async {
+    debugPrint(
+      const JsonEncoder.withIndent('  ').convert(ev),
     );
+
+    Map<String, dynamic> result = {
+      ...ev,
+      ...(ev['rawCase'] ?? {}),
+    };
+    result.remove('rawCase');
+    await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => AppointmentDetailsLawyer(model: result)))
+        .then((value) {
+      if (value == true) {
+        _loadAppointments();
+      }
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════════

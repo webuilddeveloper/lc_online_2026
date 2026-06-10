@@ -334,10 +334,9 @@ class DayEventListMobile extends StatelessWidget {
                 children: events.map((entry) {
                   final ev = entry as Map;
                   final sh = (ev['startHour'] as int? ?? 9);
-                  final color = periodColor(sh);
+                  final color = ev['rawCase']['caseStatus'] != 0 ? periodColor(sh) : Color.fromARGB(255, 168, 52, 52);
                   final label = periodLabel(sh);
-
-                  return Container(
+                  return  Container(
                     margin: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
                       onTap: () => onEventTap(ev),
@@ -365,7 +364,7 @@ class DayEventListMobile extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(ev['title'] ?? '',
+                              Text( ev['rawCase']['caseStatus'] == 0 ? "(ยกเลิก) ${ev['title']}" : "${ev['title']}",
                                     style: GoogleFonts.prompt(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
@@ -658,7 +657,7 @@ class TimelineView extends StatelessWidget {
     final startHour = (ev['startHour'] as int? ?? 9);
     final startMin = (ev['startMin'] as int? ?? 0);
     final durMin = (ev['durationMin'] as int? ?? 60);
-    const color = kTimelineColor;
+    Color color = ev['rawCase']['caseStatus'] != 0 ? kTimelineColor : Color.fromARGB(255, 168, 52, 52);
     final topOffset =
         (startHour - kStartHour) * kHourHeight + startMin * kHourHeight / 60;
     final blockH = (durMin * kHourHeight / 60).clamp(28.0, 9999.0);
@@ -681,14 +680,14 @@ class TimelineView extends StatelessWidget {
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
-              border: const Border(left: BorderSide(color: color, width: 3)),
+              border: Border(left: BorderSide(color: color, width: 3)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(ev['title'] ?? '',
+                Text(ev['rawCase']['caseStatus'] == 0 ? "(ยกเลิก) ${ev['title']}" : "${ev['title']}",
                     style: GoogleFonts.prompt(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -699,7 +698,7 @@ class TimelineView extends StatelessWidget {
                 if (blockH > 28) ...[
                   const SizedBox(height: 2),
                   Row(children: [
-                    const Icon(Icons.access_time_rounded,
+                    Icon(Icons.access_time_rounded,
                         size: 10, color: color),
                     const SizedBox(width: 3),
                     Text(timeLabel,
