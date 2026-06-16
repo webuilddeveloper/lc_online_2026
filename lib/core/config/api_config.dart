@@ -5,7 +5,8 @@ class ApiConfig {
   static const versionNumber = 418;
 
   // static const apiBaseUrl = 'https://lc.we-builds.com/lc-api/';
-  static const apiBaseUrl = 'http://localhost:7200';
+  // static const apiBaseUrl = 'http://localhost:7200';
+  static const apiBaseUrl = 'https://2f8c-125-26-172-229.ngrok-free.app';
   static const apiLC = 'https://lc.we-builds.com/lc-api/';
   static const documentUploadUrl =
       'https://lc.we-builds.com/lc-document/upload';
@@ -14,5 +15,6 @@ class ApiConfig {
   static const electionLcBaseUrl = 'http://122.155.223.63/td-election-lc-api/';
 
   // TODO: Replace this with the team's stable auth API host when ready.
-  static const authBaseUrl = 'http://localhost:7200';
+  // static const authBaseUrl = 'http://localhost:7200';
+  static const authBaseUrl = 'https://2f8c-125-26-172-229.ngrok-free.app';
 }

@@ -7,6 +7,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -40,6 +41,8 @@ class _ChatPageUserState extends State<ChatPageUser>
   List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
   String _typingUser = "";
+  bool isLoading = true;
+  dynamic caseModel = {};
 
   @override
   void initState() {
@@ -92,6 +95,7 @@ class _ChatPageUserState extends State<ChatPageUser>
     await _chatService.joinRoom(widget.roomCode, widget.userId);
     await _chatService.loadHistory(widget.roomCode);
     await _chatService.markAsRead(widget.roomCode, widget.userId);
+    await callReadCase();
   }
 
   void _scrollToBottom() {
@@ -116,40 +120,65 @@ class _ChatPageUserState extends State<ChatPageUser>
   }
 
   void _endConsultation() {
+    var lawyer = {};
+    DialogService.showLoading(context);
     DialogService.showConfirm(
       context,
       title: 'endConsultTitle'.tr(),
       message: 'endConsultMessageUser'.tr(),
-      onConfirm: () {
+      onConfirm: () async {
         final jobId = widget.model['jobId']?.toString() ??
             widget.model['id']?.toString() ??
             '';
         if (jobId.isNotEmpty) {
           // LawyerJobsStore.instance.updateStatus(jobId, 'done');
         }
-        final lawyer = {
-          'name': widget.model['name'] ?? '',
-          'avatar': (widget.model['name'] as String? ?? 'ท').characters.first,
-          'title': widget.model['title'] ??
-              (widget.model['skills'] != null &&
-                      (widget.model['skills'] as List).isNotEmpty
-                  ? (widget.model['skills'] as List).first
-                  : widget.model['experience'] ?? ''),
-          'rating': widget.model['rating'] ?? widget.model['scroll'] ?? 0,
-          'imageUrl': widget.model['imageUrl'] ?? '',
+
+        dynamic modelUpdate = {
+          "code": caseModel['code'],
+          "caseStatus": 4,
+          "isReview": false
+          // "reasonCancel": reasonCancel,
         };
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ConsultStatusPage(
-              currentStep: 4,
-              lawyer: lawyer,
-              appointmentDate: widget.model['appointmentDate'],
-              appointmentTime: widget.model['appointmentTime'],
-            ),
-          ),
-          (route) => route.isFirst,
-        );
+        var resultModel = {};
+        final param = await postDio("${server}/m/case/update", modelUpdate);
+        if (param['status'] == 'S') {
+          await postDio(
+                  "${server}/m/register/read", {"code": widget.model['lawyer']})
+              .then(
+            (res) async => {
+              if (res['status'] == 'S')
+                {
+                  resultModel = res['objectData'][0],
+                  lawyer = {
+                    'name':
+                        "${resultModel['firstName']} ${resultModel['lastName']}",
+                    'avatar': resultModel['imageUrl'],
+                    'imageUrl': resultModel['imageUrl'],
+                    'title': caseModel['topicTitle'],
+                    'rating': resultModel['rateAverage'],
+                  },
+                  await Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ConsultStatusPage(
+                        currentStep: 4,
+                        lawyer: lawyer,
+                        appointmentDate: widget.model['appointmentDate'],
+                        appointmentTime: widget.model['appointmentTime'],
+                        caseModel: param['objectData'],
+                      ),
+                    ),
+                    (route) => route.isFirst,
+                  ),
+                }
+            },
+          );
+        }
+
+        print(lawyer);
+
+        // print(lawyer);
       },
     );
   }
@@ -212,41 +241,63 @@ class _ChatPageUserState extends State<ChatPageUser>
     super.dispose();
   }
 
+  Future<void> callReadCase() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      dynamic model = {"code": widget.model['caseCode']};
+      final param = await postDio("${server}/m/case/read", model);
+
+      setState(() {
+        print('------------------- ${param['objectData'][0]['caseStatus']}');
+        caseModel = param['objectData'][0];
+        isLoading = false;
+      });
+
+      // print('------------------- ${mapped}');
+    } catch (_) {
+      isLoading = false;
+    }
+  }
+
   Map<String, dynamic> _currentModel() {
     final merged = Map<String, dynamic>.from(widget.model);
     final jobId = merged['jobId']?.toString() ?? merged['id']?.toString() ?? '';
     if (jobId.isEmpty) return merged;
 
-    Map<String, dynamic>? latestJob;
-    for (final job in LawyerJobsStore.instance.jobs) {
-      if (job['id']?.toString() == jobId) {
-        latestJob = job;
-        break;
-      }
-    }
-    if (latestJob == null) return merged;
+    // Map<String, dynamic>? latestJob;
+    // for (final job in caseModel) {
+    //   if (job['id']?.toString() == jobId) {
+    //     latestJob = job;
+    //     break;
+    //   }
+    // }
+    print('==================== ${caseModel['caseStatus']}');
+    if (caseModel == null) return merged;
 
-    final status = latestJob['status']?.toString() ?? 'pending';
-    final jobSource = (latestJob['jobSource'] ?? 'urgent').toString();
+    final status = caseModel['caseStatus'];
+    final jobSource = (caseModel['jobSource'] ?? 'urgent').toString();
     merged['jobStatus'] = status;
     merged['jobSource'] = jobSource;
-    merged['appointmentDate'] = latestJob['date'] ?? merged['appointmentDate'];
-    merged['appointmentTime'] = latestJob['time'] ?? merged['appointmentTime'];
-    merged['active'] = status == 'accepted' || status == 'in_session';
-    merged['chatLocked'] = status == 'confirmed';
-    merged['caseSuccess'] = status == 'done';
+    merged['appointmentDate'] = caseModel['caseDate'];
+    merged['appointmentTime'] =
+        "${caseModel['startTime']} ${caseModel['endTime']}";
+    merged['active'] = status == 3;
+    merged['chatLocked'] = status == 2;
+    merged['caseSuccess'] = status == 4;
     return merged;
   }
 
   @override
   Widget build(BuildContext context) {
-    final model = _currentModel();
-    final isActive = model['active'] as bool? ?? true;
-    final caseSuccess = model['caseSuccess'] as bool? ?? false;
-    final chatLocked = model['chatLocked'] as bool? ?? false;
-    final imageUrl = model['imageUrl'] as String? ?? '';
-    final appointmentDate = model['appointmentDate'] as String? ?? '';
-    final appointmentTime = model['appointmentTime'] as String? ?? '';
+    final model = caseModel;
+    final isActive = true;
+    final caseSuccess = (model['caseStatus'] == 4) as bool? ?? false;
+    final chatLocked = (model['caseStatus'] == 2) as bool? ?? false;
+    final imageUrl = widget.model['imageUrl'];
+    final appointmentDate = caseModel['caseDate'];
+    final appointmentTime = "${caseModel['startTime']} ${caseModel['endTime']}";
 
     final chatAppBar = widget.embeddedMode
         ? null
@@ -261,11 +312,11 @@ class _ChatPageUserState extends State<ChatPageUser>
                 fit: BoxFit.cover,
               ),
             ),
-            name: model['name'] ?? '',
+            name: widget.model['name'] ?? '',
             statusText: caseSuccess
                 ? null
                 : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
-            actions: !caseSuccess && !chatLocked
+            actions: !caseSuccess
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -285,41 +336,48 @@ class _ChatPageUserState extends State<ChatPageUser>
                 : null,
           );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFEEF2F5),
-      appBar: chatAppBar as PreferredSizeWidget?,
-      body: Column(
-        children: [
-          if (widget.embeddedMode)
-            _buildEmbeddedHeader(
-                model, isActive, caseSuccess, chatLocked, imageUrl),
-          // const SizedBox(height: 12),
-          Expanded(
-            child: ListView.separated(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 20, 12, 25),
-              itemCount: _messages.length,
-              itemBuilder: (_, i) {
-                final msg = _messages[i];
-                final isMe = msg['senderId'] == widget.userId; // ✅
-                return ChatBubble(
-                  text: msg['content'] ?? '',
-                  isMe: isMe,
-                  avatarAsset: imageUrl
-                );
-              },
-              separatorBuilder: (context, index) => _messages[index]['senderId'] != _messages[index+1]['senderId'] ? const SizedBox(height: 10,) : const SizedBox(),
+    return isLoading
+        ? _loadingState()
+        : Scaffold(
+            backgroundColor: const Color(0xFFEEF2F5),
+            appBar: chatAppBar as PreferredSizeWidget?,
+            body: Column(
+              children: [
+                if (widget.embeddedMode)
+                  _buildEmbeddedHeader(
+                      model, isActive, caseSuccess, chatLocked, imageUrl),
+                // const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(12, 20, 12, 25),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, i) {
+                      final msg = _messages[i];
+                      final isMe = msg['senderId'] == widget.userId; // ✅
+                      return ChatBubble(
+                          text: msg['content'] ?? '',
+                          isMe: isMe,
+                          avatarAsset: imageUrl);
+                    },
+                    separatorBuilder: (context, index) => _messages[index]
+                                ['senderId'] !=
+                            _messages[index + 1]['senderId']
+                        ? const SizedBox(
+                            height: 10,
+                          )
+                        : const SizedBox(),
+                  ),
+                ),
+                if (caseSuccess)
+                  _buildEndedBanner()
+                else if (chatLocked)
+                  _buildLockedBanner(appointmentDate, appointmentTime)
+                else
+                  ChatInput(controller: _chatController, onSend: _sendMessage),
+              ],
             ),
-          ),
-          if (caseSuccess)
-            _buildEndedBanner()
-          else if (chatLocked)
-            _buildLockedBanner(appointmentDate, appointmentTime)
-          else
-            ChatInput(controller: _chatController, onSend: _sendMessage),
-        ],
-      ),
-    );
+          );
   }
 
   Widget _buildEmbeddedHeader(Map<String, dynamic> model, bool isActive,
@@ -477,18 +535,17 @@ class _ChatPageUserState extends State<ChatPageUser>
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF0262EC)),
                   ),
-                  if (hasSchedule) ...
-                    [
-                      const SizedBox(height: 3),
-                      Text(
-                        [
-                          if (date.isNotEmpty) date,
-                          if (time.isNotEmpty) time,
-                        ].join(' • '),
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF5B6E8A)),
-                      ),
-                    ],
+                  if (hasSchedule) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        if (date.isNotEmpty) date,
+                        if (time.isNotEmpty) time,
+                      ].join(' • '),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF5B6E8A)),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -497,5 +554,22 @@ class _ChatPageUserState extends State<ChatPageUser>
       ),
     );
   }
+
+  Widget _loadingState() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEEF2F5),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
-// ✅ ลบ class _ChatMessage ออกแล้ว ไม่จำเป็นอีกต่อไป

@@ -119,6 +119,7 @@ class _MessagePageState extends State<MessagePage> {
                         model: {
                           'name': '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
                           'avatar': conv['user2Model']['imageUrl'],
+                          'caseCode': result['objectData']['caseCode'],
                           // 'clientColor': conv.clientColor,
                           'active': true,
                           'caseSuccess': false,
@@ -131,6 +132,7 @@ class _MessagePageState extends State<MessagePage> {
                         model: {
                           'name': '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
                           'imageUrl': conv['user2Model']['imageUrl'],
+                          'caseCode': result['objectData']['caseCode'],
                           'active': true,
                           'caseSuccess': false,
                         },

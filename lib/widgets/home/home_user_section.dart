@@ -123,6 +123,7 @@ class HomeUserSection extends StatelessWidget {
         ),
         if (cases.isNotEmpty)
           _buildCaseStatusList(context)
+        
         else
           _emptyState('noCases'.tr()),
         const SizedBox(height: 20),
@@ -302,7 +303,7 @@ class HomeUserSection extends StatelessWidget {
                   jobStatus == 'confirmed' ||
                   jobStatus == 'in_session' ||
                   jobStatus == 'done',
-              caseModel: Map<String, dynamic>.from(model),
+              caseModel: model,
             ),
           );
         }

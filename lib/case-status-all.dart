@@ -24,12 +24,15 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
   late TabController _tabController;
 
   final List<dynamic> _tabs = [
-    {"label": "ทั้งหมด", "status": null},
-    {"label": "รอทนาย", "status": "1"},
-    {"label": "กำลังปรึกษา", "status": "3"},
-    {"label": "ยกเลิก", "status": "5"},
-    {"label": "เสร็จสิ้น", "status": "4"},
+    {"label": "ทั้งหมด", "caseStatus": null},
+    {"label": "รอทนาย", "caseStatus": 1},
+    {"label": "รอปรึกษา", "caseStatus": 2},
+    {"label": "กำลังปรึกษา", "caseStatus": 3},
+    {"label": "เสร็จสิ้น", "caseStatus": 4},
+    {"label": "ยกเลิก", "caseStatus": 0},
   ];
+
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -52,42 +55,55 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
 
   List<dynamic> _caseList = [];
 
-  List<dynamic> _filteredList(String? status) {
+  List<dynamic> _filteredList(int? status) {
     if (status == null) return _caseList;
-    return _caseList.where((e) => e['status'] == status).toList();
+    return _caseList.where((e) => e['caseStatus'] == status).toList();
   }
 
-  Color _statusColor(String status) {
+  Color _statusColor(int status) {
     switch (status) {
-      case '1':
-        return const Color(0xFFD97706);
-      case '2':
-        return const Color(0xFFFF9500);
-      case '3':
+      // case '1':
+      //   return const Color(0xFFD97706);
+      // case '2':
+      //   return const Color(0xFFFF9500);
+      case 2:
         return const Color(0xFF059669);
-      case '4':
+      case 1:
         return const Color(0xFF6B7A99);
-      case '5':
+      case 0:
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF0262EC);
     }
   }
 
-  IconData _statusIcon(String status) {
+  IconData _statusIcon(int status) {
     switch (status) {
-      case '1':
-        return Icons.hourglass_top_rounded;
-      case '2':
-        return Icons.pending_actions_rounded;
-      case '3':
-        return Icons.chat_bubble_outline_rounded;
-      case '4':
-        return Icons.check_circle_outline_rounded;
-      case '5':
+      case 0:
         return Icons.cancel_outlined;
+      case 1:
+        return Icons.hourglass_top_rounded;
+      case 2:
+        return Icons.pending_actions_rounded;
+      case 3:
+        return Icons.chat_bubble_outline_rounded;
       default:
-        return Icons.info_outline_rounded;
+        return Icons.check_circle_outline_rounded;
+    }
+  }
+
+  String _statusText(int status) {
+    switch (status) {
+      case 0:
+        return 'ยกเลิก';
+      case 1:
+        return 'รอทนายยืนยัน';
+      case 2:
+        return 'รอปรึกษาทนาย';
+      case 3:
+        return 'กำลังปรึกษา';
+      default:
+        return 'เสร็จสิ้น';
     }
   }
 
@@ -96,6 +112,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
       final param = await postDio("${server}/m/case/read", {});
       setState(() {
         _caseList = param['objectData'];
+        isLoading = false;
        print('=-=-=-=-=-=-=-=-=-=-= ${param}');
       });
     } catch (_) {}
@@ -116,7 +133,9 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
               backAction: () => Navigator.pop(context),
               rightAction: () {},
             ),
-      body: AppLayout(
+      body: isLoading
+          ? _loadingState()
+          :  AppLayout(
         child: Container(
           decoration: isDesktop
               ? BoxDecoration(
@@ -189,7 +208,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                   indicatorWeight: 3,
                   indicatorSize: TabBarIndicatorSize.label,
                   tabs: _tabs.map((tab) {
-                    final count = _filteredList(tab['status']).length;
+                    final count = _filteredList(tab['caseStatus']).length;
                     return Tab(
                       child: Row(
                         children: [
@@ -228,7 +247,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                   child: TabBarView(
                     controller: _tabController,
                     children: _tabs.map((tab) {
-                      final list = _filteredList(tab['status']);
+                      final list = _filteredList(tab['caseStatus']);
                       return list.isEmpty
                           ? _buildEmpty()
                           : ListView.separated(
@@ -246,6 +265,19 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );
@@ -356,7 +388,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
   }
 
   Widget _caseCard(Map model) {
-    final status = model['status']?.toString() ?? '0';
+    final status = model['caseStatus'];
     final statusText = model['statusText'] ?? '';
     final category = model['category'] ?? '';
     final subTopic = model['subTopic'] ?? '';
@@ -366,7 +398,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
     final appointmentTime = model['appointmentTime'] ?? '';
     final budget = model['budget'] ?? '';
     final lawyerModel = model['lawyerModel'] as Map?;
-    final lawyerName = lawyerModel?['name'] ?? '';
+    final lawyerName = lawyerModel?['lawyerName'] ?? '';
     final lawyerImage = lawyerModel?['imageUrl'] ?? '';
     final experience = lawyerModel?['experience'] ?? '';
     final color = _statusColor(status);
@@ -395,16 +427,16 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
               child: Row(
                 children: [
                   // รูปทนาย
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      lawyerImage,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  // ClipRRect(
+                  //   borderRadius: BorderRadius.circular(10),
+                  //   child: Image.network(
+                  //     lawyerImage,
+                  //     width: 48,
+                  //     height: 48,
+                  //     fit: BoxFit.cover,
+                  //   ),
+                  // ),
+                  // const SizedBox(width: 12),
 
                   // ชื่อ + ประสบการณ์
                   Expanded(
@@ -412,7 +444,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          lawyerName,
+                          model['lawyerName'],
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -422,7 +454,8 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          experience,
+                          // model['lawyerName'],
+                          'ทนายความ',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade500,
@@ -446,7 +479,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                         Icon(icon, size: 12, color: color),
                         const SizedBox(width: 4),
                         Text(
-                          statusText,
+                          _statusText(status),
                           style: TextStyle(
                             fontSize: 11,
                             color: color,
@@ -480,7 +513,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      category,
+                      model['topicTitle'],
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF0262EC),
@@ -488,10 +521,10 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                       ),
                     ),
                   ),
-                  if (subTopic.toString().isNotEmpty) ...[
+                  if (model['subTopicTitle'] != "") ...[
                     const SizedBox(height: 6),
                     Text(
-                      subTopic,
+                      model['subTopicTitle'],
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -508,6 +541,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
             const SizedBox(height: 10),
 
             // ── Story preview ─────────────────────────────────
+            model['caseType'] != 1 ?
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
@@ -520,7 +554,7 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
-            ),
+            ) : Container(),
 
             // ── Footer: วันที่ + ปุ่ม ─────────────────────────
             Padding(
@@ -537,13 +571,10 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                         Flexible(
                           child: Text(
                             [
-                              if (appointmentDate.toString().isNotEmpty)
-                                appointmentDate,
-                              if (appointmentTime.toString().isNotEmpty)
-                                appointmentTime,
-                              if (appointmentDate.toString().isEmpty &&
-                                  appointmentTime.toString().isEmpty)
-                                createDate,
+                              if (model['caseDate'] != "")
+                                model['caseDate'],
+                              if (model['startTime'] != "")
+                                '${model['startTime']} - ${model['endTime']}',
                             ].join(' · '),
                             style: TextStyle(
                               fontSize: 11,
@@ -552,10 +583,10 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (budget.toString().isNotEmpty) ...[
+                        if (model['price'] != "") ...[
                           const SizedBox(width: 8),
                           Text(
-                            budget,
+                            model['price'],
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF0262EC),

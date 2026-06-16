@@ -5,6 +5,7 @@ import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/test.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -228,14 +229,14 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
                             onTap: () async => {
-                              openChat("20260512165120-625-478")
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //       builder: (_) => NotificationPage()
-                              //       // ChatPage()
-                              //       ),
-                              // ),
+                              // openChat("20260512165120-625-478")
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => TestPage()
+                                    // ChatPage()
+                                    ),
+                              ),
                             },
                             borderRadius: BorderRadius.circular(12),
                             splashColor:

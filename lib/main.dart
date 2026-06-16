@@ -1,4 +1,7 @@
-import 'package:LawyerOnline/shared/notification-service.dart';
+// import 'package:LawyerOnline/shared/notification-service.dart';
+import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/services/in_app_notification_service.dart';
+import 'package:LawyerOnline/services/notification_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -12,11 +15,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'firebase_options.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  // แอพปิดอยู่ — FCM จะแสดง notification อัตโนมัติ
-  // ไม่ต้องทำอะไรเพิ่มถ้า notification payload ครบ
 }
 
 final _secureStorage = FlutterSecureStorage();
@@ -29,6 +32,26 @@ Future<Locale> _loadSavedLocale() async {
   return const Locale('th');
 }
 
+void _handleNotificationNavigation(RemoteMessage message) {
+  final page = message.data['page'];
+  final code = message.data['code'];
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final state = navigatorKey.currentState;
+    if (state == null) return;
+
+    if (page == 'chat') {
+      // state.push(
+      //   MaterialPageRoute(builder: (_) => ChatPageUser(roomCode: code)),
+      // );
+    } else if (page == 'appointment_detail') {
+      // state.push(
+      //   MaterialPageRoute(builder: (_) => AppointmentDetailPage(appointmentId: code)),
+      // );
+    }
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
@@ -37,12 +60,43 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+// ✅ ให้ FCM โชว์ popup ตอนแอปเปิดอยู่บน iOS
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   if (!kIsWeb) {
-    // await NotificationService.init();
+    await NotificationService.init();
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     await [Permission.camera, Permission.microphone].request();
+
+    // (1) แอปเปิดอยู่ (foreground) — โชว์ local notification
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      NotificationService.showLocalNotification(
+        title: message.notification?.title ?? '',
+        body: message.notification?.body ?? '',
+      );
+
+      InAppNotificationService.show(
+        title: message.notification?.title ?? '',
+        body: message.notification?.body ?? '',
+        onTap: () => _handleNotificationNavigation(message),
+      );
+      // NotificationStore.instance.incrementUnread();
+    });
+
+    // 👉 เพิ่ม (2): กด notification ตอนแอป background → foreground
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationNavigation);
 
     try {
       await NotificationService.init();
@@ -67,7 +121,7 @@ void main() async {
         Locale('th'),
         Locale('en'),
       ],
-      path: 'assets/translations', // ← ตรงกับ pubspec.yaml
+      path: 'assets/translations',
       fallbackLocale: const Locale('th'),
       startLocale: startLocale,
       saveLocale: true,
@@ -75,36 +129,29 @@ void main() async {
       child: const MyApp(),
     ),
   );
+
+  // 👉 เพิ่ม (3): กด notification ตอนแอปถูกปิดสนิท (terminated)
+  if (!kIsWeb) {
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _handleNotificationNavigation(initialMessage);
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // 👈 เพิ่มตรงนี้
       locale: context.locale,
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       title: 'LC Online',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.deepPurple, primary: Color(0xFF0262EC)),
         useMaterial3: true,
@@ -115,73 +162,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({super.key, required this.title});
-
-//   // This widget is the home page of your application. It is stateful, meaning
-//   // that it has a State object (defined below) that contains fields that affect
-//   // how it looks.
-
-//   // This class is the configuration for the state. It holds the values (in this
-//   // case the title) provided by the parent (in this case the App widget) and
-//   // used by the build method of the State. Fields in a Widget subclass are
-//   // always marked "final".
-
-//   final String title;
-
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-
-// class _MyHomePageState extends State<MyHomePage> {
-//   int _counter = 0;
-
-//   void _incrementCounter() {
-//     setState(() {
-//       // This call to setState tells the Flutter framework that something has
-//       // changed in this State, which causes it to rerun the build method below
-//       // so that the display can reflect the updated values. If we changed
-//       // _counter without calling setState(), then the build method would not be
-//       // called again, and so nothing would appear to happen.
-//       _counter++;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // This method is rerun every time setState is called, for instance as done
-//     // by the _incrementCounter method above.
-//     //
-//     // The Flutter framework has been optimized to make rerunning build methods
-//     // fast, so that you can just rebuild anything that needs updating rather
-//     // than having to individually change instances of widgets.
-//     return Scaffold(
-//        body:
-//        Center(
-//          child: ElevatedButton(
-//            style: ButtonStyle(
-//                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-//                    RoundedRectangleBorder(
-//              borderRadius: BorderRadius.circular(8.0),
-//            ))),
-//            onPressed: () async => {
-//              await Navigator.push(
-//                context,
-//                MaterialPageRoute(
-//                  builder: (context) => HMSPrebuilt(roomCode: "jle-wjbx-gyk")
-//                ),
-//              ),
-//            },
-//            child: const Padding(
-//              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-//              child: Text(
-//                'Join',
-//                style: TextStyle(fontSize: 20),
-//              ),
-//            ),
-//          ),
-//        ),
-//      );
-//   }
-// }

@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/lawyer-review.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message-form.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
@@ -39,6 +40,7 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   String typeLogin = "";
   final storage = FlutterSecureStorage();
   bool isLoadingLawyers = true;
+  List<dynamic> caseList = [];
 
   // ── สีตาม rating (เหมือน LawyerDetailPage) ──────────────
   Color get _lawyerColor {
@@ -98,9 +100,10 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
       dynamic criteria = {"code": widget.code};
       final param = await postDio("${server}/m/register/read", criteria);
       setState(() {
-        print('------------------- ${param['objectData']}');
+        print('------------------- ${param['objectData'][0]['code']}');
         model = param['objectData'][0];
         callReadIsLike(model['code']);
+        callReadCase();
         // _lawyersForYou = param['objectDate'];
       });
     } catch (_) {}
@@ -142,6 +145,21 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
         isFavorite = param['objectData']['isLike'];
         isLoadingLawyers = false;
         // _lawyersForYou = param['objectDate'];
+      });
+    } catch (_) {}
+  }
+
+  Future<void> callReadCase() async {
+    final type = await storage.read(key: 'typeLogin');
+    String myUserId = UserProfileStore.instance.code;
+    setState(() {
+      typeLogin = type.toString();
+    });
+    try {
+      dynamic criteria = {"lawyer": model['code'], "reference": myUserId};
+      final param = await postDio("${server}/m/case/read", criteria);
+      setState(() {
+        caseList = param['objectData'];
       });
     } catch (_) {}
   }
@@ -581,22 +599,64 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
   // ════════════════════════════════════════════════════════
 
   Widget _buildStatsRow(Color color) {
-    return _AnimCard(
-      delay: 0.1,
-      ctrl: _entryCtrl,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _cardDecor(),
-        child: Row(children: [
-          _statItem('🏆', model['casesWon'] ?? '-', 'คดีชนะ'),
-          _vertDiv(),
-          _statItem('📅', "${model['experienceYears']}", 'ประสบการณ์'),
-          _vertDiv(),
-          _statItem('⭐', "${model['review'].length}", 'รีวิว'),
-        ]),
-      ),
+  return _AnimCard(
+    delay: 0.1,
+    ctrl: _entryCtrl,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecor(),
+      child: Row(children: [
+        Expanded(
+          child: _statContent(
+              '🏆',
+              caseList
+                  .where((x) => x['caseStatus'] == 4)
+                  .toList()
+                  .length
+                  .toString(),
+              'คดีชนะ'),
+        ),
+        _vertDiv(),
+        Expanded(
+          child: _statContent(
+              '📅', "${model['experienceYears']}", 'ประสบการณ์'),
+        ),
+        _vertDiv(),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LawyerReviewPage(lawyer: model),
+                ),
+              );
+            },
+            child: _statContent(
+                '💬', "${(model['review'] as List?)?.length ?? 0}", 'รีวิว'),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
+// ✅ เปลี่ยนชื่อ + เอา Expanded ออก คืนค่า Column ตรงๆ
+Widget _statContent(String emoji, String value, String label) => Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 22)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: Color(0xFF1A2340))),
+        const SizedBox(height: 2),
+        Text(label,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+      ],
     );
-  }
 
   Widget _statItem(String emoji, String value, String label) => Expanded(
         child: Column(children: [

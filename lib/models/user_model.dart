@@ -39,7 +39,7 @@ class UserModel {
     required this.idcard,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  factory UserModel.fromJson(dynamic json) {
     return UserModel(
       code: json['code']?.toString() ?? '',
       userType: json['userType']?.toString() ?? '',

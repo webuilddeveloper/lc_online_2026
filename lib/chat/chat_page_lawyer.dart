@@ -319,14 +319,14 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               _iconBtn(
                   icon: Icons.video_call_outlined,
                   onTap: _showReminderBeforeJoin),
-              const SizedBox(width: 8),
-              _iconBtn(
-                icon: Icons.task_alt_rounded,
-                color: const Color(0xFF34C759),
-                bgColor: const Color(0xFFF0FFF4),
-                borderColor: const Color(0xFF34C759),
-                onTap: _endConsultation,
-              ),
+              // const SizedBox(width: 8),
+              // _iconBtn(
+              //   icon: Icons.task_alt_rounded,
+              //   color: const Color(0xFF34C759),
+              //   bgColor: const Color(0xFFF0FFF4),
+              //   borderColor: const Color(0xFF34C759),
+              //   onTap: _endConsultation,
+              // ),
             ],
           )
         : null;

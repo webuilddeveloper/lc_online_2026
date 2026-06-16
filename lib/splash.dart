@@ -44,7 +44,6 @@ class _SplashPageState extends State<SplashPage> {
     // โหลดจาก UserProfileStore (มี _SafeStorage ป้องกัน OperationError แล้ว)
     await UserProfileStore.instance.load();
     final userType = UserProfileStore.instance.userType;
-
     if (!mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(

@@ -774,6 +774,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           await postDio("${server}/m/case/read", {"userCode": userCode});
       setState(() {
         caseList = param['objectData'];
+        print('----=====------ ${caseList[0]['isReview']}');
         if (userType == 'lawyer') {
           _loadLawyerAppointments();
         }

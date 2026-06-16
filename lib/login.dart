@@ -5,6 +5,8 @@ import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/register_page.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/services/fcm_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/apple_firebase.dart';
 import 'package:LawyerOnline/shared/line.dart';
 import 'package:LawyerOnline/shared/notification-service.dart';
@@ -681,6 +683,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         authToken: session.token,
       );
 
+      FcmService.registerFcmToken(user.code);
+
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -689,6 +693,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
       );
     } catch (error) {
+       print('--------------123-------------- ${error}');
       setState(() {
         isLoading = false;
       });
