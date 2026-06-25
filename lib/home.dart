@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/services/location_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/widgets/home/home_app_bar.dart';
 import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
@@ -36,6 +37,7 @@ import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 import 'package:LawyerOnline/repositories/lawyer_repository.dart';
+import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
@@ -49,9 +51,15 @@ import 'package:easy_localization/easy_localization.dart';
 const _kCard = Colors.white;
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key, this.userType, this.onProfileTap});
+  const HomePage({
+    Key? key,
+    this.userType,
+    this.onProfileTap,
+    this.isTabActive = true,
+  });
   final String? userType;
   final VoidCallback? onProfileTap;
+  final bool isTabActive;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -64,258 +72,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   ];
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
-
-  // bool _isUrgentCaseEnabled = false; // สถานะรับเคสด่วนของทนาย
-  Timer? _urgentCaseTimer; // timer คอย monitor นัดหมาย
-
-  List<dynamic> lawyerOnlineList = [
-    // ── เดิม 5 คน ──────────────────────────────────────────────────────────────
-    {
-      "code": "20260513101915-561-752",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "title": "ทนายความอาวุโส",
-      "scroll": 4.8,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "experience": "11+ ปี",
-      "price": 500,
-      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
-    },
-    {
-      "code": "1",
-      "name": "ธนากร นิติศักดิ์",
-      "title": "ทนายความอาวุโส",
-      "scroll": 4.1,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-2.png",
-      "experience": "19+ ปี",
-      "price": 500,
-      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
-    },
-    {
-      "code": "2",
-      "name": "พงษ์ภพ ยุติธรรม",
-      "title": "ทนายความอาวุโส",
-      "scroll": 3.9,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-3.png",
-      "experience": "10+ ปี",
-      "price": 500,
-      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
-    },
-    {
-      "code": "3",
-      "name": "อาริย์ ศิษย์กฎหมาย",
-      "title": "ทนายความอาวุโส",
-      "scroll": 3.0,
-      "cost": "200",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-4.png",
-      "experience": "12+ ปี",
-      "price": 500,
-      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
-    },
-    {
-      "code": "4",
-      "name": "Sachin K",
-      "title": "ทนายความอาวุโส",
-      "scroll": 4.9,
-      "cost": "1,000",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-5.png",
-      "experience": "20+ ปี",
-      "price": 500,
-      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
-    },
-
-    // ── เพิ่มใหม่ 25 คน ────────────────────────────────────────────────────────
-    {
-      "code": "5",
-      "name": "วรรณา จิตต์ดี",
-      "title": "ทนายความด้านครอบครัว",
-      "scroll": 4.7,
-      "cost": "300",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-8.png",
-      "experience": "15+ ปี",
-      "price": 300,
-      "skills": ["ครอบครัวและมรดก", "หย่าร้างและสิทธิ์เลี้ยงดูบุตร"],
-    },
-    {
-      "code": "6",
-      "name": "กิตติพงศ์ นิลพัท",
-      "title": "ทนายความด้านอสังหาริมทรัพย์",
-      "scroll": 4.5,
-      "cost": "400",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-7.png",
-      "experience": "13+ ปี",
-      "price": 400,
-      "skills": ["ทรัพย์สินและที่ดิน", "สัญญาซื้อขายอสังหาริมทรัพย์"],
-    },
-    {
-      "code": "7",
-      "name": "ภาณุพงศ์ ศรีสวัสดิ์",
-      "title": "ทนายความด้านแรงงาน",
-      "scroll": 4.6,
-      "cost": "250",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-8.png",
-      "experience": "9+ ปี",
-      "price": 250,
-      "skills": ["แรงงานและการจ้างงาน", "ค่าชดเชยและสวัสดิการ"],
-    },
-    {
-      "code": "8",
-      "name": "สุนทรี แก้วมณี",
-      "title": "ทนายความด้านแพ่ง",
-      "scroll": 4.3,
-      "cost": "350",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-13.png",
-      "experience": "14+ ปี",
-      "price": 350,
-      "skills": ["คดีแพ่ง", "สัญญาและข้อพิพาท"],
-    },
-    {
-      "code": "9",
-      "name": "อนันต์ พรหมพิทักษ์",
-      "title": "ทนายความด้านอาชญากรรมไซเบอร์",
-      "scroll": 4.8,
-      "cost": "600",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-10.png",
-      "experience": "8+ ปี",
-      "price": 600,
-      "skills": ["คดีออนไลน์และเทคโนโลยี", "อาญาและอาชญากรรม"],
-    },
-    {
-      "code": "10",
-      "name": "ปิยะนุช รุ่งเรือง",
-      "title": "ทนายความด้านธุรกิจ",
-      "scroll": 4.4,
-      "cost": "500",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-14.png",
-      "experience": "16+ ปี",
-      "price": 500,
-      "skills": ["ธุรกิจและบริษัท", "สัญญาและข้อพิพาท"],
-    },
-    {
-      "code": "11",
-      "name": "ชาติชาย วิริยะ",
-      "title": "ทนายความอิสระ",
-      "scroll": 3.8,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-12.png",
-      "experience": "5+ ปี",
-      "price": 0,
-      "skills": ["อาญาและอาชญากรรม", "ฟ้องศาล เรียกค่าเสียหาย"],
-    },
-    {
-      "code": "12",
-      "name": "มณีรัตน์ สุวรรณโชติ",
-      "title": "ทนายความด้านภาษี",
-      "scroll": 4.2,
-      "cost": "450",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-15.png",
-      "experience": "11+ ปี",
-      "price": 450,
-      "skills": ["ภาษีและการเงิน", "ธุรกิจและบริษัท"],
-    },
-    {
-      "code": "13",
-      "name": "วิทยา ธรรมสาร",
-      "title": "ทนายความด้านสิ่งแวดล้อม",
-      "scroll": 4.0,
-      "cost": "350",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-14.png",
-      "experience": "7+ ปี",
-      "price": 350,
-      "skills": ["สิ่งแวดล้อมและที่ดิน", "ทรัพย์สินและที่ดิน"],
-    },
-    {
-      "code": "14",
-      "name": "ณัฐพล อินทรวิชัย",
-      "title": "ทนายความด้านทรัพย์สินทางปัญญา",
-      "scroll": 4.7,
-      "cost": "700",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-15.png",
-      "experience": "12+ ปี",
-      "price": 700,
-      "skills": ["ทรัพย์สินทางปัญญา", "คดีออนไลน์และเทคโนโลยี"],
-    },
-  ];
-
-  List<dynamic> newLawyerOnlineList = [
-    {
-      "code": "0",
-      "name": "อาริย์ ศิษย์กฎหมาย",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 3.0,
-      "cost": "200",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-4.png",
-      "experience": "12+ ปี",
-      "price": 500,
-      "skills": ["ทรัพย์สินและที่ดิน", "ฟ้องศาล เรียกค่าเสียหาย"],
-    },
-    {
-      "code": "1",
-      "name": "Sachin K",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.9,
-      "cost": "1,000",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-5.png",
-      "experience": "20+ ปี",
-      "price": 500,
-      "skills": ["คดีออนไลน์และเทคโนโลยี", "อื่นๆและระหว่างประเทศ"],
-    },
-    {
-      "code": "2",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.8,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "experience": "11+ ปี",
-      "price": 500,
-      "skills": ["อาญาและอาชญากรรม", "ครอบครัวและมรดก"],
-    },
-    {
-      "code": "3",
-      "name": "ธนากร นิติศักดิ์",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 4.1,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-2.png",
-      "experience": "19+ ปี",
-      "price": 500,
-      "skills": ["หนี้สินและการเงิน", "ธุรกิจและบริษัท"],
-    },
-    {
-      "code": "4",
-      "name": "พงษ์ภพ ยุติธรรม",
-      'title': 'ทนายความอาวุโส',
-      "scroll": 3.9,
-      "cost": "Free",
-      "costUnit": "/hr",
-      "imageUrl": "assets/images/lawyer-avatar-3.png",
-      "experience": "10+ ปี",
-      "price": 500,
-      "skills": ["แรงงานและการจ้างงาน", "ประกันภัยและผู้บริโภค"],
-    },
-  ];
+  Timer? _profileDebounce;
 
   // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
   // final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
@@ -328,6 +85,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<dynamic> _trendingLawyers = const [];
   List<dynamic> _lawyerAppointments = const [];
   List<Map<String, dynamic>> _apiBookingJobs = const [];
+  List<Map<String, dynamic>> _caseRequestJobs = const [];
   bool _isLoadingLawyers = false;
   bool _isLoadingAppointments = false;
   String? _lawyerLoadError;
@@ -335,7 +93,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   List<dynamic> appointmentList = const [];
   List<Map<String, dynamic>> get _lawyerJobRequests => _mergeJobs(
-        _apiBookingJobs,
+        _mergeJobs(_apiBookingJobs, _caseRequestJobs),
         LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
       );
 
@@ -372,66 +130,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   List<dynamic> caseList = [];
 
-// ฟังก์ชันตรวจสอบนัดหมายล่วงหน้า 1 ชั่วโมง — delegate ไป AppointmentStore
-  // bool _hasConflictingAppointment() =>
-  //     CaseAppointmentMapper.hasConflictingAppointment(_lawyerAppointments);
-
-// ฟังก์ชันเมื่อมีการกดเปิด-ปิดสวิตช์
-  void _startUrgentCaseTimer() {
-    _urgentCaseTimer?.cancel();
-    _urgentCaseTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
-      if (!mounted) return;
-      // if (LawyerProfileStore.instance.isUrgentCaseEnabled &&
-      //     _hasConflictingAppointment()) {
-      //   // setUrgentCase เรียก notifyListeners() เอง ไม่ต้อง setState
-      //   await LawyerProfileStore.instance.setUrgentCase(false);
-
-      //   // แจ้งเตือน
-      //   showDialog(
-      //     context: context,
-      //     barrierDismissible: false,
-      //     builder: (ctx) => AlertDialog(
-      //       shape:
-      //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      //       title: Row(
-      //         children: [
-      //           const Icon(Icons.notifications_active_rounded,
-      //               color: Colors.orange, size: 28),
-      //           const SizedBox(width: 8),
-      //           Expanded(
-      //             child: Text(
-      //               'ปิดรับเคสด่วนแล้ว',
-      //               style: GoogleFonts.prompt(
-      //                   fontWeight: FontWeight.bold,
-      //                   color: Colors.orange,
-      //                   fontSize: 17),
-      //             ),
-      //           ),
-      //         ],
-      //       ),
-      //       content: Text(
-      //         'คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง\nระบบปิดรับเคสด่วนให้อัตโนมัติแล้ว',
-      //         style: GoogleFonts.prompt(fontSize: 14),
-      //       ),
-      //       actions: [
-      //         TextButton(
-      //           onPressed: () => Navigator.pop(ctx),
-      //           child: Text(
-      //             'รับทราบ',
-      //             style: GoogleFonts.prompt(
-      //                 color: const Color(0xFF0262EC),
-      //                 fontWeight: FontWeight.bold),
-      //           ),
-      //         ),
-      //       ],
-      //     ),
-      //   );
-      // }
-    });
-  }
-
   void _toggleUrgentCase(bool value) {
     if (value == true) {
+      // ตอนทนาย login สำเร็จ หรือเปิดแอพแล้วเช็คว่าเป็นทนาย
+      // if (UserProfileStore.instance.userType == 'lawyer') {
+
+      // }
+      LocationService.startPeriodicUpdate();
+      // print('object');
       // ถ้ากำลังพยายามเปิดรับเคส
       // bool hasConflict = _hasConflictingAppointment();
 
@@ -470,6 +176,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       //   );
       //   return;
       // }
+    } else {
+      // ตอน logout หรือทนายกดปิดสถานะ active
+      LocationService.stopPeriodicUpdate();
     }
 
     // store จะเรียก notifyListeners() เอง → ListenableBuilder rebuild อัตโนมัติ
@@ -486,16 +195,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     callRead();
-    callReadCase();
-    // _callReadLawyer();
-    // ← listen UserProfileStore เพื่อ rebuild ทันทีที่ profile เปลี่ยน
     UserProfileStore.instance.addListener(_onProfileChanged);
     LawyerJobsStore.instance.addListener(_onJobsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
       _fadeCtrl.forward();
     });
-    _startUrgentCaseTimer();
   }
 
   // Future<void> _callReadLawyer() async {
@@ -509,14 +214,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    UserProfileStore.instance.removeListener(_onProfileChanged); // ←
-    _urgentCaseTimer?.cancel();
+    UserProfileStore.instance.removeListener(_onProfileChanged);
+    _profileDebounce?.cancel();
     LawyerJobsStore.instance.removeListener(_onJobsChanged);
     _fadeCtrl.dispose();
     super.dispose();
   }
 
-  // ── callback เมื่อ UserProfileStore เปลี่ยน ──────────────────────────
   void _onProfileChanged() {
     if (!mounted) return;
     final store = UserProfileStore.instance;
@@ -526,7 +230,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       userType = store.userType;
       typeLogin = store.typeLogin;
     });
-    _loadRealHomeData();
+    _profileDebounce?.cancel();
+    _profileDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _loadRealHomeData();
+    });
   }
 
   void _onJobsChanged() {
@@ -559,15 +267,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       typeLogin = store.typeLogin;
     });
     _loadRealHomeData();
+    if (store.isLoggedIn) {
+      callReadCase();
+    }
   }
 
   Future<void> _loadRealHomeData() async {
-    if (UserProfileStore.instance.userType == 'user') {
+    if (UserProfileStore.instance.userType != 'lawyer') {
       _loadHomeLawyers();
     }
 
     if (UserProfileStore.instance.userType == 'lawyer') {
       _loadLawyerAppointments();
+      _loadLawyerCaseRequests();
     } else if (mounted) {
       setState(() {
         _lawyerAppointments = const [];
@@ -588,13 +300,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       dynamic model = {"limit": 10, "userType": "lawyer"};
       final param = await postDio("${server}/m/register/read", model);
 
-      setState(() {
-        print('------------------- ${param['objectData']}');
-        // _lawyersForYou = param['objectDate'];
-        _isLoadingLawyers = false;
-      });
-      // final lawyers = await _lawyerRepository.searchLawyers();
-      // final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
       final resulte = param['objectData'] ?? [];
       if (!mounted) return;
       setState(() {
@@ -646,7 +351,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       // final realAppointments =
       //     await _appointmentRepository.readScheduleForLawyer(lawyerCode);
       // if (!mounted) return;
-      final param = await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
+      final param =
+          await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
       setState(() {
         appointmentList = param['objectData'];
         _lawyerAppointments = param['objectData'];
@@ -767,16 +473,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> callReadCase() async {
-    final userCode = UserProfileStore.instance.code;
+  Future<void> _loadLawyerCaseRequests() async {
+    if (UserProfileStore.instance.userType != 'lawyer') return;
     try {
-      final param =
-          await postDio("${server}/m/case/read", {"userCode": userCode});
+      final service = CaseRequestService();
+      final list = await service.getLawyerPendingRequests();
+      if (!mounted) return;
       setState(() {
-        caseList = param['objectData'];
-        print('----=====------ ${caseList[0]['isReview']}');
+        _caseRequestJobs = list
+            .map(CaseRequestService.jobFromCaseRequest)
+            .toList(growable: false);
+      });
+      LawyerJobsStore.instance.replaceCaseRequestJobs(_caseRequestJobs);
+    } catch (_) {}
+  }
+
+  Future<void> callReadCase() async {
+    await UserProfileStore.instance.load();
+    final store = UserProfileStore.instance;
+    if (!store.isLoggedIn || store.code.isEmpty) return;
+
+    try {
+      final param = await postDio(
+        "${server}/m/case/read",
+        {"userCode": store.code},
+      );
+      final data = param['objectData'];
+      if (!mounted) return;
+      setState(() {
+        caseList = data is List ? data : const [];
         if (userType == 'lawyer') {
           _loadLawyerAppointments();
+          _loadLawyerCaseRequests();
         }
       });
     } catch (_) {}
@@ -873,7 +601,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             const SizedBox(height: 24),
 
             // ── Banner (shared) ──────────────────────────────────
-            HomeBannerSection(banners: mockBannerList),
+            HomeBannerSection(
+              banners: mockBannerList,
+              autoPlayEnabled: widget.isTabActive,
+            ),
 
             const SizedBox(height: 24),
 
@@ -891,6 +622,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   isGuest: typeLogin == 'null',
                   isLoadingLawyers: _isLoadingLawyers,
                   lawyerLoadError: _lawyerLoadError,
+                  onAppointmentClosed: () {
+                    debugPrint('📱 AppointmentDetails closed, refreshing...');
+                    callRead(); // ✅ เรียก callRead() ใหม่
+                  },
                 ),
               ),
 
@@ -916,4 +651,3 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // ─── Action Card ─────────────────────────────────────────────────
 }
-

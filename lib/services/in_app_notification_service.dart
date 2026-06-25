@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/main.dart';
+import 'package:LawyerOnline/services/notification_service.dart';
 import 'package:LawyerOnline/widgets/top_notification_banner.dart';
-import 'package:LawyerOnline/main.dart'; // เพื่อใช้ navigatorKey
 
 class InAppNotificationService {
   static OverlayEntry? _entry;
 
-  static void show({
+  static Future<void> show({
     required String title,
     required String body,
     VoidCallback? onTap,
-  }) {
+  }) async {
+    await NotificationService.playForegroundAlert();
+
     final overlay = navigatorKey.currentState?.overlay;
     if (overlay == null) return;
 
-    // ถ้ามีแบนเนอร์เก่าอยู่ ให้เอาออกก่อน
     _entry?.remove();
     _entry = null;
 

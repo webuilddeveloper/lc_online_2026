@@ -9,7 +9,7 @@ class LawyerModel {
     required this.rating,
     required this.reviews,
     required this.price,
-    required this.available,
+    required this.isOnline,
     required this.province,
     this.distance = '',
     this.distanceKm = 0,
@@ -29,7 +29,7 @@ class LawyerModel {
   final double rating;
   final int reviews;
   final int price;
-  final bool available;
+  final bool isOnline;
   final String province;
   final String distance;
   final double distanceKm;
@@ -50,7 +50,7 @@ class LawyerModel {
       rating: _double(json['rating']),
       reviews: _int(json['reviews']),
       price: _int(json['price']),
-      available: json['available'] == true,
+      isOnline: json['isOnline'] == true,
       province: _string(json['province']),
       distance: _string(json['distance']),
       distanceKm: _double(json['distanceKm']),
@@ -72,7 +72,7 @@ class LawyerModel {
         'rating': rating,
         'reviews': reviews,
         'price': price,
-        'available': available,
+        'isOnline': isOnline,
         'province': province,
         'distance': distance,
         'distanceKm': distanceKm,
@@ -83,7 +83,32 @@ class LawyerModel {
         'imageUrl': imageUrl,
       };
 
-  Map<String, dynamic> toLegacyMap() => toJson();
+  // Map<String, dynamic> toLegacyMap() => toJson();
+
+  Map<String, dynamic> toLegacyMap() {
+    return {
+      'code': code,
+      'name': name,
+      'title': title,
+      'specialty': specialty,
+      'experience': experience,
+      'experienceYears': experienceYears,
+      'rating': rating,
+      'reviews': reviews,
+      'price': price,
+      'province': province,
+      'distance': distance,
+      'distanceKm': distanceKm,
+      'eta': eta,
+      'office': office,
+      'avatar': avatar,
+      'color': color,
+      'imageUrl': imageUrl,
+      'available': isOnline, // ✅ แปลง isOnline → available
+      'isOnline': isOnline,
+      // ... field อื่นๆ
+    };
+  }
 
   static String _string(dynamic value) => value?.toString() ?? '';
 

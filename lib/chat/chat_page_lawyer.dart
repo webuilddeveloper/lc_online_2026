@@ -12,7 +12,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -20,15 +19,15 @@ import 'package:easy_localization/easy_localization.dart';
 class ChatPageLawyer extends StatefulWidget {
   final Map<String, dynamic> model;
   final bool embeddedMode;
-  final String roomCode; // ✅ เพิ่ม
-  final String userId; // ✅ เพิ่ม
+  final String roomCode;
+  final String userId;
 
   const ChatPageLawyer({
     super.key,
     required this.model,
     this.embeddedMode = false,
-    this.roomCode = '', // ✅ เพิ่ม
-    this.userId = '', // ✅ เพิ่ม
+    this.roomCode = '',
+    this.userId = '',
   });
 
   @override
@@ -37,15 +36,13 @@ class ChatPageLawyer extends StatefulWidget {
 
 class _ChatPageLawyerState extends State<ChatPageLawyer>
     with AutoPopOnDesktopMixin {
-  final ChatService _chatService = ChatService(); // ✅ เพิ่ม
+  final ChatService _chatService = ChatService();
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // ✅ เปลี่ยนจาก List<_ChatMessage> → Map
   List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
-  String _typingUser = "";
-  // bool _caseSuccess;
+  String _typingUser = '';
 
   @override
   void didChangeDependencies() {
@@ -55,48 +52,10 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   @override
   void initState() {
     super.initState();
-    // _caseSuccess = widget.model['caseSuccess'] as bool? ?? false;
-    _setupChat(); // ✅ เพิ่ม
+    _setupChat();
   }
 
-  // ✅ เหมือน ChatPageUser
-  // Future<void> _setupChat() async {
-  //   // ✅ ตัด connection เก่าทิ้งก่อนเสมอ
-  //   await _chatService.disconnect();
-
-  //   _chatService.onReceiveMessage = (message) {
-  //     setState(() => _messages.add(message));
-  //     _scrollToBottom();
-  //   };
-
-  //   _chatService.onLoadHistory = (history) {
-  //     setState(() {
-  //       _messages = history
-  //           .map((e) => e as Map<String, dynamic>)
-  //           .toList()
-  //           .reversed
-  //           .toList();
-  //     });
-  //     _scrollToBottom();
-  //   };
-
-  //   _chatService.onUserTyping = (userId, isTyping) {
-  //     if (userId != widget.userId) {
-  //       setState(() {
-  //         _isTyping = isTyping;
-  //         _typingUser = userId;
-  //       });
-  //     }
-  //   };
-
-  //   await _chatService.connect();
-  //   await _chatService.joinRoom(widget.roomCode, widget.userId);
-  //   await _chatService.loadHistory(widget.roomCode);
-  //   await _chatService.markAsRead(widget.roomCode, widget.userId);
-  // }
-
   Future<void> _setupChat() async {
-    // ✅ ตัด connection เก่าทิ้งก่อนเสมอ
     await _chatService.disconnect();
 
     _chatService.onReceiveMessage = (message) {
@@ -142,7 +101,6 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     });
   }
 
-  // ✅ ใช้ ChatService จริง
   void _sendMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
@@ -151,82 +109,40 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     _chatService.typing(widget.roomCode, widget.userId, false);
   }
 
-  void _endConsultation() {
-    DialogService.showConfirm(
-      context,
-      title: 'endConsultTitle'.tr(),
-      message: 'endConsultMessageUser'.tr(),
-      onConfirm: () {
-        updateStatusCase();
-        // final jobId = widget.model['jobId']?.toString() ??
-        //     widget.model['id']?.toString() ??
-        //     '';
-        // if (jobId.isNotEmpty) {
-        //   // LawyerJobsStore.instance.updateStatus(jobId, 'done');
-        // }
-        // final lawyer = {
-        //   'name': widget.model['name'] ?? '',
-        //   'avatar': (widget.model['name'] as String? ?? 'ท').characters.first,
-        //   'title': widget.model['title'] ??
-        //       (widget.model['skills'] != null &&
-        //               (widget.model['skills'] as List).isNotEmpty
-        //           ? (widget.model['skills'] as List).first
-        //           : widget.model['experience'] ?? ''),
-        //   'rating': widget.model['rating'] ?? widget.model['scroll'] ?? 0,
-        //   'imageUrl': widget.model['imageUrl'] ?? '',
-        // };
-        // Navigator.pushAndRemoveUntil(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (_) => ConsultStatusPage(
-        //       currentStep: 4,
-        //       lawyer: lawyer,
-        //       appointmentDate: widget.model['appointmentDate'],
-        //       appointmentTime: widget.model['appointmentTime'],
-        //     ),
-        //   ),
-        //   (route) => route.isFirst,
-        // );
-      },
-    );
-  }
+  // void _endConsultation() {
+  //   DialogService.showConfirm(
+  //     context,
+  //     title: 'endConsultTitle'.tr(),
+  //     message: 'endConsultMessageUser'.tr(),
+  //     onConfirm: () => updateStatusCase(),
+  //   );
+  // }
 
   Future<void> updateStatusCase() async {
     DialogService.showLoading(context);
-    final lawyerCode = UserProfileStore.instance.code;
     try {
-      dynamic model = {"code": widget.model['code'], "caseStatus": 4};
-      final param = await postDio("${server}/m/case/update", model);
-      setState(() {
-        if (param['status'] == 'S') {
-          DialogService.showSuccess(
+      final param = await postDio('${server}/m/case/update', {
+        'code': widget.model['code'],
+        'caseStatus': 4,
+      });
+      if (!mounted) return;
+      if (param['status'] == 'S') {
+        final caseCode = widget.model['code']?.toString() ?? '';
+        DialogService.showSuccess(
+          context,
+          title: 'successTitle'.tr(),
+          message: 'endConsultSuccessMessage'.tr(),
+          onClose: () => Navigator.pushAndRemoveUntil(
             context,
-            title: 'successTitle'.tr(),
-            message: 'endConsultSuccessMessage'.tr(),
-            onClose: () => Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 0)),
-              (route) => false,
+            // ── ส่งแค่ caseCode ──
+            MaterialPageRoute(
+              builder: (_) => ConsultStatusPage(caseCode: caseCode),
             ),
-          );
-        }
-        // appointmentList = param['objectData'];
-        // _lawyerAppointments = param['objectData'];
-        // _isLoadingAppointments = false;
-        print('>>>>>>>>>>>>>>>>>> ${param}');
-      });
-    } catch (_) {
-      // if (!mounted) return;
-      // final fallbackAppointments =
-      //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
-      setState(() {
-        // _lawyerAppointments = fallbackAppointments;
-        // _apiBookingJobs = const [];
-        // _appointmentLoadError =
-        //     fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
-        // _isLoadingAppointments = false;
-      });
-    }
+            (route) => false,
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   void _showReminderBeforeJoin() {
@@ -254,6 +170,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         await _callUser();
         if (!mounted) return;
         final navigator = Navigator.of(context);
+        final caseCode = widget.model['code']?.toString() ?? '';
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -262,8 +179,10 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               onLeave: () {
                 Future.delayed(const Duration(milliseconds: 300), () {
                   navigator.pushAndRemoveUntil(
+                    // ── ส่งแค่ caseCode ──
                     MaterialPageRoute(
-                        builder: (_) => ConsultStatusPage(currentStep: 4)),
+                      builder: (_) => ConsultStatusPage(caseCode: caseCode),
+                    ),
                     (route) => route.isFirst,
                   );
                 });
@@ -286,9 +205,8 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
       'createdAt': FieldValue.serverTimestamp(),
     });
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('callingUser'.tr())),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('callingUser'.tr())));
   }
 
   @override
@@ -297,7 +215,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     _chatService.onLoadHistory = null;
     _chatService.onUserTyping = null;
     _chatService.onMessageRead = null;
-    _chatService.leaveRoom(widget.roomCode, widget.userId); // ✅ เพิ่ม
+    _chatService.leaveRoom(widget.roomCode, widget.userId);
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -317,16 +235,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
             mainAxisSize: MainAxisSize.min,
             children: [
               _iconBtn(
-                  icon: Icons.video_call_outlined,
-                  onTap: _showReminderBeforeJoin),
-              // const SizedBox(width: 8),
-              // _iconBtn(
-              //   icon: Icons.task_alt_rounded,
-              //   color: const Color(0xFF34C759),
-              //   bgColor: const Color(0xFFF0FFF4),
-              //   borderColor: const Color(0xFF34C759),
-              //   onTap: _endConsultation,
-              // ),
+                icon: Icons.video_call_outlined,
+                onTap: _showReminderBeforeJoin,
+              ),
             ],
           )
         : null;
@@ -335,7 +246,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         ? null
         : appBarChat(
             onBack: () => Navigator.pop(context),
-            avatarWidget: model['avatar'] != ""
+            avatarWidget: model['avatar'] != null && model['avatar'] != ''
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(100),
                     child: Image.network(
@@ -351,11 +262,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                     decoration: BoxDecoration(
                         color: clientColor, shape: BoxShape.circle),
                     child: Center(
-                      child: Text(model['avatar'] ?? '?',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18)),
+                      child: Text(
+                        (model['name'] as String? ?? '?').substring(0, 1),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18),
+                      ),
                     ),
                   ),
             name: model['name'] ?? '',
@@ -373,7 +286,6 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
           if (widget.embeddedMode)
             _buildEmbeddedHeader(
                 model, isActive, clientColor, actionButtons, caseSuccess),
-          // const SizedBox(height: 12),
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
@@ -381,42 +293,37 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
-                final isMe = msg['senderId'] == widget.userId; // ✅
+                final isMe = msg['senderId'] == widget.userId;
                 return ChatBubble(
                   text: msg['content'] ?? '',
                   isMe: isMe,
                   avatarAsset: widget.model['avatar'],
                 );
               },
-              separatorBuilder: (context, index) => _messages[index]
-                          ['senderId'] !=
-                      _messages[index + 1]['senderId']
-                  ? const SizedBox(
-                      height: 10,
-                    )
-                  : const SizedBox(),
+              separatorBuilder: (_, index) =>
+                  _messages[index]['senderId'] !=
+                          _messages[index + 1]['senderId']
+                      ? const SizedBox(height: 10)
+                      : const SizedBox(),
             ),
           ),
-
-          // ✅ Typing indicator
           if (_isTyping)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "$_typingUser กำลังพิมพ์...",
+                  '$_typingUser กำลังพิมพ์...',
                   style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF8593A8),
-                  ),
+                      fontSize: 12, color: Color(0xFF8593A8)),
                 ),
               ),
             ),
-
           caseSuccess
               ? _buildEndedBanner()
-              : ChatInput(controller: _chatController, onSend: _sendMessage),
+              : ChatInput(
+                  controller: _chatController, onSend: _sendMessage),
         ],
       ),
     );
@@ -444,11 +351,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
             decoration:
                 BoxDecoration(color: clientColor, shape: BoxShape.circle),
             child: Center(
-              child: Text(model['avatar'] ?? '?',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18)),
+              child: Text(
+                (model['name'] as String? ?? '?').substring(0, 1),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -462,7 +371,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                         fontSize: 15, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
-                if (caseSuccess)
+                if (!caseSuccess)
                   Text(isActive ? 'activeNow'.tr() : 'notActive'.tr(),
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF8593A8))),
@@ -506,11 +415,13 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
           top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
+        border:
+            Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
       ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        padding:
+            const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12)),
@@ -531,4 +442,3 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     );
   }
 }
-// ✅ ลบ class _ChatMessage ออกแล้ว ไม่จำเป็นอีกต่อไป

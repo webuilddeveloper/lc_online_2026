@@ -76,9 +76,6 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
       CurvedAnimation(parent: _burstCtrl, curve: Curves.easeOut),
     );
 
-    LawyerProfileStore.instance.addListener(_onStoreChanged);
-    UserProfileStore.instance.addListener(_onStoreChanged);
-
     _syncUrgentAnimation(widget.isUrgentCaseEnabled, burst: false);
     _prevUrgent = widget.isUrgentCaseEnabled;
   }
@@ -108,13 +105,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   void dispose() {
     _pulseCtrl.dispose();
     _burstCtrl.dispose();
-    LawyerProfileStore.instance.removeListener(_onStoreChanged);
-    UserProfileStore.instance.removeListener(_onStoreChanged);
     super.dispose();
-  }
-
-  void _onStoreChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
@@ -337,41 +328,42 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
   }
 
   // ✅ Flutter สร้าง roomCode และ navigate ไปหน้าแชท
-  Future<void> openChat(String lawyerCode) async {
-    String myUserId = UserProfileStore.instance.code;
+  // Future<void> openChat(String lawyerCode) async {
+  //   String myUserId = UserProfileStore.instance.code;
 
-    // สร้าง roomCode
-    List<String> ids = [myUserId, lawyerCode]..sort();
-    var roomCode;
+  //   // สร้าง roomCode
+  //   List<String> ids = [myUserId, lawyerCode]..sort();
+  //   var roomCode;
 
-    print('------code------ ${UserProfileStore.instance.code}');
-    print('------lawyer code------ ${lawyerCode}');
-    print('------roomCode------ ${ids}');
+  //   print('------code------ ${UserProfileStore.instance.code}');
+  //   print('------lawyer code------ ${lawyerCode}');
+  //   print('------roomCode------ ${ids}');
 
-    var model = {
-      "members": ids,
-      "userA": UserProfileStore.instance.code,
-      "userB": lawyerCode
-    };
+  //   var model = {
+  //     "members": ids,
+  //     "userA": UserProfileStore.instance.code,
+  //     "userB": lawyerCode,
+  //     "caseCode": caseModel['code'],
+  //   };
 
-    final result = await postObjectData("/m/chat/room/create", model);
-    if (result['status'] == 'S') {
-      setState(() {
-        roomCode = result['objectData']['roomCode'];
-        print(roomCode);
-        // เปิดหน้าแชท
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatPage(
-              roomCode: roomCode,
-              userId: myUserId,
-            ),
-          ),
-        );
-      });
-    }
-  }
+  //   final result = await postObjectData("/m/chat/room/create", model);
+  //   if (result['status'] == 'S') {
+  //     setState(() {
+  //       roomCode = result['objectData']['roomCode'];
+  //       print(roomCode);
+  //       // เปิดหน้าแชท
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (_) => ChatPage(
+  //             roomCode: roomCode,
+  //             userId: myUserId,
+  //           ),
+  //         ),
+  //       );
+  //     });
+  //   }
+  // }
 }
 
 // ─── Pulse Ring wrapper ───────────────────────────────────────────

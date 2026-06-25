@@ -291,10 +291,7 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(
         builder: (_) => ConsultStatusPage(
-          currentStep: _statusToStep(model['status']?.toString() ?? '1'),
-          lawyer: _buildLawyerForConsult(model['lawyerModel'] as Map?),
-          appointmentDate: model['appointmentDate'],
-          appointmentTime: model['appointmentTime'],
+          caseCode: model['code']
         ),
       ),
     );

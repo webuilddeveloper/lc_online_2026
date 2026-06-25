@@ -2,7 +2,7 @@ import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
-import 'package:LawyerOnline/message-form.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -144,10 +144,12 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
         "code": widget.appointment['code'],
         "caseStatus": caseStatus,
         "reasonCancel": reasonCancel,
+        "userType": "user",
+        "userCode": widget.appointment['lawyer'],
         "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
       };
-      print(model);
+      print('======================= ${widget.appointment['lawyer']}');
       final param = await postDio("${server}/m/case/update", model);
       if (param['status'] == 'S') {
         Navigator.pop(context);
@@ -231,7 +233,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   // ── Shorthand getters ────────────────────────────────────
   Map<String, dynamic> get appointmentModel => widget.appointment;
-  int get status => (appointmentModel['status'] as int).clamp(0, 4);
+  int get status {
+    final raw = appointmentModel['status'] ?? appointmentModel['caseStatus'];
+    if (raw is int) return raw.clamp(0, 4);
+    if (raw is num) return raw.toInt().clamp(0, 4);
+    if (raw is String) return (int.tryParse(raw) ?? 1).clamp(0, 4);
+    return 1;
+  }
+
   bool get isDone => status == 4;
   bool get isActive => status == 3;
   Color get statusColor => _statusColors[status];
@@ -246,7 +255,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _isDesktop ? const Color(0xFFE9F2F9) : _surface,
+      // backgroundColor: _isDesktop ? const Color(0xFFE9F2F9) : _surface,
       body: AppLayout(
         child: isLoadingLawyers
             ? _loadingState()
@@ -1076,6 +1085,168 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     );
   }
 
+  void showReasonCancelDialog(BuildContext context) {
+    final TextEditingController reasonCancelController =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.fromLTRB(
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: _buildFormCancelContent(
+                  context,
+                  reasonCancelController,
+                  setState, // ✅ ส่ง setState ลงไป
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFormCancelContent(
+    BuildContext context,
+    TextEditingController reasonCancelController,
+    StateSetter setState, // ✅ รับ setState มาใช้
+  ) {
+    final hasText = reasonCancelController.text.trim().isNotEmpty;
+
+    return Container(
+      key: const ValueKey('form'),
+      color: Colors.white,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('เหตุผลการยกเลิก',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2340))),
+              const SizedBox(height: 4),
+              Text('กรุณาใส่เหตุผลในการยกเลิกนัดหมาย',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: reasonCancelController,
+                maxLines: 3,
+                maxLength: 300,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                // ✅ trigger rebuild ทุกครั้งที่พิมพ์
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'กรอกเหตุผล...',
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  filled: true,
+                  fillColor: const Color(0xFFEEF2F5),
+                  contentPadding: const EdgeInsets.all(14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFEEF2F5), width: 1.5)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                          color: Color(0xFF0262EC), width: 1.5)),
+                  counterStyle:
+                      TextStyle(color: Colors.grey[400], fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFEEF2F5), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Text('ยกเลิก',
+                            style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: hasText
+                        ? () => updateStatusRejectCase(
+                            reasonCancelController.text, 0)
+                        : null, // ✅ ปิดปุ่มเมื่อไม่มีข้อความ
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: hasText
+                            ? const LinearGradient(
+                                colors: [Color(0xFF0262EC), Color(0xFF0485FF)])
+                            : null,
+                        color: hasText ? null : const Color(0xFFCDD5E0),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: hasText
+                            ? [
+                                BoxShadow(
+                                    color: const Color(0xFF0262EC)
+                                        .withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4))
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded,
+                              color: hasText ? Colors.white : Colors.grey[400],
+                              size: 16),
+                          const SizedBox(width: 6),
+                          Text('ส่งเหตุผล',
+                              style: TextStyle(
+                                  color:
+                                      hasText ? Colors.white : Colors.grey[400],
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _avatarText(Color color) => Center(
         child: Text(
           appointmentModel['lawyerAvatar'] as String,
@@ -1456,11 +1627,20 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       //     builder: (context) => TopicPage(),
                       //   )
                       // )
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (_) => AppAppointment(
+                      //       lawyer: widget.appointment,
+                      //     ),
+                      //   ),
+                      // );
+                      
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => AppAppointment(
-                            lawyer: widget.appointment,
+                            lawyer: lawyerModel,
                           ),
                         ),
                       );
@@ -1505,16 +1685,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: () => {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatPageUser(
-                                model: widget.appointment,
-                                roomCode: "",
-                                userId: ""), // action เดิม
-                          ),
-                        ),
+                      onTap: () {
+                        _onTapConversation();
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -1560,7 +1732,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                             // widget.onReject?.call();
                             // if (context.mounted) Navigator.pop(context);
                             // updateStatusRejectCase(widget.job['code'], 0);
-                            showReviewDialog(context);
+                            showReasonCancelDialog(context);
                           },
                         );
                       },
@@ -1582,6 +1754,61 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   ],
                 ),
     );
+  }
+
+  void _onTapConversation() async {
+    var roomCode;
+    // สร้าง roomCode
+    List<String> ids = [
+      widget.appointment['userCode'],
+      widget.appointment['lawyer']
+    ]..sort();
+
+    var model = {
+      "members": ids,
+      "userA": widget.appointment['userCode'],
+      "userB": widget.appointment['lawyer'],
+      "caseCode": widget.appointment['code'],
+    };
+
+    final result = await postObjectData("/m/chat/room/create", model);
+    if (result['status'] == 'S') {
+      setState(
+        () {
+          roomCode = result['objectData']['roomCode'];
+          print(roomCode);
+          // เปิดหน้าแชท
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) => ChatPage(
+          //       roomCode: roomCode,
+          //       userId: myUserId,
+          //     ),
+          //   ),
+          // );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatPageUser(
+                model: {
+                  'name':
+                      '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
+                  'imageUrl': lawyerModel['imageUrl'],
+                  'caseCode': result['objectData']['caseCode'],
+                  'active': true,
+                  'caseSuccess': false,
+                  ...widget.appointment
+                },
+                roomCode: roomCode,
+                userId: widget.appointment['userCode'],
+              ),
+            ),
+          );
+          // .then((_) => _load());
+        },
+      );
+    }
   }
 
   Widget _ctaBtn({

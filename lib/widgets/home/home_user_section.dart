@@ -1,10 +1,11 @@
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
 import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/case-status-all.dart';
-import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/law_type_all_page.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
@@ -45,6 +46,33 @@ const _kCard = Colors.white;
 const _kText = Color(0xFF0D1B2A);
 const _kSub = Color(0xFF6B7A99);
 
+Widget _lawyerCardImage(String url) {
+  if (url.isEmpty || url.startsWith('assets/')) {
+    return Image.asset(
+      url.isEmpty ? 'assets/images/lawyer-avatar-1.png' : url,
+      height: 100,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    );
+  }
+  return CachedNetworkImage(
+    imageUrl: url,
+    height: 100,
+    width: double.infinity,
+    fit: BoxFit.cover,
+    memCacheWidth: 320,
+    placeholder: (_, __) => Container(
+      height: 100,
+      color: Colors.grey.shade200,
+    ),
+    errorWidget: (_, __, ___) => Container(
+      height: 100,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.person, color: Colors.grey),
+    ),
+  );
+}
+
 // ─── User Dashboard ───────────────────────────────────────────────
 // รวม: case status list, law categories, lawyer online, new lawyers
 // StatelessWidget → rebuild เฉพาะเมื่อ props เปลี่ยนเท่านั้น
@@ -56,17 +84,18 @@ class HomeUserSection extends StatelessWidget {
   final bool isGuest;
   final bool isLoadingLawyers;
   final String? lawyerLoadError;
+  final VoidCallback? onAppointmentClosed;
 
-  const HomeUserSection({
-    super.key,
-    required this.cases,
-    required this.lawCategories,
-    required this.lawyers,
-    required this.newLawyers,
-    this.isGuest = false,
-    this.isLoadingLawyers = false,
-    this.lawyerLoadError,
-  });
+  const HomeUserSection(
+      {super.key,
+      required this.cases,
+      required this.lawCategories,
+      required this.lawyers,
+      required this.newLawyers,
+      this.isGuest = false,
+      this.isLoadingLawyers = false,
+      this.lawyerLoadError,
+      this.onAppointmentClosed});
 
   void _guardedNavigate(BuildContext context, Widget page) {
     if (isGuest) {
@@ -75,6 +104,32 @@ class HomeUserSection extends StatelessWidget {
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (_) => page));
     }
+  }
+
+  void _openPage(BuildContext context, Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  Widget _buildLawyersForYouSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(
+          context,
+          title: 'lawyersForYou'.tr(),
+          onMore: () => _openPage(context, LawyerOnlineList()),
+        ),
+        if (isLoadingLawyers)
+          _loadingState()
+        else if ((lawyerLoadError ?? '').isNotEmpty)
+          _emptyState(lawyerLoadError!)
+        else if (lawyers.isNotEmpty)
+          _buildLawyerList(context, lawyers, publicAccess: true)
+        else
+          _emptyState('noLawyers'.tr()),
+        // const SizedBox(height: 20),
+      ],
+    );
   }
 
   void _showRejectedCase(BuildContext context, Map model) {
@@ -114,20 +169,30 @@ class HomeUserSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Case Status ──────────────────────────────────────────
-        _sectionHeader(
-          context,
-          title: 'caseStatus'.tr(),
-          onMore: () =>
-              _guardedNavigate(context, CaseStatusAllPage(caseList: cases)),
-        ),
-        if (cases.isNotEmpty)
-          _buildCaseStatusList(context)
-        
-        else
-          _emptyState('noCases'.tr()),
-        const SizedBox(height: 20),
-
+        // ── Case Status (แสดงเฉพาะเมื่อ login แล้ว) ───────────────
+        if (!isGuest) ...[
+          _sectionHeader(context,
+              title: 'caseStatus'.tr(),
+              onMore: () => {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CaseStatusAllPage(caseList: cases),
+                      ),
+                    ).then((_) {
+                      // ✅ เมื่อ pop กลับมา เรียก callback
+                      if (onAppointmentClosed != null) {
+                        onAppointmentClosed!();
+                        debugPrint('✅ Callback triggered after pop');
+                      }
+                    }),
+                  }),
+          if (cases.isNotEmpty)
+            _buildCaseStatusList(context)
+          else
+            _emptyState('noCases'.tr()),
+          const SizedBox(height: 20),
+        ],
         // ── Law Categories ───────────────────────────────────────
         _sectionHeader(
           context,
@@ -136,23 +201,13 @@ class HomeUserSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _buildLawCategories(context),
-        const SizedBox(height: 20),
+        const SizedBox(height: 30),
 
-        // ── Lawyers For You ──────────────────────────────────────
-        _sectionHeader(
-          context,
-          title: 'lawyersForYou'.tr(),
-          onMore: () => _guardedNavigate(context, LawyerOnlineList()),
-        ),
-        if (isLoadingLawyers)
-          _loadingState()
-        else if ((lawyerLoadError ?? '').isNotEmpty)
-          _emptyState(lawyerLoadError!)
-        else if (lawyers.isNotEmpty)
-          _buildLawyerList(context, lawyers)
-        else
-          _emptyState('noLawyers'.tr()),
-        const SizedBox(height: 20),
+        // ── หมอความสำหรับคุณ (guest โชว์ก่อนหมวดกฎหมาย) ─────────────
+        if (isGuest) _buildLawyersForYouSection(context),
+
+        // ── Lawyers For You (login แล้ว) ─────────────────────────
+        if (!isGuest) _buildLawyersForYouSection(context),
 
         // ── New Lawyers ──────────────────────────────────────────
         _sectionHeader(
@@ -278,35 +333,33 @@ class HomeUserSection extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        if (status == 0) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      AppointmentDetails(appointment: model)));
-        } else {
-          final jobStatus = model['jobStatus']?.toString() ?? 'pending';
-          if (jobStatus == 'rejected') {
-            _showRejectedCase(context, model);
-            return;
-          }
-          final jobSource = model['jobSource']?.toString() ?? 'urgent';
-          _guardedNavigate(
-            context,
-            ConsultStatusPage(
-              currentStep: consultStepFromJobStatus(model['caseStatus'],
-                  jobSource: model['caseType']),
-              lawyer: _buildLawyerForConsult(lawyerModel, model),
-              appointmentDate: model['appointmentDate'],
-              appointmentTime: model['appointmentTime'],
-              canOpenChat: jobStatus == 'accepted' ||
-                  jobStatus == 'confirmed' ||
-                  jobStatus == 'in_session' ||
-                  jobStatus == 'done',
-              caseModel: model,
-            ),
-          );
+        final jobStatus = model['jobStatus']?.toString();
+        if (jobStatus == 'rejected') {
+          _showRejectedCase(context, model);
+          return;
         }
+        final caseMap = model is Map<String, dynamic>
+            ? model
+            : Map<String, dynamic>.from(model as Map);
+        // _guardedNavigate(
+        //   context,
+        //   AppointmentDetails(
+        //     appointment: UserCaseAdapter.forAppointmentDetails(caseMap),
+        //   ),
+
+        // );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AppointmentDetailsLawyer(model: model),
+          ),
+        ).then((_) {
+          // ✅ เมื่อ pop กลับมา เรียก callback
+          if (onAppointmentClosed != null) {
+            onAppointmentClosed!();
+            debugPrint('✅ Callback triggered after pop');
+          }
+        });
       },
       child: Container(
         width: cardW,
@@ -453,7 +506,11 @@ class HomeUserSection extends StatelessWidget {
   }
 
   // ── Lawyer Card List ──────────────────────────────────────────────
-  Widget _buildLawyerList(BuildContext context, List<dynamic> list) {
+  Widget _buildLawyerList(
+    BuildContext context,
+    List<dynamic> list, {
+    bool publicAccess = false,
+  }) {
     return SizedBox(
       height: 226, // เพิ่ม 16px ให้ shadow ด้านล่างไม่โดน clip
       child: ListView.separated(
@@ -465,8 +522,14 @@ class HomeUserSection extends StatelessWidget {
         itemBuilder: (_, i) => _lawyerCard(
           context,
           list[i],
-          onTap: () => _guardedNavigate(
-              context, LawyerOnlineDetails(code: list[i]['code'])),
+          onTap: () {
+            final page = LawyerOnlineDetails(code: list[i]['code']);
+            if (publicAccess) {
+              _openPage(context, page);
+            } else {
+              _guardedNavigate(context, page);
+            }
+          },
         ),
       ),
     );
@@ -492,8 +555,7 @@ class HomeUserSection extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(18)),
               child: Stack(children: [
-                Image.network(model['imageUrl'] ?? '',
-                    height: 100, width: double.infinity, fit: BoxFit.cover),
+                _lawyerCardImage(model['imageUrl'] ?? ''),
                 Positioned(
                   bottom: 0,
                   left: 0,

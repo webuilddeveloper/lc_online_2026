@@ -102,6 +102,8 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
         "code": widget.job['code'],
         "caseStatus": caseStatus,
         "reasonCancel": reasonCancel,
+        "userType": "lawyer",
+        "userCode": widget.job['userCode'],
         "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
       };
@@ -570,21 +572,24 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
         border: Border(top: BorderSide(color: Color(0xFFEEF2F5))),
       ),
       child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatPageLawyer(
-              // jobId: widget.job['id']?.toString(),
-              model: {
-                'name': widget.job['clientName'] ?? '',
-                'avatar': widget.job['clientAvatar'] ?? '',
-                'active': true,
-                'caseSuccess': false,
-                'clientColor': widget.job['clientColor'],
-              },
-            ),
-          ),
-        ),
+        onTap: () => {
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) => ChatPageLawyer(
+          //       // jobId: widget.job['id']?.toString(),
+          //       model: {
+          //         'name': widget.job['clientName'] ?? '',
+          //         'avatar': widget.job['clientAvatar'] ?? '',
+          //         'active': true,
+          //         'caseSuccess': false,
+          //         'clientColor': widget.job['clientColor'],
+          //       },
+          //     ),
+          //   ),
+          // ),
+          print('==============123 ${widget.job}')
+        },
         child: Container(
           height: 52,
           decoration: BoxDecoration(
@@ -612,6 +617,68 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _onTapConversation(dynamic conv) async {
+    setState(() {
+      // appointmentList = param['objectData'];
+      // _lawyerAppointments = param['objectData'];
+      // _isLoadingAppointments = false;
+    });
+    String myUserId = UserProfileStore.instance.code;
+    dynamic lawyerModel = {};
+
+    await postDio("${server}/m/register/read", {"code": conv['lawyer']}).then(
+      (paramLawyer) => {
+        setState(
+          () {
+            lawyerModel = paramLawyer['objectData'][0];
+          },
+        ),
+      },
+    );
+
+    List<String> ids = [userModel['code'], lawyerModel['code']]..sort();
+    var model = {
+      "members": ids,
+      "userA": userModel['code'],
+      "userB": lawyerModel['code'],
+      "caseCode":  widget.job['code'],
+    };
+    var roomCode;
+    await postObjectData("/m/chat/room/create", model).then(
+      (result) async => {
+        if (result['status'] == 'S')
+          {
+            setState(() {
+              roomCode = result['objectData']['roomCode'];
+            }),
+            await postObjectData("/m/case/update",
+                {"code": widget.job['code'], "messageRoomCode": roomCode}).then(
+              (res) => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => ChatPageLawyer(
+                            model: {
+                              'code': widget.job['code'],
+                              'name':
+                                  '${userModel['firstName']} ${userModel['lastName']}',
+                              'avatar': userModel['imageUrl'],
+                              // 'clientColor': conv.clientColor,
+                              'active': true,
+                              'caseSuccess': false,
+                            },
+                            // jobId: conv.id,
+                            roomCode: roomCode,
+                            userId: myUserId,
+                          )),
+                ),
+              },
+            ),
+          }
+      },
     );
   }
 
@@ -843,5 +910,4 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
       ),
     );
   }
-
 }

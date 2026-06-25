@@ -91,7 +91,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
     var model = {
       "members": ids,
       "userA": userModel['code'],
-      "userB": lawyerModel['code']
+      "userB": lawyerModel['code'],
+      "caseCode":  widget.model['code'],
     };
     var roomCode;
     await postObjectData("/m/chat/room/create", model).then(
@@ -103,7 +104,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
             }),
             await postObjectData("/m/case/update", {
               "code": widget.model['code'],
-              "messageRoomCode": roomCode
+              "messageRoomCode": roomCode,
+              "caseStatus": 3,
             }).then(
               (res) => {
                 Navigator.push(
@@ -134,6 +136,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   // สถานะการนัดหมาย (mock: '1' = รอยืนยัน, '2' = ยืนยันแล้ว)
   int get appointmentStatus => widget.model?['caseStatus'] ?? 1;
   String get paymentStatus => widget.model?['isPay'] ?? false;
+
+  // รายละเอียดนัดหมาย กดจากหน้าแรก
 
   @override
   Widget build(BuildContext context) {
@@ -885,7 +889,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pop(ctx);
-                        showReasonCancelDialog(context);
+                        isApprove ?  updateStatusApproveCase(2) : showReasonCancelDialog(context);
                       },
                       child: Container(
                         height: 46,
@@ -1091,6 +1095,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
         "code": widget.model['code'],
         "caseStatus": caseStatus,
         "reasonCancel": reasonCancel,
+        "userType": "lawyer",
+        "userCode": widget.model['userCode'],
         "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
       };
@@ -1112,18 +1118,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
         // );
         _showResultDialog(isApprove: false);
       }
-      // // final lawyers = await _lawyerRepository.searchLawyers();
-      // // final mapped = lawyers.map(_homeLawyerMap).toList(growable: false);
-      // final resulte = param['objectData'] ?? [];
-      // if (!mounted) return;
-      // setState(() {
-      //   _lawyersForYou = resulte.take(10).toList(growable: false);
-      //   _trendingLawyers = [...resulte]..sort((a, b) =>
-      //       ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
-      //   _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
-      //   _isLoadingLawyers = false;
-      // });
-      // print('------------------- ${mapped}');
+     
     } catch (_) {
       // if (!mounted) return;
       // setState(() {
@@ -1132,6 +1127,36 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
       //   _lawyerLoadError = 'genericError'.tr();
       //   _isLoadingLawyers = false;
       // });
+    }
+  }
+
+   Future<void> updateStatusApproveCase(caseStatus) async {
+    DialogService.showLoading(context);
+    try {
+      dynamic model = {
+        "code": widget.model['code'],
+        "caseStatus": caseStatus,
+        "userCode": widget.model['userCode'],
+        "lawyerName": widget.model['lawyerName'],
+        "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
+      };
+      print(model);
+      final param = await postDio("${server}/m/case/update", model);
+      if (param['status'] == 'S') {
+        Navigator.pop(context);
+        _showResultDialog(isApprove: true);
+      }
+    } catch (_) {
+      // if (!mounted) return;
+      setState(() {
+       Navigator.pop(context);
+       DialogService.showError(
+        context,
+        title: 'ยืนยันนัดหมายไม่สำเร็จ',
+        message: _.toString()
+      );
+      });
     }
   }
 
@@ -1223,7 +1248,6 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
               GestureDetector(
                 onTap: () {
                   Navigator.pop(ctx);
-                  goBack();
                   goBack();
                 },
                 child: Container(

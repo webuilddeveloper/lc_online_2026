@@ -269,6 +269,20 @@ class LawyerJobsStore extends ChangeNotifier {
     return jobs.where((job) => job['lawyerCode'] == safeLawyerCode).toList();
   }
 
+  void upsertCaseRequestJob(Map<String, dynamic> job) {
+    final id = job['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    jobs.removeWhere((j) => j['id'] == id && j['isCaseRequest'] == true);
+    jobs.insert(0, job);
+    notifyListeners();
+  }
+
+  void replaceCaseRequestJobs(List<Map<String, dynamic>> items) {
+    jobs.removeWhere((j) => j['isCaseRequest'] == true);
+    jobs.insertAll(0, items);
+    notifyListeners();
+  }
+
   List<Map<String, dynamic>> jobsForClient(String clientCode) {
     final safeClientCode = clientCode.trim();
     if (safeClientCode.isEmpty) return [];

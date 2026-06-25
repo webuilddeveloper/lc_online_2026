@@ -1,4 +1,6 @@
 // import 'package:LawyerOnline/shared/notification-service.dart';
+import 'dart:convert';
+
 import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/services/in_app_notification_service.dart';
 import 'package:LawyerOnline/services/notification_service.dart';
@@ -19,37 +21,65 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // message ที่มี notification payload → ระบบแสดงให้อัตโนมัติตอน background
+  if (message.notification != null) return;
+
+  await NotificationService.initForBackground();
+  final title = message.data['title']?.toString() ?? 'แจ้งเตือน';
+  final body = message.data['body']?.toString() ?? '';
+  if (title.isEmpty && body.isEmpty) return;
+
+  await NotificationService.showSystemNotification(
+    title: title,
+    body: body,
+    payload: jsonEncode(message.data),
+  );
 }
 
-final _secureStorage = FlutterSecureStorage();
+String _readTitle(RemoteMessage message) =>
+    message.notification?.title ??
+    message.data['title']?.toString() ??
+    'แจ้งเตือน';
 
-Future<Locale> _loadSavedLocale() async {
-  final localeCode = await _secureStorage.read(key: 'appLanguage');
-  if (localeCode != null && localeCode.isNotEmpty) {
-    return Locale(localeCode);
-  }
-  return const Locale('th');
-}
+String _readBody(RemoteMessage message) =>
+    message.notification?.body ?? message.data['body']?.toString() ?? '';
 
-void _handleNotificationNavigation(RemoteMessage message) {
-  final page = message.data['page'];
-  final code = message.data['code'];
+void _handleNotificationPayload(Map<String, dynamic> data) {
+  final page = data['page']?.toString();
+  final code = data['code']?.toString();
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     final state = navigatorKey.currentState;
     if (state == null) return;
 
-    if (page == 'chat') {
+    if (page == 'chat' && code != null && code.isNotEmpty) {
       // state.push(
       //   MaterialPageRoute(builder: (_) => ChatPageUser(roomCode: code)),
       // );
-    } else if (page == 'appointment_detail') {
+    } else if (page == 'appointment_detail' && code != null && code.isNotEmpty) {
       // state.push(
-      //   MaterialPageRoute(builder: (_) => AppointmentDetailPage(appointmentId: code)),
+      //   MaterialPageRoute(
+      //     builder: (_) => AppointmentDetailPage(appointmentId: code),
+      //   ),
       // );
     }
   });
+}
+
+void _handleNotificationNavigation(RemoteMessage message) {
+  _handleNotificationPayload(message.data);
+}
+
+void _handleLocalNotificationTap(String? payload) {
+  if (payload == null || payload.isEmpty) return;
+  try {
+    final data = jsonDecode(payload);
+    if (data is Map) {
+      _handleNotificationPayload(Map<String, dynamic>.from(data));
+    }
+  } catch (_) {}
 }
 
 void main() async {
@@ -60,55 +90,40 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-// ✅ ให้ FCM โชว์ popup ตอนแอปเปิดอยู่บน iOS
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
   if (!kIsWeb) {
-    await NotificationService.init();
-
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // ปิด popup/เสียงของระบบตอน foreground — ใช้ in-app popup แทน
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: false,
+      badge: true,
+      sound: false,
+    );
+
+    await NotificationService.init(onTap: _handleLocalNotificationTap);
+
+    // แอปเปิดอยู่ → in-app popup + เสียง/สั่น
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      InAppNotificationService.show(
+        title: _readTitle(message),
+        body: _readBody(message),
+        onTap: () => _handleNotificationNavigation(message),
+      );
+    });
+
+    // กด notification ตอน background → foreground
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationNavigation);
 
     await [Permission.camera, Permission.microphone].request();
 
-    // (1) แอปเปิดอยู่ (foreground) — โชว์ local notification
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      NotificationService.showLocalNotification(
-        title: message.notification?.title ?? '',
-        body: message.notification?.body ?? '',
-      );
-
-      InAppNotificationService.show(
-        title: message.notification?.title ?? '',
-        body: message.notification?.body ?? '',
-        onTap: () => _handleNotificationNavigation(message),
-      );
-      // NotificationStore.instance.incrementUnread();
-    });
-
-    // 👉 เพิ่ม (2): กด notification ตอนแอป background → foreground
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationNavigation);
-
-    try {
-      await NotificationService.init();
-    } catch (e) {
-      debugPrint('Notification init error: $e');
-      // แอปยังทำงานต่อได้ปกติ
-    }
-
-    // await LineSDK.instance.setup('2009412792');
     LineSDK.instance.setup('2009412792').then((_) {
-      // ignore: avoid_print
-      print('LineSDK Prepared');
+      debugPrint('LineSDK Prepared');
     });
   }
 
@@ -126,16 +141,52 @@ void main() async {
       startLocale: startLocale,
       saveLocale: true,
       useOnlyLangCode: true,
-      child: const MyApp(),
+      child: const _AppView(),
     ),
   );
 
-  // 👉 เพิ่ม (3): กด notification ตอนแอปถูกปิดสนิท (terminated)
+  // กด notification ตอนแอปถูกปิดสนิท (terminated)
   if (!kIsWeb) {
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationNavigation(initialMessage);
     }
+  }
+}
+
+final _secureStorage = FlutterSecureStorage();
+
+Future<Locale> _loadSavedLocale() async {
+  final localeCode = await _secureStorage.read(key: 'appLanguage');
+  if (localeCode != null && localeCode.isNotEmpty) {
+    return Locale(localeCode);
+  }
+  return const Locale('th');
+}
+
+class _AppView extends StatelessWidget {
+  const _AppView();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: context.localizationDelegates,
+      title: 'LC Online',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          primary: const Color(0xFF0262EC),
+        ),
+        useMaterial3: true,
+        textTheme: GoogleFonts.promptTextTheme(),
+        fontFamily: GoogleFonts.prompt().fontFamily,
+      ),
+      home: const SplashPage(),
+    );
   }
 }
 

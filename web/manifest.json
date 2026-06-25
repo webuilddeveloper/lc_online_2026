@@ -1,6 +1,6 @@
 {
-    "name": "video_call",
-    "short_name": "video_call",
+    "name": "LC Online",
+    "short_name": "LC Online",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

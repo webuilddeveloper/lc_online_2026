@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:LawyerOnline/core/config/api_config.dart';
 import 'package:LawyerOnline/models/auth_session.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:LawyerOnline/models/user_model.dart';
@@ -30,13 +30,12 @@ class PasswordIncorrectException implements Exception {
 }
 
 class AuthService {
-  static const String _baseUrl = ApiConfig.authBaseUrl;
-  static const String _loginUrl = '$_baseUrl/m/register/login';
-  static const String _registerUrl = '$_baseUrl/m/register/create';
-  static const String _cancelUrl = '$_baseUrl/m/register/cancel';
-  static const String _changePasswordUrl = '$_baseUrl/m/register/change';
-  static const String _updateProfileUrl = '$_baseUrl/m/register/update';
-  static const String _createCaseUrl = '$_baseUrl/m/case/create';
+  static const String _loginUrl = '$server/m/register/login';
+  static const String _registerUrl = '$server/m/register/create';
+  static const String _cancelUrl = '$server/m/register/cancel';
+  static const String _changePasswordUrl = '$server/m/register/change';
+  static const String _updateProfileUrl = '$server/m/register/update';
+  static const String _createCaseUrl = '$server/m/case/create';
 
   static const Map<String, String> _headers = {
     'Accept': 'application/json',

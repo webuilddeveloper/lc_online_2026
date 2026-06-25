@@ -1,5 +1,4 @@
 import 'package:LawyerOnline/booking/schedule-page.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';

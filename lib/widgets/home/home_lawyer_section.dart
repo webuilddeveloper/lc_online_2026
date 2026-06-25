@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
+import 'package:LawyerOnline/calendar.dart';
 import 'package:LawyerOnline/lawyer-job-details.dart';
 import 'package:LawyerOnline/lawyer-job-list.dart';
 import 'package:LawyerOnline/menu.dart';
@@ -217,7 +218,8 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
 
     if (lawyerCode.isEmpty) return;
     try {
-      final param = await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
+      final param =
+          await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
 
       if (param['status'] == 'S') {
         // final allCases = List<dynamic>.from(param['objectData'] ?? []);
@@ -228,8 +230,7 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
         appointmentsList = param['objectData'];
       }
 
-      
-      // print('-=-=-=-=-=--appointmentList=-=-=-=--= ${filtered}');
+      // print('-=-=-=-=-=--appointmentList=-=-=-=--= ${appointmentsList}');
       setState(() {
         // _lawyerappointmentsList = param['objectData'];
         // _isLoadingAppointments = false;
@@ -250,49 +251,49 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
 
   void _navigateFromAppointment(BuildContext context, dynamic appt) {
     final caseStatus = (appt['caseStatus'] ?? '').toString();
-    if (caseStatus == '1') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (detailCtx) => LawyerJobDetailPage(
-            job: appt,
-            onAccept: () {
-              // LawyerJobsStore.instance.acceptJob(appt['code'] as String);
-              // if (detailCtx.mounted) {
-              //   Navigator.pop(detailCtx);
-              //   widget.onJobStatusChanged?.call(appt, 'accepted');
-              // }
-              print('1');
-            },
-            onReject: () {
-              // DialogService.showConfirmRejectJob(
-              //   detailCtx,
-              //   title: "rejectJob".tr(),
-              //   message: "rejectJobConfirm".tr(),
-              //   onConfirm: () {
-              //     LawyerJobsStore.instance.rejectJob(appt['code'] as String);
-              //     if (detailCtx.mounted) {
-              //       Navigator.pop(detailCtx);
-              //       widget.onJobStatusChanged?.call(appt, 'rejected');
-              //     }
-              //   },
-              // );
-              print('2');
-            },
-          ),
-        ),
-      ).then((value) => {
-            _loadLawyerappointmentsList()
-            // print(value)
-            // if (value) rippleController.reverse()
-          });
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => AppointmentDetailsLawyer(model: appt)),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AppointmentDetailsLawyer(model: appt)),
+    ).then((x) => _loadLawyerappointmentsList());
+    // if (caseStatus == '1') {
+    //   Navigator.push(
+    //     context,
+    //     MaterialPageRoute(
+    //       builder: (detailCtx) => LawyerJobDetailPage(
+    //         job: appt,
+    //         onAccept: () {
+    //           // LawyerJobsStore.instance.acceptJob(appt['code'] as String);
+    //           // if (detailCtx.mounted) {
+    //           //   Navigator.pop(detailCtx);
+    //           //   widget.onJobStatusChanged?.call(appt, 'accepted');
+    //           // }
+    //           print('1');
+    //         },
+    //         onReject: () {
+    //           // DialogService.showConfirmRejectJob(
+    //           //   detailCtx,
+    //           //   title: "rejectJob".tr(),
+    //           //   message: "rejectJobConfirm".tr(),
+    //           //   onConfirm: () {
+    //           //     LawyerJobsStore.instance.rejectJob(appt['code'] as String);
+    //           //     if (detailCtx.mounted) {
+    //           //       Navigator.pop(detailCtx);
+    //           //       widget.onJobStatusChanged?.call(appt, 'rejected');
+    //           //     }
+    //           //   },
+    //           // );
+    //           print('2');
+    //         },
+    //       ),
+    //     ),
+    //   ).then((value) => {
+    //         _loadLawyerappointmentsList()
+    //         // print(value)
+    //         // if (value) rippleController.reverse()
+    //       });
+    // } else {
+
+    // }
   }
 
   Widget _appointmentCardDesktop(BuildContext context, Map model,
@@ -467,8 +468,15 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
         _sectionHeader(
           context,
           title: '${'appointmentList'.tr()} (${appointmentsList.length})',
-          onMore: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 3))),
+          onMore: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CalendarPage(),
+            ),
+          ).then((_) {
+            // ✅ เมื่อ pop กลับมา เรียก callback
+            _loadLawyerappointmentsList();
+          }),
         ),
         if (widget.isLoadingAppointments)
           _loadingState()

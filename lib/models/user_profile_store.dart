@@ -80,6 +80,8 @@ class UserProfileStore extends ChangeNotifier {
   String get prefixName => user?.prefixName ?? '';
   String get token => authToken;
   bool get isLoggedIn => typeLogin != 'null';
+  double get lastLat => user?.lastLat ?? 0.0;
+  double get lastLong => user?.lastLong ?? 0.0;
 
   // ── load จาก secure storage ──────────────────────────────────────────
   Future<void> load() async {
@@ -91,6 +93,11 @@ class UserProfileStore extends ChangeNotifier {
   Future<void> forceReload() async {
     _loaded = false;
     await load();
+  }
+
+  static double _parseStoredDouble(String? value) {
+    if (value == null || value.isEmpty) return 0.0;
+    return double.tryParse(value) ?? 0.0;
   }
 
   Future<void> _reload() async {
@@ -133,6 +140,8 @@ class UserProfileStore extends ChangeNotifier {
         sex: await _storage.read(key: 'sex') ?? '',
         address: await _storage.read(key: 'address') ?? '',
         idcard: await _storage.read(key: 'idcard') ?? '',
+        lastLat: _parseStoredDouble(await _storage.read(key: 'lastLat')),
+        lastLong: _parseStoredDouble(await _storage.read(key: 'lastLong')),
       );
     } catch (e) {
       debugPrint('UserProfileStore._reload() error: $e');
@@ -195,6 +204,20 @@ class UserProfileStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── update location (จาก LocationService) ─────────────────────────────
+  Future<void> updateLocation({
+    required double lat,
+    required double lng,
+  }) async {
+    if (user == null) return;
+    user = user!.copyWith(lastLat: lat, lastLong: lng);
+    await Future.wait([
+      _storage.write(key: 'lastLat', value: lat.toString()),
+      _storage.write(key: 'lastLong', value: lng.toString()),
+    ]);
+    notifyListeners();
+  }
+
   // ── reset เมื่อ logout ────────────────────────────────────────────────
   void reset() {
     user = null;
@@ -225,6 +248,9 @@ class UserProfileStore extends ChangeNotifier {
       _storage.delete(key: 'sex'),
       _storage.delete(key: 'address'),
       _storage.delete(key: 'idcard'),
+      _storage.delete(key: 'isOnline'),
+      _storage.delete(key: 'lastLat'),
+      _storage.delete(key: 'lastLong'),
     ]);
   }
 
@@ -250,6 +276,8 @@ class UserProfileStore extends ChangeNotifier {
       _storage.write(key: 'sex', value: m.sex),
       _storage.write(key: 'address', value: m.address),
       _storage.write(key: 'idcard', value: m.idcard),
+      _storage.write(key: 'lastLat', value: m.lastLat.toString()),
+      _storage.write(key: 'lastLong', value: m.lastLong.toString()),
     ]);
   }
 }

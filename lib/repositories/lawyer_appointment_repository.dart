@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:intl/intl.dart';
 
 abstract class LawyerAppointmentRepository {
@@ -52,7 +53,9 @@ class ApiLawyerAppointmentRepository implements LawyerAppointmentRepository {
       ],
       bookingJobs: [
         for (final item in cases)
-          CaseAppointmentMapper.bookingJobFromCase(item),
+          item['caseType'] == 2
+              ? CaseAppointmentMapper.bookingJobFromCase(item)
+              : null,
       ],
     );
   }
@@ -115,7 +118,7 @@ class CaseAppointmentMapper {
     };
   }
 
-  static Map<String, dynamic> bookingJobFromCase(Map<String, dynamic> source) {
+  static dynamic bookingJobFromCase(dynamic source) async {
     final appointment = fromCase(source);
     final code = _caseIdentity(source);
     final rawCode = _string(_first(source, const [
@@ -126,34 +129,40 @@ class CaseAppointmentMapper {
     ]));
     final lawyerCode = _string(_first(source, const ['lawyerCode']));
     final lawyerName = _string(_first(source, const ['lawyerName']));
-    final clientName = _string(_first(source, const ['clientName', 'name']));
+    String userName = "";
+    String userImage = "";
 
-    return {
-      'id': code,
-      'caseCode': rawCode,
-      'clientCode': _string(_first(source, const ['clientCode'])),
-      'lawyerCode': lawyerCode,
-      'lawyerModel': {
-        'code': lawyerCode,
-        'name': lawyerName,
-        'imageUrl': 'assets/images/lawyer-avatar-1.png',
-      },
-      'clientName': clientName,
-      'clientAvatar': clientName.isNotEmpty ? clientName.substring(0, 1) : '',
-      'clientColor': 0xFF0262EC,
-      'topic': appointment['caseType'] ?? '',
-      'subTopic': appointment['subCaseType'] ?? '',
-      'detail': appointment['details'] ?? '',
-      'date': appointment['appointmentDate'] ?? '',
-      'time': appointment['appointmentTime'] ?? '',
-      'status': _jobStatus(source['caseStatus']),
-      'requestedAt': '',
-      'jobSource': 'booking',
-      'budget': _string(_first(source, const ['price', 'budget'])),
-      'rawCase': source,
-      'isApiCase': true,
-      'apiCaseCode': rawCode,
-    };
+    await postDio("${server}/m/register/read", {'userCode': source['userCode']})
+        .then((res) {
+      userName = res['objectData'][0]['firstName'] ?? '';
+      userImage = res['objectData'][0]['imageUrl'] ?? '';
+      return {
+        'id': code,
+        'caseCode': rawCode,
+        'clientCode': _string(_first(source, const ['clientCode'])),
+        'lawyerCode': lawyerCode,
+        'lawyerModel': {
+          'code': lawyerCode,
+          'name': lawyerName,
+          'imageUrl': 'assets/images/lawyer-avatar-1.png',
+        },
+        'clientName': userName,
+        'clientAvatar': userImage,
+        'clientColor': 0xFF0262EC,
+        'topic': appointment['caseType'] ?? '',
+        'subTopic': appointment['subCaseType'] ?? '',
+        'detail': appointment['details'] ?? '',
+        'date': appointment['appointmentDate'] ?? '',
+        'time': appointment['appointmentTime'] ?? '',
+        'status': _jobStatus(source['caseStatus']),
+        'requestedAt': '',
+        'jobSource': 'booking',
+        'budget': _string(_first(source, const ['price', 'budget'])),
+        'rawCase': source,
+        'isApiCase': true,
+        'apiCaseCode': rawCode,
+      };
+    });
   }
 
   static Map<DateTime, List<dynamic>> eventMapFromAppointments(

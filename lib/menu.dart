@@ -1,7 +1,7 @@
 import 'dart:ui';
+
 import 'package:LawyerOnline/calendar.dart';
 import 'package:LawyerOnline/home.dart';
-import 'package:LawyerOnline/lawyer-online-list.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message.dart';
 import 'package:LawyerOnline/my-appointment.dart';
@@ -12,8 +12,10 @@ import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -35,9 +37,17 @@ class MenuPage extends StatefulWidget {
   State<MenuPage> createState() => _MenuPageState();
 }
 
-class _MenuPageState extends State<MenuPage> {
-  List<Widget> pages = [];
+class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin {
+  static const _tabSpring = SpringDescription(
+    mass: 1,
+    stiffness: 80,
+    damping: 22,
+  );
+
+  late final AnimationController _tabAnimCtrl;
+
   int _currentPage = 0;
+  double _slideDirection = 1.0;
   DateTime? currentBackPressTime;
 
   String userType = '';
@@ -73,16 +83,30 @@ class _MenuPageState extends State<MenuPage> {
   @override
   void initState() {
     super.initState();
+    _tabAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _tabAnimCtrl.value = 1.0;
+
     callRead();
     Future.delayed(Duration.zero, requestPermissions);
-    // listen store — rebuild ทันทีเมื่อ profile เปลี่ยน (เช่น หลัง updateProfile)
     UserProfileStore.instance.addListener(_onStoreChanged);
+    LawyerProfileStore.instance.addListener(_syncLawyerBroadcast);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncLawyerBroadcast());
   }
 
   @override
   void dispose() {
+    _tabAnimCtrl.dispose();
     UserProfileStore.instance.removeListener(_onStoreChanged);
+    LawyerProfileStore.instance.removeListener(_syncLawyerBroadcast);
+    LawyerCaseBroadcastService.instance.stop();
     super.dispose();
+  }
+
+  void _syncLawyerBroadcast() {
+    LawyerCaseBroadcastService.instance.sync();
   }
 
   void _onStoreChanged() {
@@ -115,30 +139,95 @@ class _MenuPageState extends State<MenuPage> {
       typeLogin = store.typeLogin;
       _currentPage = widget.pageIndex ?? 0;
     });
+    _syncLawyerBroadcast();
   }
 
-  Widget _getPage(int index) {
+  Widget _tabChild(int index) {
     switch (index) {
       case 0:
-        return HomePage(onProfileTap: () => _onNavTap(4));
+        return HomePage(
+          key: const ValueKey('home_tab'),
+          onProfileTap: () => _onNavTap(4),
+          isTabActive: _currentPage == 0,
+        );
       case 1:
-        return typeLogin != 'null' ? MessagePage() : LoginPage(isBack: false);
-      case 2:
-        return CommunityPage();
-      case 3:
         return typeLogin != 'null'
-            ? userType == 'lawyer'
-                ? CalendarPage()
-                : AppointmentListPage()
-            : LoginPage(isBack: false);
+            ? MessagePage(key: ValueKey('message_tab_$typeLogin'))
+            : LoginPage(
+                key: ValueKey('message_login_$typeLogin'),
+                isBack: false,
+              );
+      case 2:
+        return CommunityPage(key: const ValueKey('community_tab'));
+      case 3:
+        if (typeLogin != 'null') {
+          return userType == 'lawyer'
+              ? CalendarPage(key: ValueKey('calendar_tab_$userType'))
+              : AppointmentListPage(
+                  key: ValueKey('appointment_tab_$userType'),
+                );
+        }
+        return LoginPage(
+          key: ValueKey('appointment_login_$typeLogin'),
+          isBack: false,
+        );
       case 4:
-        return typeLogin != 'null' ? ProfilePage() : LoginPage(isBack: false);
+        return typeLogin != 'null'
+            ? ProfilePage(key: ValueKey('profile_tab_$typeLogin'))
+            : LoginPage(
+                key: ValueKey('profile_login_$typeLogin'),
+                isBack: false,
+              );
       default:
-        return HomePage(onProfileTap: () => _onNavTap(4));
+        return HomePage(
+          key: const ValueKey('home_tab_fallback'),
+          onProfileTap: () => _onNavTap(4),
+          isTabActive: _currentPage == 0,
+        );
     }
   }
 
-  void _onNavTap(int index) => setState(() => _currentPage = index);
+  void _playTabTransition() {
+    _tabAnimCtrl.stop();
+    _tabAnimCtrl.value = 0;
+    _tabAnimCtrl.animateWith(
+      SpringSimulation(_tabSpring, 0, 1, 0),
+    );
+  }
+
+  Widget _buildAnimatedTabBody() {
+    return AnimatedBuilder(
+      animation: _tabAnimCtrl,
+      builder: (context, child) {
+        final t = _tabAnimCtrl.value.clamp(0.0, 1.0);
+        final dx = _slideDirection * 5 * (1 - t);
+        final dy = 1.5 * (1 - t);
+        return Transform.translate(
+          offset: Offset(dx, dy),
+          child: child,
+        );
+      },
+      child: RepaintBoundary(
+        child: IndexedStack(
+          index: _currentPage,
+          sizing: StackFit.expand,
+          children: List.generate(_navItems.length, (index) {
+            return TickerMode(
+              enabled: index == _currentPage,
+              child: _tabChild(index),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  void _onNavTap(int index) {
+    if (index == _currentPage) return;
+    _slideDirection = index > _currentPage ? 1.0 : -1.0;
+    setState(() => _currentPage = index);
+    _playTabTransition();
+  }
 
   Future<bool> confirmExit() {
     final now = DateTime.now();
@@ -179,28 +268,9 @@ class _MenuPageState extends State<MenuPage> {
       // ── Body ───────────────────────────────────────────
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: WillPopScope(
+          child: WillPopScope(
           onWillPop: confirmExit,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.02),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
-                child: child,
-              ),
-            ),
-            child: KeyedSubtree(
-              key: ValueKey<int>(_currentPage),
-              child: _getPage(_currentPage),
-            ),
-          ),
+          child: _buildAnimatedTabBody(),
         ),
       ),
 

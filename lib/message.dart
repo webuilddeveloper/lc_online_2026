@@ -57,7 +57,6 @@ class _MessagePageState extends State<MessagePage> {
     if (result['status'] == 'S') {
       setState(() {
         _conversations = result['objectData'];
-        print('----------123---------= ${result}');
         // เปิดหน้าแชท
       });
     }
@@ -92,7 +91,8 @@ class _MessagePageState extends State<MessagePage> {
       var model = {
         "members": ids,
         "userA": UserProfileStore.instance.code,
-        "userB": lawyerCode
+        "userB": lawyerCode,
+// "caseCode": caseModel['code'],
       };
 
       final result = await postObjectData("/m/chat/room/create", model);

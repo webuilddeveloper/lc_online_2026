@@ -1,5 +1,5 @@
 import 'package:LawyerOnline/component/appbar.dart';
-import 'package:LawyerOnline/consult/consult_status.dart';
+import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
@@ -329,27 +329,17 @@ class _CaseStatusAllPageState extends State<CaseStatusAllPage>
   }
 
   void _openCaseDetail(Map model) {
-    final jobStatus = model['jobStatus']?.toString() ?? 'pending';
+    final jobStatus = model['jobStatus']?.toString();
     if (jobStatus == 'rejected') {
       _showRejectedCase(model);
       return;
     }
-    final jobSource = model['jobSource']?.toString() ?? 'urgent';
-
+    final caseMap = Map<String, dynamic>.from(model);
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ConsultStatusPage(
-          currentStep:
-              consultStepFromJobStatus(model['caseStatus'], jobSource: model['caseType']),
-          lawyer: _lawyerForConsult(model['lawyerModel'] as Map?, model),
-          appointmentDate: model['appointmentDate'],
-          appointmentTime: model['appointmentTime'],
-          canOpenChat: jobStatus == 'accepted' ||
-              jobStatus == 'confirmed' ||
-              jobStatus == 'in_session' ||
-              jobStatus == 'done',
-          caseModel: Map<String, dynamic>.from(model),
+        builder: (context) => AppointmentDetails(
+          appointment: UserCaseAdapter.forAppointmentDetails(caseMap),
         ),
       ),
     );

@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'dart:io';
 
-import 'package:LawyerOnline/core/config/api_config.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 
 // ignore: depend_on_referenced_packages
@@ -19,18 +18,23 @@ import 'package:path_provider/path_provider.dart';
 // flutter build apk --build-name=4.0.0 --build-number=24
 // flutter build appbundle --build-name=4.0.0 --build-number=24
 
-const versionName = ApiConfig.versionName;
-const versionNumber = ApiConfig.versionNumber;
+
+const versionName = '4.1.8';
+const versionNumber = 418;
 
 // const server = 'http://122.155.223.63/td-lc-api/';
 // const server = 'http://localhost:5600/';
-const server = ApiConfig.apiBaseUrl;
-const serverUpload = ApiConfig.documentUploadUrl;
-const serverLineNoti = ApiConfig.lineNotifyUrl;
-const serverOTP = ApiConfig.otpBaseUrl;
-const serverElectionLc = ApiConfig.electionLcBaseUrl;
-const serverLC = ApiConfig.apiLC;
+const server = 'http://line-ddpm.we-builds.com/lc-lawyer-api';
+const serverUpload = 'https://lc.we-builds.com/lc-document/upload';
+const serverLineNoti = 'https://notify-api.line.me/api/notify';
+const serverOTP = 'https://portal-otp.smsmkt.com/api/';
+const serverElectionLc = 'http://122.155.223.63/td-election-lc-api/';
+const serverLC = 'https://lc.we-builds.com/lc-api/';
 // const serverElectionLc = 'http://lawyerselection2565.com/election-api/';
+
+String get caseRequestHubUrl => '$server/caseRequestHub';
+
+List<String> get caseRequestHubCandidates => [caseRequestHubUrl];
 
 const newsElectionLcApi = '${serverElectionLc}m/news/read';
 const newsGalleryElectionLcApi = '${serverElectionLc}m/news/gallery/read';
@@ -308,7 +312,6 @@ Future<dynamic> postObjectData(String url, dynamic criteria) async {
   var response = await http.post(Uri.parse(server + url),
       body: body, headers: _jsonHeaders());
   // ignore: avoid_print
-  print('_+_+_+_+__+ ${criteria}');
 
   if (response.statusCode == 200) {
     var data = json.decode(response.body);

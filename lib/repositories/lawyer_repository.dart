@@ -40,7 +40,7 @@ class ApiLawyerRepository implements LawyerRepository {
         .where((account) => account.code.trim().isNotEmpty)
         .map(_lawyerFromAccount)
         .where((lawyer) {
-      if (availableOnly && !lawyer.available) {
+      if (availableOnly && !lawyer.isOnline) {
         return false;
       }
       if (normalizedProvince.isNotEmpty &&
@@ -82,7 +82,7 @@ class ApiLawyerRepository implements LawyerRepository {
       rating: 0,
       reviews: 0,
       price: 0,
-      available: account.isActive || account.status.trim().isEmpty,
+      isOnline: account.isActive || account.status.trim().isEmpty,
       province: account.address.trim(),
       distance: '-',
       distanceKm: 0,

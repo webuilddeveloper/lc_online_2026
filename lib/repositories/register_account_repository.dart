@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:LawyerOnline/core/config/api_config.dart';
 import 'package:LawyerOnline/models/user_model.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:http/http.dart' as http;
 
 abstract class RegisterAccountRepository {
@@ -27,7 +27,7 @@ class RegisterAccountRepositoryException implements Exception {
 class ApiRegisterAccountRepository implements RegisterAccountRepository {
   const ApiRegisterAccountRepository({
     http.Client? client,
-    String baseUrl = ApiConfig.authBaseUrl,
+    String baseUrl = server,
   })  : _client = client,
         _baseUrl = baseUrl;
 

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:LawyerOnline/core/config/api_config.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:http/http.dart' as http;
 
 class BookingCaseRepositoryException implements Exception {
@@ -119,11 +119,9 @@ class ApiBookingCaseRepository implements BookingCaseRepository {
 
   final http.Client? _client;
 
-  static const _baseUrl = ApiConfig.authBaseUrl;
-
   @override
   Future<Map<String, dynamic>> createCase(BookingCaseDraft draft) {
-    return _post('$_baseUrl/m/case/create', draft.toJson());
+    return _post('$server/m/case/create', draft.toJson());
   }
 
   @override
@@ -133,11 +131,11 @@ class ApiBookingCaseRepository implements BookingCaseRepository {
     String clientCode = '',
     String lawyerCode = '',
   }) async {
-    final response = await _post('$_baseUrl/m/case/read', {
+    final response = await _post('$server/m/case/read', {
       'code': code,
       'keySearch': keySearch,
-      'clientCode': clientCode,
-      'lawyerCode': lawyerCode,
+      'userCode': clientCode,
+      'lawyer': lawyerCode,
     });
     final objectData = response['objectData'];
     if (objectData is! List) return const [];
@@ -149,7 +147,7 @@ class ApiBookingCaseRepository implements BookingCaseRepository {
 
   @override
   Future<Map<String, dynamic>> updateCase(Map<String, dynamic> payload) {
-    return _post('$_baseUrl/m/case/update', payload);
+    return _post('$server/m/case/update', payload);
   }
 
   Future<Map<String, dynamic>> _post(

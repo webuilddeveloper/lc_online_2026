@@ -1,4 +1,4 @@
-import 'package:LawyerOnline/core/config/api_config.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class ChatService {
@@ -22,7 +22,7 @@ class ChatService {
           _connection!.state == HubConnectionState.Connected) return;
 
       _connection = HubConnectionBuilder()
-          .withUrl("${ApiConfig.apiBaseUrl}/chatHub")
+          .withUrl("${server}/chatHub")
           .withAutomaticReconnect()
           .build();
 

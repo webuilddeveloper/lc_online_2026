@@ -17,6 +17,8 @@ class UserModel {
   final String sex;
   final String address;
   final String idcard;
+  final double lastLat;
+  final double lastLong;
 
   const UserModel({
     required this.code,
@@ -37,6 +39,8 @@ class UserModel {
     required this.sex,
     required this.address,
     required this.idcard,
+    required this.lastLat,
+    required this.lastLong,
   });
 
   factory UserModel.fromJson(dynamic json) {
@@ -60,6 +64,8 @@ class UserModel {
       sex: json['sex']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
       idcard: json['idcard']?.toString() ?? '',
+      lastLat: json['lastLat']?? 0.0,
+      lastLong: json['lastLong'] ?? 0.0,
     );
   }
 
@@ -83,6 +89,8 @@ class UserModel {
       'sex': sex,
       'address': address,
       'idcard': idcard,
+      'lastLat': lastLat,
+      'lastLong': lastLong,
     };
   }
 
@@ -114,6 +122,9 @@ class UserModel {
     String? sex,
     String? address,
     String? idcard,
+    double? lastLat,
+    double? lastLong,
+    bool? isOnline
   }) {
     return UserModel(
       code: code ?? this.code,
@@ -134,6 +145,8 @@ class UserModel {
       sex: sex ?? this.sex,
       address: address ?? this.address,
       idcard: idcard ?? this.idcard,
+      lastLat: lastLat ?? this.lastLat,
+      lastLong: lastLong ?? this.lastLong,
     );
   }
 }

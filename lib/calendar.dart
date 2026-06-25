@@ -551,9 +551,23 @@ class _CalendarPageState extends State<CalendarPage>
         child: Row(
           children: [
             const SizedBox(width: 12),
-            Text(monthLabel,
-                style: GoogleFonts.prompt(
-                    color: kText, fontSize: 17, fontWeight: FontWeight.w600)),
+            // Text(monthLabel,
+            //     style: GoogleFonts.prompt(
+            //         color: kText, fontSize: 17, fontWeight: FontWeight.w600)),
+            GestureDetector(
+            onTap: goBack,
+            child: Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                shape: BoxShape.circle,
+                border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
+              ),
+              child: const Icon(Icons.arrow_back_ios_new, size: 15),
+            ),
+          ),
             const Spacer(),
             _iconBtn(
               _showAllView
@@ -604,6 +618,6 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   void goBack() async {
-    Navigator.pop(context, false);
+    Navigator.pop(context, true);
   }
 }

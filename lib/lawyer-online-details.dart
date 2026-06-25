@@ -2,7 +2,6 @@ import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/lawyer-review.dart';
 import 'package:LawyerOnline/login.dart';
-import 'package:LawyerOnline/message-form.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
@@ -14,11 +13,12 @@ import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 class LawyerOnlineDetails extends StatefulWidget {
-  LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic})
+  LawyerOnlineDetails({Key? key, this.code, this.topic, this.subTopic, this.isAppointmentBtn = true})
       : super(key: key);
   final String? code;
   String? topic;
   String? subTopic;
+  bool isAppointmentBtn;
 
   @override
   State<LawyerOnlineDetails> createState() => _LawyerOnlineDetailsState();
@@ -267,7 +267,8 @@ class _LawyerOnlineDetailsState extends State<LawyerOnlineDetails>
                             ],
                           ),
                         ),
-                        _buildBookingButton(color),
+                        widget.isAppointmentBtn ? 
+                        _buildBookingButton(color) : Container()
                       ],
                     ),
         ),

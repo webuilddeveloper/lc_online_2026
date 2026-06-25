@@ -6,6 +6,7 @@ import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/register_page.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/services/fcm_service.dart';
+import 'package:LawyerOnline/services/location_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/apple_firebase.dart';
 import 'package:LawyerOnline/shared/line.dart';
@@ -582,27 +583,28 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       // ── setUser → persist + broadcast ──
       await UserProfileStore.instance.setUser(
         UserModel(
-          code: obj.userProfile!.userId,
-          userType: 'user',
-          firstName: obj.userProfile!.displayName,
-          lastName: '',
-          email: userEmail.toString(),
-          phone: '',
-          imageUrl: obj.userProfile!.pictureUrl?.isNotEmpty == true
-              ? obj.userProfile!.pictureUrl!
-              : '',
-          category: 'Line',
-          isActive: true,
-          status: '',
-          prefixName: '',
-          facebookID: '',
-          googleID: '',
-          lineID: obj.userProfile!.userId,
-          line: '',
-          sex: '',
-          address: '',
-          idcard: '',
-        ),
+            code: obj.userProfile!.userId,
+            userType: 'user',
+            firstName: obj.userProfile!.displayName,
+            lastName: '',
+            email: userEmail.toString(),
+            phone: '',
+            imageUrl: obj.userProfile!.pictureUrl?.isNotEmpty == true
+                ? obj.userProfile!.pictureUrl!
+                : '',
+            category: 'Line',
+            isActive: true,
+            status: '',
+            prefixName: '',
+            facebookID: '',
+            googleID: '',
+            lineID: obj.userProfile!.userId,
+            line: '',
+            sex: '',
+            address: '',
+            idcard: '',
+            lastLat: 0.0,
+            lastLong: 0.0),
         typeLogin: 'social',
       );
 
@@ -693,7 +695,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
       );
     } catch (error) {
-       print('--------------123-------------- ${error}');
+      print('--------------123-------------- ${error}');
       setState(() {
         isLoading = false;
       });

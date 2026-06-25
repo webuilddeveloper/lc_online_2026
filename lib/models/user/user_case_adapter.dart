@@ -1,6 +1,47 @@
 class UserCaseAdapter {
   const UserCaseAdapter._();
 
+  /// แปลงข้อมูลเคสจาก API / home ให้ใช้กับ [AppointmentDetails] ได้
+  static Map<String, dynamic> forAppointmentDetails(
+    Map<String, dynamic> raw,
+  ) {
+    final data = Map<String, dynamic>.from(raw);
+    final caseStatus = _asInt(data['caseStatus'] ?? data['status'], fallback: 1);
+    data['caseStatus'] = caseStatus;
+    data['status'] = caseStatus;
+
+    if ((data['lawyer'] ?? '').toString().isEmpty) {
+      data['lawyer'] = data['lawyerCode'] ??
+          (data['lawyerModel'] is Map
+              ? (data['lawyerModel'] as Map)['code']
+              : null) ??
+          '';
+    }
+
+    final lawyerName = data['lawyerName']?.toString() ?? '';
+    data['lawyerAvatar'] ??=
+        lawyerName.isNotEmpty ? lawyerName.substring(0, 1) : 'ท';
+
+    data['caseDate'] ??= data['appointmentDate'] ?? data['caseDate'] ?? '';
+    final timeRange = data['appointmentTime']?.toString() ?? '';
+    if ((data['startTime'] ?? '').toString().isEmpty && timeRange.contains('-')) {
+      final parts = timeRange.split('-');
+      data['startTime'] = parts.first.trim();
+      data['endTime'] = parts.length > 1 ? parts.last.trim() : '';
+    }
+    data['startTime'] ??= '';
+    data['endTime'] ??= '';
+
+    return data;
+  }
+
+  static int _asInt(dynamic value, {required int fallback}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
   static List<dynamic> fromJobs(List<dynamic> jobs) {
     return jobs.map(fromJob).toList();
   }

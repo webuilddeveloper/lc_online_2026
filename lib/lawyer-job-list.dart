@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/lawyer-job-details.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
@@ -8,6 +11,7 @@ import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
+import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 // ══════════════════════════════════════════════════════════
@@ -32,12 +36,13 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   final BookingCaseRepository _caseRepository =
       const ApiBookingCaseRepository();
   List<Map<String, dynamic>> _apiJobs = const [];
+  List<Map<String, dynamic>> _caseRequestJobs = const [];
   bool _isLoadingApiJobs = false;
 
   static const _kPrimary = Color(0xFF0262EC);
 
   List<Map<String, dynamic>> get _jobs => _mergeJobs(
-        _apiJobs,
+        _mergeJobs(_apiJobs, _caseRequestJobs),
         LawyerJobsStore.instance.jobsForLawyer(UserProfileStore.instance.code),
       );
 
@@ -125,8 +130,16 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     try {
       final snapshot =
           await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      final caseReqService = CaseRequestService();
+      final caseRequests = await caseReqService.getLawyerPendingRequests();
       if (!mounted) return;
-      setState(() => _apiJobs = snapshot.bookingJobs);
+      setState(() {
+        _apiJobs = snapshot.bookingJobs;
+        _caseRequestJobs = caseRequests
+            .map(CaseRequestService.jobFromCaseRequest)
+            .toList(growable: false);
+      });
+      LawyerJobsStore.instance.replaceCaseRequestJobs(_caseRequestJobs);
     } finally {
       _isLoadingApiJobs = false;
     }
@@ -494,7 +507,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   //  Job Card
   // ════════════════════════════════════════════════════════
 
-  Widget _buildJobCard(Map<String, dynamic> job) {
+  Widget _buildJobCard(dynamic job) {
     final status = job['status'] as String;
     final clientColor = Color(job['clientColor'] as int);
     final isPending = status == 'pending';
@@ -801,27 +814,31 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                 child: GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ChatPageLawyer(
-                            // jobId: job['id'] as String?,
-                           model: {
-                        'id': job['id'],
-                        'jobId': job['id'],
-                        'jobSource': job['jobSource'] ?? 'urgent',
-                        'jobStatus': job['status'],
-                        'name': job['clientName'] ?? '',
-                        'avatar': job['clientAvatar'] ?? '',
-                        'imageUrl': '', // เพิ่ม default imageUrl
-                        'active': true, // เพิ่ม default active status
-                        'caseSuccess':
-                            job['status'] == 'done', // เพิ่ม caseSuccess flag
-                        'clientColor': job['clientColor'], // เพิ่มสีถ้าต้องการ
-                      }),
-                    ),
-                  ),
+                  onTap: () => {
+                    _onTapConversation(job),
+                    
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (_) =>
+                  //         ChatPageLawyer(
+                  //           // jobId: job['id'] as String?,
+                  //          model: {
+                  //       'id': job['id'],
+                  //       'jobId': job['id'],
+                  //       'jobSource': job['jobSource'] ?? 'urgent',
+                  //       'jobStatus': job['status'],
+                  //       'name': job['clientName'] ?? '',
+                  //       'avatar': job['clientAvatar'] ?? '',
+                  //       'imageUrl': '', // เพิ่ม default imageUrl
+                  //       'active': true, // เพิ่ม default active status
+                  //       'caseSuccess':
+                  //           job['status'] == 'done', // เพิ่ม caseSuccess flag
+                  //       'clientColor': job['clientColor'], // เพิ่มสีถ้าต้องการ
+                  //     }),
+                  //   ),
+                  // ),
+                  },
                   child: Container(
                     height: 42,
                     decoration: BoxDecoration(
@@ -887,6 +904,74 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       ),
     );
   }
+
+  void _onTapConversation(dynamic job) async {
+    setState(() {
+      // appointmentList = param['objectData'];
+      // _lawyerAppointments = param['objectData'];
+      // _isLoadingAppointments = false;
+    });
+    String myUserId = UserProfileStore.instance.code;
+    dynamic caseModel = {};
+
+    await postDio("${server}/m/case/read", {"code": job['code']}).then(
+      (paramJob) => {
+        setState(
+          () {
+            caseModel = paramJob['objectData'][0];
+          },
+        ),
+      },
+    );
+
+    List<String> ids = [caseModel['userCode'], caseModel['lawyer']]..sort();
+    var model = {
+      "members": ids,
+      "userA": caseModel['userCode'],
+      "userB": caseModel['lawyer'],
+      "caseCode": caseModel['code'],
+    };
+    var roomCode;
+
+    print('==============123. ${job}');
+    print('==============123. ${caseModel}');
+    await postObjectData("/m/chat/room/create", model).then(
+      (result) async => {
+        if (result['status'] == 'S')
+          {
+            setState(() {
+              roomCode = result['objectData']['roomCode'];
+            }),
+            await postObjectData("/m/case/update", {
+              "code": caseModel['code'],
+              "messageRoomCode": roomCode
+            }).then(
+              (res) => {
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //       builder: (_) => ChatPageLawyer(
+                //             model: {
+                //               'code': widget.model['code'],
+                //               'name':
+                //                   caseModel['lawyerName'],
+                //               'avatar': userModel['imageUrl'],
+                //               // 'clientColor': conv.clientColor,
+                //               'active': true,
+                //               'caseSuccess': false,
+                //             },
+                //             // jobId: conv.id,
+                //             roomCode: roomCode,
+                //             userId: myUserId,
+                //           )),
+                // ),
+              },
+            ),
+          }
+      },
+    );
+  }
+
 
   Widget _statusBadge(String status) {
     final configs = {

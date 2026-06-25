@@ -1,5 +1,5 @@
 import 'package:LawyerOnline/appointment-details.dart';
-import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
+import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
@@ -7,56 +7,37 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
-// ── Step helper: แปลง jobStatus → currentStep สำหรับ ConsultStatusPage ────────────
-// เรียกใช้ที่ทุกหน้าที่นำทางไป ConsultStatusPage
-int consultStepFromJobStatus(int jobStatus, {int jobSource = 0}) {
-  if (jobSource == 1) {
-    switch (jobStatus) {
-      case 1:
-        return 1; // รอทนายยืนยัน
-      case 2:
-        return 2; // ยืนยันนัดแล้ว
-      case 3:
-        return 3; // กำลังปรึกษา
-      case 4:
-        return 4; // เสร็จสิ้น
-      default:
-        return 0;
-    }
-  }
-  // 0
-  switch (jobStatus) {
-    case 1:
-      return 1;
+/// caseStatus (logic เก่า):
+///   0 = ยกเลิกเคส
+///   2 = ทนายรับเคสแล้ว รอเริ่มปรึกษา
+///   3 = กำลังปรึกษาทนายความ
+///   4 = เสร็จสิ้น
+///
+/// caseType:
+///   1 = นัดหมายล่วงหน้า
+///   2 = เปิดเคสด่วน
+
+int _caseStatusToStep(int caseStatus) {
+  switch (caseStatus) {
+    case 0:
+      return 0; // ยกเลิก → ส่งคำขอ
     case 2:
-      return 3;
+      return 1; // รอเริ่มปรึกษา → รอการยืนยัน
     case 3:
-      return 4;
+      return 3; // กำลังปรึกษา → กำลังปรึกษา
+    case 4:
+      return 4; // เสร็จสิ้น
     default:
-      return 1;
+      return 0;
   }
 }
 
 class ConsultStatusPage extends StatefulWidget {
-  final int currentStep;
-  final dynamic lawyer;
-  final String? appointmentDate;
-  final String? appointmentTime;
-  final bool canOpenChat;
-  final dynamic caseModel;
+  final String caseCode;
 
-  const ConsultStatusPage({
-    super.key,
-    this.currentStep = 3,
-    this.lawyer,
-    this.appointmentDate,
-    this.appointmentTime,
-    this.canOpenChat = true,
-    this.caseModel,
-  });
+  const ConsultStatusPage({Key? key, required this.caseCode}) : super(key: key);
 
   @override
   State<ConsultStatusPage> createState() => _ConsultStatusPageState();
@@ -64,6 +45,10 @@ class ConsultStatusPage extends StatefulWidget {
 
 class _ConsultStatusPageState extends State<ConsultStatusPage>
     with TickerProviderStateMixin {
+  dynamic _caseData;
+  bool _isLoading = true;
+  dynamic lawyerModel;
+
   late AnimationController _staggerController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
@@ -102,6 +87,8 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
   @override
   void initState() {
     super.initState();
+    _loadCase();
+
     _staggerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -124,27 +111,173 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     super.dispose();
   }
 
-  Future<void> createReview(comment, rating) async {
+  // ── Load Case Data (logic เก่า) ────────────────────────────────────────────
+  Future<void> _loadCase() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await postDio('${server}/m/case/read', {
+        'code': widget.caseCode,
+        'userCode': UserProfileStore.instance.code,
+      });
+
+      final resLawyer = await postDio('${server}/m/register/read', {
+        'code': res['objectData'][0]['lawyer'],
+      });
+
+      if (resLawyer['status'] == 'S') {
+        setState(() => lawyerModel = resLawyer['objectData'][0]);
+      }
+
+      // ✅ print ดูก่อน
+
+      print('objectData: ${res['objectData']}');
+
+      if (res['status'] == 'S' && res['objectData'] != null) {
+        final raw = res['objectData'];
+        if (raw is List && raw.isNotEmpty) {
+          setState(
+              () => _caseData = Map<String, dynamic>.from(raw.first as Map));
+        } else if (raw is Map) {
+          setState(() => _caseData = Map<String, dynamic>.from(raw));
+        }
+      }
+    } catch (e) {
+      print('_loadCase error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  int? _parseCaseStatus(dynamic statusRaw) {
+    if (statusRaw == null) return null;
+    if (statusRaw is int) return statusRaw;
+    if (statusRaw is double) return statusRaw.toInt();
+    if (statusRaw is String) return int.tryParse(statusRaw.trim());
+    return null;
+  }
+
+  // ── Helper: Get Current Step for UI ────────────────────────────────────────
+  int get _currentStep {
+    try {
+      if (_caseData == null) return 0;
+      if (_caseData is! Map) return 0;
+      final statusRaw = (_caseData as Map)['caseStatus'];
+      final status = _parseCaseStatus(statusRaw) ?? -1;
+      final step = _caseStatusToStep(status);
+      return step.clamp(0, _steps.length - 1);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  // ── ยกเลิกเคส (logic เก่า) ────────────────────────────────────────────────
+  Future<void> _cancelCase() async {
+    final confirm = await DialogService.showConfirm(
+      context,
+      title: 'ยืนยันการยกเลิก',
+      message: 'คุณต้องการยกเลิกเคสนี้ใช่ไหม?',
+    );
+    if (confirm != true) return;
+
+    final res = await postDio('${server}/m/case/update', {
+      'code': widget.caseCode,
+      'userCode': UserProfileStore.instance.code,
+      'caseStatus': 0, // Assuming 5 represents cancelled status
+
+    });
+    if (!mounted) return;
+    if (res['status'] == 'S') {
+      await _loadCase();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res['message'] ?? 'ยกเลิกไม่สำเร็จ')),
+      );
+    }
+  }
+
+  // ── เปิดแชท (logic เก่า) ──────────────────────────────────────────────────
+  void _openChat() async {
+    if (_caseData == null) return;
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (_) => ChatPageUser(
+    //       model: _caseData,
+    //       roomCode: _caseData!['messageRoomCode'] ?? '',
+    //       caseCode: widget.caseCode,
+    //     ),
+    //   ),
+    // );
+    var roomCode;
+    // สร้าง roomCode
+    List<String> ids = [
+      _caseData['userCode'],
+      _caseData['lawyer']
+    ]..sort();
+
+    var model = {
+      "members": ids,
+      "userA": _caseData['userCode'],
+      "userB": _caseData['lawyer'],
+      "caseCode": _caseData['code'],
+    };
+
+    final result = await postObjectData("/m/chat/room/create", model);
+    if (result['status'] == 'S') {
+      setState(
+        () {
+          roomCode = result['objectData']['roomCode'];
+          print(roomCode);
+          // เปิดหน้าแชท
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) => ChatPage(
+          //       roomCode: roomCode,
+          //       userId: myUserId,
+          //     ),
+          //   ),
+          // );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatPageUser(
+                model: {
+                  'name':
+                      '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
+                  'imageUrl': lawyerModel['imageUrl'],
+                  'caseCode': result['objectData']['caseCode'],
+                  'active': true,
+                  'caseSuccess': false,
+                  ..._caseData
+                },
+                roomCode: roomCode,
+                userId: _caseData['userCode'],
+              ),
+            ),
+          );
+          // .then((_) => _load());
+        },
+      );
+    }
+  }
+
+  // ── Rating Dialog ──────────────────────────────────────────────────────────
+  Future<void> createReview(String comment, double rating) async {
     Navigator.pop(context);
     DialogService.showLoading(context);
     try {
-      // { "lawyerRef", value.lawyerRef },
-      //                   { "caseRef", value.caseRef },
-      //                   { "userRef", value.userRef },
-      //                   { "rate", value.rate },
-      //                   { "comment", value.comment},
       dynamic model = {
-        "lawyerRef": widget.caseModel['lawyer'],
-        "caseRef": widget.caseModel['code'],
-        "userRef": widget.caseModel['userCode'],
+        "lawyerRef": _caseData['lawyer'],
+        "caseRef": _caseData['code'],
+        "userRef": _caseData['userCode'],
         "comment": comment,
         "rate": rating
       };
-      print(model);
       final param = await postDio("${server}/m/case/review/create", model);
       if (param['status'] == 'S') {
         await postDio("${server}/m/case/update", {
-          "code": widget.caseModel['code'],
+          "code": _caseData['code'],
           "isReview": true,
           "caseStatus": 4,
         }).then(
@@ -160,17 +293,15 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
       Navigator.pop(context);
       DialogService.showError(
         context,
-        title: "ให้คะแนนไม่สำเร็จสำเร็จ",
+        title: "ให้คะแนนไม่สำเร็จ",
         message: _.toString(),
       );
     }
   }
 
+  // ── Build Main UI ──────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final lawyer = widget.lawyer;
-    final currentStep = widget.currentStep.clamp(0, _steps.length - 1);
-
     return Scaffold(
       backgroundColor: _kBg,
       appBar: appBar(
@@ -180,49 +311,53 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         rightAction: () {},
         backAction: () => Navigator.pop(context),
       ),
-      body: AppLayout(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    _headerCard(currentStep),
-                    const SizedBox(height: 16),
-                    if (widget.lawyer != null) ...[
-                      _lawyerCard(widget.lawyer),
-                      const SizedBox(height: 16),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _caseData == null
+              ? const Center(child: Text('ไม่พบข้อมูลเคส'))
+              : AppLayout(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              _headerCard(),
+                              const SizedBox(height: 16),
+                              if (_caseData?['lawyerName'] != null &&
+                                  (_caseData?['lawyerName'] as String)
+                                      .isNotEmpty) ...[
+                                _lawyerCard(),
+                                const SizedBox(height: 16),
+                              ],
+                              _caseDetailCard(),
+                              const SizedBox(height: 16),
+                              if (_caseData?['appointmentDate'] != null ||
+                                  _caseData?['appointmentTime'] != null) ...[
+                                _infoRow(),
+                                const SizedBox(height: 16),
+                              ],
+                              _progressCard(),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
+                        ),
+                      ),
+                      _bottomBar(context),
                     ],
-                    if (widget.caseModel != null) ...[
-                      _caseDetailCard(widget.caseModel!),
-                      const SizedBox(height: 16),
-                    ],
-                    if (widget.appointmentDate != null ||
-                        widget.appointmentTime != null) ...[
-                      _infoRow(),
-                      const SizedBox(height: 16),
-                    ],
-                    _progressCard(currentStep),
-                    const SizedBox(height: 8),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            _bottomBar(currentStep, context),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _headerCard(int currentStep) {
+  // ── Header Card ────────────────────────────────────────────────────────────
+  Widget _headerCard() {
     return GestureDetector(
       onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) =>
-                  AppointmentDetails(appointment: widget.caseModel!))),
+              builder: (_) => AppointmentDetails(appointment: _caseData!))),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -259,40 +394,42 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'ขั้นตอน ${currentStep + 1}/${_steps.length} · ${_steps[currentStep].label}',
+                    'ขั้นตอน ${_currentStep + 1}/${_steps.length} · ${_steps[_currentStep].label}',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 5),
-                const Text('Live',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
-              ]),
-            ),
+            // Container(
+            //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            //   decoration: BoxDecoration(
+            //     color: Colors.white.withOpacity(0.2),
+            //     borderRadius: BorderRadius.circular(20),
+            //   ),
+            //   child: Row(children: [
+            //     Container(
+            //       width: 6,
+            //       height: 6,
+            //       decoration: const BoxDecoration(
+            //           color: Colors.white, shape: BoxShape.circle),
+            //     ),
+            //     // const SizedBox(width: 5),
+            //     // const Text('Live',
+            //     //     style: TextStyle(
+            //     //         color: Colors.white,
+            //     //         fontSize: 11,
+            //     //         fontWeight: FontWeight.w700)),
+            //   ]),
+            // ),
           ],
         ),
       ),
     );
   }
 
-  Widget _lawyerCard(dynamic lawyer) {
+  // ── Lawyer Card ────────────────────────────────────────────────────────────
+  Widget _lawyerCard() {
+    final lawyerName = _caseData?['lawyerName'] ?? '';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -306,82 +443,50 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         ],
       ),
       child: Row(children: [
-        // CircleAvatar(
-        //   radius: 26,
-        //   backgroundColor: _kPrimary.withOpacity(0.12),
-        //   child: Text(
-        //     lawyer['avatar'] as String? ?? 'ท',
-        //     style: const TextStyle(
-        //         color: _kPrimary, fontWeight: FontWeight.bold, fontSize: 20),
-        //   ),
-        // ),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(50),
-          child: Container(
-            width: 60,
-            height: 60,
-            color: const Color(0xFFF2F4F7),
-            child: lawyer['imageUrl'] != null
-                ? Image.network(
-                    lawyer['imageUrl'] as String,
-                    fit: BoxFit.cover,
-                  )
-                : Center(
-                    child: Text(
-                      lawyer['avatar'] as String,
-                      style: TextStyle(
-                          fontSize: 48,
-                          color: Color(lawyer['color'] as int),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-          ),
-        ),
+        (lawyerModel?['imageUrl'] ?? "") != ""
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Image.network(
+                  lawyerModel?['imageUrl'],
+                  width: 55,
+                  height: 55,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : const CircleAvatar(
+                radius: 30,
+                backgroundColor: Color(0xFFF2F4F7),
+                child: Icon(Icons.person, color: Color(0xFF0262EC)),
+              ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(lawyer['name'] as String? ?? '',
+              Text(
+                  '${lawyerModel?['firstName'] ?? ''} ${lawyerModel?['lastName'] ?? ''}',
                   style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                       color: Color(0xFF1A2340))),
               const SizedBox(height: 3),
-              Text(lawyer['title'] as String? ?? '',
+              Text('ทนายความของคุณ',
                   style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-              const SizedBox(height: 6),
-              Row(children: [
-                const Icon(Icons.star_rounded,
-                    color: Color(0xFFFFC107), size: 14),
-                const SizedBox(width: 3),
-                Text('${lawyer['rating'] ?? ''}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
-              ]),
             ],
           ),
         ),
-        // Container(
-        //   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        //   decoration: BoxDecoration(
-        //     color: _kPrimary.withOpacity(0.1),
-        //     borderRadius: BorderRadius.circular(12),
-        //   ),
-        //   child: const Icon(Icons.chat_bubble_outline_rounded,
-        //       color: _kPrimary, size: 20),
-        // ),
       ]),
     );
   }
 
-  Widget _caseDetailCard(Map<String, dynamic> model) {
+  // ── Case Detail Card ───────────────────────────────────────────────────────
+  Widget _caseDetailCard() {
     return GestureDetector(
       onTap: () {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => AppointmentDetails(appointment: model)));
+                builder: (_) => AppointmentDetails(appointment: _caseData!)));
       },
       child: Container(
         width: double.infinity,
@@ -396,104 +501,65 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                 offset: const Offset(0, 2))
           ],
         ),
-        child: model['caseType'] == 2
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('รายละเอียดเคส',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: Color(0xFF1A2340))),
-                  const SizedBox(height: 10),
-                  Text(model['topicTitle']?.toString() ?? '',
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: _kPrimary)),
-                  if ((model['subTopicTitle']?.toString() ?? '')
-                      .isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(model['subTopic'].toString(),
-                        style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A2340))),
-                  ],
-                  if ((model['story']?.toString() ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(model['story'].toString(),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            height: 1.5)),
-                  ],
-                  if ((model['budget']?.toString() ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text(model['budget'].toString(),
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: _kPrimary,
-                            fontWeight: FontWeight.w700)),
-                  ],
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('รหัสนัดหมาย',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              color: Color(0xFF1A2340))),
-                      // const SizedBox(height: 10),
-                      Text(model['code']?.toString() ?? '',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: _kPrimary)),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'ดูรายละเอียดการนัดหมาย',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: Color.fromARGB(255, 62, 63, 64),
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 13,
-                      )
-                    ],
-                  )
-                ],
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('รายละเอียดเคส',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Color(0xFF1A2340))),
+            const SizedBox(height: 10),
+            _infoRowCard('หัวข้อ', _caseData?['topicTitle'] ?? '-'),
+            _infoRowCard('หมวดย่อย', _caseData?['subTopicTitle'] ?? '-'),
+            _infoRowCard('จังหวัด', _caseData?['province'] ?? '-'),
+            if ((_caseData?['story'] ?? '').toString().isNotEmpty)
+              _infoRowCard('รายละเอียด', _caseData!['story']),
+            if ((_caseData?['requirement'] ?? '').toString().isNotEmpty)
+              _infoRowCard('ข้อเรียกร้อง', _caseData!['requirement']),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _infoRowCard(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label,
+                style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1A2340))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Info Row (Date & Time) ─────────────────────────────────────────────────
   Widget _infoRow() {
     return Row(children: [
-      if (widget.appointmentDate != null)
+      if (_caseData?['appointmentDate'] != null)
         Expanded(
-            child: _infoChip(
-                Icons.calendar_today_outlined, widget.appointmentDate!)),
-      if (widget.appointmentDate != null && widget.appointmentTime != null)
+            child: _infoChip(Icons.calendar_today_outlined,
+                _caseData!['appointmentDate'] ?? '')),
+      if (_caseData?['appointmentDate'] != null &&
+          _caseData?['appointmentTime'] != null)
         const SizedBox(width: 10),
-      if (widget.appointmentTime != null)
+      if (_caseData?['appointmentTime'] != null)
         Expanded(
-            child:
-                _infoChip(Icons.access_time_rounded, widget.appointmentTime!)),
+            child: _infoChip(Icons.access_time_rounded,
+                _caseData!['appointmentTime'] ?? '')),
     ]);
   }
 
@@ -523,7 +589,9 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     );
   }
 
-  Widget _progressCard(int currentStep) {
+  // ── Progress Card ──────────────────────────────────────────────────────────
+  Widget _progressCard() {
+    final currentStep = _currentStep;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -730,7 +798,10 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     );
   }
 
-  Widget _bottomBar(int currentStep, BuildContext context) {
+  // ── Bottom Bar ─────────────────────────────────────────────────────────────
+  Widget _bottomBar(BuildContext context) {
+    final status = _parseCaseStatus(_caseData?['caseStatus']) ?? -1;
+    final currentStep = _currentStep;
     final canUsePrimaryAction = currentStep >= 3;
     final String primaryLabel =
         currentStep < 4 ? 'เข้าสู่ห้องปรึกษา' : 'ให้คะแนนทนายความ';
@@ -750,22 +821,18 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.caseModel['isReview'] == false) ...[
+          // ปุ่มหลัก (Chat หรือ Rating)
+          if (status == 3 || status == 4) ...[
             if (canUsePrimaryAction) ...[
               GestureDetector(
                 onTap: () {
-                  currentStep < 4
-                      ?
-                      // print(widget.lawyer)
-                      _onTapConversation(widget.caseModel)
-
-                      //  Navigator.pushAndRemoveUntil(
-                      //     context,
-                      //     MaterialPageRoute(
-                      //         builder: (_) => ChatPageUser(
-                      //             model: widget.lawyer ?? <String, dynamic>{})),
-                      //     (Route<dynamic> route) => route.isFirst)
-                      : showRatingDialog(context);
+                  if (currentStep < 4) {
+                    _openChat();
+                  } else {
+                    if (_caseData?['isReview'] == false) {
+                      showRatingDialog(context);
+                    }
+                  }
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -798,8 +865,86 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
               const SizedBox(height: 10),
             ],
           ],
+
+          // ปุ่มดูนัดหมาย
+          if (status == 2) ...[
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AppointmentDetails(appointment: _caseData),
+                ),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFF0262EC), Color(0xFF0485FF)]),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                        color: _kPrimary.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.calendar_today,
+                        color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    const Text('ดูรายละเอียดนัดหมาย',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // ปุ่มยกเลิก
+          if (status == 2) ...[
+            GestureDetector(
+              onTap: _cancelCase,
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.red, width: 1.5),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                    SizedBox(width: 8),
+                    Text('ยกเลิกเคส',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // ปุ่มกลับหน้าหลัก
           GestureDetector(
-            onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
+            onTap: () => {
+              // Navigator.popUntil(context, (route) => route.isFirst)
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const MenuPage()),
+                (route) => false,
+              )
+            },
             child: Container(
               height: 48,
               decoration: BoxDecoration(
@@ -826,112 +971,21 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     );
   }
 
-  void _onTapConversation(dynamic conv) async {
-    setState(() {
-      // appointmentList = param['objectData'];
-      // _lawyerAppointments = param['objectData'];
-      // _isLoadingAppointments = false;
-    });
-    String userType = UserProfileStore.instance.userType;
-    String myUserId = UserProfileStore.instance.code;
-    dynamic userModel = {};
-    dynamic lawyerModel = {};
-    await postDio("${server}/m/register/read", {"code": conv['userCode']}).then(
-      (paramUser) => {
-        setState(
-          () {
-            userModel = paramUser['objectData'][0];
-          },
-        ),
-      },
-    );
-
-    await postDio("${server}/m/register/read", {"code": conv['lawyer']}).then(
-      (paramLawyer) => {
-        setState(
-          () {
-            lawyerModel = paramLawyer['objectData'][0];
-          },
-        ),
-      },
-    );
-
-    List<String> ids = [userModel['code'], lawyerModel['code']]..sort();
-    var model = {
-      "members": ids,
-      "userA": userModel['code'],
-      "userB": lawyerModel['code'],
-      "caseCode": widget.caseModel['code'],
-    };
-    var roomCode;
-    await postObjectData("/m/chat/room/create", model).then(
-      (result) async => {
-        if (result['status'] == 'S')
-          {
-            setState(() {
-              roomCode = result['objectData']['roomCode'];
-            }),
-            await postObjectData("/m/case/update", {
-              "code": widget.caseModel['code'],
-              "messageRoomCode": roomCode
-            }).then(
-              (res) => {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => userType == 'lawyer'
-                        ? ChatPageLawyer(
-                            model: {
-                              'name':
-                                  '${userModel['firstName']} ${userModel['lastName']}',
-                              'avatar': userModel['imageUrl'],
-                              // 'clientColor': conv.clientColor,
-                              'active': true,
-                              'caseSuccess': false,
-                            },
-                            // jobId: conv.id,
-                            roomCode: roomCode,
-                            userId: myUserId,
-                          )
-                        : ChatPageUser(
-                            model: {
-                              'name':
-                                  '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
-                              'imageUrl': lawyerModel['imageUrl'],
-                              'active': true,
-                              'caseSuccess': false,
-                            },
-                            roomCode: roomCode,
-                            userId: myUserId,
-                          ),
-                  ),
-                ),
-              },
-            ),
-          }
-      },
-    );
-  }
-
+  // ── Rating Dialog ──────────────────────────────────────────────────────────
   void showRatingDialog(BuildContext context) {
     double rating = 0;
-    bool submitted = false;
     final TextEditingController commentController = TextEditingController();
 
     showDialog(
       context: context,
-      // ✅ ทำให้ dialog ขยับขึ้นเมื่อ keyboard เปิด
       barrierColor: Colors.black.withOpacity(0.45),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
               backgroundColor: Colors.transparent,
-              // ✅ insetPadding ตอบสนอง keyboard (viewInsets.bottom)
               insetPadding: EdgeInsets.fromLTRB(
-                  24, MediaQuery.of(context).size.height * 0.01, 24, 0
-                  // MediaQuery.of(context).viewInsets.bottom + 16,
-                  ),
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: AnimatedSwitcher(
@@ -942,134 +996,16 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                     scale: animation,
                     child: FadeTransition(opacity: animation, child: child),
                   ),
-                  child:
-                      // submitted
-                      //     ? _buildSuccessContent(context)
-                      //     :
-                      _buildFormContent(
+                  child: _buildFormContent(
                     context,
                     rating,
                     commentController,
                     (value) => setState(() => rating = value),
-                    () => setState(
-                      () {
-                        // print(commentController.text);
-                        createReview(commentController.text, rating);
-                        print(rating);
-                        submitted = true;
-                      },
-                    ),
+                    () {
+                      createReview(commentController.text, rating);
+                    },
                   ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  _buildSuccessContent(BuildContext context) {
-    showDialog(
-      context: context,
-      // ✅ ทำให้ dialog ขยับขึ้นเมื่อ keyboard เปิด
-      barrierColor: Colors.black.withOpacity(0.45),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              // ✅ insetPadding ตอบสนอง keyboard (viewInsets.bottom)
-              insetPadding: EdgeInsets.fromLTRB(
-                  24, MediaQuery.of(context).size.height * 0.01, 24, 0
-                  // MediaQuery.of(context).viewInsets.bottom + 16,
-                  ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
-                    switchInCurve: Curves.easeOutBack,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) => ScaleTransition(
-                          scale: animation,
-                          child:
-                              FadeTransition(opacity: animation, child: child),
-                        ),
-                    child: Container(
-                      key: const ValueKey('success'),
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFFE8F5E9),
-                                shape: BoxShape.circle),
-                            child: const Icon(Icons.check_rounded,
-                                color: Color(0xFF2E7D32), size: 44),
-                          ),
-                          const SizedBox(height: 20),
-                          const Text('ส่งคะแนนสำเร็จ!',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A2340))),
-                          const SizedBox(height: 8),
-                          Text(
-                            'ขอบคุณที่ให้ความคิดเห็น\nคะแนนของคุณมีคุณค่ามากสำหรับเรา',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[500],
-                                height: 1.6),
-                          ),
-                          const SizedBox(height: 28),
-                          GestureDetector(
-                            onTap: () => Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      MenuPage()), // หน้า home จริงๆ
-                              (route) => false,
-                            ),
-                            child: Container(
-                              height: 50,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [
-                                  Color(0xFF0262EC),
-                                  Color(0xFF0485FF)
-                                ]),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: const Color(0xFF0262EC)
-                                          .withOpacity(0.3),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4))
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.home_rounded,
-                                      color: Colors.white, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('กลับหน้าหลัก',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 15)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
               ),
             );
           },
@@ -1086,9 +1022,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     VoidCallback onSubmit,
   ) {
     return Container(
-      key: const ValueKey('form'),
       color: Colors.white,
-      // ✅ ครอบด้วย SingleChildScrollView ป้องกัน overflow เมื่อ keyboard ขึ้น
       child: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         child: Padding(
@@ -1119,23 +1053,18 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                 onRatingUpdate: onRatingUpdate,
               ),
               const SizedBox(height: 8),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  _ratingLabel(rating),
-                  key: ValueKey(rating),
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF0262EC),
-                      fontWeight: FontWeight.w600),
-                ),
+              Text(
+                _ratingLabel(rating),
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF0262EC),
+                    fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: commentController,
                 maxLines: 3,
                 maxLength: 300,
-                // ✅ ป้องกัน keyboard ดัน content แล้ว overflow
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
@@ -1236,6 +1165,109 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     );
   }
 
+  _buildSuccessContent(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.fromLTRB(
+                  24, MediaQuery.of(context).size.height * 0.01, 24, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    switchInCurve: Curves.easeOutBack,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                          scale: animation,
+                          child:
+                              FadeTransition(opacity: animation, child: child),
+                        ),
+                    child: Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFFE8F5E9),
+                                shape: BoxShape.circle),
+                            child: const Icon(Icons.check_rounded,
+                                color: Color(0xFF2E7D32), size: 44),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text('ส่งคะแนนสำเร็จ!',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A2340))),
+                          const SizedBox(height: 8),
+                          Text(
+                            'ขอบคุณที่ให้ความคิดเห็น\nคะแนนของคุณมีคุณค่ามากสำหรับเรา',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[500],
+                                height: 1.6),
+                          ),
+                          const SizedBox(height: 28),
+                          GestureDetector(
+                            onTap: () => Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const MenuPage()),
+                              (route) => false,
+                            ),
+                            child: Container(
+                              height: 50,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [
+                                  Color(0xFF0262EC),
+                                  Color(0xFF0485FF)
+                                ]),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: const Color(0xFF0262EC)
+                                          .withOpacity(0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4))
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.home_rounded,
+                                      color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('กลับหน้าหลัก',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   String _ratingLabel(double rating) {
     switch (rating.toInt()) {
       case 1:
@@ -1261,7 +1293,3 @@ class _StepData {
   const _StepData(
       {required this.icon, required this.label, required this.sublabel});
 }
-
-// ══════════════════════════════════════════════════════════
-//  Rating Dialog — แก้ keyboard overflow
-// ══════════════════════════════════════════════════════════

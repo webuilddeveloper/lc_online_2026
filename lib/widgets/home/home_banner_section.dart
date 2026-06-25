@@ -15,7 +15,12 @@ const _kAccent = Color(0xFF2F80ED);
 // กด dot หรือ scroll banner ไม่ rebuild หน้า home เลย
 class HomeBannerSection extends StatefulWidget {
   final List<dynamic> banners;
-  const HomeBannerSection({super.key, required this.banners});
+  final bool autoPlayEnabled;
+  const HomeBannerSection({
+    super.key,
+    required this.banners,
+    this.autoPlayEnabled = true,
+  });
 
   @override
   State<HomeBannerSection> createState() => _HomeBannerSectionState();
@@ -50,6 +55,13 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
   @override
   void didUpdateWidget(covariant HomeBannerSection oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.autoPlayEnabled != widget.autoPlayEnabled) {
+      if (widget.autoPlayEnabled) {
+        _restartAutoPlayTimer();
+      } else {
+        _stopAutoPlayTimer();
+      }
+    }
     if (!identical(oldWidget.banners, widget.banners) ||
         oldWidget.banners.length != widget.banners.length) {
       if (_current >= widget.banners.length) {
@@ -67,7 +79,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
 
   void _restartAutoPlayTimer() {
     _stopAutoPlayTimer();
-    if (widget.banners.length <= 1) return;
+    if (!widget.autoPlayEnabled || widget.banners.length <= 1) return;
 
     _autoPlayTimer = Timer.periodic(_autoPlayInterval, (_) {
       unawaited(_advanceBanner());
@@ -80,7 +92,9 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
   }
 
   Future<void> _advanceBanner() async {
-    if (!mounted || _autoPlayAnimating || !_carouselController.ready) return;
+    if (!mounted || !widget.autoPlayEnabled || _autoPlayAnimating || !_carouselController.ready) {
+      return;
+    }
     if (_route?.isCurrent == false) return;
 
     _autoPlayAnimating = true;
