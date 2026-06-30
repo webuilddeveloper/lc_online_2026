@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/extension.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,7 +154,8 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final caseStatus = widget.job['caseStatus'];
+    final caseStatus = widget.job['rawRequest']['requestStatus'];
+    // ✅ Parse String to Int safely
     final caseStatusInt = caseStatus is int
         ? caseStatus
         : int.tryParse(caseStatus?.toString() ?? '') ?? 0;
@@ -189,7 +191,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                       child: Column(children: [
                         _buildStatusCard(caseStatusInt),
                         const SizedBox(height: 14),
-                        if (widget.job['caseStatusInt'] == 0) ...[
+                        if (widget.job['caseStatus'] == 0) ...[
                           _buildDetailReasonCancelCard(clientColor),
                           const SizedBox(height: 14),
                         ],
@@ -205,7 +207,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                       ]),
                     ),
                   ),
-                  if (widget.job['caseStatus'] == 1 && widget.onAccept != null)
+                  if (widget.job['caseStatusInt'] == 1 && widget.onAccept != null)
                     _buildPendingButtons(context)
                   else if (widget.job['caseStatusInt'] == 2)
                     _buildAcceptedButton(context),
@@ -272,7 +274,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
               Row(children: [
                 Icon(Icons.schedule_rounded, size: 12, color: Colors.grey[400]),
                 const SizedBox(width: 4),
-                Text('ส่งคำขอ ${widget.job['caseDate'] ?? ''}',
+                Text('ส่งคำขอ ${ dateStringToDateStringFormat(widget.job['rawRequest']['createDate'] ?? '')}',
                     style: TextStyle(fontSize: 11, color: Colors.grey[400])),
               ]),
               const SizedBox(height: 6),
@@ -285,7 +287,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    (widget.job['price'] ?? '').toString(),
+                    (widget.job['price'] ?? '500฿').toString(),
                     style: const TextStyle(
                         fontSize: 12,
                         color: _kPrimary,
@@ -307,9 +309,9 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         _sectionTitle(Icons.gavel_rounded, 'รายละเอียดคดี', color),
         const SizedBox(height: 14),
-        _infoRow('ประเภทหัวข้อ', (widget.job['topicTitle'] ?? '').toString()),
+        _infoRow('ประเภทหัวข้อ', (widget.job['topic'] ?? '').toString()),
         const Divider(height: 20, color: Color(0xFFF0F4F8)),
-        _infoRow('หัวข้อย่อย', (widget.job['subTopicTitle'] ?? '').toString()),
+        _infoRow('หัวข้อย่อย', (widget.job['subTopic'] ?? '').toString()),
         const Divider(height: 20, color: Color(0xFFF0F4F8)),
         Text('รายละเอียด',
             style: TextStyle(fontSize: 11, color: Colors.grey[400])),
@@ -322,7 +324,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            (widget.job['details'] ?? '-').toString(),
+            (widget.job['detail'] ?? '-').toString(),
             style:
                 TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.6),
           ),
@@ -402,6 +404,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
       );
 
   Widget _buildStatusCard(int status) {
+    print('>>>><<><><><><> ${status}');
     final configs = {
       0: (
         Colors.grey,
@@ -644,7 +647,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
       "members": ids,
       "userA": userModel['code'],
       "userB": lawyerModel['code'],
-      "caseCode":  widget.job['code'],
+      "caseCode": widget.job['code'],
     };
     var roomCode;
     await postObjectData("/m/chat/room/create", model).then(

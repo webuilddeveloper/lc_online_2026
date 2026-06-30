@@ -55,7 +55,7 @@ class SummaryPage extends StatelessWidget {
         : '';
 
     final cost = lawyer?['price'].toString() ?? 'ฟรี';
-    final isFree = cost == 0;
+    final isFree = cost == '500';
     
 
     return Scaffold(
@@ -225,7 +225,7 @@ class SummaryPage extends StatelessWidget {
                               Text('ค่าบริการ',
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.grey[500])),
-                              Text(isFree ? 'ฟรี' : lawyer['cost'],
+                              Text(lawyer['cost'],
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -243,7 +243,7 @@ class SummaryPage extends StatelessWidget {
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF1A2340))),
                               Text(
-                                isFree ? 'ฟรี' : lawyer['cost'],
+                                lawyer['cost'],
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,

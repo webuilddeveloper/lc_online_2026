@@ -136,11 +136,6 @@ class _ChatPageUserState extends State<ChatPageUser>
   }
 
   // caseCode สำหรับนำทางไป ConsultStatusPage
-  String get _caseCode =>
-      widget.caseCode.isNotEmpty
-          ? widget.caseCode
-          : _caseData['code']?.toString() ?? '';
-
   void _endConsultation() {
     DialogService.showConfirm(
       context,
@@ -148,9 +143,10 @@ class _ChatPageUserState extends State<ChatPageUser>
       message: 'endConsultMessageUser'.tr(),
       onConfirm: () async {
         final param = await postDio('${server}/m/case/update', {
-          'code': _caseCode,
+          'code': widget.model['caseCode'],
           'caseStatus': 4,
           'isReview': false,
+          'lawyer': widget.model['lawyer']
         });
         if (!mounted) return;
         print('------>>> ${param}');
@@ -160,11 +156,12 @@ class _ChatPageUserState extends State<ChatPageUser>
             context,
             // ── ส่งแค่ caseCode ──
             MaterialPageRoute(
-              builder: (_) => ConsultStatusPage(caseCode: _caseCode),
+              builder: (_) => ConsultStatusPage(caseCode: widget.caseCode),
             ),
             (route) => route.isFirst,
           );
         }
+        print('------>>> ${widget.caseCode}');
       },
     );
   }
@@ -203,7 +200,7 @@ class _ChatPageUserState extends State<ChatPageUser>
                   navigator.pushAndRemoveUntil(
                     // ── ส่งแค่ caseCode ──
                     MaterialPageRoute(
-                      builder: (_) => ConsultStatusPage(caseCode: _caseCode),
+                      builder: (_) => ConsultStatusPage(caseCode: widget.caseCode),
                     ),
                     (route) => route.isFirst,
                   );

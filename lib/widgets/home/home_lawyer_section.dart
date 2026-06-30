@@ -230,7 +230,6 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
         appointmentsList = param['objectData'];
       }
 
-      // print('-=-=-=-=-=--appointmentList=-=-=-=--= ${appointmentsList}');
       setState(() {
         // _lawyerappointmentsList = param['objectData'];
         // _isLoadingAppointments = false;
@@ -471,7 +470,7 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
           onMore: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CalendarPage(),
+              builder: (_) => CalendarPage(isBtnBack: true,),
             ),
           ).then((_) {
             // ✅ เมื่อ pop กลับมา เรียก callback

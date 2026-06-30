@@ -201,6 +201,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       requestPermissions();
       _fadeCtrl.forward();
     });
+    print('------- ><><><><><><>< ------- ${_caseRequestJobs}');
   }
 
   // Future<void> _callReadLawyer() async {

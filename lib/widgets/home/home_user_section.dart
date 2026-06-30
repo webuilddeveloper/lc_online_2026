@@ -177,7 +177,7 @@ class HomeUserSection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CaseStatusAllPage(caseList: cases),
+                        builder: (_) => CaseListPage(),
                       ),
                     ).then((_) {
                       // ✅ เมื่อ pop กลับมา เรียก callback
@@ -351,7 +351,7 @@ class HomeUserSection extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => AppointmentDetailsLawyer(model: model),
+            builder: (_) => AppointmentDetails(appointment: model),
           ),
         ).then((_) {
           // ✅ เมื่อ pop กลับมา เรียก callback

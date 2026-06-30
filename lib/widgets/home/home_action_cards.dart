@@ -211,7 +211,7 @@ class _UrgentSwitchCardState extends State<_UrgentSwitchCard>
         );
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
+        duration: const Duration(milliseconds: 450),
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
@@ -253,10 +253,10 @@ class _UrgentSwitchCardState extends State<_UrgentSwitchCard>
             ),
             const SizedBox(height: 8),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 450),
               child: Text(
                 enabled ? 'urgentCaseOn'.tr() : 'urgentCaseOff'.tr(),
-                key: ValueKey(enabled),
+                // key: ValueKey(enabled),
                 style: GoogleFonts.prompt(
                   fontSize: 12,
                   color: enabled ? green : Colors.grey.shade600,

@@ -1,14 +1,7 @@
-// ─── calendar.dart ────────────────────────────────────────────────────────────
-// State management + layout orchestration เท่านั้น
-// Widget จริงอยู่ใน:
-//   calendar_theme.dart        — สี / ค่าคงที่ / helpers
-//   timeline_section.dart      — ปฏิทินรายเดือน / Timeline
-//   all_events_section.dart    — รายการนัดหมายทั้งหมด
-// ─────────────────────────────────────────────────────────────────────────────
-
 import 'dart:convert';
 
 import 'package:LawyerOnline/appointment-details-lawyer.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/calendar/all_events_section.dart';
@@ -24,7 +17,10 @@ import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 
 class CalendarPage extends StatefulWidget {
-  const CalendarPage({super.key});
+  CalendarPage({super.key, this.isBtnBack = false, this.isTabActive = false,});
+
+  bool isBtnBack;
+  final bool isTabActive;
 
   @override
   _CalendarPageState createState() => _CalendarPageState();
@@ -56,7 +52,6 @@ class _CalendarPageState extends State<CalendarPage>
   final ScrollController _timelineScroll = ScrollController();
   final ScrollController _allViewScroll = ScrollController();
 
-  // ──────────────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -90,9 +85,14 @@ class _CalendarPageState extends State<CalendarPage>
 
   Future<void> _loadAppointments() async {
     final lawyerCode = UserProfileStore.instance.code.trim();
-    if (lawyerCode.isEmpty) return;
+
+    if (lawyerCode.isEmpty) {
+      return;
+    }
+
     final localAppointments =
         LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+
     if (_isLoadingAppointments) {
       if (localAppointments.isNotEmpty && mounted) {
         setState(() {
@@ -104,6 +104,7 @@ class _CalendarPageState extends State<CalendarPage>
       }
       return;
     }
+
     setState(() {
       if (localAppointments.isNotEmpty) {
         _appointments = CaseAppointmentMapper.mergeAppointments(
@@ -114,31 +115,47 @@ class _CalendarPageState extends State<CalendarPage>
       _isLoadingAppointments = true;
       _appointmentLoadError = null;
     });
+
     try {
       final realAppointments =
           await _appointmentRepository.readAppointmentsForLawyer(lawyerCode);
+
       if (!mounted) return;
+
       setState(() {
         _appointments = CaseAppointmentMapper.mergeAppointments(
           realAppointments,
           LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode),
         );
+
         _isLoadingAppointments = false;
+        _appointmentLoadError = null;
       });
-    } catch (_) {
+    } catch (e, st) {
       if (!mounted) return;
+
       final fallbackAppointments =
           LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+
       setState(() {
         _appointments = fallbackAppointments;
         _appointmentLoadError =
             fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
         _isLoadingAppointments = false;
       });
+
+      if (mounted && fallbackAppointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ไม่สามารถโหลดนัดหมายได้'),
+            backgroundColor: Colors.red[600],
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
-  // ─── Scroll helpers ────────────────────────────────────────────────────────
   void _scrollToCurrentHour() {
     final now = DateTime.now();
     final offset = ((now.hour - kStartHour) - 1) * kHourHeight;
@@ -201,7 +218,6 @@ class _CalendarPageState extends State<CalendarPage>
     }
   }
 
-  // ─── Calendar panel toggle ─────────────────────────────────────────────────
   void _toggleCalendarPanel() {
     final closing = _showMonthCalendar;
     setState(() {
@@ -215,7 +231,6 @@ class _CalendarPageState extends State<CalendarPage>
     }
   }
 
-  // ─── Event helpers ─────────────────────────────────────────────────────────
   List<dynamic> _getEventsForDay(DateTime day) {
     final key = DateTime(day.year, day.month, day.day);
     return itemEvents[key] ?? [];
@@ -225,29 +240,49 @@ class _CalendarPageState extends State<CalendarPage>
       key.day * 1000000 + key.month * 10000 + key.year;
 
   void _navigateToEvent(dynamic ev) async {
-    debugPrint(
-      const JsonEncoder.withIndent('  ').convert(ev),
-    );
+    if (ev == null) return;
 
-    Map<String, dynamic> result = {
-      ...ev,
-      ...(ev['rawCase'] ?? {}),
+    if (ev is! Map) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ข้อมูลนัดหมายผิดพลาด')),
+      );
+      return;
+    }
+
+    final Map<String, dynamic> result = {
+      ...?ev as Map<String, dynamic>,
+      ...(ev['rawCase'] as Map<String, dynamic>?) ?? {},
     };
     result.remove('rawCase');
-    await Navigator.push(
+
+    if (result.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ไม่พบข้อมูลนัดหมาย')),
+      );
+      return;
+    }
+
+    try {
+      final refreshed = await Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) => AppointmentDetailsLawyer(model: result)))
-        .then((value) {
-      if (value == true) {
+              builder: (_) => AppointmentDetailsLawyer(model: result),
+            ),
+          ) as bool? ??
+          false;
+
+      if (refreshed && mounted) {
         _loadAppointments();
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+        );
+      }
+    }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  //  BUILD
-  // ══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
@@ -259,9 +294,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  //  DESKTOP BODY
-  // ══════════════════════════════════════════════════════════════════════════
   Widget _buildDesktopBody() {
     final hPad = RV.pagePadding(context);
 
@@ -272,7 +304,6 @@ class _CalendarPageState extends State<CalendarPage>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── LEFT: calendar panel ─────────────────────────────────
             SizedBox(
               width: 500,
               child: Column(
@@ -291,10 +322,7 @@ class _CalendarPageState extends State<CalendarPage>
                 ],
               ),
             ),
-
             const SizedBox(width: 24),
-
-            // ── RIGHT: timeline ──────────────────────────────────────
             Expanded(
               child: Column(
                 children: [
@@ -330,7 +358,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ── Desktop: header ซ้าย ──────────────────────────────────────────────────
   Widget _buildDesktopCalendarHeader() {
     final monthLabel =
         '${'calendar.monthShort.${_focusedDay.month}'.tr()} ${calYearLabel(_focusedDay.year)}';
@@ -369,7 +396,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ── Desktop: header ขวา ───────────────────────────────────────────────────
   Widget _buildDesktopRightHeader() {
     final isToday = isSameDay(_selectedDay, DateTime.now());
     final dayLabel =
@@ -410,7 +436,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ── Desktop: LEFT panel (month calendar + day events) ─────────────────────
   Widget _buildDesktopLeftPanel() {
     return Container(
       decoration: BoxDecoration(
@@ -444,9 +469,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  //  MOBILE BODY
-  // ══════════════════════════════════════════════════════════════════════════
   Widget _buildMobileBody() {
     return IndexedStack(
       index: _showAllView ? 1 : 0,
@@ -508,7 +530,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── AppBar  (mobile only) ─────────────────────────────────────────────────
   Widget _calendarStatusBanner() {
     if (_isLoadingAppointments) {
       return const Padding(
@@ -550,24 +571,29 @@ class _CalendarPageState extends State<CalendarPage>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            const SizedBox(width: 12),
-            // Text(monthLabel,
-            //     style: GoogleFonts.prompt(
-            //         color: kText, fontSize: 17, fontWeight: FontWeight.w600)),
-            GestureDetector(
-            onTap: goBack,
-            child: Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
-                shape: BoxShape.circle,
-                border: Border.all(width: 1, color: const Color(0xFFDBDBDB)),
-              ),
-              child: const Icon(Icons.arrow_back_ios_new, size: 15),
-            ),
-          ),
+            // const SizedBox(width: 12),
+
+            widget.isBtnBack
+                ? GestureDetector(
+                    onTap: goBack,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFAFAFA),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            width: 1, color: const Color(0xFFDBDBDB)),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new, size: 15),
+                    ),
+                  )
+                : Text(monthLabel,
+                    style: GoogleFonts.prompt(
+                        color: kText,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600)),
             const Spacer(),
             _iconBtn(
               _showAllView
@@ -601,7 +627,6 @@ class _CalendarPageState extends State<CalendarPage>
     );
   }
 
-  // ─── Shared icon button ────────────────────────────────────────────────────
   Widget _iconBtn(IconData icon, VoidCallback onTap, {bool active = false}) {
     return GestureDetector(
       onTap: onTap,
@@ -618,6 +643,6 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   void goBack() async {
-    Navigator.pop(context, true);
+    Navigator.pop(context, false);
   }
 }

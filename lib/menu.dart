@@ -1,10 +1,10 @@
 import 'dart:ui';
 
 import 'package:LawyerOnline/calendar.dart';
+import 'package:LawyerOnline/case-status-all.dart';
 import 'package:LawyerOnline/home.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/message.dart';
-import 'package:LawyerOnline/my-appointment.dart';
 import 'package:LawyerOnline/post-list.dart';
 import 'package:LawyerOnline/profile.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
@@ -143,49 +143,56 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
   }
 
   Widget _tabChild(int index) {
-    switch (index) {
-      case 0:
-        return HomePage(
-          key: const ValueKey('home_tab'),
-          onProfileTap: () => _onNavTap(4),
-          isTabActive: _currentPage == 0,
-        );
-      case 1:
-        return typeLogin != 'null'
-            ? MessagePage(key: ValueKey('message_tab_$typeLogin'))
-            : LoginPage(
-                key: ValueKey('message_login_$typeLogin'),
-                isBack: false,
+  switch (index) {
+    case 0:
+      return HomePage(
+        key: const ValueKey(0),
+        onProfileTap: () => _onNavTap(4),
+        isTabActive: _currentPage == 0,
+      );
+    case 1:
+      return typeLogin != 'null'
+          ? MessagePage(
+              key: const ValueKey(1),
+              isTabActive: _currentPage == 1,
+            )
+          : LoginPage(
+              key: const ValueKey(1),
+              isBack: false,
+            );
+    case 2:
+      return CommunityPage(key: const ValueKey(2),);
+    case 3:
+      if (typeLogin != 'null') {
+        return userType == 'lawyer'
+            ? CalendarPage(
+                key: const ValueKey(3),
+                isTabActive: _currentPage == 3,
+              )
+            : CaseListPage(
+                key: const ValueKey(3),
+                isTabActive: _currentPage == 3,
               );
-      case 2:
-        return CommunityPage(key: const ValueKey('community_tab'));
-      case 3:
-        if (typeLogin != 'null') {
-          return userType == 'lawyer'
-              ? CalendarPage(key: ValueKey('calendar_tab_$userType'))
-              : AppointmentListPage(
-                  key: ValueKey('appointment_tab_$userType'),
-                );
-        }
-        return LoginPage(
-          key: ValueKey('appointment_login_$typeLogin'),
-          isBack: false,
-        );
-      case 4:
-        return typeLogin != 'null'
-            ? ProfilePage(key: ValueKey('profile_tab_$typeLogin'))
-            : LoginPage(
-                key: ValueKey('profile_login_$typeLogin'),
-                isBack: false,
-              );
-      default:
-        return HomePage(
-          key: const ValueKey('home_tab_fallback'),
-          onProfileTap: () => _onNavTap(4),
-          isTabActive: _currentPage == 0,
-        );
-    }
+      }
+      return LoginPage(
+        key: const ValueKey(3),
+        isBack: false,
+      );
+    case 4:
+      return typeLogin != 'null'
+          ? ProfilePage(key: const ValueKey(4),)
+          : LoginPage(
+              key: const ValueKey(4),
+              isBack: false,
+            );
+    default:
+      return HomePage(
+        key: const ValueKey(0),
+        onProfileTap: () => _onNavTap(4),
+        isTabActive: _currentPage == 0,
+      );
   }
+}
 
   void _playTabTransition() {
     _tabAnimCtrl.stop();

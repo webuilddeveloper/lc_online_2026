@@ -519,7 +519,9 @@
     "dayShort": {
       "0": "M", "1": "T", "2": "W", "3": "Th",
       "4": "F", "5": "Sa", "6": "Su"
-    }
+    },
+    "loadError": "Failed to load appointments",
+    "genericError": "An error occurred. Please try again"
   },
   "lawyerProfile": "Lawyer Profile",
   "idCard": "ID Card No.",

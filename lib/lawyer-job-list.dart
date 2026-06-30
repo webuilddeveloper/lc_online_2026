@@ -72,26 +72,15 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
   List<Map<String, dynamic>> get _filtered {
     switch (_activeTab) {
       case 'pending':
-        return _jobs
-            .where((j) => _isUrgent(j) && j['status'] == 'pending')
-            .toList();
-      case 'accepted':
-        return _jobs
-            .where((j) => _isUrgent(j) && j['status'] == 'accepted')
-            .toList();
-      case 'booking':
-        return _jobs
-            .where((j) =>
-                _isBooking(j) &&
-                (j['status'] == 'pending' ||
-                    j['status'] == 'confirmed' ||
-                    j['status'] == 'in_session'))
-            .toList();
+        return _jobs.where((j) => j['status'] == 'pending').toList();
+      case 'in_session':
+        return _jobs.where((j) => j['status'] == 'in_session').toList();
       case 'done':
         return _jobs
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .toList();
       case 'all':
+      default:
         const order = {
           'in_session': 0,
           'accepted': 1,
@@ -102,17 +91,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         };
         return [..._jobs]..sort((a, b) =>
             (order[a['status']] ?? 9).compareTo(order[b['status']] ?? 9));
-      default:
-        const orderDef = {
-          'in_session': 0,
-          'accepted': 1,
-          'confirmed': 2,
-          'pending': 3,
-          'rejected': 4,
-          'done': 5
-        };
-        return [..._jobs]..sort((a, b) =>
-            (orderDef[a['status']] ?? 9).compareTo(orderDef[b['status']] ?? 9));
     }
   }
 
@@ -401,39 +379,26 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       {
         'key': 'pending',
         'label': 'รอตอบรับ',
-        'count':
-            _jobs.where((j) => _isUrgent(j) && j['status'] == 'pending').length,
+        'count': _jobs.where((j) => j['status'] == 'pending').length,
         'color': const Color(0xFFD97706),
       },
       {
-        'key': 'accepted',
-        'label': 'รับแล้ว',
-        'count': _jobs
-            .where((j) => _isUrgent(j) && j['status'] == 'accepted')
-            .length,
-        'color': const Color.fromARGB(255, 2, 156, 23),
-      },
-      {
-        'key': 'booking',
-        'label': 'นัดหมาย',
-        'count': _jobs
-            .where((j) =>
-                _isBooking(j) &&
-                (j['status'] == 'pending' ||
-                    j['status'] == 'confirmed' ||
-                    j['status'] == 'in_session'))
-            .length,
-        'color': const Color(0xFF7C3AED),
+        'key': 'in_session',
+        'label': 'กำลังปรึกษา',
+        'count': _jobs.where((j) => j['status'] == 'in_session').length,
+        'color': const Color(0xFF059669),
       },
       {
         'key': 'done',
-        'label': 'ปิดเคส',
+        'label': 'เสร็จสิ้น',
         'count': _jobs
             .where((j) => j['status'] == 'done' || j['status'] == 'rejected')
             .length,
-        'color': Colors.grey,
+        'color': const Color(0xFF6D28D9),
       },
     ];
+
+    final tabWidth = (MediaQuery.of(context).size.width - 32) / tabs.length;
 
     return Container(
       color: Colors.white,
@@ -442,7 +407,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
         children: tabs.map((t) {
           final isActive = _activeTab == t['key'];
           final color = t['color'] as Color;
-          return Expanded(
+          return SizedBox(
+            width: tabWidth,
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -464,19 +430,21 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                     ),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       t['label'] as String,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 11,
                         fontWeight:
                             isActive ? FontWeight.w700 : FontWeight.w500,
                         color: isActive ? color : Colors.grey[500],
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(height: 3),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
@@ -502,7 +470,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       ),
     );
   }
-
   // ════════════════════════════════════════════════════════
   //  Job Card
   // ════════════════════════════════════════════════════════
@@ -511,7 +478,7 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
     final status = job['status'] as String;
     final clientColor = Color(job['clientColor'] as int);
     final isPending = status == 'pending';
-    final isAccepted = status == 'accepted' || status == 'in_session';
+    final isAccepted = status == 'in_session';
     final isBooking = _isBooking(job);
     final isBookingConfirmed = isBooking && status == 'confirmed';
 
@@ -705,108 +672,108 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
             ),
 
             // ── Action buttons (pending only) ─────────────
-            if (isPending) ...[
-              const Divider(height: 1, color: Color(0xFFF0F4F8)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                child: Row(children: [
-                  // Reject
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        DialogService.showConfirmRejectJob(
-                          context,
-                          title: "ปฏิเสธคำขอ",
-                          message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
-                          onConfirm: () {
-                            _setJobStatus(job, 'rejected');
-                            if (mounted) {
-                              setState(() {});
-                              _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
-                            }
-                          },
-                        );
-                      },
-                      child: Container(
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF2F2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: const Color(0xFFEF4444).withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.close_rounded,
-                                color: Color(0xFFEF4444), size: 16),
-                            SizedBox(width: 6),
-                            Text('ปฏิเสธ',
-                                style: TextStyle(
-                                    color: Color(0xFFEF4444),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Accept
-                  Expanded(
-                    flex: 2,
-                    child: GestureDetector(
-                      onTap: () {
-                        DialogService.showConfirmAcceptJob(
-                          context,
-                          title: "รับงาน",
-                          message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
-                          onConfirm: () {
-                            if (isBooking) {
-                              _setJobStatus(job, 'confirmed');
-                            } else {
-                              _setJobStatus(job, 'accepted');
-                            }
-                            if (mounted) {
-                              setState(() {});
-                              _showSnackbar('รับงานสำเร็จแล้ว!', true);
-                            }
-                          },
-                        );
-                      },
-                      child: Container(
-                        height: 42,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                                color: _kPrimary.withOpacity(0.35),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3))
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_rounded,
-                                color: Colors.white, size: 16),
-                            const SizedBox(width: 6),
-                            Text('รับงาน',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-            ],
+            // if (isPending) ...[
+            //   const Divider(height: 1, color: Color(0xFFF0F4F8)),
+            //   Padding(
+            //     padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            //     child: Row(children: [
+            //       // Reject
+            //       Expanded(
+            //         child: GestureDetector(
+            //           onTap: () {
+            //             DialogService.showConfirmRejectJob(
+            //               context,
+            //               title: "ปฏิเสธคำขอ",
+            //               message: "คุณยืนยันที่จะปฏิเสธคำขอนี้ใช่หรือไม่",
+            //               onConfirm: () {
+            //                 _setJobStatus(job, 'rejected');
+            //                 if (mounted) {
+            //                   setState(() {});
+            //                   _showSnackbar('ปฏิเสธคำขอแล้ว!', false);
+            //                 }
+            //               },
+            //             );
+            //           },
+            //           child: Container(
+            //             height: 42,
+            //             decoration: BoxDecoration(
+            //               color: const Color(0xFFFFF2F2),
+            //               borderRadius: BorderRadius.circular(12),
+            //               border: Border.all(
+            //                   color: const Color(0xFFEF4444).withOpacity(0.3)),
+            //             ),
+            //             child: Row(
+            //               mainAxisAlignment: MainAxisAlignment.center,
+            //               children: [
+            //                 Icon(Icons.close_rounded,
+            //                     color: Color(0xFFEF4444), size: 16),
+            //                 SizedBox(width: 6),
+            //                 Text('ปฏิเสธ',
+            //                     style: TextStyle(
+            //                         color: Color(0xFFEF4444),
+            //                         fontWeight: FontWeight.w700,
+            //                         fontSize: 13)),
+            //               ],
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       const SizedBox(width: 10),
+            //       // Accept
+            //       Expanded(
+            //         flex: 2,
+            //         child: GestureDetector(
+            //           onTap: () {
+            //             DialogService.showConfirmAcceptJob(
+            //               context,
+            //               title: "รับงาน",
+            //               message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
+            //               onConfirm: () {
+            //                 if (isBooking) {
+            //                   _setJobStatus(job, 'confirmed');
+            //                 } else {
+            //                   _setJobStatus(job, 'accepted');
+            //                 }
+            //                 if (mounted) {
+            //                   setState(() {});
+            //                   _showSnackbar('รับงานสำเร็จแล้ว!', true);
+            //                 }
+            //               },
+            //             );
+            //           },
+            //           child: Container(
+            //             height: 42,
+            //             decoration: BoxDecoration(
+            //               gradient: const LinearGradient(
+            //                 colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
+            //               ),
+            //               borderRadius: BorderRadius.circular(12),
+            //               boxShadow: [
+            //                 BoxShadow(
+            //                     color: _kPrimary.withOpacity(0.35),
+            //                     blurRadius: 10,
+            //                     offset: const Offset(0, 3))
+            //               ],
+            //             ),
+            //             child: Row(
+            //               mainAxisAlignment: MainAxisAlignment.center,
+            //               children: [
+            //                 const Icon(Icons.check_rounded,
+            //                     color: Colors.white, size: 16),
+            //                 const SizedBox(width: 6),
+            //                 Text('รับงาน',
+            //                     style: TextStyle(
+            //                         color: Colors.white,
+            //                         fontWeight: FontWeight.w700,
+            //                         fontSize: 13)),
+            //               ],
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //     ]),
+            //   ),
+            // ],
 
             // ── Accepted — chat button ────────────────────
             if (isAccepted) ...[
@@ -816,28 +783,28 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                 child: GestureDetector(
                   onTap: () => {
                     _onTapConversation(job),
-                    
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (_) =>
-                  //         ChatPageLawyer(
-                  //           // jobId: job['id'] as String?,
-                  //          model: {
-                  //       'id': job['id'],
-                  //       'jobId': job['id'],
-                  //       'jobSource': job['jobSource'] ?? 'urgent',
-                  //       'jobStatus': job['status'],
-                  //       'name': job['clientName'] ?? '',
-                  //       'avatar': job['clientAvatar'] ?? '',
-                  //       'imageUrl': '', // เพิ่ม default imageUrl
-                  //       'active': true, // เพิ่ม default active status
-                  //       'caseSuccess':
-                  //           job['status'] == 'done', // เพิ่ม caseSuccess flag
-                  //       'clientColor': job['clientColor'], // เพิ่มสีถ้าต้องการ
-                  //     }),
-                  //   ),
-                  // ),
+
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (_) =>
+                    //         ChatPageLawyer(
+                    //           // jobId: job['id'] as String?,
+                    //          model: {
+                    //       'id': job['id'],
+                    //       'jobId': job['id'],
+                    //       'jobSource': job['jobSource'] ?? 'urgent',
+                    //       'jobStatus': job['status'],
+                    //       'name': job['clientName'] ?? '',
+                    //       'avatar': job['clientAvatar'] ?? '',
+                    //       'imageUrl': '', // เพิ่ม default imageUrl
+                    //       'active': true, // เพิ่ม default active status
+                    //       'caseSuccess':
+                    //           job['status'] == 'done', // เพิ่ม caseSuccess flag
+                    //       'clientColor': job['clientColor'], // เพิ่มสีถ้าต้องการ
+                    //     }),
+                    //   ),
+                    // ),
                   },
                   child: Container(
                     height: 42,
@@ -870,35 +837,35 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
                 ),
               ),
             ],
-            if (isBookingConfirmed) ...[
-              const Divider(height: 1, color: Color(0xFFF0F4F8)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-                child: Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F4FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF7C3AED)),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.lock_clock_rounded,
-                          color: Color(0xFF7C3AED), size: 16),
-                      SizedBox(width: 8),
-                      Text('รอถึงวันนัดหมายเพื่อเริ่มปรึกษา',
-                          style: TextStyle(
-                              color: Color(0xFF7C3AED),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            // if (isBookingConfirmed) ...[
+            //   const Divider(height: 1, color: Color(0xFFF0F4F8)),
+            //   Padding(
+            //     padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            //     child: Container(
+            //       width: double.infinity,
+            //       padding:
+            //           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            //       decoration: BoxDecoration(
+            //         color: const Color(0xFFF8F4FF),
+            //         borderRadius: BorderRadius.circular(12),
+            //         border: Border.all(color: const Color(0xFF7C3AED)),
+            //       ),
+            //       child: const Row(
+            //         mainAxisAlignment: MainAxisAlignment.center,
+            //         children: [
+            //           Icon(Icons.lock_clock_rounded,
+            //               color: Color(0xFF7C3AED), size: 16),
+            //           SizedBox(width: 8),
+            //           Text('รอถึงวันนัดหมายเพื่อเริ่มปรึกษา',
+            //               style: TextStyle(
+            //                   color: Color(0xFF7C3AED),
+            //                   fontWeight: FontWeight.w700,
+            //                   fontSize: 13)),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ),
@@ -942,10 +909,8 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
             setState(() {
               roomCode = result['objectData']['roomCode'];
             }),
-            await postObjectData("/m/case/update", {
-              "code": caseModel['code'],
-              "messageRoomCode": roomCode
-            }).then(
+            await postObjectData("/m/case/update",
+                {"code": caseModel['code'], "messageRoomCode": roomCode}).then(
               (res) => {
                 // Navigator.push(
                 //   context,
@@ -971,7 +936,6 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
       },
     );
   }
-
 
   Widget _statusBadge(String status) {
     final configs = {

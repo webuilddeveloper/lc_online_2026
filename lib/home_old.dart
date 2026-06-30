@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                CaseStatusAllPage(caseList: caseList),
+                                CaseListPage(),
                           ),
                         ),
                       ),

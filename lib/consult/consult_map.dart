@@ -459,6 +459,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     });
 
     try {
+      // GPS...
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       ).timeout(const Duration(seconds: 8));
@@ -468,28 +469,44 @@ class _ConsultMapPageState extends State<ConsultMapPage>
           _currentPosition!.latitude,
           _currentPosition!.longitude,
         );
-        setState(() => _userLocation = loc);
-        _mapController.move(loc, 14);
+        try {
+          setState(() => _userLocation = loc);
+          _mapController.move(loc, 14);
+        } catch (e) {
+          debugPrint('⚠️ MapController error: $e');
+        }
       }
 
+      // ✅ API Call
       final res = await postDio('${server}/m/register/read', {
         'userType': 'lawyer',
         'subTopic': widget.subTopic,
       });
 
-      print('API Response ==========>: ${res}');
-
       if (!mounted) return;
 
-      setState(() {
-        _loadingLawyers = false;
-        _lawyerLoadError = 'ไม่สามารถโหลดข้อมูลทนายได้';
-      });
+      // ✅ เก็บ data ลง _lawyers
+      final data = res['objectData'] as List? ?? [];
+      final lawyers = List<dynamic>.from(data);
+
+      // ✅ Check success
+      if (res['status'] == 'S' && lawyers.isNotEmpty) {
+        setState(() {
+          _lawyers = lawyers; // ✅ สำคัญ!
+          _loadingLawyers = false;
+          _lawyerLoadError = null; // ✅ ไม่มี error
+        });
+      } else {
+        setState(() {
+          _loadingLawyers = false;
+          _lawyerLoadError = 'ไม่พบทนายความ';
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loadingLawyers = false;
-        _lawyerLoadError = 'เกิดข้อผิดพลาด: ${e.toString()}';
+        _lawyerLoadError = 'Error: $e';
       });
     }
   }
@@ -821,9 +838,21 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     _cardAnim.dispose();
     _textTimer?.cancel();
     _pollTimer?.cancel();
-    _mapController.dispose();
+    // _mapController.dispose();
     _lawyerDetailRetryTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> CancelCaseRequest() async {
+     await _caseReqService.detachAfterMatch();
+    try {
+      dynamic model = {"code": widget.requestCode, 'userCode': UserProfileStore.instance.code,};
+      final param = await postDio("${server}/m/caseRequest/cancel", model);
+      if (param['status'] == 'S') {
+        Navigator.pop(context);
+      }
+    } catch (_) {
+    }
   }
 
   @override
@@ -835,8 +864,10 @@ class _ConsultMapPageState extends State<ConsultMapPage>
         backBtn: true,
         rightBtn: false,
         rightAction: () {},
-        backAction: () =>
-            {_caseReqService.detachAfterMatch(), Navigator.pop(context)},
+        backAction: () async =>
+            {
+              CancelCaseRequest(),
+            },
       ),
       body: Column(
         children: [
@@ -1138,7 +1169,8 @@ class _ConsultMapPageState extends State<ConsultMapPage>
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        _statusTexts[_statusIdx.clamp(0, _statusTexts.length - 1)],
+                        _statusTexts[
+                            _statusIdx.clamp(0, _statusTexts.length - 1)],
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF0262EC),
@@ -2127,4 +2159,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
           ),
         ),
       );
+
+
+
 }
