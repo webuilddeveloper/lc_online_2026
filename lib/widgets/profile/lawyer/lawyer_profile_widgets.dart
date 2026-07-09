@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
 
 // ══════════════════════════════════════════════════════════
 //  lawyer_profile_widgets.dart
@@ -101,7 +102,7 @@ class ProfileSectionCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: AppTypography.prompt(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A2340),
@@ -154,16 +155,16 @@ class ProfileTextField extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
+            style: AppTypography.prompt(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: Color(0xFF1A2340),
             ),
             children: required
                 ? [
-                    const TextSpan(
+                    TextSpan(
                       text: ' *',
-                      style: TextStyle(color: Color(0xFFC62828)),
+                      style: AppTypography.prompt(color: Color(0xFFC62828)),
                     ),
                   ]
                 : [],
@@ -175,10 +176,13 @@ class ProfileTextField extends StatelessWidget {
           keyboardType: keyboardType,
           maxLines: maxLines,
           onChanged: onChanged != null ? (_) => onChanged!() : null,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF1A2340)),
+          style: AppTypography.prompt(fontSize: 13, color: Color(0xFF1A2340)),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+            hintStyle: AppTypography.prompt(
+              color: Colors.grey[400],
+              fontSize: 13,
+            ),
             filled: true,
             fillColor: const Color(0xFFF8F9FB),
             contentPadding:

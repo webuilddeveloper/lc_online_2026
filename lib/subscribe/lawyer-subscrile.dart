@@ -6,9 +6,12 @@
 // ══════════════════════════════════════════════════════════════════════
 
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/subscribe/checkout.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -125,6 +128,7 @@ class _SubscribePageState extends State<SubscribePage>
   @override
   void initState() {
     super.initState();
+    _store.addListener(_onStoreChanged);
     // เริ่มต้น selected plan ตาม current plan จริงจาก store
     _selectedPlan = _store.isPro ? 'pro' : 'free';
     _isYearly = _store.billingCycle.isYearly;
@@ -135,8 +139,17 @@ class _SubscribePageState extends State<SubscribePage>
     _animCtrl.forward();
   }
 
+  void _onStoreChanged() {
+    if (!mounted) return;
+    setState(() {
+      _selectedPlan = _store.isPro ? 'pro' : 'free';
+      _isYearly = _store.billingCycle.isYearly;
+    });
+  }
+
   @override
   void dispose() {
+    _store.removeListener(_onStoreChanged);
     _animCtrl.dispose();
     super.dispose();
   }
@@ -199,6 +212,10 @@ class _SubscribePageState extends State<SubscribePage>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHero(),
+              if (_isCurrentPro && _store.isOnTrial) ...[
+                const SizedBox(height: 12),
+                _buildTrialBanner(),
+              ],
               const SizedBox(height: 16),
               _buildBillingToggle(),
               const SizedBox(height: 16),
@@ -235,7 +252,59 @@ class _SubscribePageState extends State<SubscribePage>
               _buildCompareSection(),
               const SizedBox(height: 24),
               _buildCTA(),
+              if (_isCurrentPro) ...[
+                const SizedBox(height: 12),
+                _buildCancelButton(),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrialBanner() {
+    final days = _store.trialDaysRemaining ?? 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: kPrimaryLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: kPrimary.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.timer_outlined, color: kPrimary, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'proTrialRemaining'.tr(namedArgs: {'days': '$days'}),
+                style: AppTypography.prompt(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: kPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCancelButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: TextButton(
+        onPressed: _showCancelProDialog,
+        child: Text(
+          'cancelProSubscription'.tr(),
+          style: AppTypography.prompt(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.red.shade600,
           ),
         ),
       ),
@@ -272,7 +341,7 @@ class _SubscribePageState extends State<SubscribePage>
         Text(
           'ยกระดับการให้บริการด้วย Lawyer Pro',
           textAlign: TextAlign.center,
-          style: GoogleFonts.prompt(
+          style: AppTypography.prompt(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: kText,
@@ -282,7 +351,7 @@ class _SubscribePageState extends State<SubscribePage>
         Text(
           'ฟีเจอร์ครบครันที่ช่วยให้ทนายมืออาชีพ\nเติบโตและรับเคสได้มากขึ้น',
           textAlign: TextAlign.center,
-          style: GoogleFonts.prompt(fontSize: 13, color: kSub, height: 1.6),
+          style: AppTypography.prompt(fontSize: 13, color: kSub, height: 1.6),
         ),
       ]),
     );
@@ -753,6 +822,51 @@ class _SubscribePageState extends State<SubscribePage>
     }
   }
 
+  void _showCancelProDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('cancelProConfirmTitle'.tr(),
+            style: AppTypography.prompt(
+                fontWeight: FontWeight.w600, fontSize: 16, color: kText)),
+        content: Text(
+          'cancelProConfirmMessage'.tr(),
+          style: AppTypography.prompt(fontSize: 13, color: kSub, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('cancel'.tr(),
+                style: AppTypography.prompt(
+                    color: kSub, fontWeight: FontWeight.w500)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              DialogService.showLoading(context);
+              final ok = await _store.cancelPro();
+              if (mounted) Navigator.of(context, rootNavigator: true).pop();
+              if (!mounted) return;
+              if (ok) {
+                setState(() => _selectedPlan = 'free');
+              } else {
+                DialogService.showError(
+                  context,
+                  title: 'errorTitle'.tr(),
+                  message: 'cancelProFailed'.tr(),
+                );
+              }
+            },
+            child: Text('confirm'.tr(),
+                style: AppTypography.prompt(
+                    color: Colors.red, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showDowngradeDialog() {
     showDialog(
       context: context,
@@ -776,11 +890,16 @@ class _SubscribePageState extends State<SubscribePage>
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await _store.downgradeToFree(); // ✅ อัปเดต store ทันที
-              if (mounted) setState(() => _selectedPlan = 'free');
+              DialogService.showLoading(context);
+              final ok = await _store.cancelPro();
+              if (mounted) Navigator.of(context, rootNavigator: true).pop();
+              if (!mounted) return;
+              if (ok) {
+                setState(() => _selectedPlan = 'free');
+              }
             },
             child: Text('ยืนยันดาวน์เกรด',
-                style: GoogleFonts.prompt(
+                style: AppTypography.prompt(
                     color: Colors.red, fontWeight: FontWeight.w600)),
           ),
         ],

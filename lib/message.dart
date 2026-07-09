@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -87,71 +88,80 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   void _onTapConversation(dynamic conv, bool isDesktop) async {
-    if (isDesktop) {
-      setState(() => _selectedConv = conv);
-    } else {
-      String myUserId = UserProfileStore.instance.code;
-      String lawyerCode = conv['user2Model']['code'];
-      var roomCode;
+    await UserProfileStore.instance.load();
+    final myUserId = UserProfileStore.instance.code;
+    final otherCode = conv['user2Model']?['code']?.toString() ?? '';
 
-      // สร้าง roomCode
-      List<String> ids = [myUserId, lawyerCode]..sort();
+    if (otherCode.isEmpty) return;
 
-      var model = {
-        "members": ids,
-        "userA": UserProfileStore.instance.code,
-        "userB": lawyerCode,
-// "caseCode": caseModel['code'],
-      };
+    final ids = [myUserId, otherCode]..sort();
+    final model = {
+      'members': ids,
+      'userA': myUserId,
+      'userB': otherCode,
+    };
 
-      final result = await postObjectData("/m/chat/room/create", model);
-      if (result['status'] == 'S') {
-        setState(
-          () {
-            roomCode = result['objectData']['roomCode'];
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => _userType == 'lawyer'
-                    ? ChatPageLawyer(
-                        model: {
-                          'name':
-                              '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
-                          'avatar': conv['user2Model']['imageUrl'],
-                          'caseCode': result['objectData']['caseCode'],
-                          // 'clientColor': conv.clientColor,
-                          'active': true,
-                          'caseSuccess': false,
-                        },
-                        // jobId: conv.id,
-                        roomCode: roomCode,
-                        userId: myUserId,
-                      )
-                    : ChatPageUser(
-                        model: {
-                          'name':
-                              '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
-                          'imageUrl': conv['user2Model']['imageUrl'],
-                          'caseCode': result['objectData']['caseCode'],
-                          'active': true,
-                          'caseSuccess': false,
-                          'lawyer': result['objectData']['userB'],
-                        },
-                        roomCode: roomCode,
-                        userId: myUserId,
-                      ),
-              ),
-            ).then((_) => _load());
-          },
-        );
-      } else {
-        DialogService.showError(
-          context,
-          title: 'ผิดพลาด',
-          message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-        );
-      }
+    final result = await postObjectData('/m/chat/room/create', model);
+    if (result['status'] != 'S') {
+      if (!mounted) return;
+      DialogService.showError(
+        context,
+        title: 'ผิดพลาด',
+        message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+      );
+      return;
     }
+
+    final roomCode = result['objectData']?['roomCode']?.toString() ?? '';
+    if (roomCode.isEmpty || !mounted) return;
+
+    final chatModel = _userType == 'lawyer'
+        ? {
+            'name':
+                '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
+            'avatar': conv['user2Model']['imageUrl'],
+            'caseCode': result['objectData']?['caseCode'],
+            'active': true,
+            'caseSuccess': false,
+          }
+        : {
+            'name':
+                '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
+            'imageUrl': conv['user2Model']['imageUrl'],
+            'caseCode': result['objectData']?['caseCode'],
+            'active': true,
+            'caseSuccess': false,
+            'lawyer': result['objectData']?['userB'],
+          };
+
+    if (isDesktop) {
+      setState(() {
+        _selectedConv = {
+          ...conv,
+          '_roomCode': roomCode,
+          '_chatModel': chatModel,
+        };
+      });
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _userType == 'lawyer'
+            ? ChatPageLawyer(
+                model: chatModel,
+                roomCode: roomCode,
+                userId: myUserId,
+              )
+            : ChatPageUser(
+                model: chatModel,
+                roomCode: roomCode,
+                userId: myUserId,
+                caseCode: chatModel['caseCode']?.toString() ?? '',
+              ),
+      ),
+    ).then((_) => _load());
   }
 
   // ── build ──────────────────────────────────────────────
@@ -175,7 +185,7 @@ class _MessagePageState extends State<MessagePage> {
         rightAction: () {},
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? AppLoadingView(message: 'loading'.tr())
           : _conversations.isEmpty
               ? Center(
                   child: Text('noConversations'.tr(),
@@ -230,7 +240,7 @@ class _MessagePageState extends State<MessagePage> {
                 // List
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? AppLoadingView(message: 'loading'.tr(), expand: false)
                       : _conversations.isEmpty
                           ? Center(
                               child: Text('noConversations'.tr(),
@@ -254,38 +264,42 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   // ── Chat panel (desktop) ───────────────────────────────
-  Widget _buildChatPanel(Conversation conv) {
-    final model = _userType == 'lawyer'
-        ? {
-            'name': conv.name,
-            'avatar': conv.avatar,
-            'clientColor': conv.clientColor,
-            'active': !conv.caseSuccess,
-            'caseSuccess': conv.caseSuccess,
-          }
+  Widget _buildChatPanel(dynamic conv) {
+    final roomCode = conv['_roomCode']?.toString() ?? '';
+    final chatModel = conv['_chatModel'] is Map<String, dynamic>
+        ? Map<String, dynamic>.from(conv['_chatModel'] as Map)
         : {
-            'name': conv.name,
-            'imageUrl': conv.avatar,
-            'active': !conv.caseSuccess,
-            'caseSuccess': conv.caseSuccess,
+            'name':
+                '${conv['user2Model']?['firstName'] ?? ''} ${conv['user2Model']?['lastName'] ?? ''}',
+            if (_userType == 'lawyer')
+              'avatar': conv['user2Model']?['imageUrl'] ?? ''
+            else
+              'imageUrl': conv['user2Model']?['imageUrl'] ?? '',
+            'active': true,
+            'caseSuccess': false,
           };
+    final myUserId = UserProfileStore.instance.code;
+
+    if (roomCode.isEmpty) {
+      return const _EmptyChat();
+    }
 
     return _userType == 'lawyer'
         ? ChatPageLawyer(
-            key: ValueKey(conv.id),
-            model: model,
-            // jobId: conv.id,
+            key: ValueKey(roomCode),
+            model: chatModel,
+            roomCode: roomCode,
+            userId: myUserId,
             embeddedMode: true,
           )
         : ChatPageUser(
-            key: ValueKey(conv.id),
-            model: model,
+            key: ValueKey(roomCode),
+            model: chatModel,
+            roomCode: roomCode,
+            userId: myUserId,
+            caseCode: chatModel['caseCode']?.toString() ?? '',
             embeddedMode: true,
-            roomCode: "",
-            userId: ""
-            // roomCode: roomCode,
-            // userId: myUserId,
-            );
+          );
   }
 
   // ── Conversation list ──────────────────────────────────
@@ -299,8 +313,9 @@ class _MessagePageState extends State<MessagePage> {
       separatorBuilder: (_, __) => SizedBox(height: isDesktop ? 4 : 10),
       itemBuilder: (context, index) => _ConversationItem(
         conv: _conversations[index],
-        isSelected:
-            isDesktop && _selectedConv['code'] == _conversations[index]['code'],
+        isSelected: isDesktop &&
+            _selectedConv != null &&
+            _selectedConv['code'] == _conversations[index]['code'],
         isDesktop: isDesktop,
         onTap: () => _onTapConversation(_conversations[index], isDesktop),
       ),

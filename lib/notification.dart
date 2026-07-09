@@ -1,11 +1,18 @@
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/notification-detail.dart';
+import 'package:LawyerOnline/services/notification_navigation_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// Mock data สำหรับ notification dropdown (ยังไม่ได้ผูก API)
 List<Map<String, dynamic>> globalNotifications = [
   {
     "type": "call",
@@ -27,254 +34,552 @@ List<Map<String, dynamic>> globalNotifications = [
     "fullDetail":
         "การนัดหมายปรึกษาคดีของคุณกับทนายศักดิ์สิทธิ์ ได้รับการยืนยันแล้ว กรุณาเตรียมเอกสารที่เกี่ยวข้องให้พร้อมก่อนถึงเวลานัดหมาย"
   },
-  {
-    "type": "finish",
-    "title": "นัดหมายทนายความเสร็จสิ้น",
-    "detail": "กรุณารีวิวการให้คะแนนทนายความ",
-    "time": "เมื่อวาน",
-    "date": "yesterday",
-    "isRead": true,
-    "fullDetail":
-        "การนัดหมายของคุณเสร็จสิ้นเรียบร้อยแล้ว กรุณาทำแบบประเมินและรีวิวการให้คะแนนทนายความเพื่อเป็นประโยชน์ในการพัฒนาบริการของเราต่อไป"
-  },
-  {
-    "type": "system",
-    "title": "ทนายความรับเคสแล้ว",
-    "detail": "คดีของคุณมีทนายความรับเคสแล้ว",
-    "time": "2 วันก่อน",
-    "date": "old",
-    "isRead": true,
-    "fullDetail":
-        "คดีของคุณมีทนายความรับเคสเรียบร้อยแล้ว คุณสามารถเริ่มสนทนาหรือส่งเอกสารเพิ่มเติมให้กับทนายความได้ทันที"
-  }
 ];
 
 class NotificationPage extends StatefulWidget {
-  const NotificationPage({Key? key}) : super(key: key);
+  const NotificationPage({super.key});
 
   @override
   State<NotificationPage> createState() => _NotificationPageState();
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  List<Map<String, dynamic>> get notifications => globalNotifications;
+  static const _kPrimary = Color(0xFF0262EC);
+  static const _kBg = Color(0xFFEEF2F5);
+
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
 
   int get unreadCount =>
-      notifications.where((n) => n["isRead"] == false).length;
+      _notifications.where((n) => n['isRead'] != true).length;
 
-  IconData getIcon(type) {
-    switch (type) {
-      case "chat":
-        return Icons.chat_bubble;
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
 
-      case "call":
-        return Icons.call_end;
+  Future<void> _loadNotifications() async {
+    final code = UserProfileStore.instance.code;
+    if (code.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
-      case "booking":
-        return Icons.calendar_month;
+    try {
+      final result = await postDio('$server/m/notification/read', {
+        'code': code,
+        'skip': 0,
+        'limit': 50,
+      });
 
-      case "payment":
-        return Icons.payment;
+      if (!mounted) return;
 
-      case "finish":
-        return Icons.task_alt;
+      final raw = result['objectData'];
+      final list = raw is List
+          ? raw
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : <Map<String, dynamic>>[];
 
-      default:
-        return Icons.notifications;
+      setState(() {
+        _notifications = list;
+        _isLoading = false;
+      });
+
+      final total = result['totalData'];
+      if (total != null) {
+        NotificationStore.instance.setUnread(
+          total is int
+              ? total
+              : int.tryParse(total.toString()) ?? unreadCount,
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future refresh() async {
-    await Future.delayed(const Duration(seconds: 1));
-  }
+  Future<void> _markAllRead() async {
+    if (_notifications.isEmpty) return;
 
-  void markAllRead() {
     setState(() {
-      for (var n in notifications) {
-        n["isRead"] = true;
+      for (final n in _notifications) {
+        n['isRead'] = true;
       }
     });
+
+    await NotificationStore.instance.markAllRead();
+    await NotificationStore.instance.refresh();
   }
 
-  Widget buildItem(item, index) {
-    return Dismissible(
-      key: Key(index.toString()),
-      direction: DismissDirection.endToStart,
-      onDismissed: (direction) {
-        setState(() {
-          notifications.removeAt(index);
-        });
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            item["isRead"] = true;
-            // Overlay.of(context).insert(overlay);
-          });
-          if (item["type"] == 'call') {
-            showIncomingCallOverlay(context, "ทนายทนายศักด์สิทธิ์");
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => NotificationDetailPage(data: item),
-              ),
-            );
-          }
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: item["isRead"] ? Colors.white : Color(0xFFBAD5FF),
-            borderRadius: BorderRadius.circular(16),
-            // boxShadow: const [
-            //   BoxShadow(
-            //     color: Colors.black12,
-            //     blurRadius: 3,
-            //     offset: Offset(0, 2),
-            //   )
-            // ],
-          ),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: item["isRead"]
-                  ? const Color.fromARGB(255, 206, 228, 246)
-                  : Colors.white,
-              child: Icon(
-                getIcon(item["type"]),
-                color: Colors.blue,
-              ),
-            ),
-            title: Text(
-              item["title"],
-              style: TextStyle(
-                fontWeight:
-                    item["isRead"] ? FontWeight.normal : FontWeight.bold,
-              ),
-            ),
-            subtitle: Text(item["detail"]),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item["time"],
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                if (!item["isRead"])
-                  Container(
-                    margin: const EdgeInsets.only(top: 5),
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        color: Colors.red, shape: BoxShape.circle),
-                  )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> _markOneRead(Map<String, dynamic> item) async {
+    if (item['isRead'] == true) return;
+
+    setState(() => item['isRead'] = true);
+
+    final code = item['code']?.toString();
+    if (code != null && code.isNotEmpty) {
+      try {
+        await postDio('$server/m/notification/markRead', {'code': code});
+        await NotificationStore.instance.refresh();
+      } catch (_) {}
+    }
   }
 
-  Widget buildSection(title, date) {
-    List items = notifications.where((n) => n["date"] == date).toList();
+  Map<String, dynamic> _toDetailData(Map<String, dynamic> item) {
+    return {
+      'type': item['type'] ?? item['page'] ?? 'system',
+      'title': item['title']?.toString() ?? '',
+      'detail': item['body']?.toString() ?? '',
+      'body': item['body']?.toString() ?? '',
+      'time': _formatTime(item),
+      'fullDetail': item['body']?.toString() ?? '',
+      'page': item['page']?.toString() ?? '',
+      'refCode': item['refCode']?.toString() ?? '',
+    };
+  }
 
-    if (items.isEmpty) return const SizedBox();
+  DateTime? _parseDate(Map<String, dynamic> item) {
+    final raw = item['docDate'];
+    if (raw is DateTime) return raw;
+    if (raw is String && raw.isNotEmpty) {
+      return DateTime.tryParse(raw);
+    }
+    final date = item['createDate']?.toString() ?? '';
+    final time = item['createTime']?.toString() ?? '';
+    if (date.length >= 8) {
+      try {
+        final y = int.parse(date.substring(0, 4));
+        final m = int.parse(date.substring(4, 6));
+        final d = int.parse(date.substring(6, 8));
+        int h = 0, min = 0;
+        if (time.length >= 4) {
+          h = int.tryParse(time.substring(0, 2)) ?? 0;
+          min = int.tryParse(time.substring(2, 4)) ?? 0;
+        }
+        return DateTime(y, m, d, h, min);
+      } catch (_) {}
+    }
+    return null;
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        ...items.map((item) {
-          int index = notifications.indexOf(item);
+  String _dateGroup(Map<String, dynamic> item) {
+    final dt = _parseDate(item);
+    if (dt == null) return 'old';
 
-          return buildItem(item, index);
-        }).toList()
-      ],
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final itemDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(itemDay).inDays;
+
+    if (diff == 0) return 'today';
+    if (diff == 1) return 'yesterday';
+    return 'old';
+  }
+
+  String _formatTime(Map<String, dynamic> item) {
+    final dt = _parseDate(item);
+    if (dt != null) {
+      return DateFormat('HH:mm').format(dt);
+    }
+    final time = item['createTime']?.toString() ?? '';
+    if (time.length >= 4) {
+      return '${time.substring(0, 2)}:${time.substring(2, 4)}';
+    }
+    return '';
+  }
+
+  _NotificationStyle _styleFor(Map<String, dynamic> item) {
+    final type = item['type']?.toString() ?? '';
+    final page = item['page']?.toString() ?? '';
+
+    if (type == 'chat_message' || page == 'chat') {
+      return const _NotificationStyle(
+        Icons.chat_bubble_outline_rounded,
+        Color(0xFF0262EC),
+        Color(0xFFE8F1FF),
+      );
+    }
+    if (page == 'appointment_detail' ||
+        page == 'case_request_detail' ||
+        type.contains('case') ||
+        type.contains('payment') ||
+        type == 'session_end') {
+      return const _NotificationStyle(
+        Icons.event_available_rounded,
+        Color(0xFF7C4DFF),
+        Color(0xFFF0EBFF),
+      );
+    }
+    if (type == 'lawyer_apply_approved') {
+      return const _NotificationStyle(
+        Icons.verified_rounded,
+        Color(0xFF059669),
+        Color(0xFFE8F8F1),
+      );
+    }
+    if (page == 'community') {
+      return const _NotificationStyle(
+        Icons.groups_rounded,
+        Color(0xFFE65100),
+        Color(0xFFFFF3E8),
+      );
+    }
+    if (type == 'call') {
+      return const _NotificationStyle(
+        Icons.call_end_rounded,
+        Color(0xFFC62828),
+        Color(0xFFFFEBEE),
+      );
+    }
+    return const _NotificationStyle(
+      Icons.notifications_none_rounded,
+      Color(0xFF5B6E8A),
+      Color(0xFFF1F5FB),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Row(
-      //     children: [
-      //       const Text("การแจ้งเตือน"),
-      //       const SizedBox(width: 10),
-      //       if (unreadCount > 0)
-      //         Container(
-      //           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      //           decoration: BoxDecoration(
-      //             color: Colors.red,
-      //             borderRadius: BorderRadius.circular(20),
-      //           ),
-      //           child: Text(
-      //             unreadCount.toString(),
-      //             style: const TextStyle(color: Colors.white, fontSize: 12),
-      //           ),
-      //         )
-      //     ],
-      //   ),
-      //   actions: [
-      //     IconButton(onPressed: markAllRead, icon: const Icon(Icons.done_all))
-      //   ],
-      // ),
-      backgroundColor: const Color(0xFFEEF2F5),
+      backgroundColor: _kBg,
       appBar: appBarCustom(
-        title: "notifications".tr(),
+        title: 'notifications'.tr(),
         backBtn: true,
-        isRightWidget: true,
-        backAction: () => goBack(),
-        rightWidget: GestureDetector(
-          onTap: () => {
-            markAllRead(),
-          },
-          child: Container(
-            width: 40,
-            alignment: Alignment.center,
-            // padding: const EdgeInsets.symmetric(
-            //   horizontal: 12,
-            //   vertical: 10,
-            // ),
+        isRightWidget: unreadCount > 0,
+        backAction: () => Navigator.pop(context),
+        rightWidget: unreadCount > 0
+            ? GestureDetector(
+                onTap: _markAllRead,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.done_all_rounded,
+                          size: 14, color: _kPrimary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'markAllRead'.tr(),
+                        style: AppTypography.prompt(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _kPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : null,
+      ),
+      body: _isLoading
+          ? AppLoadingView(message: 'loading'.tr())
+          : RefreshIndicator(
+              color: _kPrimary,
+              onRefresh: _loadNotifications,
+              child: _notifications.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [_buildEmptyState()],
+                    )
+                  : ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      children: [
+                        if (unreadCount > 0) ...[
+                          _buildUnreadBanner(),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildSection('timeline.today'.tr(), 'today'),
+                        _buildSection('timeline.yesterday'.tr(), 'yesterday'),
+                        _buildSection('timeline.earlier'.tr(), 'old'),
+                      ],
+                    ),
+            ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
-              // borderRadius: BorderRadius.circular(22),
+              color: _kPrimary.withOpacity(0.08),
               shape: BoxShape.circle,
-              border: Border.all(
-                width: 1,
-                color: const Color(0xFFDBDBDB),
-              ),
             ),
             child: const Icon(
-              Icons.done_all,
-              size: 15,
+              Icons.notifications_none_rounded,
+              size: 40,
+              color: _kPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'noNotifications'.tr(),
+            style: AppTypography.prompt(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1A2340),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'noNotificationsDesc'.tr(),
+            textAlign: TextAlign.center,
+            style: AppTypography.prompt(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnreadBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0262EC), Color(0xFF0099FF)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _kPrimary.withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.mark_email_unread_rounded,
+                color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'unreadNotifications'.tr(),
+                  style: AppTypography.prompt(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+                Text(
+                  '$unreadCount',
+                  style: AppTypography.prompt(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, String group) {
+    final items =
+        _notifications.where((n) => _dateGroup(n) == group).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10, top: 8),
+          child: Text(
+            title,
+            style: AppTypography.prompt(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF64748B),
             ),
           ),
         ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: refresh,
-        child: ListView(
-          children: [
-            buildSection("timeline.today".tr(), "today"),
-            buildSection("timeline.yesterday".tr(), "yesterday"),
-            buildSection("timeline.earlier".tr(), "earlier"),
-            const SizedBox(height: 20)
-          ],
+        ...items.map(_buildNotificationCard),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildNotificationCard(Map<String, dynamic> item) {
+    final isRead = item['isRead'] == true;
+    final style = _styleFor(item);
+    final time = _formatTime(item);
+    final body = item['body']?.toString() ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () async {
+            await _markOneRead(item);
+
+            final type = item['type']?.toString() ?? '';
+            if (type == 'call') {
+              if (!mounted) return;
+              showIncomingCallOverlay(context, item['title']?.toString() ?? '');
+              return;
+            }
+
+            if (!mounted) return;
+            final navigated =
+                await NotificationNavigationService.handle(context, item);
+            if (!navigated && mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      NotificationDetailPage(data: _toDetailData(item)),
+                ),
+              );
+            }
+          },
+          child: Ink(
+            decoration: BoxDecoration(
+              color: isRead ? Colors.white : const Color(0xFFF5F9FF),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isRead
+                    ? const Color(0xFFE8EDF5)
+                    : _kPrimary.withOpacity(0.25),
+                width: isRead ? 1 : 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isRead)
+                  Container(
+                    width: 4,
+                    height: 88,
+                    decoration: const BoxDecoration(
+                      color: _kPrimary,
+                      borderRadius: BorderRadius.horizontal(
+                        left: Radius.circular(18),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: style.bg,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(style.icon, color: style.color, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item['title']?.toString() ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.prompt(
+                                        fontSize: 14,
+                                        fontWeight: isRead
+                                            ? FontWeight.w600
+                                            : FontWeight.w700,
+                                        color: const Color(0xFF1A2340),
+                                      ),
+                                    ),
+                                  ),
+                                  if (time.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      time,
+                                      style: AppTypography.prompt(
+                                        fontSize: 11,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (body.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.prompt(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (!isRead) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: const BoxDecoration(
+                              color: _kPrimary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -287,12 +592,6 @@ class _NotificationPageState extends State<NotificationPage> {
 
     await player.setReleaseMode(ReleaseMode.loop);
     await player.play(AssetSource('incoming_call.mp3'));
-
-    // callback ที่ widget ด้านในจะเรียกเพื่อ dismiss พร้อม animate
-    Future<void> dismiss() async {
-      // บอกให้ widget เล่น animation ออก แล้วค่อย remove
-      // ใช้ GlobalKey เพื่อเข้าถึง state
-    }
 
     final key = GlobalKey<_IncomingCallOverlayState>();
 
@@ -316,7 +615,6 @@ class _NotificationPageState extends State<NotificationPage> {
 
     Overlay.of(context).insert(overlay);
 
-    // Auto dismiss ภายใน 10 วิ
     Future.delayed(const Duration(seconds: 10), () async {
       if (overlay.mounted) {
         await player.stop();
@@ -330,39 +628,37 @@ class _NotificationPageState extends State<NotificationPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("notification.pre_consultation_instruction".tr()),
-        content: Text("notification.pre_consultation_instruction_message".tr()),
+        title: Text('notification.pre_consultation_instruction'.tr()),
+        content: Text('notification.pre_consultation_instruction_message'.tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text("cancel".tr()),
+            child: Text('cancel'.tr()),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop(); // ปิด dialog
+              Navigator.of(context).pop();
 
-              Map<Permission, PermissionStatus> statuses = await [
+              final statuses = await [
                 Permission.camera,
                 Permission.microphone,
               ].request();
 
-              // ถ้าโดนปฏิเสธแบบถาวร (iOS จะไม่ถามซ้ำ)
               if (statuses.values.any((s) => s.isPermanentlyDenied)) {
+                if (!context.mounted) return;
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text("permission.title".tr()),
-                    content: Text("permission.content".tr()),
+                    title: Text('permission.title'.tr()),
+                    content: Text('permission.content'.tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: Text("cancel".tr()),
+                        child: Text('cancel'.tr()),
                       ),
                       TextButton(
-                        onPressed: () {
-                          openAppSettings(); // เปิดหน้า Settings
-                        },
-                        child: Text("permission.open_settings".tr()),
+                        onPressed: openAppSettings,
+                        child: Text('permission.open_settings'.tr()),
                       ),
                     ],
                   ),
@@ -370,46 +666,50 @@ class _NotificationPageState extends State<NotificationPage> {
                 return;
               }
 
-              bool allGranted =
+              final allGranted =
                   statuses.values.every((status) => status.isGranted);
 
+              if (!context.mounted) return;
               if (allGranted) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => HMSPrebuilt(
-                      roomCode: "jle-wjbx-gyk",
+                      roomCode: 'jle-wjbx-gyk',
                     ),
                   ),
                 );
               } else {
-                // แจ้งเตือนทั่วไป
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text("notification.permission_denied_title".tr()),
+                    title: Text('notification.permission_denied_title'.tr()),
                     content:
-                        Text("notification.permission_denied_content".tr()),
+                        Text('notification.permission_denied_content'.tr()),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: Text("confirm".tr()),
+                        child: Text('confirm'.tr()),
                       ),
                     ],
                   ),
                 );
               }
             },
-            child: Text("notification.join_now".tr()),
+            child: Text('notification.join_now'.tr()),
           ),
         ],
       ),
     );
   }
+}
 
-  void goBack() async {
-    Navigator.pop(context, false);
-  }
+class _NotificationStyle {
+  final IconData icon;
+  final Color color;
+  final Color bg;
+
+  const _NotificationStyle(this.icon, this.color, this.bg);
 }
 
 class _IncomingCallOverlay extends StatefulWidget {
@@ -442,14 +742,13 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
       duration: const Duration(milliseconds: 320),
     );
     _slide = Tween<Offset>(
-      begin: const Offset(0, -0.5), // เริ่มจากนอกจอด้านบน
+      begin: const Offset(0, -0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
 
     _fade = Tween<double>(begin: 0, end: 1)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
-    // เล่น animation เข้า
     _ctrl.forward();
   }
 
@@ -459,7 +758,6 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
     super.dispose();
   }
 
-  /// เรียกจากภายนอกเพื่อ animate ออกแล้ว resolve
   Future<void> dismiss() async {
     await _ctrl.animateTo(
       0,
@@ -517,23 +815,24 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "notification.incoming_call".tr(),
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 12),
+                          'notification.incoming_call'.tr(),
+                          style: AppTypography.prompt(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                          ),
                         ),
                         Text(
                           widget.lawyerName,
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14),
+                          style: AppTypography.prompt(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  // ปุ่มวางสาย
                   Container(
                     width: 45,
                     decoration: BoxDecoration(
@@ -548,7 +847,6 @@ class _IncomingCallOverlayState extends State<_IncomingCallOverlay>
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // ปุ่มรับสาย
                   Container(
                     width: 45,
                     decoration: BoxDecoration(

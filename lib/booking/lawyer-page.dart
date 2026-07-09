@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/booking/lawyer-details.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/app_dropdown.dart';
 import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/repositories/province_repository.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
@@ -1059,106 +1060,28 @@ class _LawyerPageState extends State<LawyerPage> {
             if (_isLoadingProvinces)
               _buildProvinceSkeleton()
             else
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _selectedProvince != 'ทั้งหมด'
-                      ? _kPrimary.withOpacity(0.08)
-                      : const Color(0xFFF8F9FB),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _selectedProvince != 'ทั้งหมด'
-                        ? _kPrimary.withOpacity(0.4)
-                        : const Color(0xFFE2E8F4),
-                    width: 1.5,
-                  ),
+              AppDropdownFilter<String>(
+                value: _allProvinces.any((e) => e['title'] == _selectedProvince)
+                    ? _selectedProvince
+                    : null,
+                active: _selectedProvince != 'ทั้งหมด',
+                accentColor: _kPrimary,
+                selectedItemBuilder:
+                    AppDropdownStyles.provinceTitleSelectedBuilder(
+                  _allProvinces,
+                  _selectedProvince,
+                  accentColor: _kPrimary,
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    // value: _selectedProvince,
-                    value: _allProvinces
-                            .any((e) => e['title'] == _selectedProvince)
-                        ? _selectedProvince
-                        : null, // 🔥
-                    isExpanded: true,
-                    icon: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: _selectedProvince != 'ทั้งหมด'
-                          ? _kPrimary
-                          : Colors.grey[400],
-                      size: 20,
-                    ),
-                    selectedItemBuilder: (_) => _allProvinces.map((p) {
-                      return Row(children: [
-                        Icon(
-                          p['title'] != 'ทั้งหมด'
-                              ? Icons.location_city_outlined
-                              : Icons.public_rounded,
-                          size: 15,
-                          color: _selectedProvince != 'ทั้งหมด'
-                              ? _kPrimary
-                              : Colors.grey[400],
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          p['title'],
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _selectedProvince != 'ทั้งหมด'
-                                ? _kPrimary
-                                : const Color(0xFF64748B),
-                          ),
-                        ),
-                      ]);
-                    }).toList(),
-                    items: _allProvinces.map<DropdownMenuItem<String>>(
-                      (p) {
-                        final isSelected = _selectedProvince == p['title'];
-                        return DropdownMenuItem<String>(
-                          value: p['title'],
-                          child: Row(
-                            children: [
-                              Icon(
-                                p['title'] != 'ทั้งหมด'
-                                    ? Icons.location_city_outlined
-                                    : Icons.public_rounded,
-                                size: 15,
-                                color:
-                                    isSelected ? _kPrimary : Colors.grey[400],
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  p['title'],
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: isSelected
-                                        ? _kPrimary
-                                        : const Color(0xFF1A2340),
-                                  ),
-                                ),
-                              ),
-                              if (isSelected)
-                                const Icon(Icons.check_rounded,
-                                    size: 15, color: _kPrimary),
-                            ],
-                          ),
-                        );
-                      },
-                    ).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setModalState(() => _selectedProvince = val);
-                      }
-                    },
-                  ),
+                items: AppDropdownStyles.provinceTitleItems(
+                  _allProvinces,
+                  _selectedProvince,
+                  accentColor: _kPrimary,
                 ),
+                onChanged: (val) {
+                  if (val != null) {
+                    setModalState(() => _selectedProvince = val);
+                  }
+                },
               ),
             if (_provinceLoadError != null) ...[
               const SizedBox(height: 8),

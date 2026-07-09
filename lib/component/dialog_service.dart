@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -644,15 +645,17 @@ class DialogService {
   }
 
   /// LOADING
-  static showLoading(BuildContext context) {
+  static showLoading(BuildContext context, {String? message}) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: Center(
+          child: AppLoadingCard(message: message ?? 'loading'.tr()),
+        ),
+      ),
     );
   }
 

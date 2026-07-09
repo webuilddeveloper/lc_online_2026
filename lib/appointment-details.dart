@@ -177,7 +177,6 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       //   _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
       //   _isLoadingLawyers = false;
       // });
-      // print('------------------- ${mapped}');
     } catch (_) {
       // if (!mounted) return;
       // setState(() {
@@ -1801,7 +1800,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                   ...widget.appointment
                 },
                 roomCode: roomCode,
-                userId: widget.appointment['userCode'],
+                userId: UserProfileStore.instance.code,
               ),
             ),
           );

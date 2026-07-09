@@ -91,9 +91,16 @@ class NotificationService {
   }
 
   /// เสียง + สั่น ตอนแอปเปิดอยู่ (ใช้คู่กับ in-app popup)
-  static Future<void> playForegroundAlert() async {
-    await HapticFeedback.heavyImpact();
-    SystemSound.play(SystemSoundType.alert);
+  static Future<void> playForegroundAlert({
+    bool sound = true,
+    bool vibration = true,
+  }) async {
+    if (vibration) {
+      await HapticFeedback.heavyImpact();
+    }
+    if (sound) {
+      SystemSound.play(SystemSoundType.alert);
+    }
   }
 
   /// แจ้งเตือนระบบ — ใช้ตอนแอป background / data-only message
@@ -101,6 +108,8 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    bool sound = true,
+    bool vibration = true,
   }) async {
     final androidDetails = AndroidNotificationDetails(
       _channelId,
@@ -108,16 +117,16 @@ class NotificationService {
       channelDescription: 'แจ้งเตือนทั่วไปของแอป',
       importance: Importance.max,
       priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      vibrationPattern: _vibrationPattern,
+      playSound: sound,
+      enableVibration: vibration,
+      vibrationPattern: vibration ? _vibrationPattern : null,
       icon: '@mipmap/ic_launcher',
     );
 
-    const iosDetails = DarwinNotificationDetails(
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true,
+      presentSound: sound,
     );
 
     await _plugin.show(

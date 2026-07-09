@@ -8,6 +8,8 @@ import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
+import 'package:LawyerOnline/widgets/notification_badge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -103,9 +105,13 @@ class _DesktopTopNavState extends State<DesktopTopNav>
     );
 
     LawyerProfileStore.instance.addListener(_onStoreChanged);
+    NotificationStore.instance.addListener(_onNotificationChanged);
 
     _prevUrgent = LawyerProfileStore.instance.isUrgentCaseEnabled;
     _syncUrgentAnimation(_prevUrgent, burst: false);
+    if (widget.typeLogin != 'null') {
+      NotificationStore.instance.refresh();
+    }
   }
 
   @override
@@ -113,6 +119,7 @@ class _DesktopTopNavState extends State<DesktopTopNav>
     _pulseCtrl.dispose();
     _burstCtrl.dispose();
     LawyerProfileStore.instance.removeListener(_onStoreChanged);
+    NotificationStore.instance.removeListener(_onNotificationChanged);
     super.dispose();
   }
 
@@ -124,6 +131,10 @@ class _DesktopTopNavState extends State<DesktopTopNav>
       _pulseCtrl.stop();
       _pulseCtrl.reset();
     }
+  }
+
+  void _onNotificationChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onStoreChanged() {
@@ -194,7 +205,11 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                         .map((item) => DesktopNavItem(
                               item: item,
                               isSelected: currentIndex == item.index,
-                              showBadge: item.showBadge && typeLogin != 'null',
+                              badgeCount: widget.typeLogin != 'null'
+                                  ? NotificationStore.instance
+                                      .badgeCountForNavIndex(item.index)
+                                  : 0,
+                              showBadgeSlot: item.showBadge,
                               onTap: () => onTap(item.index),
                             ))
                         .toList(),
@@ -234,21 +249,18 @@ class _DesktopTopNavState extends State<DesktopTopNav>
                         color: const Color(0xFF1565C0).withOpacity(0.2)),
                   ),
                   child: Stack(
+                    clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: [
                       Image.asset('assets/icons/bell-2.png',
                           width: 22,
                           height: 22,
                           color: const Color(0xFF1565C0)),
-                      Positioned(
-                        top: 8,
-                        right: 9,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                              color: Color(0xFFF70C0C), shape: BoxShape.circle),
-                        ),
+                      NotificationBadgeDot(
+                        count: NotificationStore.instance.unreadCount,
+                        showCount: true,
+                        top: 2,
+                        right: 2,
                       ),
                     ],
                   ),
@@ -534,14 +546,16 @@ class _UrgentAvatarRing extends StatelessWidget {
 class DesktopNavItem extends StatelessWidget {
   final NavItem item;
   final bool isSelected;
-  final bool showBadge;
+  final bool showBadgeSlot;
+  final int badgeCount;
   final VoidCallback onTap;
 
   const DesktopNavItem({
     Key? key,
     required this.item,
     required this.isSelected,
-    required this.showBadge,
+    required this.showBadgeSlot,
+    required this.badgeCount,
     required this.onTap,
   }) : super(key: key);
 
@@ -578,6 +592,7 @@ class DesktopNavItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Stack(
+                        clipBehavior: Clip.none,
                         alignment: Alignment.center,
                         children: [
                           Image.asset(
@@ -588,18 +603,12 @@ class DesktopNavItem extends StatelessWidget {
                                 ? const Color(0xFF0262EC)
                                 : const Color(0xFF666666),
                           ),
-                          if (showBadge)
-                            Positioned(
+                          if (showBadgeSlot)
+                            NotificationBadgeDot(
+                              count: badgeCount,
+                              size: 8,
                               top: 0,
                               right: 2,
-                              child: Container(
-                                width: 10,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF70C0C),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
                             ),
                         ],
                       ),

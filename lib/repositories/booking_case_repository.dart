@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class BookingCaseRepositoryException implements Exception {
@@ -154,11 +155,19 @@ class ApiBookingCaseRepository implements BookingCaseRepository {
     String url,
     Map<String, dynamic> payload,
   ) async {
+    const storage = FlutterSecureStorage();
+    final profileCode = await storage.read(key: 'profileCode18');
+    final requestBody = {
+      ...payload,
+      if (profileCode != null && profileCode.isNotEmpty)
+        'profileCode': profileCode,
+    };
+
     final client = _client ?? http.Client();
     final response = await client.post(
       Uri.parse(url),
       headers: _headers(),
-      body: jsonEncode(payload),
+      body: jsonEncode(requestBody),
     );
 
     if (response.statusCode != 200) {

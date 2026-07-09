@@ -1,5 +1,148 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
+
+// ─────────────────────────────────────────────
+// App Loading — ใช้ทั่วแอป (สีหลัก #0262EC, Prompt font)
+// ─────────────────────────────────────────────
+//
+//  AppLoadingView()           — โหลดเต็มหน้า / body
+//  AppLoadingInline()         — โหลดใน section ย่อย
+//  AppLoadingCard()           — การ์ดสำหรับ dialog
+//  LoadingDialog.show/hide    — overlay dialog
+//
+// ─────────────────────────────────────────────
+
+abstract final class AppLoadingColors {
+  static const primary = Color(0xFF0262EC);
+  static const text = Color(0xFF1A2340);
+  static const muted = Color(0xFF8593A8);
+  static const surface = Color(0xFFF2F6FF);
+}
+
+/// Ring spinner แบบ modern — ใช้แทน CircularProgressIndicator
+class AppRingSpinner extends StatefulWidget {
+  final Color color;
+  final double size;
+
+  const AppRingSpinner({
+    super.key,
+    this.color = AppLoadingColors.primary,
+    this.size = 48,
+  });
+
+  @override
+  State<AppRingSpinner> createState() => _AppRingSpinnerState();
+}
+
+/// การ์ด loading สำหรับ dialog / overlay
+class AppLoadingCard extends StatelessWidget {
+  final String message;
+  final bool dark;
+
+  const AppLoadingCard({
+    super.key,
+    required this.message,
+    this.dark = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (dark) return _DarkLoadingCard(message: message);
+    return _LightLoadingCard(message: message);
+  }
+}
+
+/// Loading เต็มพื้นที่ — ใช้แทน Center(CircularProgressIndicator)
+class AppLoadingView extends StatelessWidget {
+  final String? message;
+  final Color? color;
+  final EdgeInsetsGeometry padding;
+  final bool expand;
+  final bool showDots;
+
+  const AppLoadingView({
+    super.key,
+    this.message,
+    this.color,
+    this.padding = const EdgeInsets.all(32),
+    this.expand = true,
+    this.showDots = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = color ?? AppLoadingColors.primary;
+
+    final content = Padding(
+      padding: padding,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppRingSpinner(color: accent, size: 52),
+          if (message != null && message!.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: AppTypography.prompt(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppLoadingColors.muted,
+                height: 1.4,
+              ),
+            ),
+          ],
+          if (showDots) ...[
+            const SizedBox(height: 14),
+            DotsLoader(color: accent.withValues(alpha: 0.55), size: 6),
+          ],
+        ],
+      ),
+    );
+
+    if (expand) {
+      return ColoredBox(
+        color: Colors.transparent,
+        child: Center(child: content),
+      );
+    }
+    return Center(child: content);
+  }
+}
+
+/// Loading แบบ inline สำหรับ section / list
+class AppLoadingInline extends StatelessWidget {
+  final double height;
+  final EdgeInsetsGeometry padding;
+  final Color? color;
+  final double size;
+
+  const AppLoadingInline({
+    super.key,
+    this.height = 120,
+    this.padding = const EdgeInsets.symmetric(vertical: 24),
+    this.color,
+    this.size = 34,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: SizedBox(
+        height: height,
+        child: Center(
+          child: AppRingSpinner(
+            color: color ?? AppLoadingColors.primary,
+            size: size,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // ─────────────────────────────────────────────
 // USAGE EXAMPLES
@@ -97,19 +240,26 @@ class _LightLoadingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.07), width: 0.5),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: AppLoadingColors.primary.withValues(alpha: 0.1),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _RingSpinner(color: Color(0xFF1A1A1A), size: 48),
+          const AppRingSpinner(color: AppLoadingColors.primary, size: 48),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(
+            style: AppTypography.prompt(
               fontSize: 13,
-              color: Color(0xFF888888),
-              fontWeight: FontWeight.w400,
+              color: AppLoadingColors.muted,
+              fontWeight: FontWeight.w500,
               height: 1.5,
             ),
           ),
@@ -136,7 +286,7 @@ class _DarkLoadingCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _RingSpinner(color: Colors.white, size: 48),
+          const AppRingSpinner(color: Colors.white, size: 48),
           const SizedBox(height: 16),
           Text(
             message,
@@ -155,16 +305,7 @@ class _DarkLoadingCard extends StatelessWidget {
 
 // ── Ring Spinner widget ───────────────────────
 
-class _RingSpinner extends StatefulWidget {
-  final Color color;
-  final double size;
-  const _RingSpinner({required this.color, required this.size});
-
-  @override
-  State<_RingSpinner> createState() => _RingSpinnerState();
-}
-
-class _RingSpinnerState extends State<_RingSpinner>
+class _AppRingSpinnerState extends State<AppRingSpinner>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _rotate;
@@ -237,7 +378,7 @@ class _RingPainter extends CustomPainter {
       2 * pi,
       false,
       Paint()
-        ..color = color.withOpacity(0.1)
+        ..color = color.withValues(alpha: 0.12)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round,
@@ -311,7 +452,7 @@ class _ProgressOverlay extends StatelessWidget {
                     minHeight: 2,
                     backgroundColor: Colors.black.withOpacity(0.07),
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF1A1A1A),
+                      AppLoadingColors.primary,
                     ),
                   ),
                 ),
@@ -373,7 +514,7 @@ class DotsLoader extends StatefulWidget {
   final double size;
   const DotsLoader({
     super.key,
-    this.color = const Color(0xFF1A1A1A),
+    this.color = AppLoadingColors.primary,
     this.size = 8,
   });
 
@@ -484,15 +625,7 @@ class _LoadingButtonState extends State<LoadingButton> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_loading) ...[
-              const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeCap: StrokeCap.round,
-                ),
-              ),
+              const AppRingSpinner(color: Colors.white, size: 14),
               const SizedBox(width: 8),
             ],
             AnimatedSwitcher(

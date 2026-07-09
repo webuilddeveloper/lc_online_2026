@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/app_dropdown.dart';
 import 'package:LawyerOnline/consult/consult_sum.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:dotted_border/dotted_border.dart';
@@ -18,6 +19,7 @@ class ConsultPage extends StatefulWidget {
 class _ConsultPageState extends State<ConsultPage> {
   dynamic _selectedTopic;
   dynamic _selectedSubCase;
+  bool isLoadingLawyers = true;
 
   String? _selectedProvince = 'กรุงเทพมหานคร';
 
@@ -43,13 +45,17 @@ class _ConsultPageState extends State<ConsultPage> {
   ];
 
   Future<void> readTopic() async {
+    setState(() => isLoadingLawyers = true);
     try {
       final param = await postDio('${server}/m/topic/read', {});
+      if (!mounted) return;
       setState(() {
-        print('--===--==--==-- ${param}');
-        _caseTypeList = param['objectData'];
+        _caseTypeList = param['objectData'] ?? [];
+        isLoadingLawyers = false;
       });
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) setState(() => isLoadingLawyers = false);
+    }
   }
 
   List<Map<String, dynamic>> get _subCases {
@@ -94,6 +100,19 @@ class _ConsultPageState extends State<ConsultPage> {
     super.dispose();
   }
 
+   Widget _loadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const topicColor = Color(0xFF0262EC);
@@ -111,17 +130,18 @@ class _ConsultPageState extends State<ConsultPage> {
           backAction: () => Navigator.pop(context, false),
         ),
         body: AppLayout(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildHeaderCard(),
-                        const SizedBox(height: 16),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      _buildHeaderCard(),
+                      const SizedBox(height: 16),
+                      if (isLoadingLawyers)
+                        _loadingState()
+                      else
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
@@ -172,13 +192,12 @@ class _ConsultPageState extends State<ConsultPage> {
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-                _buildBottomButton(topicColor),
-              ],
-            ),
+              ),
+              _buildBottomButton(topicColor),
+            ],
           ),
         ),
       ),
@@ -325,9 +344,21 @@ class _ConsultPageState extends State<ConsultPage> {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1A2340))),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
+        AppDropdownField<String>(
           value: _selectedSubCase?['code'] as String?,
-          isExpanded: true,
+          hint: 'เลือกหัวข้อย่อย',
+          prefixIcon: Icons.subdirectory_arrow_right_rounded,
+          items: subTopics
+              .map(
+                (s) => DropdownMenuItem<String>(
+                  value: s['code'] as String,
+                  child: Text(
+                    s['title'] as String,
+                    style: AppDropdownStyles.itemStyle(),
+                  ),
+                ),
+              )
+              .toList(),
           onChanged: (val) {
             final sub = subTopics.firstWhere(
               (s) => s['code'] == val,
@@ -335,42 +366,6 @@ class _ConsultPageState extends State<ConsultPage> {
             );
             setState(() => _selectedSubCase = sub);
           },
-          decoration: InputDecoration(
-            hintText: 'เลือกหัวข้อย่อย',
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-            prefixIcon: const Icon(Icons.subdirectory_arrow_right_rounded,
-                color: Color(0xFF0262EC), size: 20),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFF0262EC), width: 1.5),
-            ),
-          ),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF0262EC)),
-          dropdownColor: const Color(0xFFEEF2F5),
-          borderRadius: BorderRadius.circular(14),
-          items: subTopics
-              .map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(
-                    value: s['code'] as String,
-                    child: Text(s['title'] as String,
-                        style: const TextStyle(fontSize: 13)),
-                  ))
-              .toList(),
         ),
       ],
     );
@@ -394,48 +389,20 @@ class _ConsultPageState extends State<ConsultPage> {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1A2340))),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
+        AppDropdownField<String>(
           value: value,
-          onChanged: enabled ? onChanged : null,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-            prefixIcon: Icon(icon, color: const Color(0xFF0262EC), size: 20),
-            filled: true,
-            fillColor: enabled ? Colors.white : const Color(0xFFF5F7FA),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFF0262EC), width: 1.5),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFEEF2F5), width: 1.5),
-            ),
-          ),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF0262EC)),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          hint: hint,
+          prefixIcon: icon,
+          enabled: enabled,
           items: items
-              .map((e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e, style: const TextStyle(fontSize: 14)),
-                  ))
+              .map(
+                (e) => DropdownMenuItem<String>(
+                  value: e,
+                  child: Text(e, style: AppDropdownStyles.itemStyle()),
+                ),
+              )
               .toList(),
+          onChanged: enabled ? onChanged : null,
         ),
       ],
     );

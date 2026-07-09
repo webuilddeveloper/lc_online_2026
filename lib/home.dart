@@ -132,60 +132,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _toggleUrgentCase(bool value) {
     if (value == true) {
-      // ตอนทนาย login สำเร็จ หรือเปิดแอพแล้วเช็คว่าเป็นทนาย
-      // if (UserProfileStore.instance.userType == 'lawyer') {
-
-      // }
       LocationService.startPeriodicUpdate();
-      // print('object');
-      // ถ้ากำลังพยายามเปิดรับเคส
-      // bool hasConflict = _hasConflictingAppointment();
-
-      // if (hasConflict) {
-      //   // มีคิวชนใน 1 ชั่วโมง แจ้งเตือนและไม่อนุญาตให้เปิด
-      //   showDialog(
-      //     context: context,
-      //     builder: (context) => AlertDialog(
-      //       shape:
-      //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      //       title: Row(
-      //         children: [
-      //           const Icon(Icons.warning_amber_rounded,
-      //               color: Colors.orange, size: 28),
-      //           const SizedBox(width: 8),
-      //           Text("ไม่สามารถเปิดรับเคสด่วนได้",
-      //               style: GoogleFonts.prompt(
-      //                   fontWeight: FontWeight.bold,
-      //                   color: Colors.orange,
-      //                   fontSize: 18)),
-      //         ],
-      //       ),
-      //       content: Text(
-      //           "คุณมีนัดหมายที่กำลังจะเริ่มภายใน 1 ชั่วโมง หรือกำลังอยู่ในช่วงเวลาของเคสอื่นอยู่ โปรดดำเนินการให้เสร็จสิ้นก่อนเปิดรับเคสด่วน",
-      //           style: GoogleFonts.prompt(fontSize: 14)),
-      //       actions: [
-      //         TextButton(
-      //           onPressed: () => Navigator.pop(context),
-      //           child: Text("ตกลง",
-      //               style: GoogleFonts.prompt(
-      //                   color: const Color(0xFF0262EC),
-      //                   fontWeight: FontWeight.bold)),
-      //         )
-      //       ],
-      //     ),
-      //   );
-      //   return;
-      // }
     } else {
-      // ตอน logout หรือทนายกดปิดสถานะ active
       LocationService.stopPeriodicUpdate();
     }
 
-    // store จะเรียก notifyListeners() เอง → ListenableBuilder rebuild อัตโนมัติ
     LawyerProfileStore.instance.setUrgentCase(value);
-
-    // บันทึกสถานะลง persistent storage
-    // storage.write(key: 'urgentCaseEnabled', value: value.toString());
   }
 
   @override
@@ -595,7 +547,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 userType: userType,
                 isUrgentCaseEnabled:
                     LawyerProfileStore.instance.isUrgentCaseEnabled,
+                isPro: LawyerProfileStore.instance.isPro,
+                urgentCaseScope: LawyerProfileStore.instance.urgentCaseScope,
                 onToggleUrgentCase: _toggleUrgentCase,
+                onUrgentCaseScopeChanged: (scope) {
+                  LawyerProfileStore.instance.setUrgentCaseScope(scope);
+                },
               ),
             ),
 

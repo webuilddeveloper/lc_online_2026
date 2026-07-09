@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:LawyerOnline/main.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/widgets/lawyer/lawyer_case_popup.dart';
@@ -68,7 +69,7 @@ class LawyerCaseBroadcastService {
   }
 
   Future<void> _onNewCaseRequest(dynamic raw) async {
-    final data = _normalizeCaseData(_asMap(raw));
+    var data = _normalizeCaseData(_unwrapPayload(_asMap(raw)));
     if (data.isEmpty) return;
 
     final requestCode = _readRequestCode(data);
@@ -77,11 +78,57 @@ class LawyerCaseBroadcastService {
     final lawyerCode = UserProfileStore.instance.code;
     if (_isExcluded(data, lawyerCode)) return;
     if (!await _isWithinRadius(data)) return;
+    if (!_matchesUrgentCaseScope(data)) return;
 
     if (_dialogOpen && _activeRequestCode == requestCode) return;
 
+    if (_needsDetailEnrichment(data)) {
+      try {
+        final detail = await _caseReqService.getRequestDetail(requestCode);
+        if (detail.isNotEmpty) {
+          data = _normalizeCaseData({...data, ...detail});
+        }
+      } catch (e) {
+        debugPrint('Case detail enrich error: $e');
+      }
+    }
+
     _activeCaseData = data;
     _showCasePopup(data);
+  }
+
+  bool _needsDetailEnrichment(Map<String, dynamic> data) {
+    return _pick(data, const [
+          'details',
+          'Details',
+          'topicTitle',
+          'TopicTitle',
+          'subTopicTitle',
+          'SubTopicTitle',
+        ]).isEmpty ||
+        _pick(data, const ['userName', 'UserName', 'clientName']).isEmpty;
+  }
+
+  bool _matchesUrgentCaseScope(Map<String, dynamic> data) {
+    final caseSubTopic = _pick(data, const ['subTopic', 'SubTopic']);
+    if (caseSubTopic.isEmpty) return true;
+
+    final store = LawyerProfileStore.instance;
+    if (store.isPro && store.urgentCaseScope == 'all') return true;
+
+    final expertise = UserProfileStore.instance.user?.expertiseList ?? store.skills;
+    return expertise.contains(caseSubTopic);
+  }
+
+  String _pick(Map<String, dynamic> data, List<String> keys,
+      [String fallback = '']) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return fallback;
   }
 
   bool _isExcluded(Map<String, dynamic> data, String lawyerCode) {
@@ -156,16 +203,27 @@ class LawyerCaseBroadcastService {
     _closeDialogIfOpen(message: 'มีทนายรายอื่นรับเคสนี้แล้ว');
   }
 
-  Future<void> claimCase(String requestCode) async {
-    try {
-      await _caseReqService.claimCaseRequest(requestCode);
-      _upsertClaimedJob(requestCode);
-      await _refreshLawyerJobsFromApi();
+  /// เปิด popup รับเคสจากการกดแจ้งเตือน (new_case_request)
+  Future<void> presentCaseFromRequestCode(String requestCode) async {
+    if (requestCode.isEmpty) return;
 
-      debugPrint('✅ Case claimed successfully');
-    } catch (e) {
-      debugPrint('❌ claimCase error: $e');
-    }
+    var data = await _caseReqService.getRequestDetail(requestCode);
+    if (data.isEmpty) return;
+
+    data = _normalizeCaseData({
+      ...data,
+      'code': requestCode,
+      'requestCode': requestCode,
+    });
+    _activeCaseData = data;
+    _showCasePopup(data);
+  }
+
+  Future<void> claimCase(String requestCode) async {
+    await _caseReqService.claimCaseRequest(requestCode);
+    _upsertClaimedJob(requestCode);
+    await _refreshLawyerJobsFromApi();
+    debugPrint('✅ Case claimed successfully');
   }
 
   void _upsertClaimedJob(String requestCode) {
@@ -196,9 +254,60 @@ class LawyerCaseBroadcastService {
   Map<String, dynamic> _normalizeCaseData(Map<String, dynamic> data) {
     return {
       ...data,
-      'requestCode': data['requestCode'] ?? data['code'],
-      'province':
-          data['provinceTitle'] ?? data['provinceCode'] ?? data['province'],
+      'requestCode': _pick(data, const ['requestCode', 'RequestCode', 'code', 'Code']),
+      'userName': _pick(data, const [
+        'userName',
+        'UserName',
+        'clientName',
+        'ClientName',
+        'name',
+        'Name',
+      ], 'ลูกความ'),
+      'topicTitle': _pick(data, const [
+        'topicTitle',
+        'TopicTitle',
+        'topic',
+        'Topic',
+        'caseTypeTitle',
+        'caseType',
+      ]),
+      'subTopicTitle': _pick(data, const [
+        'subTopicTitle',
+        'SubTopicTitle',
+        'subTopic',
+        'SubTopic',
+        'subCaseType',
+      ]),
+      'provinceTitle': _pick(data, const [
+        'provinceTitle',
+        'ProvinceTitle',
+        'province',
+        'Province',
+        'provinceCode',
+        'ProvinceCode',
+      ]),
+      'province': _pick(data, const [
+        'provinceTitle',
+        'ProvinceTitle',
+        'province',
+        'Province',
+        'provinceCode',
+        'ProvinceCode',
+      ]),
+      'details': _pick(data, const [
+        'details',
+        'Details',
+        'detail',
+        'Detail',
+        'description',
+        'Description',
+      ]),
+      'requirement': _pick(data, const [
+        'requirement',
+        'Requirement',
+        'demand',
+        'Demand',
+      ]),
     };
   }
 
@@ -211,7 +320,7 @@ class LawyerCaseBroadcastService {
     _dialogOpen = true;
 
     _dismissTimer?.cancel();
-    const seconds = 30;
+    const seconds = CaseRequestService.broadcastTimeoutSeconds;
     _dismissTimer = Timer(const Duration(seconds: seconds), () {
       if (_activeRequestCode == requestCode) {
         _closeDialogIfOpen(message: 'หมดเวลารับเคส');
@@ -239,19 +348,12 @@ class LawyerCaseBroadcastService {
             expiresInSeconds: seconds,
             onAccept: () async {
               _dismissTimer?.cancel();
-              _dialogOpen = false;
-              // ✅ pop ด้วย dialogCtx
-              if (Navigator.canPop(dialogCtx)) {
-                Navigator.of(dialogCtx, rootNavigator: true).pop();
-              }
-              await Future.delayed(const Duration(milliseconds: 300));
               await claimCase(requestCode);
             },
             onDismiss: () {
               _dismissTimer?.cancel();
               _dialogOpen = false;
               _activeRequestCode = null;
-              // ✅ pop ด้วย dialogCtx
               if (Navigator.canPop(dialogCtx)) {
                 Navigator.of(dialogCtx, rootNavigator: true).pop();
               }
@@ -316,6 +418,16 @@ class LawyerCaseBroadcastService {
             sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return r * c;
+  }
+
+  Map<String, dynamic> _unwrapPayload(Map<String, dynamic> data) {
+    for (final key in ['objectData', 'data', 'caseRequest', 'request']) {
+      final nested = data[key];
+      if (nested is Map) {
+        return {...data, ...Map<String, dynamic>.from(nested)};
+      }
+    }
+    return data;
   }
 
   Map<String, dynamic> _asMap(dynamic raw) {

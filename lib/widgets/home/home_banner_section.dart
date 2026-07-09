@@ -4,6 +4,7 @@ import 'package:LawyerOnline/carousel_form.dart';
 import 'package:LawyerOnline/component/comming-soon.dart';
 import 'package:LawyerOnline/component/link_url_in.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -153,7 +154,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
             color: Colors.grey.shade200,
           ),
           child: const Center(
-            child: CircularProgressIndicator(color: _kAccent),
+            child: AppRingSpinner(color: _kAccent, size: 36),
           ),
         ),
       );

@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -127,7 +128,7 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
                 else if (appointmentsList.isNotEmpty)
                   _buildAppointmentListDesktop(context)
                 else
-                  _emptyState('noappointmentsList'.tr()),
+                  _emptyState('noAppointments'.tr()),
                 const SizedBox(height: 20),
               ],
             ),
@@ -484,7 +485,7 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
         else if (appointmentsList.isNotEmpty)
           _buildAppointmentListMobile(context)
         else
-          _emptyState('noappointmentsList'.tr()),
+          _emptyState('noAppointments'.tr()),
         const SizedBox(height: 20),
         if (dueBookings.isNotEmpty) ...[
           _sectionHeader(
@@ -744,15 +745,7 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
   }
 
   Widget _loadingState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-    );
+    return const AppLoadingInline(height: 72, size: 28);
   }
 
   Widget _buildTodayBookingList(BuildContext context, List<dynamic> jobs) {

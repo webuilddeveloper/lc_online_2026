@@ -10,12 +10,14 @@ import 'package:LawyerOnline/profile.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/navigation/desktop_top_nav.dart';
+import 'package:LawyerOnline/widgets/notification_badge.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -93,6 +95,7 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     Future.delayed(Duration.zero, requestPermissions);
     UserProfileStore.instance.addListener(_onStoreChanged);
     LawyerProfileStore.instance.addListener(_syncLawyerBroadcast);
+    NotificationStore.instance.addListener(_onNotificationChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncLawyerBroadcast());
   }
 
@@ -101,6 +104,7 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     _tabAnimCtrl.dispose();
     UserProfileStore.instance.removeListener(_onStoreChanged);
     LawyerProfileStore.instance.removeListener(_syncLawyerBroadcast);
+    NotificationStore.instance.removeListener(_onNotificationChanged);
     LawyerCaseBroadcastService.instance.stop();
     super.dispose();
   }
@@ -118,6 +122,15 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
       typeLogin = store.typeLogin;
       userType = store.userType.isNotEmpty ? store.userType : userType;
     });
+    if (store.isLoggedIn) {
+      NotificationStore.instance.refresh();
+    } else {
+      NotificationStore.instance.clearUnread();
+    }
+  }
+
+  void _onNotificationChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> requestPermissions() async {
@@ -127,7 +140,18 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
 
   Future<void> callRead() async {
     await UserProfileStore.instance.load();
+    if (UserProfileStore.instance.isLawyerApplyPending) {
+      await UserProfileStore.instance.refreshFromApi();
+    }
+    if (UserProfileStore.instance.isLoggedIn) {
+      await NotificationStore.instance.refresh();
+    }
     await LawyerProfileStore.instance.load();
+    if (UserProfileStore.instance.userType == 'lawyer' &&
+        UserProfileStore.instance.user != null) {
+      await LawyerProfileStore.instance
+          .syncFromUserModel(UserProfileStore.instance.user!);
+    }
 
     final store = UserProfileStore.instance;
     setState(() {
@@ -166,11 +190,11 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
       if (typeLogin != 'null') {
         return userType == 'lawyer'
             ? CalendarPage(
-                key: const ValueKey(3),
+                key: ValueKey('tab3_lawyer'),
                 isTabActive: _currentPage == 3,
               )
             : CaseListPage(
-                key: const ValueKey(3),
+                key: ValueKey('tab3_user'),
                 isTabActive: _currentPage == 3,
               );
       }
@@ -234,6 +258,9 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     _slideDirection = index > _currentPage ? 1.0 : -1.0;
     setState(() => _currentPage = index);
     _playTabTransition();
+    if (UserProfileStore.instance.isLoggedIn) {
+      NotificationStore.instance.refresh();
+    }
   }
 
   Future<bool> confirmExit() {
@@ -307,8 +334,11 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
                                 child: _BottomNavItem(
                                   item: item,
                                   isSelected: _currentPage == item.index,
-                                  showBadge:
-                                      item.showBadge && typeLogin != 'null',
+                                  badgeCount: typeLogin != 'null'
+                                      ? NotificationStore.instance
+                                          .badgeCountForNavIndex(item.index)
+                                      : 0,
+                                  showBadgeSlot: item.showBadge,
                                   onTap: () => _onNavTap(item.index),
                                 ),
                               ))
@@ -326,13 +356,15 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
 class _BottomNavItem extends StatelessWidget {
   final NavItem item;
   final bool isSelected;
-  final bool showBadge;
+  final bool showBadgeSlot;
+  final int badgeCount;
   final VoidCallback onTap;
 
   const _BottomNavItem({
     required this.item,
     required this.isSelected,
-    required this.showBadge,
+    required this.showBadgeSlot,
+    required this.badgeCount,
     required this.onTap,
   });
 
@@ -366,7 +398,7 @@ class _BottomNavItem extends StatelessWidget {
             ],
           ),
           child: Stack(
-            // clipBehavior: Clip.none,
+            clipBehavior: Clip.none,
             children: [
               Image.asset(
                 item.icon,
@@ -374,18 +406,12 @@ class _BottomNavItem extends StatelessWidget {
                 height: item.isLogo ? 34 : 22,
                 color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
               ),
-              if (showBadge)
-                Positioned(
+              if (showBadgeSlot)
+                NotificationBadgeDot(
+                  count: badgeCount,
+                  size: 7,
                   top: -1,
                   right: -2,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF70C0C),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
                 ),
             ],
           ),

@@ -1,5 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
+import 'package:LawyerOnline/shared/notification_settings_store.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -13,12 +15,19 @@ class NotificationSettingPage extends StatefulWidget {
 }
 
 class _NotificationSettingPageState extends State<NotificationSettingPage> {
-  bool masterNotification = true;
-  bool messageNotification = true;
-  bool promotionNotification = false;
-  bool systemNotification = true;
-  bool sound = true;
-  bool vibration = false;
+  final _store = NotificationSettingsStore.instance;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    await _store.load();
+    if (mounted) setState(() => _loading = false);
+  }
 
   Widget buildSwitchTile({
     required String title,
@@ -26,6 +35,7 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
     required bool value,
     required Function(bool) onChanged,
     IconData? icon,
+    bool enabled = true,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -42,75 +52,46 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
       ),
       child: SwitchListTile(
         value: value,
-        onChanged: onChanged,
-        activeColor: Color(0xFF0262EC),
-        // activeTrackColor: Colors.amber,
+        onChanged: enabled ? onChanged : null,
+        activeColor: const Color(0xFF0262EC),
         inactiveTrackColor: Colors.white,
         inactiveThumbColor: Colors.black,
-        // trackOutlineColor: WidgetStateProperty.all(Colors.blue),
-        secondary: Icon(icon, color: Colors.blue),
+        secondary: Icon(icon, color: enabled ? Colors.blue : Colors.grey),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
+            color: enabled ? Colors.black : Colors.grey,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w400,
+            color: enabled ? Colors.black54 : Colors.grey,
           ),
         ),
       ),
     );
   }
 
-  void saveSetting() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.notifications_active,
-              color: Colors.green,
-              size: 60,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "saveSuccess".tr(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "notificationSettingsMessage".tr(),
-              textAlign: TextAlign.center,
-            )
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: Text("ok".tr()),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          )
-        ],
-      ),
+  Future<void> _saveSettings() async {
+    await _store.save();
+    if (!mounted) return;
+    DialogService.showSuccess(
+      context,
+      title: "saveSuccess".tr(),
+      message: "notificationSettingsMessage".tr(),
+      onClose: () => Navigator.pop(context),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final masterOn = _store.masterEnabled;
+
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
       appBar: appBarCustom(
@@ -119,113 +100,102 @@ class _NotificationSettingPageState extends State<NotificationSettingPage> {
         backAction: () => goBack(),
         isRightWidget: false,
       ),
-      body: AppLayout(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-          children: [
-            buildSwitchTile(
-              title: "enableNotification".tr(),
-              subtitle: "enableAllNotificationDesc".tr(),
-              value: masterNotification,
-              icon: Icons.notifications,
-              onChanged: (value) {
-                setState(() {
-                  masterNotification = value;
-                });
-              },
-            ),
-            buildSwitchTile(
-              title: "message".tr(),
-              subtitle: "messageDesc".tr(),
-              value: messageNotification,
-              icon: Icons.message,
-              onChanged: (value) {
-                setState(() {
-                  messageNotification = value;
-                });
-              },
-            ),
-            buildSwitchTile(
-              title: "appointment".tr(),
-              subtitle: "appointmentDesc".tr(),
-              value: promotionNotification,
-              icon: Icons.local_offer,
-              onChanged: (value) {
-                setState(() {
-                  promotionNotification = value;
-                });
-              },
-            ),
-            buildSwitchTile(
-              title: "system".tr(),
-              subtitle: "systemDesc".tr(),
-              value: systemNotification,
-              icon: Icons.settings,
-              onChanged: (value) {
-                setState(() {
-                  systemNotification = value;
-                });
-              },
-            ),
-            buildSwitchTile(
-              title: "sound".tr(),
-              subtitle: "soundDesc".tr(),
-              value: sound,
-              icon: Icons.volume_up,
-              onChanged: (value) {
-                setState(() {
-                  sound = value;
-                });
-              },
-            ),
-            buildSwitchTile(
-              title: "vibration".tr(),
-              subtitle: "vibrationDesc".tr(),
-              value: vibration,
-              icon: Icons.vibration,
-              onChanged: (value) {
-                setState(() {
-                  vibration = value;
-                });
-              },
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => {
-                DialogService.showSuccess(
-                  context,
-                  title: "saveSuccess".tr(),
-                  message: "saveSuccessMessage".tr(),
-                  onClose: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              },
-              child: Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                decoration: BoxDecoration(
-                    color: const Color(0xFF0262EC),
-                    borderRadius: BorderRadius.circular(18),
-                    border:
-                        Border.all(width: 1, color: const Color(0xFFDBDBDB))),
-                child: Text(
-                  "saveButton".tr(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
+      body: _loading
+          ? AppLoadingView(message: 'loading'.tr())
+          : AppLayout(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    buildSwitchTile(
+                      title: "enableNotification".tr(),
+                      subtitle: "enableAllNotificationDesc".tr(),
+                      value: _store.masterEnabled,
+                      icon: Icons.notifications,
+                      onChanged: (value) {
+                        setState(() => _store.update(masterEnabled: value));
+                      },
+                    ),
+                    buildSwitchTile(
+                      title: "message".tr(),
+                      subtitle: "messageDesc".tr(),
+                      value: _store.messageEnabled,
+                      icon: Icons.message,
+                      enabled: masterOn,
+                      onChanged: (value) {
+                        setState(() => _store.update(messageEnabled: value));
+                      },
+                    ),
+                    buildSwitchTile(
+                      title: "appointment".tr(),
+                      subtitle: "appointmentDesc".tr(),
+                      value: _store.appointmentEnabled,
+                      icon: Icons.event,
+                      enabled: masterOn,
+                      onChanged: (value) {
+                        setState(
+                            () => _store.update(appointmentEnabled: value));
+                      },
+                    ),
+                    buildSwitchTile(
+                      title: "system".tr(),
+                      subtitle: "systemDesc".tr(),
+                      value: _store.systemEnabled,
+                      icon: Icons.settings,
+                      enabled: masterOn,
+                      onChanged: (value) {
+                        setState(() => _store.update(systemEnabled: value));
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    buildSwitchTile(
+                      title: "sound".tr(),
+                      subtitle: "soundDesc".tr(),
+                      value: _store.soundEnabled,
+                      icon: Icons.volume_up,
+                      enabled: masterOn,
+                      onChanged: (value) {
+                        setState(() => _store.update(soundEnabled: value));
+                      },
+                    ),
+                    buildSwitchTile(
+                      title: "vibration".tr(),
+                      subtitle: "vibrationDesc".tr(),
+                      value: _store.vibrationEnabled,
+                      icon: Icons.vibration,
+                      enabled: masterOn,
+                      onChanged: (value) {
+                        setState(() => _store.update(vibrationEnabled: value));
+                      },
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _saveSettings,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0262EC),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                              width: 1, color: const Color(0xFFDBDBDB)),
+                        ),
+                        child: Text(
+                          "saveButton".tr(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-      ),
     );
   }
 

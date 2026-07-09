@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'dart:math' as math;
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
@@ -292,16 +293,7 @@ class HomeUserSection extends StatelessWidget {
   }
 
   Widget _loadingState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
+    return const AppLoadingInline(height: 72, size: 28);
   }
 
   Widget _caseStatusItem(BuildContext context, dynamic model) {

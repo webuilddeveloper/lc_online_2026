@@ -2,10 +2,14 @@ import 'dart:io';
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
+import 'package:LawyerOnline/chat/chat_room_lifecycle_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/chat_attachment_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +38,7 @@ class ChatPageUser extends StatefulWidget {
 }
 
 class _ChatPageUserState extends State<ChatPageUser>
-    with AutoPopOnDesktopMixin {
+    with AutoPopOnDesktopMixin, WidgetsBindingObserver, ChatRoomLifecycleMixin {
   final ChatService _chatService = ChatService();
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -43,7 +47,18 @@ class _ChatPageUserState extends State<ChatPageUser>
   bool _isTyping = false;
   String _typingUser = '';
   bool _isLoading = true;
+  bool _isUploadingAttachment = false;
   dynamic _caseData = {};
+  late String _myUserId;
+
+  @override
+  ChatService get chatService => _chatService;
+
+  @override
+  String get chatRoomCode => widget.roomCode;
+
+  @override
+  String get chatUserId => _myUserId;
 
   @override
   void initState() {
@@ -57,17 +72,20 @@ class _ChatPageUserState extends State<ChatPageUser>
   }
 
   Future<void> _setupChat() async {
+    await UserProfileStore.instance.load();
+    _myUserId = ChatService.resolveMyUserId(widget.userId);
+
     await _chatService.disconnect();
 
     _chatService.onReceiveMessage = (message) {
-      setState(() => _messages.add(message));
+      setState(() => _messages.add(ChatService.normalizeMessage(message)));
       _scrollToBottom();
     };
 
     _chatService.onLoadHistory = (history) {
       setState(() {
         _messages = history
-            .map((e) => e as Map<String, dynamic>)
+            .map((e) => ChatService.normalizeMessage(e))
             .toList()
             .reversed
             .toList();
@@ -76,7 +94,7 @@ class _ChatPageUserState extends State<ChatPageUser>
     };
 
     _chatService.onUserTyping = (userId, isTyping) {
-      if (userId != widget.userId) {
+      if (userId != _myUserId) {
         setState(() {
           _isTyping = isTyping;
           _typingUser = userId;
@@ -85,9 +103,10 @@ class _ChatPageUserState extends State<ChatPageUser>
     };
 
     await _chatService.connect();
-    await _chatService.joinRoom(widget.roomCode, widget.userId);
+    await _chatService.joinRoom(widget.roomCode, _myUserId);
+    _chatService.setActiveRoom(widget.roomCode);
     await _chatService.loadHistory(widget.roomCode);
-    await _chatService.markAsRead(widget.roomCode, widget.userId);
+    await _chatService.markAsRead(widget.roomCode, _myUserId);
     await _loadCase();
   }
 
@@ -129,10 +148,27 @@ class _ChatPageUserState extends State<ChatPageUser>
 
   void _sendMessage() {
     final text = _chatController.text.trim();
-    if (text.isEmpty) return;
-    _chatService.sendMessage(widget.roomCode, widget.userId, text);
+    if (text.isEmpty || _isUploadingAttachment) return;
+    _chatService.sendMessage(
+      widget.roomCode,
+      _myUserId,
+      content: text,
+    );
     _chatController.clear();
-    _chatService.typing(widget.roomCode, widget.userId, false);
+    _chatService.typing(widget.roomCode, _myUserId, false);
+  }
+
+  Future<void> _pickAttachment() async {
+    if (_isUploadingAttachment) return;
+    await ChatAttachmentService.showPicker(
+      context: context,
+      chatService: _chatService,
+      roomCode: widget.roomCode,
+      senderId: _myUserId,
+      onUploadingChanged: (uploading) {
+        if (mounted) setState(() => _isUploadingAttachment = uploading);
+      },
+    );
   }
 
   // caseCode สำหรับนำทางไป ConsultStatusPage
@@ -219,7 +255,8 @@ class _ChatPageUserState extends State<ChatPageUser>
     _chatService.onLoadHistory = null;
     _chatService.onUserTyping = null;
     _chatService.onMessageRead = null;
-    _chatService.leaveRoom(widget.roomCode, widget.userId);
+    _chatService.setActiveRoom(null);
+    _chatService.leaveRoom(widget.roomCode, _myUserId);
     LawyerJobsStore.instance.removeListener(() {});
     _chatController.dispose();
     _scrollController.dispose();
@@ -288,9 +325,9 @@ class _ChatPageUserState extends State<ChatPageUser>
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
-                final isMe = msg['senderId'] == widget.userId;
+                final isMe = ChatService.isMyMessage(msg, _myUserId);
                 return ChatBubble(
-                  text: msg['content'] ?? '',
+                  message: msg,
                   isMe: isMe,
                   avatarAsset: imageUrl,
                 );
@@ -318,7 +355,12 @@ class _ChatPageUserState extends State<ChatPageUser>
           else if (chatLocked)
             _buildLockedBanner(appointmentDate, appointmentTime)
           else
-            ChatInput(controller: _chatController, onSend: _sendMessage),
+            ChatInput(
+              controller: _chatController,
+              onSend: _sendMessage,
+              onAttach: _pickAttachment,
+              isUploading: _isUploadingAttachment,
+            ),
         ],
       ),
     );
@@ -500,15 +542,9 @@ class _ChatPageUserState extends State<ChatPageUser>
   }
 
   Widget _buildLoadingState() {
-    return const Scaffold(
-      backgroundColor: Color(0xFFEEF2F5),
-      body: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFEEF2F5),
+      body: AppLoadingView(message: 'loading'.tr()),
     );
   }
 }

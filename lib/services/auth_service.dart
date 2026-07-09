@@ -35,6 +35,7 @@ class AuthService {
   static const String _cancelUrl = '$server/m/register/cancel';
   static const String _changePasswordUrl = '$server/m/register/change';
   static const String _updateProfileUrl = '$server/m/register/update';
+  static const String _applyLawyerUrl = '$server/m/register/applyLawyer';
   static const String _createCaseUrl = '$server/m/case/create';
 
   static const Map<String, String> _headers = {
@@ -273,8 +274,8 @@ class AuthService {
     }
   }
 
-  /// อัปเดตโปรไฟล์
-  static Future<void> updateProfile({
+  /// อัปเดตโปรไฟล์ — คืนค่า user ล่าสุดจาก API (ถ้ามี)
+  static Future<UserModel?> updateProfile({
     required String code,
     required String email,
     required String firstName,
@@ -283,19 +284,56 @@ class AuthService {
     String imageUrl = '',
     String userType = 'user',
     String? password,
+    String prefixName = '',
+    String title = '',
+    String description = '',
+    List<String>? expertiseList,
+    String province = '',
+    String provinceCode = '',
+    double? experienceYears,
+    String? isAvailable,
+    bool? isAllowCase,
+    String facebookID = '',
+    String lv0 = '',
+    String lv1 = '',
+    String lv2 = '',
+    String lv3 = '',
   }) async {
     try {
       final Map<String, dynamic> bodyMap = {
         'code': code,
+        'updateBy': code,
         'email': email,
         'firstName': firstName,
         'lastName': lastName,
         'phone': phone,
         'imageUrl': imageUrl,
         'userType': userType,
+        'prefixName': prefixName,
+        'title': title,
+        'description': description,
+        'province': province,
+        'provinceCode': provinceCode,
+        'facebookID': facebookID,
+        'lv0': lv0,
+        'lv1': lv1,
+        'lv2': lv2,
+        'lv3': lv3,
       };
       if (password != null && password.isNotEmpty) {
         bodyMap['password'] = password;
+      }
+      if (expertiseList != null) {
+        bodyMap['expertiseList'] = expertiseList;
+      }
+      if (experienceYears != null) {
+        bodyMap['experienceYears'] = experienceYears;
+      }
+      if (isAvailable != null) {
+        bodyMap['isAvailable'] = isAvailable;
+      }
+      if (isAllowCase != null) {
+        bodyMap['isAllowCase'] = isAllowCase;
       }
       final body = json.encode(bodyMap);
 
@@ -333,6 +371,15 @@ class AuthService {
       }
 
       debugPrint('[AuthService.updateProfile] success for code=$code');
+
+      final objectData = data['objectData'];
+      if (objectData is Map<String, dynamic>) {
+        return UserModel.fromJson(objectData);
+      }
+      if (objectData is Map) {
+        return UserModel.fromJson(Map<String, dynamic>.from(objectData));
+      }
+      return null;
     } on EmailDuplicateException {
       rethrow;
     } on PhoneDuplicateException {
@@ -341,6 +388,62 @@ class AuthService {
       rethrow;
     } catch (e) {
       debugPrint('[AuthService.updateProfile] error: $e');
+      rethrow;
+    }
+  }
+
+  /// ส่งคำขอสมัครเป็นทนายความ (รอเจ้าหน้าที่อนุมัติ)
+  static Future<void> applyLawyer({
+    required String code,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required String lawyerNo,
+    required List<String> expertiseList,
+    required String provinceCode,
+    required String provinceTitle,
+    required List<String> documentList,
+  }) async {
+    try {
+      final body = json.encode({
+        'code': code,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'lawyerNo': lawyerNo,
+        'expertiseList': expertiseList,
+        'provinceCode': provinceCode,
+        'province': provinceTitle,
+        'documentList': documentList,
+      });
+
+      debugPrint('[AuthService.applyLawyer] url=$_applyLawyerUrl');
+      debugPrint('[AuthService.applyLawyer] body=$body');
+
+      final response = await http.post(
+        Uri.parse(_applyLawyerUrl),
+        body: body,
+        headers: _headers,
+      );
+
+      debugPrint(
+          '[AuthService.applyLawyer] status=${response.statusCode} body=${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Server error ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      if (data['status'] != 'S') {
+        final rawMsg = data['message']?.toString() ?? '';
+        throw Exception(rawMsg.isNotEmpty ? rawMsg : 'Lawyer application failed');
+      }
+
+      debugPrint('[AuthService.applyLawyer] success for code=$code');
+    } catch (e) {
+      debugPrint('[AuthService.applyLawyer] error: $e');
       rethrow;
     }
   }

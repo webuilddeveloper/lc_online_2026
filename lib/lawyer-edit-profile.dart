@@ -3,8 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/app_dropdown.dart';
+import 'package:LawyerOnline/component/media_picker_sheet.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:LawyerOnline/widgets/profile/lawyer/lawyer_profile_widgets.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -47,35 +53,16 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
   bool _isAvailable = true;
   bool _isUrgentEnabled = false;
   bool _isSaving = false;
+  bool _pageLoading = true;
   XFile? _pickedImage;
+  String _imageUrl = '';
 
-  // skills chips
-  final List<String> _allSkills = [
-    'อาญาและอาชญากรรม',
-    'ครอบครัวและมรดก',
-    'หนี้สินและการเงิน',
-    'ธุรกิจและบริษัท',
-    'แรงงานและการจ้างงาน',
-    'ประกันภัยและผู้บริโภค',
-    'ทรัพย์สินและที่ดิน',
-    'ฟ้องศาล เรียกค่าเสียหาย',
-    'คดีออนไลน์และเทคโนโลยี',
-    'อื่นๆและระหว่างประเทศ',
-  ];
-  final List<String> _selectedSkills = [];
+  List<dynamic> _specialtyOptions = [];
+  final Set<String> _selectedSkillCodes = {};
 
-  // province
-  final List<String> _provinces = [
-    'กรุงเทพมหานคร',
-    'เชียงใหม่',
-    'ขอนแก่น',
-    'ชลบุรี',
-    'ภูเก็ต',
-    'นนทบุรี',
-    'สมุทรปราการ',
-    'อื่นๆ',
-  ];
+  List<dynamic> _provinceList = [];
   String _selectedProvince = 'กรุงเทพมหานคร';
+  String _selectedProvinceCode = '';
 
   // tab
   late TabController _tabController;
@@ -84,7 +71,13 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initControllers();
+    _loadProfile();
+    UserProfileStore.instance.addListener(_refresh);
+    LawyerProfileStore.instance.addListener(_refresh);
+  }
 
+  void _initControllers() {
     final store = UserProfileStore.instance;
     final lawyerStore = LawyerProfileStore.instance;
 
@@ -101,19 +94,81 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
     _twitterCtrl = TextEditingController(text: lawyerStore.twitter);
     _linkedinCtrl = TextEditingController(text: lawyerStore.linkedin);
     _titleCtrl = TextEditingController(
-        text: lawyerStore.title.isEmpty ? 'ทนายความ' : lawyerStore.title);
+      text: lawyerStore.title.isEmpty ? 'ทนายความ' : lawyerStore.title,
+    );
 
     _isAvailable = lawyerStore.isAvailable;
     _isUrgentEnabled = lawyerStore.isUrgentCaseEnabled;
-    if (lawyerStore.skills.isNotEmpty) {
-      _selectedSkills.addAll(lawyerStore.skills);
-    }
+    _imageUrl = store.imageUrl;
     if (lawyerStore.province.isNotEmpty) {
       _selectedProvince = lawyerStore.province;
     }
+  }
 
-    UserProfileStore.instance.addListener(_refresh);
-    LawyerProfileStore.instance.addListener(_refresh);
+  Future<void> _loadProfile() async {
+    final userStore = UserProfileStore.instance;
+    await userStore.load();
+    await userStore.refreshFromApi();
+
+    final user = userStore.user;
+    if (user != null) {
+      await LawyerProfileStore.instance.syncFromUserModel(user);
+      _selectedSkillCodes
+        ..clear()
+        ..addAll(user.expertiseList);
+      _selectedProvinceCode = user.provinceCode;
+      if (user.province.isNotEmpty) {
+        _selectedProvince = user.province;
+      }
+    }
+
+    final subTopic = await postDio('$server/m/topic/subTopic/read', {});
+    final province = await postDio('${serverLC}route/province/read', {});
+
+    if (!mounted) return;
+
+    _applyStoreToControllers();
+
+    setState(() {
+      _specialtyOptions = [...(subTopic['objectData'] ?? [])];
+      _provinceList = [...(province['objectData'] ?? [])];
+      if (_selectedProvinceCode.isEmpty && _selectedProvince.isNotEmpty) {
+        final match = _provinceList.cast<Map>().firstWhere(
+              (p) => p['title']?.toString() == _selectedProvince,
+              orElse: () => {},
+            );
+        if (match.isNotEmpty) {
+          _selectedProvinceCode = match['code']?.toString() ?? '';
+        }
+      }
+      _pageLoading = false;
+    });
+  }
+
+  void _applyStoreToControllers() {
+    final store = UserProfileStore.instance;
+    final lawyerStore = LawyerProfileStore.instance;
+
+    _prefixCtrl.text = store.prefixName;
+    _firstNameCtrl.text = store.firstName;
+    _lastNameCtrl.text = store.lastName;
+    _phoneCtrl.text = store.phone;
+    _emailCtrl.text = store.email;
+    _experienceCtrl.text = lawyerStore.experience;
+    _casesWonCtrl.text = lawyerStore.casesWon;
+    _bioCtrl.text = lawyerStore.bio;
+    _facebookCtrl.text = lawyerStore.facebook;
+    _instagramCtrl.text = lawyerStore.instagram;
+    _twitterCtrl.text = lawyerStore.twitter;
+    _linkedinCtrl.text = lawyerStore.linkedin;
+    _titleCtrl.text =
+        lawyerStore.title.isEmpty ? 'ทนายความ' : lawyerStore.title;
+    _isAvailable = lawyerStore.isAvailable;
+    _isUrgentEnabled = lawyerStore.isUrgentCaseEnabled;
+    _imageUrl = store.imageUrl;
+    if (lawyerStore.province.isNotEmpty) {
+      _selectedProvince = lawyerStore.province;
+    }
   }
 
   @override
@@ -145,50 +200,137 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
     if (mounted) setState(() {});
   }
 
-  // ── Pick Image ─────────────────────────────────────────
-  Future<void> _pickImage() async {
+  Future<void> _pickImageFromGallery() async {
     final picker = ImagePicker();
     final img =
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (img != null) setState(() => _pickedImage = img);
+    if (img == null) return;
+    setState(() => _pickedImage = img);
+    await _uploadImage(img);
   }
 
-  // ── Save ───────────────────────────────────────────────
+  Future<void> _pickImageFromCamera() async {
+    final picker = ImagePicker();
+    final img =
+        await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+    if (img == null) return;
+    setState(() => _pickedImage = img);
+    await _uploadImage(img);
+  }
+
+  Future<void> _uploadImage(XFile image) async {
+    try {
+      final url = await uploadImageX(image);
+      if (!mounted) return;
+      setState(() => _imageUrl = url);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('อัปโหลดรูปไม่สำเร็จ: $e');
+    }
+  }
+
+  void _showImagePicker() {
+    MediaPickerSheet.showImageSources(
+      context,
+      onGallery: _pickImageFromGallery,
+      onCamera: _pickImageFromCamera,
+    );
+  }
+
+  String? _skillTitle(String code) {
+    for (final option in _specialtyOptions) {
+      if (option is Map && option['code']?.toString() == code) {
+        return option['title']?.toString() ?? code;
+      }
+    }
+    return code;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedSkills.isEmpty) {
+    if (_selectedSkillCodes.isEmpty) {
       _showSnack('กรุณาเลือกความเชี่ยวชาญอย่างน้อย 1 ด้าน');
       return;
     }
+
     setState(() => _isSaving = true);
 
-    await UserProfileStore.instance.updateFromProfile(
-      firstName: _firstNameCtrl.text.trim(),
-      lastName: _lastNameCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
-      userType: 'lawyer',
-    );
+    try {
+      final store = UserProfileStore.instance;
+      final imageUrl = _imageUrl.isNotEmpty ? _imageUrl : store.imageUrl;
+      final experienceYears =
+          double.tryParse(_experienceCtrl.text.trim()) ?? 0;
 
-    await LawyerProfileStore.instance.updateProfile(
-      title: _titleCtrl.text.trim(),
-      experience: _experienceCtrl.text.trim(),
-      casesWon: _casesWonCtrl.text.trim(),
-      bio: _bioCtrl.text.trim(),
-      skills: List.from(_selectedSkills),
-      province: _selectedProvince,
-      isAvailable: _isAvailable,
-      isUrgentCaseEnabled: _isUrgentEnabled,
-      facebook: _facebookCtrl.text.trim(),
-      instagram: _instagramCtrl.text.trim(),
-      twitter: _twitterCtrl.text.trim(),
-      linkedin: _linkedinCtrl.text.trim(),
-    );
+      final updated = await AuthService.updateProfile(
+        code: store.code,
+        email: _emailCtrl.text.trim(),
+        firstName: _firstNameCtrl.text.trim(),
+        lastName: _lastNameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
+        imageUrl: imageUrl,
+        userType: 'lawyer',
+        prefixName: _prefixCtrl.text.trim(),
+        title: _titleCtrl.text.trim(),
+        description: _bioCtrl.text.trim(),
+        expertiseList: _selectedSkillCodes.toList(),
+        province: _selectedProvince,
+        provinceCode: _selectedProvinceCode,
+        experienceYears: experienceYears,
+        isAvailable: _isAvailable ? 'T' : 'F',
+        isAllowCase: _isUrgentEnabled,
+        facebookID: _facebookCtrl.text.trim(),
+        lv0: _instagramCtrl.text.trim(),
+        lv1: _twitterCtrl.text.trim(),
+        lv2: _linkedinCtrl.text.trim(),
+        lv3: _casesWonCtrl.text.trim(),
+      );
 
-    setState(() => _isSaving = false);
-    if (!mounted) return;
-    _showSnack('บันทึกข้อมูลสำเร็จ', success: true);
-    Navigator.pop(context);
+      if (updated != null) {
+        await store.applyUserModel(updated);
+        await LawyerProfileStore.instance.syncFromUserModel(updated);
+      } else {
+        await store.updateFromProfile(
+          firstName: _firstNameCtrl.text.trim(),
+          lastName: _lastNameCtrl.text.trim(),
+          phone: _phoneCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          imageUrl: imageUrl,
+          userType: 'lawyer',
+          prefixName: _prefixCtrl.text.trim(),
+        );
+        await LawyerProfileStore.instance.updateProfile(
+          title: _titleCtrl.text.trim(),
+          experience: _experienceCtrl.text.trim(),
+          casesWon: _casesWonCtrl.text.trim(),
+          bio: _bioCtrl.text.trim(),
+          skills: _selectedSkillCodes.toList(),
+          province: _selectedProvince,
+          isAvailable: _isAvailable,
+          isUrgentCaseEnabled: _isUrgentEnabled,
+          facebook: _facebookCtrl.text.trim(),
+          instagram: _instagramCtrl.text.trim(),
+          twitter: _twitterCtrl.text.trim(),
+          linkedin: _linkedinCtrl.text.trim(),
+        );
+      }
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showSnack('บันทึกข้อมูลสำเร็จ', success: true);
+      Navigator.pop(context);
+    } on EmailDuplicateException {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showSnack('emailDuplicate'.tr());
+    } on PhoneDuplicateException {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showSnack('phoneDuplicate'.tr());
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showSnack(e.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   void _showSnack(String msg, {bool success = false}) {
@@ -200,7 +342,7 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
           size: 16,
         ),
         const SizedBox(width: 8),
-        Expanded(child: Text(msg, style: const TextStyle(fontSize: 13))),
+        Expanded(child: Text(msg, style: AppTypography.prompt(fontSize: 13))),
       ]),
       backgroundColor:
           success ? const Color(0xFF059669) : const Color(0xFFC62828),
@@ -219,12 +361,14 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
     return Scaffold(
       backgroundColor: _kBg,
       appBar: appBarCustom(
-        title: 'แก้ไขโปรไฟล์',
+        title: 'editInfoTitle'.tr(),
         backBtn: true,
         isRightWidget: false,
         backAction: () => Navigator.pop(context),
       ),
-      body: GestureDetector(
+      body: _pageLoading
+          ? AppLoadingView(message: 'loading'.tr())
+          : GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
         child: Align(
@@ -256,14 +400,16 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
           ),
         ),
       ),
-      bottomNavigationBar: _buildSaveBar(),
+      bottomNavigationBar: _pageLoading ? null : _buildSaveBar(),
     );
   }
 
   // ── Preview Card (style เหมือน LawyerOnlineList card) ──
   Widget _buildPreviewCard() {
     final store = UserProfileStore.instance;
-    final imageUrl = _pickedImage != null ? '' : store.imageUrl;
+    final imageUrl = _pickedImage != null
+        ? _imageUrl
+        : (_imageUrl.isNotEmpty ? _imageUrl : store.imageUrl);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -284,7 +430,7 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
         children: [
           // Avatar with edit overlay
           GestureDetector(
-            onTap: _pickImage,
+            onTap: _showImagePicker,
             child: Stack(
               children: [
                 Container(
@@ -339,7 +485,7 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
                           _firstNameCtrl.text,
                           _lastNameCtrl.text
                         ].where((s) => s.isNotEmpty).join(' '),
-                  style: const TextStyle(
+                  style: AppTypography.prompt(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                     color: Color(0xFF1A2340),
@@ -348,7 +494,10 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
                 const SizedBox(height: 2),
                 Text(
                   _titleCtrl.text.isEmpty ? 'ทนายความ' : _titleCtrl.text,
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  style: AppTypography.prompt(
+                    color: Colors.grey[400],
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(children: [
@@ -400,9 +549,16 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
         unselectedLabelColor: const Color(0xFF64748B),
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        unselectedLabelStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        labelStyle: AppTypography.prompt(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+        unselectedLabelStyle: AppTypography.prompt(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF64748B),
+        ),
         tabs: const [
           Tab(text: 'ข้อมูลทั่วไป'),
           Tab(text: 'ความเชี่ยวชาญ'),
@@ -540,12 +696,7 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
               ),
               child: Center(
                 child: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
-                      )
+                    ? const AppRingSpinner(color: Colors.white, size: 22)
                     : const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -840,43 +991,42 @@ class _InfoTabContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FB),
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: const Color(0xFFE2E8F4), width: 1.5),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: s._selectedProvince,
-                      isExpanded: true,
-                      icon: Icon(Icons.keyboard_arrow_down_rounded,
-                          color: Colors.grey[400], size: 20),
-                      items: s._provinces
-                          .map((p) => DropdownMenuItem<String>(
-                                value: p,
-                                child: Row(children: [
-                                  const Icon(Icons.location_city_outlined,
-                                      size: 14, color: Color(0xFF0262EC)),
-                                  const SizedBox(width: 8),
-                                  Text(p,
-                                      style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF1A2340))),
-                                ]),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          s.setState(() => s._selectedProvince = v);
-                        }
-                      },
-                    ),
-                  ),
+                AppDropdownFilter<String>(
+                  value: s._selectedProvince,
+                  items: s._provinceList
+                      .map(
+                        (p) => DropdownMenuItem<String>(
+                          value: p['title']?.toString() ?? '',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_city_outlined,
+                                size: 14,
+                                color: AppDropdownStyles.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                p['title']?.toString() ?? '',
+                                style: AppDropdownStyles.itemStyle(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      final match = s._provinceList.cast<Map>().firstWhere(
+                            (p) => p['title']?.toString() == v,
+                            orElse: () => {},
+                          );
+                      s.setState(() {
+                        s._selectedProvince = v;
+                        s._selectedProvinceCode =
+                            match['code']?.toString() ?? '';
+                      });
+                    }
+                  },
                 ),
               ],
             ),
@@ -939,7 +1089,7 @@ class _SkillsTabContent extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
       children: [
         // Preview chips ที่เลือกแล้ว
-        if (s._selectedSkills.isNotEmpty) ...[
+        if (s._selectedSkillCodes.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -954,8 +1104,8 @@ class _SkillsTabContent extends StatelessWidget {
                   const Icon(Icons.gavel_rounded, size: 14, color: _kPrimary),
                   const SizedBox(width: 6),
                   Text(
-                    'ความเชี่ยวชาญที่เลือก (${s._selectedSkills.length})',
-                    style: const TextStyle(
+                    'ความเชี่ยวชาญที่เลือก (${s._selectedSkillCodes.length})',
+                    style: AppTypography.prompt(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: _kPrimary,
@@ -966,11 +1116,11 @@ class _SkillsTabContent extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: s._selectedSkills
-                      .map((sk) => SkillSelectedChip(
-                            skill: sk,
-                            onRemove: () =>
-                                s.setState(() => s._selectedSkills.remove(sk)),
+                  children: s._selectedSkillCodes
+                      .map((code) => SkillSelectedChip(
+                            skill: s._skillTitle(code) ?? code,
+                            onRemove: () => s.setState(
+                                () => s._selectedSkillCodes.remove(code)),
                           ))
                       .toList(),
                 ),
@@ -984,32 +1134,40 @@ class _SkillsTabContent extends StatelessWidget {
           title: 'เลือกความเชี่ยวชาญ',
           icon: Icons.balance_rounded,
           children: [
-            Text('เลือกได้หลายด้าน',
-                style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+            Text(
+              'เลือกได้หลายด้าน',
+              style: AppTypography.prompt(fontSize: 11, color: Colors.grey[400]),
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: s._allSkills
-                  .map((sk) => SkillToggleChip(
-                        skill: sk,
-                        selected: s._selectedSkills.contains(sk),
-                        onTap: () {
-                          s.setState(() {
-                            if (s._selectedSkills.contains(sk)) {
-                              s._selectedSkills.remove(sk);
-                            } else {
-                              s._selectedSkills.add(sk);
-                            }
-                          });
-                        },
-                      ))
+              children: s._specialtyOptions
+                  .whereType<Map>()
+                  .map((option) {
+                    final code = option['code']?.toString() ?? '';
+                    final title = option['title']?.toString() ?? code;
+                    if (code.isEmpty) return const SizedBox.shrink();
+                    return SkillToggleChip(
+                      skill: title,
+                      selected: s._selectedSkillCodes.contains(code),
+                      onTap: () {
+                        s.setState(() {
+                          if (s._selectedSkillCodes.contains(code)) {
+                            s._selectedSkillCodes.remove(code);
+                          } else {
+                            s._selectedSkillCodes.add(code);
+                          }
+                        });
+                      },
+                    );
+                  })
                   .toList(),
             ),
           ],
         ),
 
-        if (s._selectedSkills.isEmpty) ...[
+        if (s._selectedSkillCodes.isEmpty) ...[
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),

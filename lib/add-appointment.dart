@@ -1,5 +1,6 @@
 import 'package:LawyerOnline/booking/summary-page.dart';
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/app_dropdown.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
@@ -360,9 +361,22 @@ class _AppAppointmentState extends State<AppAppointment> {
       children: [
         _fieldLabel('หัวข้อย่อย', required: true),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
+        AppDropdownField<String>(
           value: _selectedSubCase?['code'] as String?,
-          isExpanded: true,
+          hint: 'เลือกหัวข้อย่อย',
+          prefixIcon: Icons.subdirectory_arrow_right_rounded,
+          accentColor: color,
+          items: subTopics
+              .map(
+                (s) => DropdownMenuItem<String>(
+                  value: s['code'] as String,
+                  child: Text(
+                    s['title'] as String,
+                    style: AppDropdownStyles.itemStyle(),
+                  ),
+                ),
+              )
+              .toList(),
           onChanged: (val) {
             final sub = subTopics.firstWhere(
               (s) => s['code'] == val,
@@ -370,22 +384,6 @@ class _AppAppointmentState extends State<AppAppointment> {
             );
             setState(() => _selectedSubCase = sub);
           },
-          decoration: _inputDecor(
-            prefixIcon: Icon(Icons.subdirectory_arrow_right_rounded,
-                color: color, size: 20),
-          ),
-          hint: Text('เลือกหัวข้อย่อย',
-              style: TextStyle(color: Colors.grey[400], fontSize: 13)),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: color),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          items: subTopics
-              .map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(
-                    value: s['code'] as String,
-                    child: Text(s['title'] as String,
-                        style: const TextStyle(fontSize: 13)),
-                  ))
-              .toList(),
         ),
       ],
     );
@@ -732,12 +730,7 @@ class _AppAppointmentState extends State<AppAppointment> {
   //  Shared Widgets
   // ════════════════════════════════════════════════════════
   Widget _loadingState() {
-    return const Center(
-      child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2)),
-    );
+    return const AppLoadingView(showDots: false);
   }
 
   Widget _fieldLabel(String label, {bool required = false}) {

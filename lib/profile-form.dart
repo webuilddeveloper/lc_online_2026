@@ -1,5 +1,8 @@
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
+import 'package:LawyerOnline/component/media_picker_sheet.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'dart:io';
@@ -17,31 +20,26 @@ class ProfileFormPage extends StatefulWidget {
   State<ProfileFormPage> createState() => _ProfileFormPageState();
 }
 
-class _ProfileFormPageState extends State<ProfileFormPage>
-    with SingleTickerProviderStateMixin {
-  // ── controllers ──────────────────────────────────────────────────────
+class _ProfileFormPageState extends State<ProfileFormPage> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
 
-  // ── scroll ───────────────────────────────────────────────────────────
   final ScrollController _scrollCtrl = ScrollController();
   final GlobalKey _firstNameKey = GlobalKey();
   final GlobalKey _lastNameKey = GlobalKey();
   final GlobalKey _phoneKey = GlobalKey();
   final GlobalKey _emailKey = GlobalKey();
 
-  // ── inline error state ───────────────────────────────────────────────
   String? _firstNameError;
   String? _lastNameError;
   String? _phoneError;
   String? _emailError;
 
   bool isLoading = false;
+  bool _pageLoading = true;
 
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
   XFile? profileImage;
   final ImagePicker picker = ImagePicker();
 
@@ -50,30 +48,35 @@ class _ProfileFormPageState extends State<ProfileFormPage>
   static const Color _errorColor = Color(0xFFD32F2F);
 
   String get _userType => UserProfileStore.instance.userType;
-  String get _typeLogin => UserProfileStore.instance.typeLogin;
   String get _code => UserProfileStore.instance.code;
-  String get _storedImageUrl => UserProfileStore.instance.imageUrl;
   String _imageUrl = '';
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
-    _scaleAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
-    _loadFromStore();
+    _loadProfile();
   }
 
   @override
   void dispose() {
     _scrollCtrl.dispose();
-    _controller.dispose();
     firstNameController.dispose();
     lastNameController.dispose();
     phoneController.dispose();
     emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProfile() async {
+    final store = UserProfileStore.instance;
+    await store.load();
+    await store.refreshFromApi();
+    if (!mounted) return;
+    _loadFromStore();
+    setState(() {
+      _imageUrl = store.imageUrl;
+      _pageLoading = false;
+    });
   }
 
   void _loadFromStore() {
@@ -92,11 +95,13 @@ class _ProfileFormPageState extends State<ProfileFormPage>
 
   bool get _hasChanges {
     final store = UserProfileStore.instance;
+    final currentImage = _imageUrl.isNotEmpty ? _imageUrl : store.imageUrl;
     return firstNameController.text.trim() != store.firstName ||
         lastNameController.text.trim() != store.lastName ||
         phoneController.text.trim() != store.phone ||
         emailController.text.trim() != store.email ||
-        profileImage != null;
+        profileImage != null ||
+        currentImage != store.imageUrl;
   }
 
   void _scrollToKey(GlobalKey key) {
@@ -110,52 +115,51 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     );
   }
 
-  // Future<void> pickImage() async {
-  //   final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-  //   if (image != null) {
-  //     setState(() {
-  //       profileImage = XFile(image.path);
-  //     });
-  //   }
-  // }
-
-  _imgFromCamera() async {
-    final ImagePicker _picker = ImagePicker();
-    // Pick an image
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-
-    setState(() {
-      profileImage = image!;
-    });
-    _upload();
+  Future<void> _imgFromCamera() async {
+    final image = await picker.pickImage(source: ImageSource.camera);
+    if (image == null) return;
+    setState(() => profileImage = image);
+    await _upload(image);
   }
 
-  _imgFromGallery() async {
-    // XFile image = await ImagePicker.pickImage(
-    //   source: ImageSource.gallery,
-    //   imageQuality: 100,
-    // );
-
-    final ImagePicker _picker = ImagePicker();
-    // Pick an image
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-
-    setState(() {
-      profileImage = image!;
-    });
-    _upload();
+  Future<void> _imgFromGallery() async {
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    setState(() => profileImage = image);
+    await _upload(image);
   }
 
-  void _upload() async {
-    if (profileImage == null) return;
+  Future<void> _upload(XFile image) async {
+    try {
+      final url = await uploadImageX(image);
+      if (!mounted) return;
+      setState(() => _imageUrl = url);
+    } catch (e) {
+      if (!mounted) return;
+      DialogService.showError(
+        context,
+        title: 'errorTitle'.tr(),
+        message: e.toString(),
+      );
+    }
+  }
 
-    uploadImageX(profileImage!).then((res) {
-      setState(() {
-        _imageUrl = res;
-      });
-    }).catchError((err) {
-      print(err);
-    });
+  Widget _buildAvatar() {
+    ImageProvider? provider;
+    if (profileImage != null) {
+      provider = FileImage(File(profileImage!.path));
+    } else if (_imageUrl.isNotEmpty) {
+      provider = NetworkImage(_imageUrl);
+    }
+
+    return CircleAvatar(
+      radius: 45,
+      backgroundColor: _blue,
+      backgroundImage: provider,
+      child: provider == null
+          ? const Icon(Icons.person, size: 45, color: Colors.white)
+          : null,
+    );
   }
 
   @override
@@ -168,117 +172,109 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         backAction: () => Navigator.pop(context),
         isRightWidget: false,
       ),
-      body: AppLayout(
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: ListView(
-            controller: _scrollCtrl,
-            padding: const EdgeInsets.fromLTRB(15, 20, 15, 100),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 6),
-                    )
-                  ],
-                ),
-                child: Column(
+      body: _pageLoading
+          ? AppLoadingView(message: 'loading'.tr())
+          : AppLayout(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: ListView(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(15, 20, 15, 100),
                   children: [
-                    /// Profile Image
-                    GestureDetector(
-                      onTap: _showPickerImage(context),
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 45,
-                            backgroundColor: _blue,
-                            backgroundImage: _imageUrl == ''
-                                ? NetworkImage(_imageUrl)
-                                : null,
-                            child:
-                                _imageUrl == ''
-                                    ? const Icon(Icons.person,
-                                        size: 45, color: Colors.white)
-                                    : null,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: _blue,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 16,
-                              color: Colors.white,
-                            ),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
                           )
                         ],
                       ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    _textField(
-                      fieldKey: _firstNameKey,
-                      title: 'firstName'.tr(),
-                      controller: firstNameController,
-                      icon: Icons.person_outline,
-                      errorText: _firstNameError,
-                      onChanged: (_) => setState(() => _firstNameError = null),
-                    ),
-                    const SizedBox(height: 15),
-                    _textField(
-                      fieldKey: _lastNameKey,
-                      title: 'lastName'.tr(),
-                      controller: lastNameController,
-                      icon: Icons.person_outline,
-                      errorText: _lastNameError,
-                      onChanged: (_) => setState(() => _lastNameError = null),
-                    ),
-                    const SizedBox(height: 15),
-                    _textField(
-                      fieldKey: _phoneKey,
-                      title: 'phone'.tr(),
-                      controller: phoneController,
-                      icon: Icons.phone_outlined,
-                      maxLength: 10,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      errorText: _phoneError,
-                      onChanged: (_) => setState(() => _phoneError = null),
-                    ),
-                    const SizedBox(height: 15),
-                    _textField(
-                      fieldKey: _emailKey,
-                      title: 'email'.tr(),
-                      controller: emailController,
-                      icon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                      errorText: _emailError,
-                      onChanged: (_) => setState(() => _emailError = null),
-                    ),
-
-                    const SizedBox(height: 25),
-                    _saveButton(),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _showPickerImage(context),
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                _buildAvatar(),
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: _blue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          _textField(
+                            fieldKey: _firstNameKey,
+                            title: 'firstName'.tr(),
+                            controller: firstNameController,
+                            icon: Icons.person_outline,
+                            errorText: _firstNameError,
+                            onChanged: (_) =>
+                                setState(() => _firstNameError = null),
+                          ),
+                          const SizedBox(height: 15),
+                          _textField(
+                            fieldKey: _lastNameKey,
+                            title: 'lastName'.tr(),
+                            controller: lastNameController,
+                            icon: Icons.person_outline,
+                            errorText: _lastNameError,
+                            onChanged: (_) =>
+                                setState(() => _lastNameError = null),
+                          ),
+                          const SizedBox(height: 15),
+                          _textField(
+                            fieldKey: _phoneKey,
+                            title: 'phone'.tr(),
+                            controller: phoneController,
+                            icon: Icons.phone_outlined,
+                            maxLength: 10,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            errorText: _phoneError,
+                            onChanged: (_) =>
+                                setState(() => _phoneError = null),
+                          ),
+                          const SizedBox(height: 15),
+                          _textField(
+                            fieldKey: _emailKey,
+                            title: 'email'.tr(),
+                            controller: emailController,
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            errorText: _emailError,
+                            onChanged: (_) =>
+                                setState(() => _emailError = null),
+                          ),
+                          const SizedBox(height: 25),
+                          _saveButton(),
+                        ],
+                      ),
+                    )
                   ],
                 ),
-              )
-            ],
-          ),
-        ),
-      ),
+              ),
+            ),
     );
   }
 
-  // ── TEXT FIELD ──────────────────────────────────────────────────────
   Widget _textField({
     required GlobalKey fieldKey,
     required String title,
@@ -294,14 +290,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       key: fieldKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13,
-            color: _blue,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(title, style: AppTypography.label(context)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -309,6 +298,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           onChanged: onChanged,
+          style: AppTypography.field(context),
           decoration: InputDecoration(
             counterText: '',
             prefixIcon: Icon(
@@ -319,13 +309,13 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: errorText != null ? _errorColor : _border),
+              borderSide: BorderSide(
+                  color: errorText != null ? _errorColor : _border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: errorText != null ? _errorColor : _border),
+              borderSide: BorderSide(
+                  color: errorText != null ? _errorColor : _border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -338,6 +328,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                 ? _errorColor.withOpacity(0.04)
                 : const Color(0xFFFAFAFA),
             filled: true,
+            hintStyle: AppTypography.hint(),
           ),
         ),
         if (errorText != null) ...[
@@ -348,14 +339,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
                   size: 13, color: _errorColor),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  errorText,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: _errorColor,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                child: Text(errorText, style: AppTypography.error()),
               ),
             ],
           ),
@@ -364,7 +348,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     );
   }
 
-  // ── SAVE BUTTON ─────────────────────────────────────────────────────
   Widget _saveButton() {
     final canSave = _hasChanges && !isLoading;
 
@@ -379,26 +362,22 @@ class _ProfileFormPageState extends State<ProfileFormPage>
         ),
         child: Center(
           child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-                  'saveButton'.tr(),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16),
-                ),
+              ? const AppRingSpinner(color: Colors.white, size: 22)
+              : Text('saveButton'.tr(), style: AppTypography.button()),
         ),
       ),
     );
   }
 
-  // ── SAVE LOGIC ──────────────────────────────────────────────────────
   Future<void> _onSave() async {
     final firstName = firstNameController.text.trim();
     final lastName = lastNameController.text.trim();
     final phone = phoneController.text.trim();
     final email = emailController.text.trim();
     final userType = _userType;
+    final imageUrl = _imageUrl.isNotEmpty
+        ? _imageUrl
+        : UserProfileStore.instance.imageUrl;
 
     setState(() {
       _firstNameError = null;
@@ -413,12 +392,10 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       _firstNameError = 'firstNameRequired'.tr();
       firstErrorKey ??= _firstNameKey;
     }
-
     if (lastName.isEmpty) {
       _lastNameError = 'lastNameRequired'.tr();
       firstErrorKey ??= _lastNameKey;
     }
-
     if (phone.isEmpty) {
       _phoneError = 'phoneRequired'.tr();
       firstErrorKey ??= _phoneKey;
@@ -426,7 +403,6 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       _phoneError = 'phoneInvalid'.tr();
       firstErrorKey ??= _phoneKey;
     }
-
     if (email.isEmpty) {
       _emailError = 'emailRequired'.tr();
       firstErrorKey ??= _emailKey;
@@ -446,23 +422,28 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     setState(() => isLoading = true);
 
     try {
-      await AuthService.updateProfile(
+      final updated = await AuthService.updateProfile(
         code: _code,
         email: email,
         firstName: firstName,
         lastName: lastName,
         phone: phone,
-        imageUrl: _storedImageUrl,
+        imageUrl: imageUrl,
         userType: userType,
       );
 
-      await UserProfileStore.instance.updateFromProfile(
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-        email: email,
-        userType: userType,
-      );
+      if (updated != null) {
+        await UserProfileStore.instance.applyUserModel(updated);
+      } else {
+        await UserProfileStore.instance.updateFromProfile(
+          firstName: firstName,
+          lastName: lastName,
+          phone: phone,
+          email: email,
+          imageUrl: imageUrl,
+          userType: userType,
+        );
+      }
 
       if (!mounted) return;
       setState(() => isLoading = false);
@@ -493,9 +474,7 @@ class _ProfileFormPageState extends State<ProfileFormPage>
       });
     } on PasswordIncorrectException catch (e) {
       if (!mounted) return;
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       DialogService.showError(context,
           title: 'errorTitle'.tr(), message: e.message);
     } catch (e) {
@@ -507,48 +486,11 @@ class _ProfileFormPageState extends State<ProfileFormPage>
     }
   }
 
-  _showPickerImage(context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Container(
-            child: new Wrap(
-              children: <Widget>[
-                new ListTile(
-                    leading: new Icon(Icons.photo_library),
-                    title: new Text(
-                      'อัลบั้มรูปภาพ',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'Kanit',
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                    onTap: () {
-                      _imgFromGallery();
-                      Navigator.of(context).pop();
-                    }),
-                new ListTile(
-                  leading: new Icon(Icons.photo_camera),
-                  title: new Text(
-                    'กล้องถ่ายรูป',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'Kanit',
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                  onTap: () {
-                    _imgFromCamera();
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  void _showPickerImage(context) {
+    MediaPickerSheet.showImageSources(
+      context,
+      onGallery: _imgFromGallery,
+      onCamera: _imgFromCamera,
     );
   }
 }

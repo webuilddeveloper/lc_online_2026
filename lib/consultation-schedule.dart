@@ -4,10 +4,11 @@ import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 
 class ConsultationSchedule extends StatefulWidget {
@@ -22,36 +23,10 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
   final storage = FlutterSecureStorage();
   final TextEditingController costPerHrController = TextEditingController();
 
-  // ── วันที่เปิดรับ (0=อาทิตย์ ... 6=เสาร์) ──────────────
-  // static const _allDays = [
-  //   {'day': 1, 'title': 'จันทร์'},
-  //   {'day': 2, 'title': 'อังคาร'},
-  //   {'day': 3, 'title': 'พุธ'},
-  //   {'day': 4, 'title': 'พฤหัสบดี'},
-  //   {'day': 5, 'title': 'ศุกร์'},
-  //   {'day': 6, 'title': 'เสาร์'},
-  //   {'day': 0, 'title': 'อาทิตย์'},
-  // ];
+  static const _kPrimary = Color(0xFF0262EC);
 
-  // // ── slot เวลา ───────────────────────────────────────────
-  // static const _allSlots = [
-  //   '09:00-10:00',
-  //   '10:00-11:00',
-  //   '11:00-12:00',
-  //   '12:00-13:00',
-  //   '13:00-14:00',
-  //   '14:00-15:00',
-  //   '15:00-16:00',
-  //   '16:00-17:00',
-  // ];
-
-  List<dynamic> _allDays = [
-   
-  ];
-
-  List<dynamic> _allSlots = [
-   
-  ];
+  List<dynamic> _allDays = [];
+  List<dynamic> _allSlots = [];
 
   bool get isLawyerPro => LawyerProfileStore.instance.isPro;
   final double defaultPrice = 500.0;
@@ -78,7 +53,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       final param = await postDio("$server/m/register/available/read", {"code": UserProfileStore.instance.code});
 
       setState(() {
-        print('------------------- ${param['objectData']}');
         _allDays = param['objectData']['availableDays'];
         _allSlots = param['objectData']['availableSlots'];
         // _lawyersForYou = param['objectDate'];
@@ -87,7 +61,6 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
       
       // if (!mounted) return;
      
-      // print('------------------- ${mapped}');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -253,8 +226,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           backAction: () => Navigator.pop(context, false),
           rightAction: () {},
         ),
-        body: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF0262EC))),
+        body: const AppLoadingView(),
       );
     }
 
@@ -268,83 +240,109 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         rightAction: () {},
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: EdgeInsets.fromLTRB(
+          14,
+          20,
+          14,
+          MediaQuery.of(context).padding.bottom + 100,
+        ),
         children: [
-          // ── Info banner ──────────────────────────────
-          
-
-          // ── Section: วัน ─────────────────────────────
           _sectionLabel('วันที่เปิดรับ', Icons.calendar_month_rounded),
           const SizedBox(height: 12),
           _buildDaySelector(),
           const SizedBox(height: 24),
-
-          // ── Section: Slot เวลา ────────────────────────
-          _sectionLabel('ช่วงเวลารับงาน', Icons.access_time_rounded),
+          _sectionLabel('selectTimeSlot'.tr(), Icons.access_time_rounded),
           const SizedBox(height: 12),
-          _buildSlotList(),
+          _buildSlotPeriodSections(),
           const SizedBox(height: 24),
-
-          // ── Section: ราคา ─────────────────────────────
           _buildPriceSection(),
-          const SizedBox(height: 24),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomActionBar(),
+    );
+  }
 
-          // ── Buttons ───────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: _clearAll,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDDEEFF),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFA6BFEE)),
-                  ),
+  Widget _buildBottomActionBar() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
+      // decoration: BoxDecoration(
+      //   color: Colors.white,
+      //   boxShadow: [
+      //     BoxShadow(
+      //       color: Colors.black.withOpacity(0.08),
+      //       blurRadius: 16,
+      //       offset: const Offset(0, -4),
+      //     ),
+      //   ],
+      // ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _clearAll,
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDDEEFF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFA6BFEE)),
+                ),
+                child: Center(
                   child: Text(
                     'clearAll'.tr(),
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0262EC)),
-                    textAlign: TextAlign.center,
+                    style: AppTypography.prompt(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _kPrimary,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GestureDetector(
-                onTap: _isSaving ? null : _saveSchedule,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    color: _isSaving
-                        ? const Color(0xFFCDD5E0)
-                        : const Color(0xFF0262EC),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: GestureDetector(
+              onTap: _isSaving ? null : _saveSchedule,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 50,
+                decoration: BoxDecoration(
+                  color: _isSaving ? const Color(0xFFCDD5E0) : _kPrimary,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: _isSaving
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: _kPrimary.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                ),
+                child: Center(
                   child: _isSaving
-                      ? const Center(
-                          child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white)))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(
                           'save'.tr(),
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white),
-                          textAlign: TextAlign.center,
+                          style: AppTypography.button(),
                         ),
                 ),
               ),
             ),
-          ]),
-          const SizedBox(height: 20),
+          ),
         ],
       ),
     );
@@ -385,7 +383,7 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
             ),
             child: Text(
               d['title'] as String,
-              style: TextStyle(
+              style: AppTypography.prompt(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: isOpen ? Colors.white : Colors.grey[400],
@@ -397,106 +395,230 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     );
   }
 
-  // ── Slot list (toggle row) ──────────────────────────────
-  Widget _buildSlotList() {
+  // ── Slot แบ่งช่วงเช้า / กลางวัน / เย็น ─────────────────
+  int _slotStartHour(dynamic slot) {
+    final title = slot['title']?.toString() ?? '';
+    final start = title.split('-').first.trim();
+    return int.tryParse(start.split(':').first) ?? 0;
+  }
+
+  _SlotPeriod _periodOf(dynamic slot) {
+    final hour = _slotStartHour(slot);
+    if (hour < 12) return _SlotPeriod.morning;
+    if (hour < 17) return _SlotPeriod.afternoon;
+    return _SlotPeriod.evening;
+  }
+
+  List<dynamic> _slotsInPeriod(_SlotPeriod period) {
+    return _allSlots.where((s) => _periodOf(s) == period).toList();
+  }
+
+  void _togglePeriod(_SlotPeriod period, bool isOpen) {
+    for (final slot in _allSlots) {
+      if (_periodOf(slot) == period) {
+        slot['isOpen'] = isOpen;
+      }
+    }
+    setState(() {});
+  }
+
+  bool _isPeriodAllOpen(_SlotPeriod period) {
+    final slots = _slotsInPeriod(period);
+    if (slots.isEmpty) return false;
+    return slots.every((s) => s['isOpen'] == true);
+  }
+
+  Widget _buildSlotPeriodSections() {
     return Column(
-      children: _allSlots.map((slot) {
-        final title = slot['title'].toString();
-        final isOpen = slot['isOpen'] == true;
-        final parts = title.split('-');
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                slot['isOpen'] = !isOpen;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: isOpen ? const Color(0xFFEEF4FF) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isOpen
-                      ? const Color(0xFF0262EC).withOpacity(0.4)
-                      : const Color(0xFFE2E8F4),
-                  width: isOpen ? 1.5 : 1,
-                ),
+      children: [
+        _buildPeriodCard(
+          period: _SlotPeriod.morning,
+          title: 'timeMorning'.tr(),
+          range: 'timeMorningRange'.tr(),
+          icon: Icons.wb_sunny_outlined,
+          accent: const Color(0xFFFFA726),
+        ),
+        const SizedBox(height: 12),
+        _buildPeriodCard(
+          period: _SlotPeriod.afternoon,
+          title: 'timeAfternoon'.tr(),
+          range: 'timeAfternoonRange'.tr(),
+          icon: Icons.wb_cloudy_outlined,
+          accent: _kPrimary,
+        ),
+        const SizedBox(height: 12),
+        _buildPeriodCard(
+          period: _SlotPeriod.evening,
+          title: 'timeEvening'.tr(),
+          range: 'timeEveningRange'.tr(),
+          icon: Icons.nights_stay_outlined,
+          accent: const Color(0xFF5C6BC0),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeriodCard({
+    required _SlotPeriod period,
+    required String title,
+    required String range,
+    required IconData icon,
+    required Color accent,
+  }) {
+    final slots = _slotsInPeriod(period);
+    if (slots.isEmpty) return const SizedBox.shrink();
+
+    final allOpen = _isPeriodAllOpen(period);
+    final openCount =
+        slots.where((s) => s['isOpen'] == true).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.08),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(17),
               ),
-              child: Row(children: [
+            ),
+            child: Row(
+              children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isOpen
-                        ? const Color(0xFF0262EC).withOpacity(0.1)
-                        : const Color(0xFFF1F5FB),
-                    borderRadius: BorderRadius.circular(12),
+                    color: accent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.access_time_rounded,
-                      color:
-                          isOpen ? const Color(0xFF0262EC) : Colors.grey[400],
-                      size: 20),
+                  child: Icon(icon, color: accent, size: 18),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${parts[0]} - ${parts[1]}',
-                        style: TextStyle(
-                          fontSize: 15,
+                        title,
+                        style: AppTypography.prompt(
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: isOpen
-                              ? const Color(0xFF0262EC)
-                              : const Color(0xFF9AAABB),
+                          color: const Color(0xFF1A2340),
                         ),
                       ),
                       Text(
-                        isOpen ? 'เปิดรับลูกความ' : 'ปิด',
-                        style: TextStyle(
+                        range,
+                        style: AppTypography.prompt(
                           fontSize: 11,
-                          color: isOpen
-                              ? const Color(0xFF0262EC).withOpacity(0.6)
-                              : Colors.grey[400],
+                          color: Colors.grey[500],
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Toggle switch
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 48,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: isOpen
-                        ? const Color(0xFF0262EC)
-                        : const Color(0xFFE2E8F4),
-                    borderRadius: BorderRadius.circular(14),
+                Text(
+                  '$openCount/${slots.length}',
+                  style: AppTypography.prompt(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: accent,
                   ),
-                  child: AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    alignment:
-                        isOpen ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: const BoxDecoration(
-                          color: Colors.white, shape: BoxShape.circle),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'selectTimeSlot'.tr(),
+                    style: AppTypography.prompt(
+                      fontSize: 11,
+                      color: Colors.grey[500],
                     ),
                   ),
                 ),
-              ]),
+                GestureDetector(
+                  onTap: () => _togglePeriod(period, !allOpen),
+                  child: Text(
+                    allOpen ? 'deselectAll'.tr() : 'selectAll'.tr(),
+                    style: AppTypography.prompt(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _kPrimary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      }).toList(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: slots.map((slot) => _buildSlotChip(slot)).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotChip(dynamic slot) {
+    final title = slot['title']?.toString() ?? '';
+    final isOpen = slot['isOpen'] == true;
+    final parts = title.split('-');
+    final label = parts.length >= 2 ? '${parts[0]} - ${parts[1]}' : title;
+
+    return GestureDetector(
+      onTap: () => setState(() => slot['isOpen'] = !isOpen),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isOpen ? const Color(0xFFEEF4FF) : const Color(0xFFF8F9FB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isOpen ? _kPrimary : const Color(0xFFE2E8F4),
+            width: isOpen ? 1 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isOpen ? Icons.check_circle_rounded : Icons.schedule_rounded,
+              size: 14,
+              color: isOpen ? _kPrimary : Colors.grey[400],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTypography.prompt(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isOpen ? _kPrimary : const Color(0xFF9AAABB),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -582,13 +704,18 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
 
   Widget _sectionLabel(String title, IconData icon) {
     return Row(children: [
-      Icon(icon, size: 16, color: const Color(0xFF0262EC)),
+      Icon(icon, size: 16, color: _kPrimary),
       const SizedBox(width: 8),
-      Text(title,
-          style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A2340))),
+      Text(
+        title,
+        style: AppTypography.prompt(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF1A2340),
+        ),
+      ),
     ]);
   }
 }
+
+enum _SlotPeriod { morning, afternoon, evening }

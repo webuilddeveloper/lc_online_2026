@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_model.dart';
+import 'package:LawyerOnline/repositories/register_account_repository.dart';
 
 // ══════════════════════════════════════════════════════════════════════
 //  _SafeStorage
@@ -67,6 +69,7 @@ class UserProfileStore extends ChangeNotifier {
       'null'; // 'local' | 'google' | 'facebook' | 'line' | 'null'
   String authToken = '';
   bool _loaded = false;
+  bool _lawyerApplyPending = false;
 
   // ── convenience getters ───────────────────────────────────────────────
   String get name => user?.fullName ?? '';
@@ -82,6 +85,8 @@ class UserProfileStore extends ChangeNotifier {
   bool get isLoggedIn => typeLogin != 'null';
   double get lastLat => user?.lastLat ?? 0.0;
   double get lastLong => user?.lastLong ?? 0.0;
+  bool get isLawyerApplyPending =>
+      _lawyerApplyPending || user?.lawyerApplyStatus == 'pending';
 
   // ── load จาก secure storage ──────────────────────────────────────────
   Future<void> load() async {
@@ -104,6 +109,8 @@ class UserProfileStore extends ChangeNotifier {
     try {
       typeLogin = await _storage.read(key: 'typeLogin') ?? 'null';
       authToken = await _storage.read(key: 'authToken') ?? '';
+      _lawyerApplyPending =
+          (await _storage.read(key: 'lawyerApplyPending')) == 'true';
 
       final code = await _storage.read(key: 'code') ?? '';
       if (code.isEmpty) {
@@ -161,12 +168,17 @@ class UserProfileStore extends ChangeNotifier {
     user = model;
     this.typeLogin = typeLogin;
     this.authToken = authToken;
+    _lawyerApplyPending = model.lawyerApplyStatus == 'pending';
     _loaded = true;
     notifyListeners(); // แสดง UI ก่อน แล้วค่อย persist
     await _persistToStorage(
       model,
       typeLogin: typeLogin,
       authToken: authToken,
+    );
+    await _storage.write(
+      key: 'lawyerApplyPending',
+      value: _lawyerApplyPending ? 'true' : 'false',
     );
   }
 
@@ -177,7 +189,8 @@ class UserProfileStore extends ChangeNotifier {
     required String phone,
     required String email,
     String? imageUrl,
-    String? userType, // ✅ เพิ่ม parameter userType เพื่อป้องกันค่าหาย
+    String? userType,
+    String? prefixName,
   }) async {
     if (user == null) return;
 
@@ -187,7 +200,8 @@ class UserProfileStore extends ChangeNotifier {
       phone: phone,
       email: email,
       imageUrl: imageUrl ?? user!.imageUrl,
-      userType: userType ?? user!.userType, // ✅ ใช้ค่าเดิมถ้าไม่ได้ส่งมา
+      userType: userType ?? user!.userType,
+      prefixName: prefixName ?? user!.prefixName,
     );
 
     final fullName = [firstName, lastName].where((s) => s.isNotEmpty).join(' ');
@@ -195,12 +209,63 @@ class UserProfileStore extends ChangeNotifier {
       _storage.write(key: 'name', value: fullName),
       _storage.write(key: 'phone', value: phone),
       _storage.write(key: 'email', value: email),
-      // ✅ persist userType ลง storage ด้วยเสมอ เพื่อให้ค่าคงอยู่หลัง reload
       _storage.write(key: 'userType', value: userType ?? user!.userType),
+      if (prefixName != null)
+        _storage.write(key: 'prefixName', value: prefixName),
       if (imageUrl != null)
         _storage.write(key: 'imageUrlSocial', value: imageUrl),
     ]);
 
+    notifyListeners();
+  }
+
+  Future<void> applyUserModel(UserModel model, {bool persist = true}) async {
+    user = model;
+    _lawyerApplyPending = model.lawyerApplyStatus == 'pending';
+    notifyListeners();
+    if (model.userType == 'lawyer') {
+      await LawyerProfileStore.instance.syncFromUserModel(model);
+    }
+    if (persist) {
+      await _persistToStorage(
+        model,
+        typeLogin: typeLogin,
+        authToken: authToken,
+      );
+      await _storage.write(
+        key: 'lawyerApplyPending',
+        value: _lawyerApplyPending ? 'true' : 'false',
+      );
+    }
+  }
+
+  /// Reload current user from API (keeps session — no logout required).
+  Future<bool> refreshFromApi() async {
+    if (code.isEmpty) return false;
+
+    try {
+      const repo = ApiRegisterAccountRepository();
+      final accounts = await repo.readAccounts(code: code);
+      if (accounts.isEmpty) return false;
+
+      final fresh = accounts.first;
+      await applyUserModel(fresh);
+      return true;
+    } catch (e) {
+      debugPrint('UserProfileStore.refreshFromApi() error: $e');
+      return false;
+    }
+  }
+
+  Future<void> setLawyerApplyPending(bool pending) async {
+    _lawyerApplyPending = pending;
+    await _storage.write(
+      key: 'lawyerApplyPending',
+      value: pending ? 'true' : 'false',
+    );
+    if (user != null && pending) {
+      user = user!.copyWith(lawyerApplyStatus: 'pending');
+    }
     notifyListeners();
   }
 
@@ -251,6 +316,7 @@ class UserProfileStore extends ChangeNotifier {
       _storage.delete(key: 'isOnline'),
       _storage.delete(key: 'lastLat'),
       _storage.delete(key: 'lastLong'),
+      _storage.delete(key: 'lawyerApplyPending'),
     ]);
   }
 

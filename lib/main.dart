@@ -1,9 +1,14 @@
 // import 'package:LawyerOnline/shared/notification-service.dart';
 import 'dart:convert';
 
-import 'package:LawyerOnline/chat/chat_page_user.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/services/in_app_notification_service.dart';
+import 'package:LawyerOnline/services/lawyer_apply_notification_handler.dart';
+import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:LawyerOnline/services/notification_service.dart';
+import 'package:LawyerOnline/shared/notification_settings_store.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +32,11 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (message.notification != null) return;
 
   await NotificationService.initForBackground();
+  await NotificationSettingsStore.instance.load();
+
+  if (!NotificationSettingsStore.instance.shouldNotify(message.data)) return;
+
+  final settings = NotificationSettingsStore.instance;
   final title = message.data['title']?.toString() ?? 'แจ้งเตือน';
   final body = message.data['body']?.toString() ?? '';
   if (title.isEmpty && body.isEmpty) return;
@@ -35,6 +45,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     title: title,
     body: body,
     payload: jsonEncode(message.data),
+    sound: settings.shouldPlaySound,
+    vibration: settings.shouldVibrate,
   );
 }
 
@@ -46,26 +58,17 @@ String _readTitle(RemoteMessage message) =>
 String _readBody(RemoteMessage message) =>
     message.notification?.body ?? message.data['body']?.toString() ?? '';
 
+bool _shouldSuppressChatForegroundNotification(RemoteMessage message) {
+  final page = message.data['page']?.toString();
+  final type = message.data['type']?.toString();
+  if (page != 'chat' && type != 'chat_message') return false;
+
+  final roomCode = message.data['code']?.toString();
+  return ChatService().shouldSuppressChatNotification(roomCode);
+}
+
 void _handleNotificationPayload(Map<String, dynamic> data) {
-  final page = data['page']?.toString();
-  final code = data['code']?.toString();
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final state = navigatorKey.currentState;
-    if (state == null) return;
-
-    if (page == 'chat' && code != null && code.isNotEmpty) {
-      // state.push(
-      //   MaterialPageRoute(builder: (_) => ChatPageUser(roomCode: code)),
-      // );
-    } else if (page == 'appointment_detail' && code != null && code.isNotEmpty) {
-      // state.push(
-      //   MaterialPageRoute(
-      //     builder: (_) => AppointmentDetailPage(appointmentId: code),
-      //   ),
-      // );
-    }
-  });
+  NotificationNavigationService.handlePayload(data);
 }
 
 void _handleNotificationNavigation(RemoteMessage message) {
@@ -108,13 +111,36 @@ void main() async {
 
     await NotificationService.init(onTap: _handleLocalNotificationTap);
 
-    // แอปเปิดอยู่ → in-app popup + เสียง/สั่น
+    // แอปเปิดอยู่ → in-app popup + เสียง/สั่น (ยกเว้นอยู่ในห้องแชทเดียวกัน)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (_shouldSuppressChatForegroundNotification(message)) {
+        if (UserProfileStore.instance.isLoggedIn) {
+          NotificationStore.instance.refresh();
+        }
+        return;
+      }
+
+      if (!NotificationSettingsStore.instance.shouldNotify(message.data)) {
+        if (UserProfileStore.instance.isLoggedIn) {
+          NotificationStore.instance.refresh();
+        }
+        return;
+      }
+
       InAppNotificationService.show(
         title: _readTitle(message),
         body: _readBody(message),
+        data: message.data,
         onTap: () => _handleNotificationNavigation(message),
       );
+
+      if (LawyerApplyNotificationHandler.isLawyerApplyApproved(message.data)) {
+        LawyerApplyNotificationHandler.handle(showDialog: true);
+      }
+
+      if (UserProfileStore.instance.isLoggedIn) {
+        NotificationStore.instance.refresh();
+      }
     });
 
     // กด notification ตอน background → foreground
@@ -128,6 +154,7 @@ void main() async {
   }
 
   await initializeDateFormatting('th', null);
+  await NotificationSettingsStore.instance.load();
   final startLocale = await _loadSavedLocale();
 
   runApp(

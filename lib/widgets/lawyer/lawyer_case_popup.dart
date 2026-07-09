@@ -137,10 +137,58 @@ class _LawyerCasePopupState extends State<LawyerCasePopup>
   }
 
   String _text(String key, [String fallback = '-']) {
-    final v = widget.caseData[key];
-    if (v == null) return fallback;
-    final s = v.toString().trim();
-    return s.isEmpty ? fallback : s;
+    const aliases = <String, List<String>>{
+      'userName': [
+        'userName',
+        'UserName',
+        'clientName',
+        'ClientName',
+        'name',
+      ],
+      'topicTitle': [
+        'topicTitle',
+        'TopicTitle',
+        'topic',
+        'Topic',
+        'caseTypeTitle',
+        'caseType',
+      ],
+      'subTopicTitle': [
+        'subTopicTitle',
+        'SubTopicTitle',
+        'subTopic',
+        'SubTopic',
+        'subCaseType',
+      ],
+      'provinceTitle': [
+        'provinceTitle',
+        'ProvinceTitle',
+        'province',
+        'Province',
+        'provinceCode',
+      ],
+      'details': [
+        'details',
+        'Details',
+        'detail',
+        'Detail',
+        'description',
+      ],
+      'requirement': [
+        'requirement',
+        'Requirement',
+        'demand',
+        'Demand',
+      ],
+    };
+
+    for (final field in aliases[key] ?? [key]) {
+      final value = widget.caseData[field];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return fallback;
   }
 
   // ✅ Timer Progress Widget - ลดขนาด
@@ -335,10 +383,19 @@ class _LawyerCasePopupState extends State<LawyerCasePopup>
                           _infoTile(
                             Icons.notes_outlined,
                             'รายละเอียด',
-                            _text('details',
-                                _text('details', 'ไม่ได้ระบุรายละเอียด')),
-                            maxLines: 2,
+                            _text('details', 'ไม่ได้ระบุรายละเอียด'),
+                            maxLines: 3,
                           ),
+                          if (_text('requirement', '').isNotEmpty &&
+                              _text('requirement') != '-') ...[
+                            const SizedBox(height: 8),
+                            _infoTile(
+                              Icons.flag_outlined,
+                              'ข้อเรียกร้อง',
+                              _text('requirement'),
+                              maxLines: 3,
+                            ),
+                          ],
 
                           // ✅ Error message
                           if (_errorMsg != null) ...[

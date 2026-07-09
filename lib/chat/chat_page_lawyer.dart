@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
+import 'package:LawyerOnline/chat/chat_room_lifecycle_mixin.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hms_room_kit/hms_room_kit.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:LawyerOnline/services/chat_attachment_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -35,14 +37,25 @@ class ChatPageLawyer extends StatefulWidget {
 }
 
 class _ChatPageLawyerState extends State<ChatPageLawyer>
-    with AutoPopOnDesktopMixin {
+    with AutoPopOnDesktopMixin, WidgetsBindingObserver, ChatRoomLifecycleMixin {
   final ChatService _chatService = ChatService();
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
+  bool _isUploadingAttachment = false;
   String _typingUser = '';
+  late String _myUserId;
+
+  @override
+  ChatService get chatService => _chatService;
+
+  @override
+  String get chatRoomCode => widget.roomCode;
+
+  @override
+  String get chatUserId => _myUserId;
 
   @override
   void didChangeDependencies() {
@@ -56,17 +69,20 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   }
 
   Future<void> _setupChat() async {
+    await UserProfileStore.instance.load();
+    _myUserId = ChatService.resolveMyUserId(widget.userId);
+
     await _chatService.disconnect();
 
     _chatService.onReceiveMessage = (message) {
-      setState(() => _messages.add(message));
+      setState(() => _messages.add(ChatService.normalizeMessage(message)));
       _scrollToBottom();
     };
 
     _chatService.onLoadHistory = (history) {
       setState(() {
         _messages = history
-            .map((e) => e as Map<String, dynamic>)
+            .map((e) => ChatService.normalizeMessage(e))
             .toList()
             .reversed
             .toList();
@@ -75,7 +91,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     };
 
     _chatService.onUserTyping = (userId, isTyping) {
-      if (userId != widget.userId) {
+      if (userId != _myUserId) {
         setState(() {
           _isTyping = isTyping;
           _typingUser = userId;
@@ -84,9 +100,10 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     };
 
     await _chatService.connect();
-    await _chatService.joinRoom(widget.roomCode, widget.userId);
+    await _chatService.joinRoom(widget.roomCode, _myUserId);
+    _chatService.setActiveRoom(widget.roomCode);
     await _chatService.loadHistory(widget.roomCode);
-    await _chatService.markAsRead(widget.roomCode, widget.userId);
+    await _chatService.markAsRead(widget.roomCode, _myUserId);
   }
 
   void _scrollToBottom() {
@@ -103,10 +120,27 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
 
   void _sendMessage() {
     final text = _chatController.text.trim();
-    if (text.isEmpty) return;
-    _chatService.sendMessage(widget.roomCode, widget.userId, text);
+    if (text.isEmpty || _isUploadingAttachment) return;
+    _chatService.sendMessage(
+      widget.roomCode,
+      _myUserId,
+      content: text,
+    );
     _chatController.clear();
-    _chatService.typing(widget.roomCode, widget.userId, false);
+    _chatService.typing(widget.roomCode, _myUserId, false);
+  }
+
+  Future<void> _pickAttachment() async {
+    if (_isUploadingAttachment) return;
+    await ChatAttachmentService.showPicker(
+      context: context,
+      chatService: _chatService,
+      roomCode: widget.roomCode,
+      senderId: _myUserId,
+      onUploadingChanged: (uploading) {
+        if (mounted) setState(() => _isUploadingAttachment = uploading);
+      },
+    );
   }
 
   // void _endConsultation() {
@@ -215,7 +249,8 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     _chatService.onLoadHistory = null;
     _chatService.onUserTyping = null;
     _chatService.onMessageRead = null;
-    _chatService.leaveRoom(widget.roomCode, widget.userId);
+    _chatService.setActiveRoom(null);
+    _chatService.leaveRoom(widget.roomCode, _myUserId);
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -293,9 +328,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
               itemCount: _messages.length,
               itemBuilder: (_, i) {
                 final msg = _messages[i];
-                final isMe = msg['senderId'] == widget.userId;
+                final isMe = ChatService.isMyMessage(msg, _myUserId);
                 return ChatBubble(
-                  text: msg['content'] ?? '',
+                  message: msg,
                   isMe: isMe,
                   avatarAsset: widget.model['avatar'],
                 );
@@ -323,7 +358,11 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
           caseSuccess
               ? _buildEndedBanner()
               : ChatInput(
-                  controller: _chatController, onSend: _sendMessage),
+                  controller: _chatController,
+                  onSend: _sendMessage,
+                  onAttach: _pickAttachment,
+                  isUploading: _isUploadingAttachment,
+                ),
         ],
       ),
     );

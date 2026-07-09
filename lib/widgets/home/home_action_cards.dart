@@ -15,7 +15,10 @@ class HomeActionCards extends StatelessWidget {
   final String typeLogin;
   final String userType;
   final bool isUrgentCaseEnabled;
+  final bool isPro;
+  final String urgentCaseScope;
   final ValueChanged<bool> onToggleUrgentCase;
+  final ValueChanged<String> onUrgentCaseScopeChanged;
   final bool isGuest;
 
   const HomeActionCards({
@@ -23,7 +26,10 @@ class HomeActionCards extends StatelessWidget {
     required this.typeLogin,
     required this.userType,
     required this.isUrgentCaseEnabled,
+    this.isPro = false,
+    this.urgentCaseScope = 'expertise',
     required this.onToggleUrgentCase,
+    required this.onUrgentCaseScopeChanged,
     this.isGuest = false,
   });
 
@@ -110,6 +116,14 @@ class HomeActionCards extends StatelessWidget {
           ),
         ),
 
+        if (isPro && isUrgentCaseEnabled) ...[
+          const SizedBox(height: 12),
+          _UrgentCaseScopeSelector(
+            scope: urgentCaseScope,
+            onChanged: onUrgentCaseScopeChanged,
+          ),
+        ],
+
         const SizedBox(height: 14),
 
         // ── ตั้งค่าวันและเวลา ────────────────────────────────────
@@ -127,6 +141,93 @@ class HomeActionCards extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _UrgentCaseScopeSelector extends StatelessWidget {
+  final String scope;
+  final ValueChanged<String> onChanged;
+
+  const _UrgentCaseScopeSelector({
+    required this.scope,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD6E4FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'urgentCaseScopeTitle'.tr(),
+            style: GoogleFonts.prompt(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1E3A8A),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _scopeChip(
+                  label: 'urgentCaseScopeExpertise'.tr(),
+                  selected: scope != 'all',
+                  onTap: () => onChanged('expertise'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _scopeChip(
+                  label: 'urgentCaseScopeAll'.tr(),
+                  selected: scope == 'all',
+                  onTap: () => onChanged('all'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _scopeChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF0262EC) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFF0262EC)
+                : const Color(0xFFD6E4FF),
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.prompt(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : const Color(0xFF334155),
+          ),
+        ),
+      ),
     );
   }
 }

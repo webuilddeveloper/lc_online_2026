@@ -1,12 +1,14 @@
 import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 
 /// caseStatus (logic เก่า):
@@ -252,7 +254,8 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
                   ..._caseData
                 },
                 roomCode: roomCode,
-                userId: _caseData['userCode'],
+                userId: UserProfileStore.instance.code,
+                caseCode: result['objectData']?['caseCode']?.toString() ?? '',
               ),
             ),
           );
@@ -312,7 +315,7 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
         backAction: () => Navigator.pop(context),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? AppLoadingView(message: 'loading'.tr())
           : _caseData == null
               ? const Center(child: Text('ไม่พบข้อมูลเคส'))
               : AppLayout(

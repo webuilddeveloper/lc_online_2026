@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:LawyerOnline/models/user_model.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/lawyer-edit-profile.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/widgets/profile/lawyer/lawyer_profile_widgets.dart';
 
 // ══════════════════════════════════════════════════════════
@@ -25,10 +28,29 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
+  UserModel? _profile;
+  bool _isLoading = true;
+  double _rateAverage = 0;
+
+  List<String> get _skillTitles {
+    final data = _profile?.expertiseData ??
+        UserProfileStore.instance.user?.expertiseData ??
+        const [];
+    return data
+        .map((item) => item['title']?.toString().trim() ?? '')
+        .where((title) => title.isNotEmpty)
+        .toList();
+  }
+
+  double get _displayRating {
+    if (_rateAverage > 0) return _rateAverage;
+    final rating = LawyerProfileStore.instance.rating;
+    if (rating > 0) return rating;
+    return 5.0;
+  }
+
   Color get _lawyerColor {
-    final r = LawyerProfileStore.instance.rating;
-    // ถ้าไม่มีเรตติ้ง (เป็น 0.0) ให้ใช้สีเริ่มต้นที่เหมาะสม หรือจะอิงตามเกรดเฉลี่ยสูงสุดก็ได้
-    final displayRating = r == 0.0 ? 5.0 : r;
+    final displayRating = _displayRating;
     if (displayRating >= 4.8) return const Color(0xFF1565C0);
     if (displayRating >= 4.0) return const Color(0xFF02A8D1);
     if (displayRating >= 3.0) return const Color(0xFFFDD835);
@@ -52,6 +74,46 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
     );
     UserProfileStore.instance.addListener(_refresh);
     LawyerProfileStore.instance.addListener(_refresh);
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    await UserProfileStore.instance.load();
+    final code = UserProfileStore.instance.code;
+    if (code.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final param = await postDio('${server}/m/register/read', {'code': code});
+      if (!mounted) return;
+
+      if (param != null &&
+          param['status'] == 'S' &&
+          param['objectData'] is List &&
+          (param['objectData'] as List).isNotEmpty) {
+        final raw = Map<String, dynamic>.from(
+          (param['objectData'] as List).first as Map,
+        );
+        final fresh = UserModel.fromJson(raw);
+        _profile = fresh;
+        final rate = raw['rateAverage'];
+        if (rate is num) {
+          _rateAverage = rate.toDouble();
+        } else {
+          _rateAverage = double.tryParse(rate?.toString() ?? '') ?? 0;
+        }
+        await UserProfileStore.instance.applyUserModel(fresh);
+        await LawyerProfileStore.instance.syncFromUserModel(fresh);
+      } else {
+        _profile = UserProfileStore.instance.user;
+      }
+    } catch (_) {
+      _profile = UserProfileStore.instance.user;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -103,11 +165,15 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
           Container(
             margin: const EdgeInsets.fromLTRB(0, 8, 15, 8),
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const LawyerEditProfilePage()),
-              ),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const LawyerEditProfilePage()),
+                );
+                if (!mounted) return;
+                await _loadProfile();
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 alignment: Alignment.center,
@@ -143,7 +209,9 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
           ),
         ],
       ),
-      body: Column(
+      body: _isLoading
+          ? const AppLoadingView()
+          : Column(
         children: [
           Expanded(
             child: Column(
@@ -334,7 +402,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
                               color: Color(0xFFFFC107), size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            ls.rating == 0.0 ? '5.0' : '${ls.rating}',
+                            '${_displayRating.toStringAsFixed(1)}',
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
@@ -432,7 +500,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
   // ════════════════════════════════════════════════════════
 
   Widget _buildSkillsCard(Color color) {
-    final skills = LawyerProfileStore.instance.skills;
+    final skills = _skillTitles;
     if (skills.isEmpty) return const SizedBox.shrink();
 
     return ProfileAnimCard(
@@ -461,7 +529,7 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
   // ════════════════════════════════════════════════════════
 
   Widget _buildBioCard(Color color) {
-    final bio = LawyerProfileStore.instance.bio;
+    final bio = _profile?.description ?? LawyerProfileStore.instance.bio;
     if (bio.isEmpty) return const SizedBox.shrink();
 
     return ProfileAnimCard(

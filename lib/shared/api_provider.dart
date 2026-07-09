@@ -318,7 +318,8 @@ Future<dynamic> postObjectData(String url, dynamic criteria) async {
     return {
       "status": data['status'],
       "message": data['message'],
-      "objectData": data['objectData']
+      "objectData": data['objectData'],
+      "totalData": data['totalData'],
     };
     // Future.value(data['objectData']);
   } else {

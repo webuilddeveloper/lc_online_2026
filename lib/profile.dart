@@ -1,7 +1,6 @@
 import 'package:LawyerOnline/page_exam.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/about-us.dart';
-import 'package:LawyerOnline/change-language.dart';
 import 'package:LawyerOnline/change-password.dart';
 import 'package:LawyerOnline/delete-account.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
@@ -12,6 +11,7 @@ import 'package:LawyerOnline/notification-settings.dart';
 import 'package:LawyerOnline/profile-form.dart';
 import 'package:LawyerOnline/lawyer-profile-view.dart';
 import 'package:LawyerOnline/lawyer-edit-profile.dart';
+import 'package:LawyerOnline/lawyer_apply_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -38,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String get name => UserProfileStore.instance.name;
   String get imageUrl => UserProfileStore.instance.imageUrl;
   String get typeLogin => UserProfileStore.instance.typeLogin;
+  bool get _isLawyerApplyPending => UserProfileStore.instance.isLawyerApplyPending;
 
   bool get _isPro => LawyerProfileStore.instance.isPro && userType == 'lawyer';
 
@@ -163,7 +164,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProfileFormPage(),
+                      builder: (context) => userType == 'lawyer'
+                          ? const LawyerEditProfilePage()
+                          : const ProfileFormPage(),
                     ),
                   ),
                 },
@@ -180,6 +183,65 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 },
               ),
+
+              if (userType == 'user' && typeLogin != 'null')
+                _isLawyerApplyPending
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF8E8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFF5A623).withOpacity(0.4),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.hourglass_top_rounded,
+                                size: 18,
+                                color: Color(0xFFF5A623),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'lawyerApplyPendingMessage'.tr(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF7A5B00),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : menuItem(
+                        title: 'applyAsLawyer'.tr(),
+                        onTap: () async {
+                          final applied = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LawyerApplyPage(),
+                            ),
+                          );
+                          if (applied == true && mounted) setState(() {});
+                        },
+                        titleStyle: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF0262EC),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        trailing: const Icon(
+                          Icons.gavel_rounded,
+                          size: 18,
+                          color: Color(0xFF0262EC),
+                        ),
+                      ),
 
               userType == "user"
                   ? Column(

@@ -10,6 +10,8 @@ import 'package:signalr_netcore/signalr_client.dart';
 /// SignalR + REST สำหรับ CaseRequest flow
 /// สอดคล้องกับ backend CaseRequestController + CaseRequestHub
 class CaseRequestService {
+  static const int broadcastTimeoutSeconds = 60;
+
   HubConnection? _connection;
   String? _joinedUserCode;
   String? _joinedLawyerCode;
@@ -247,6 +249,7 @@ class CaseRequestService {
       'lng': lng,
       'userCode': UserProfileStore.instance.code,
       'userName': UserProfileStore.instance.name,
+      'broadcastTimeoutSeconds': broadcastTimeoutSeconds,
     });
     return res;
   }

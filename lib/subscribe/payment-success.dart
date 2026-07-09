@@ -7,8 +7,8 @@
 
 import 'package:LawyerOnline/subscribe/subscribe_theme.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final String price;
@@ -30,10 +30,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   late AnimationController _fadeCtrl;
   late Animation<double> _scaleAnim;
   late Animation<double> _fadeAnim;
+  bool _upgradeDone = false;
+  bool _upgradeFailed = false;
 
   @override
   void initState() {
     super.initState();
+    _upgradeSubscription();
 
     _scaleCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
@@ -46,6 +49,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       if (!mounted) return;
       _scaleCtrl.forward();
       _fadeCtrl.forward();
+    });
+  }
+
+  Future<void> _upgradeSubscription() async {
+    final cycle =
+        widget.isYearly ? BillingCycle.yearly : BillingCycle.monthly;
+    final ok = await LawyerProfileStore.instance.upgradeToPro(cycle);
+    if (!mounted) return;
+    setState(() {
+      _upgradeDone = true;
+      _upgradeFailed = !ok;
     });
   }
 
@@ -88,17 +102,41 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
                 Text('ชำระเงินสำเร็จ!',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.prompt(
+                    style: AppTypography.prompt(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
                         color: kText)),
                 const SizedBox(height: 8),
                 Text(
-                  'ยินดีต้อนรับสู่ Pro Plan\nคุณสามารถเข้าถึงฟีเจอร์ครบครันได้แล้ว',
+                  _upgradeFailed
+                      ? 'ชำระเงินสำเร็จ แต่ยังไม่สามารถเปิด Pro ได้\nกรุณาลองอีกครั้งจากหน้าโปรไฟล์'
+                      : 'ยินดีต้อนรับสู่ Pro Plan\nคุณสามารถเข้าถึงฟีเจอร์ครบครันได้แล้ว',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.prompt(
+                  style: AppTypography.prompt(
                       fontSize: 13, color: kSub, height: 1.6),
                 ),
+                if (_upgradeDone &&
+                    !_upgradeFailed &&
+                    LawyerProfileStore.instance.isOnTrial) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: kPrimaryLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'ทดลองใช้ฟรี ${LawyerProfileStore.instance.trialDaysRemaining ?? 0} วัน',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.prompt(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kPrimary,
+                      ),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 32),
 
@@ -117,7 +155,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         'รอบบิล', widget.isYearly ? 'รายปี' : 'รายเดือน'),
                     const SizedBox(height: 10),
                     _receiptRow('ยอดชำระ', widget.price,
-                        valueStyle: GoogleFonts.prompt(
+                        valueStyle: AppTypography.prompt(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: kPrimary)),
@@ -131,7 +169,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       children: [
                         Text('สถานะ',
                             style:
-                                GoogleFonts.prompt(fontSize: 13, color: kSub)),
+                                AppTypography.prompt(fontSize: 13, color: kSub)),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 3),
@@ -139,7 +177,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               color: kGreenLight,
                               borderRadius: BorderRadius.circular(20)),
                           child: Text('ชำระแล้ว',
-                              style: GoogleFonts.prompt(
+                              style: AppTypography.prompt(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: kGreen)),
@@ -156,11 +194,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () async {
-                      // รอ upgradeToPro เสร็จก่อน (ถ้ายังไม่เสร็จ) แล้วค่อย pop
-                      final cycle = widget.isYearly
-                          ? BillingCycle.yearly
-                          : BillingCycle.monthly;
-                      await LawyerProfileStore.instance.upgradeToPro(cycle);
+                      if (!_upgradeDone) {
+                        await _upgradeSubscription();
+                      }
                       if (!mounted) return;
                       Navigator.popUntil(context, (route) => route.isFirst);
                     },
@@ -171,9 +207,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: Text('กลับหน้าหลัก',
-                        style: GoogleFonts.prompt(
-                            fontSize: 15, fontWeight: FontWeight.w600)),
+                    child: Text('กลับหน้าหลัก', style: AppTypography.button()),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -189,10 +223,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.prompt(fontSize: 13, color: kSub)),
+          Text(label, style: AppTypography.prompt(fontSize: 13, color: kSub)),
           Text(value,
               style: valueStyle ??
-                  GoogleFonts.prompt(
+                  AppTypography.prompt(
                       fontSize: 13, fontWeight: FontWeight.w600, color: kText)),
         ],
       );

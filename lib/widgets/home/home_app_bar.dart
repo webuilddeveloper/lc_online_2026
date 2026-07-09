@@ -1,11 +1,11 @@
-import 'package:LawyerOnline/chat_page.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/models/auth_session.dart';
 import 'package:LawyerOnline/notification.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
-import 'package:LawyerOnline/test.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
+import 'package:LawyerOnline/widgets/notification_badge.dart';
 import 'package:LawyerOnline/widgets/profile/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -78,6 +78,14 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
 
     _syncUrgentAnimation(widget.isUrgentCaseEnabled, burst: false);
     _prevUrgent = widget.isUrgentCaseEnabled;
+    NotificationStore.instance.addListener(_onNotificationChanged);
+    if (widget.typeLogin != 'null') {
+      NotificationStore.instance.refresh();
+    }
+  }
+
+  void _onNotificationChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -103,6 +111,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    NotificationStore.instance.removeListener(_onNotificationChanged);
     _pulseCtrl.dispose();
     _burstCtrl.dispose();
     super.dispose();
@@ -219,15 +228,16 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
-                            onTap: () async => {
-                              // openChat("20260512165120-625-478")
-                              Navigator.push(
+                            onTap: () async {
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => TestPage()
-                                    // ChatPage()
-                                    ),
-                              ),
+                                  builder: (_) => const NotificationPage(),
+                                ),
+                              );
+                              if (mounted) {
+                                await NotificationStore.instance.refresh();
+                              }
                             },
                             borderRadius: BorderRadius.circular(12),
                             splashColor:
@@ -246,6 +256,7 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                                 ),
                               ),
                               child: Stack(
+                                clipBehavior: Clip.none,
                                 alignment: Alignment.center,
                                 children: [
                                   Image.asset(
@@ -254,17 +265,12 @@ class _HomeAppBarState extends State<HomeAppBar> with TickerProviderStateMixin {
                                     height: 25,
                                     color: const Color(0xFF1565C0),
                                   ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 9,
-                                    child: Container(
-                                      width: 9,
-                                      height: 9,
-                                      decoration: const BoxDecoration(
-                                        color: Color.fromARGB(255, 247, 12, 12),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
+                                  NotificationBadgeDot(
+                                    count:
+                                        NotificationStore.instance.unreadCount,
+                                    showCount: true,
+                                    top: 4,
+                                    right: 4,
                                   ),
                                 ],
                               ),

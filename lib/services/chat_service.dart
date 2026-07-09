@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class ChatService {
@@ -7,12 +8,75 @@ class ChatService {
   ChatService._internal();
 
   HubConnection? _connection; // ✅ เปลี่ยนเป็น nullable
+  String? _activeRoomCode;
+
+  String? get activeRoomCode => _activeRoomCode;
+
+  void setActiveRoom(String? roomCode) {
+    final trimmed = roomCode?.trim();
+    _activeRoomCode = (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  }
+
+  bool shouldSuppressChatNotification(String? roomCode) {
+    final active = _activeRoomCode;
+    if (active == null) return false;
+    final code = roomCode?.trim();
+    if (code == null || code.isEmpty) return false;
+    return active == code;
+  }
 
   // Callbacks
   Function(Map<String, dynamic>)? onReceiveMessage;
   Function(List<dynamic>)? onLoadHistory;
   Function(String, bool)? onUserTyping;
   Function(Map<String, dynamic>)? onMessageRead;
+
+  static String readSenderId(dynamic raw) {
+    if (raw is! Map) return '';
+    final msg = raw is Map<String, dynamic>
+        ? raw
+        : Map<String, dynamic>.from(raw);
+    for (final key in [
+      'senderId',
+      'senderCode',
+      'profileCode',
+      'reference',
+      'userCode',
+      'sender',
+      'createBy',
+    ]) {
+      final value = msg[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return '';
+  }
+
+  static String resolveMyUserId(String widgetUserId) {
+    final fromWidget = widgetUserId.trim();
+    if (fromWidget.isNotEmpty) return fromWidget;
+    return UserProfileStore.instance.code.trim();
+  }
+
+  static bool isMyMessage(dynamic raw, String myUserId) {
+    final senderId = readSenderId(raw);
+    final mine = myUserId.trim();
+    if (senderId.isEmpty || mine.isEmpty) return false;
+    return senderId == mine;
+  }
+
+  static Map<String, dynamic> normalizeMessage(dynamic raw) {
+    if (raw is! Map) return {};
+    final msg = raw is Map<String, dynamic>
+        ? Map<String, dynamic>.from(raw)
+        : Map<String, dynamic>.from(raw);
+    final senderId = readSenderId(msg);
+    if (senderId.isNotEmpty) {
+      msg['senderId'] = senderId;
+    }
+    return msg;
+  }
 
   // ========== เชื่อมต่อ ==========
   Future<void> connect() async {
@@ -91,9 +155,23 @@ class ChatService {
     }
   }
 
-  Future<void> sendMessage(String roomCode, String senderId, String content) async {
+  Future<void> sendMessage(
+    String roomCode,
+    String senderId, {
+    String content = '',
+    String type = 'text',
+    String fileUrl = '',
+    String fileName = '',
+  }) async {
     try {
-      await _connection?.invoke("SendMessage", args: [roomCode, senderId, content]);
+      await _connection?.invoke("SendMessage", args: [
+        roomCode,
+        senderId,
+        content,
+        type,
+        fileUrl,
+        fileName,
+      ]);
     } catch (e) {
       print("=== SendMessage Error: $e ===");
     }

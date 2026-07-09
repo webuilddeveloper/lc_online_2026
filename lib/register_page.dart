@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/media_picker_sheet.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -25,20 +25,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _confirmCtrl = TextEditingController();
-  final TextEditingController lawyerNoCtrl = TextEditingController();
   final TextEditingController idCardCtrl = TextEditingController();
 
   final ScrollController _scrollCtrl = ScrollController();
   final GlobalKey _nameKey = GlobalKey();
   final GlobalKey _phoneKey = GlobalKey();
-  final GlobalKey lawyerNoKey = GlobalKey();
-  final GlobalKey _specialtyKey = GlobalKey();
   final GlobalKey _emailKey = GlobalKey();
   final GlobalKey _passwordKey = GlobalKey();
   final GlobalKey _confirmKey = GlobalKey();
   final GlobalKey _idCardKey = GlobalKey();
-
-  String _userType = 'client';
   bool _pwVisible = false;
   bool _cfVisible = false;
   bool _agreeTerms = false;
@@ -51,16 +46,8 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _emailError;
   String? _passwordError;
   String? _confirmError;
-  String? lawyerNoError;
   String? idCardError;
-  bool _specialtyError = false;
   String _imageUrl = '';
-  String provinceTitle = '';
-  String provinceCode = '';
-
-  List<dynamic> _specialtyOptions = [];
-  Set<String> _selectedSpecialties = {};
-  List<dynamic> provinceList = [];
 
   final ImagePicker _picker = ImagePicker();
 
@@ -72,8 +59,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isEmailValid(String e) =>
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
   bool _isPhoneValid(String p) => p.replaceAll(RegExp(r'\D'), '').length >= 9;
-  bool _isBarNumValid(String b) => RegExp(r'^\d+/\d{4}$').hasMatch(b.trim());
-
   int _calcStrength(String pw) {
     int s = 0;
     if (pw.length >= 8) s++;
@@ -149,23 +134,9 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  Future<void> _callReadSubTopic() async {
-    final param = await postDio("${server}/m/topic/subTopic/read", {});
-    setState(() {
-      _specialtyOptions = [...param['objectData']];
-    });
-  }
-
-  Future<void> _callReadProvince() async {
-    final param = await postDio("${serverLC}route/province/read", {});
-
-    setState(() {
-      provinceList = [
-        {"code": "0", "title": "เลือกจังหวัด"},
-        ...param['objectData']
-      ];
-    });
-    print(provinceList);
+  @override
+  void initState() {
+    super.initState();
   }
 
   Future<void> _submit() async {
@@ -175,8 +146,6 @@ class _RegisterPageState extends State<RegisterPage> {
       _emailError = null;
       _passwordError = null;
       _confirmError = null;
-      lawyerNoError = null;
-      _specialtyError = false;
     });
 
     if (!_agreeTerms) {
@@ -197,20 +166,6 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_isPhoneValid(_phoneCtrl.text)) {
       _phoneError = 'phoneInvalidMin'.tr();
       firstErrorKey ??= _phoneKey;
-    }
-
-    if (_userType == 'lawyer') {
-      if (lawyerNoCtrl.text.trim().isEmpty) {
-        lawyerNoError = 'lawyerNoRequired'.tr();
-        firstErrorKey ??= lawyerNoKey;
-      } else if (!_isBarNumValid(lawyerNoCtrl.text)) {
-        lawyerNoError = 'lawyerNoInvalid'.tr();
-        firstErrorKey ??= lawyerNoKey;
-      }
-      if (_selectedSpecialties.isEmpty) {
-        _specialtyError = true;
-        firstErrorKey ??= _specialtyKey;
-      }
     }
 
     if (_emailCtrl.text.trim().isEmpty) {
@@ -249,27 +204,19 @@ class _RegisterPageState extends State<RegisterPage> {
     final parts = fullName.split(RegExp(r'\s+'));
     final firstName = parts.isNotEmpty ? parts.first : '';
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    final userType = _userType == 'lawyer' ? 'lawyer' : 'user';
-
-    print(_selectedSpecialties.toList());
-    print('======------====== ${lawyerNoCtrl.text}');
 
     setState(() => _isLoading = true);
     try {
       await AuthService.register(
           firstName: firstName,
           lastName: lastName,
-          userType: userType,
+          userType: 'user',
           phone: _phoneCtrl.text.trim(),
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
           confirmPassword: _confirmCtrl.text,
-          lawyerNo: lawyerNoCtrl.text,
           idCard: idCardCtrl.text,
-          imageUrl: _imageUrl,
-          expertiseList: _selectedSpecialties.toList(),
-          provinceCode: provinceCode,
-          provinceTitle: provinceTitle);
+          imageUrl: _imageUrl);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -339,278 +286,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // ── Specialty Dialog ──────────────────────────────────────────────────────────
-  void _showSpecialtyDialog() {
-    final Set<String> tempSelected = Set.from(_selectedSpecialties);
-
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              insetPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
-                        blurRadius: 30,
-                        offset: const Offset(0, 10))
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ── Header ──
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 16, 16),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8F0FE),
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(28),
-                            topRight: Radius.circular(28)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: _blue,
-                                borderRadius: BorderRadius.circular(10)),
-                            child: const Icon(Icons.gavel_rounded,
-                                color: Colors.white, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('ความเชี่ยวชาญ',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: _blue)),
-                                Text('เลือกได้มากกว่า 1 อย่าง',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: _blue.withOpacity(0.7))),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(ctx),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                  color: Colors.white, shape: BoxShape.circle),
-                              child: Icon(Icons.close_rounded,
-                                  size: 18, color: Colors.grey.shade500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // ── Selected Badge ──
-                    if (tempSelected.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _blue.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _blue.withOpacity(0.15)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle_rounded,
-                                size: 15, color: _blue),
-                            const SizedBox(width: 8),
-                            Text('เลือกแล้ว ${tempSelected.length} รายการ',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: _blue,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-
-                    // ── Options ──
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _specialtyOptions
-                              .where((o) => o['code'] != '0')
-                              .map((option) {
-                            final selected =
-                                tempSelected.contains(option['code']);
-                            return GestureDetector(
-                              onTap: () {
-                                setDialogState(() {
-                                  if (selected) {
-                                    tempSelected.remove(option['code']);
-                                  } else {
-                                    tempSelected.add(option['code']);
-                                  }
-                                });
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? _blue
-                                      : const Color(0xFFF5F7FA),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                      color: selected
-                                          ? _blue
-                                          : const Color(0xFFE0E3EA)),
-                                  boxShadow: selected
-                                      ? [
-                                          BoxShadow(
-                                              color: _blue.withOpacity(0.25),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 3))
-                                        ]
-                                      : [],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (selected) ...[
-                                      const Icon(Icons.check_rounded,
-                                          size: 13, color: Colors.white),
-                                      const SizedBox(width: 5),
-                                    ],
-                                    Flexible(
-                                      child: Text(
-                                        option['title'],
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: selected
-                                              ? Colors.white
-                                              : const Color(0xFF444444),
-                                          fontWeight: selected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-
-                    // ── Footer ──
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setDialogState(() => tempSelected.clear()),
-                              child: Container(
-                                height: 46,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF5F7FA),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                      color: const Color(0xFFE0E3EA)),
-                                ),
-                                child: Center(
-                                  child: Text('ล้างทั้งหมด',
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade600,
-                                          fontWeight: FontWeight.w500)),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedSpecialties.clear();
-                                  _selectedSpecialties.addAll(tempSelected);
-                                  if (_selectedSpecialties.isNotEmpty)
-                                    _specialtyError = false;
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              child: Container(
-                                height: 46,
-                                decoration: BoxDecoration(
-                                  color: _blue,
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: _blue.withOpacity(0.35),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.check_rounded,
-                                          color: Colors.white, size: 17),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'เสร็จสิ้น${tempSelected.isNotEmpty ? " (${tempSelected.length})" : ""}',
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _callReadSubTopic();
-    _callReadProvince();
-  }
-
   @override
   Widget build(BuildContext context) {
     final isWide = ResponsiveLayout.isDesktop(context);
@@ -621,9 +296,13 @@ class _RegisterPageState extends State<RegisterPage> {
         children: [
           Center(child: _buildAvatarPicker()),
           const SizedBox(height: 24),
-          _sectionLabel('whoAreYou'.tr()),
-          const SizedBox(height: 8),
-          _buildTypeSelector(),
+          Text(
+            'registerClientHint'.tr(),
+            style: GoogleFonts.prompt(
+              fontSize: 13,
+              color: const Color(0xFF666666),
+            ),
+          ),
           const SizedBox(height: 20),
           _sectionLabel('fullName'.tr()),
           const SizedBox(height: 6),
@@ -660,75 +339,6 @@ class _RegisterPageState extends State<RegisterPage> {
             errorText: idCardError,
             onChanged: (_) => setState(() => idCardError = null),
           ),
-          if (_userType == 'lawyer') ...[
-            const SizedBox(height: 14),
-            _sectionLabel('จังหวัด'.tr()),
-            const SizedBox(height: 6),
-            SizedBox(
-              // height: 43,
-              child: dropdownCustom(
-                label: "จังหวัดที่เลือก",
-                list: provinceList,
-                isRequired: true,
-                valueSelect: provinceCode,
-                onChanged: (value) {
-                  setState(() {
-                    provinceCode = value!;
-                    provinceTitle = provinceList
-                        .firstWhere((x) => x['code'] == value)['title'];
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            _sectionLabel('lawyerNo'.tr()),
-            const SizedBox(height: 6),
-            _buildTextField(
-              key: lawyerNoKey,
-              controller: lawyerNoCtrl,
-              hint: 'lawyerNoHint'.tr(),
-              icon: Icons.badge_outlined,
-              errorText: lawyerNoError,
-              onChanged: (_) => setState(() => lawyerNoError = null),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              key: _specialtyKey,
-              children: [
-                _sectionLabel('specialty'.tr()),
-                const SizedBox(width: 8),
-                if (_selectedSpecialties.isNotEmpty)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                        color: _blue, borderRadius: BorderRadius.circular(10)),
-                    child: Text('${_selectedSpecialties.length}',
-                        style: GoogleFonts.prompt(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            if (_specialtyError)
-              Row(
-                children: [
-                  Icon(Icons.error_outline_rounded,
-                      size: 13, color: _errorColor),
-                  const SizedBox(width: 4),
-                  Text('specialtyRequired'.tr(),
-                      style:
-                          GoogleFonts.prompt(fontSize: 11, color: _errorColor)),
-                ],
-              ),
-            Text('specialtyMultiple'.tr(),
-                style: GoogleFonts.prompt(
-                    fontSize: 11, color: Colors.grey.shade500)),
-            const SizedBox(height: 10),
-            _buildSpecialtyChips(),
-          ],
         ],
       ),
     );
@@ -889,168 +499,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  dropdownCustom({
-    required String label,
-    bool isRequired = false,
-    required List<dynamic> list,
-    required String? valueSelect,
-    required Function(String?) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          value: list.any((e) => e['code'] == valueSelect) ? valueSelect : null,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: Colors.grey, size: 20),
-          decoration: InputDecoration(
-            counterText: '',
-            hintText: label,
-            hintStyle:
-                GoogleFonts.prompt(fontSize: 14, color: Color(0xFF9E9E9E)),
-            prefixIcon: const Icon(Icons.location_on_outlined,
-                color: Colors.grey, size: 20),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: _blue, width: 1.5),
-            ),
-            fillColor: const Color(0xFFFAFAFA),
-            filled: true,
-          ),
-          style: GoogleFonts.prompt(fontSize: 14, color: Color(0xFF1A1A2E)),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          items: list.map<DropdownMenuItem<String>>((e) {
-            return DropdownMenuItem<String>(
-              value: e['code'],
-              child: Text(
-                e['title'],
-                style:
-                    GoogleFonts.prompt(fontSize: 14, color: Color(0xFF1A1A2E)),
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  // ── Specialty Chips ───────────────────────────────────────────────────────────
-  Widget _buildSpecialtyChips() {
-    if (_selectedSpecialties.isEmpty) {
-      return GestureDetector(
-        onTap: () => _showSpecialtyDialog(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _specialtyError
-                ? _errorColor.withOpacity(0.04)
-                : const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _specialtyError ? _errorColor : _border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: _specialtyError
-                      ? _errorColor.withOpacity(0.1)
-                      : const Color(0xFFE8F0FE),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.add_rounded,
-                    size: 18, color: _specialtyError ? _errorColor : _blue),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'เลือกความเชี่ยวชาญอย่างน้อย 1 อย่าง',
-                style: GoogleFonts.prompt(
-                    fontSize: 13,
-                    color: _specialtyError
-                        ? _errorColor
-                        : const Color(0xFF8C8C8C)),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        ..._selectedSpecialties.map((code) {
-          final option = _specialtyOptions.firstWhere(
-            (o) => o['code'] == code,
-            orElse: () => {'code': code, 'title': code},
-          );
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-                color: _blue, borderRadius: BorderRadius.circular(20)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(option['title'],
-                    style: GoogleFonts.prompt(
-                        fontSize: 13,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _selectedSpecialties.remove(code)),
-                  child: const Icon(Icons.close_rounded,
-                      size: 14, color: Colors.white),
-                ),
-              ],
-            ),
-          );
-        }),
-        GestureDetector(
-          onTap: () => _showSpecialtyDialog(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F0FE),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _blue.withOpacity(0.3)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_rounded, size: 15, color: _blue),
-                SizedBox(width: 4),
-                Text('เพิ่ม',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: _blue,
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   // ── Avatar Picker ─────────────────────────────────────────────────────────────
   Widget _buildAvatarPicker() {
     return GestureDetector(
@@ -1074,58 +522,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 size: 15, color: Colors.white),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Type Selector ─────────────────────────────────────────────────────────────
-  Widget _buildTypeSelector() {
-    return Row(
-      children: [
-        _typeChip('client', Icons.person_rounded, 'clientType'.tr(),
-            'clientTypeSub'.tr()),
-        const SizedBox(width: 10),
-        _typeChip('lawyer', Icons.gavel_rounded, 'lawyerType'.tr(),
-            'lawyerTypeSub'.tr()),
-      ],
-    );
-  }
-
-  Widget _typeChip(String value, IconData icon, String label, String sub) {
-    final selected = _userType == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() {
-          _userType = value;
-          _selectedSpecialties.clear();
-          lawyerNoError = null;
-          _specialtyError = false;
-        }),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFE8F0FE) : const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: selected ? _blue : _border, width: selected ? 1.5 : 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 22, color: selected ? _blue : Colors.grey),
-              const SizedBox(height: 6),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: selected ? _blue : const Color(0xFF1A1A2E))),
-              Text(sub,
-                  style:
-                      const TextStyle(fontSize: 10, color: Color(0xFF8C8C8C))),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1323,40 +719,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _showPickerImage(context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('อัลบั้มรูปภาพ',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'Kanit',
-                        fontWeight: FontWeight.normal)),
-                onTap: () {
-                  _imgFromGallery();
-                  Navigator.of(context).pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('กล้องถ่ายรูป',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'Kanit',
-                        fontWeight: FontWeight.normal)),
-                onTap: () {
-                  _imgFromCamera();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
+    MediaPickerSheet.showImageSources(
+      context,
+      onGallery: _imgFromGallery,
+      onCamera: _imgFromCamera,
     );
   }
 
@@ -1368,7 +734,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
-    lawyerNoCtrl.dispose();
+    idCardCtrl.dispose();
     super.dispose();
   }
 

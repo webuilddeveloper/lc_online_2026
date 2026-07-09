@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/appointment-details.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -1154,16 +1155,7 @@ class _CaseListPageState extends State<CaseListPage>
       );
 
   Widget _buildLoadingState() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
+    return const AppLoadingInline(height: 80, size: 28);
   }
 }
 

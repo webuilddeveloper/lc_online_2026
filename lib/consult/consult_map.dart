@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/app_dropdown.dart';
 import 'package:LawyerOnline/consult/consult_detail.dart';
 import 'package:LawyerOnline/consult/consult_payment.dart';
 import 'package:LawyerOnline/lawyer-online-details.dart';
@@ -12,7 +14,9 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 enum _Phase { searching, found, error, idle }
@@ -54,6 +58,8 @@ class _ConsultMapPageState extends State<ConsultMapPage>
   int selectedIndex = 0;
 
   // ── Tab1 (broadcast) ──
+  static const String _noLawyerFoundError = '__NO_LAWYER_FOUND__';
+
   bool _isSearching = false;
   bool _lawyerFound = false;
   bool _isReassigning = false;
@@ -79,6 +85,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
   int _statusIdx = 0;
   Timer? _textTimer;
   Timer? _pollTimer;
+  Timer? _broadcastTimer;
 
   int _lawyerDetailRetries = 0;
   Timer? _lawyerDetailRetryTimer;
@@ -93,17 +100,18 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     return _Phase.idle;
   }
 
+  bool get _isNoLawyerError => _errorMsg == _noLawyerFoundError;
+
   @override
   void initState() {
     super.initState();
     selectedIndex = widget.requestCode != null ? 0 : 1;
     _initAnimations();
     _tryGps(); // ✅ เรียก GPS ก่อนอื่น
+    unawaited(_loadLawyers());
 
     if (widget.requestCode != null) {
       _startBroadcastListening();
-    } else {
-      _loadLawyers();
     }
 
     print('---------->>>>>>> ${widget.requestCode}');
@@ -117,6 +125,8 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       _errorMsg = null;
       _statusIdx = 0;
     });
+    _slideAnim.reset();
+    _cardAnim.reset();
     _startPulse();
     _startStatusTextCycle();
 
@@ -131,8 +141,8 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     };
 
     _caseReqService.onRequestExpired = (data) {
-      if (!mounted) return;
-      _stopSearching(message: 'ไม่พบทนายในบริเวณนี้ กรุณาลองใหม่อีกครั้ง');
+      if (!mounted || _lawyerFound) return;
+      _stopSearchingWithNoLawyer();
     };
 
     _caseReqService.onSearchingAgain = (data) {
@@ -150,6 +160,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       _startPulse();
       _startStatusTextCycle();
       _startPolling();
+      _startBroadcastTimeout();
     };
 
     try {
@@ -158,6 +169,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
 
       await _checkExistingClaim();
       _startPolling();
+      _startBroadcastTimeout();
     } catch (e) {
       if (!mounted) return;
       _stopPulse();
@@ -270,7 +282,10 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       );
 
       if (mounted) {
-        setState(() => _pendingLawyer = enriched);
+        setState(() {
+          _pendingLawyer = enriched;
+          _mergeLawyerIntoList(enriched);
+        });
         print('✅ _pendingLawyer updated with full detail');
       }
     } catch (e) {
@@ -329,6 +344,28 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     return distanceKm;
   }
 
+  void _startBroadcastTimeout() {
+    _broadcastTimer?.cancel();
+    _broadcastTimer = Timer(
+      Duration(seconds: CaseRequestService.broadcastTimeoutSeconds),
+      () {
+        if (!mounted) return;
+        if (_isSearching && !_lawyerFound) {
+          _stopSearchingWithNoLawyer();
+        }
+      },
+    );
+  }
+
+  void _stopSearchingWithNoLawyer() {
+    _stopSearching(message: _noLawyerFoundError);
+  }
+
+  Future<void> _retryBroadcastSearch() async {
+    if (widget.requestCode == null) return;
+    await _startBroadcastListening();
+  }
+
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
@@ -342,6 +379,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     _stopPulse();
     _textTimer?.cancel();
     _pollTimer?.cancel();
+    _broadcastTimer?.cancel();
     setState(() {
       _isSearching = false;
       if (message != null) {
@@ -350,6 +388,9 @@ class _ConsultMapPageState extends State<ConsultMapPage>
         _errorMsg = message;
       }
     });
+    if (message == _noLawyerFoundError) {
+      _slideAnim.forward(from: 0);
+    }
   }
 
   Map<String, dynamic> _asMap(dynamic raw) {
@@ -367,6 +408,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     _stopPulse();
     _textTimer?.cancel();
     _pollTimer?.cancel();
+    _broadcastTimer?.cancel();
     if (!mounted) return;
 
     setState(() {
@@ -375,6 +417,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       _pendingLawyer = lawyer;
       _errorMsg = null;
       _statusIdx = _statusTexts.length - 1;
+      _mergeLawyerIntoList(lawyer);
     });
 
     _slideAnim.value = 1.0;
@@ -450,73 +493,196 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     _startPulse();
     _startStatusTextCycle();
     _startPolling();
+    _startBroadcastTimeout();
   }
 
   Future<void> _loadLawyers() async {
+    if (_loadingLawyers) return;
+
     setState(() {
       _loadingLawyers = true;
       _lawyerLoadError = null;
     });
 
     try {
-      // GPS...
-      _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      ).timeout(const Duration(seconds: 8));
+      await _updateUserLocationFromGps();
 
-      if (mounted) {
-        final loc = LatLng(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-        );
-        try {
-          setState(() => _userLocation = loc);
-          _mapController.move(loc, 14);
-        } catch (e) {
-          debugPrint('⚠️ MapController error: $e');
-        }
-      }
-
-      // ✅ API Call
-      final res = await postDio('${server}/m/register/read', {
-        'userType': 'lawyer',
-        'subTopic': widget.subTopic,
-      });
-
+      final lawyers = await _fetchLawyersFromApi();
       if (!mounted) return;
 
-      // ✅ เก็บ data ลง _lawyers
-      final data = res['objectData'] as List? ?? [];
-      final lawyers = List<dynamic>.from(data);
-
-      // ✅ Check success
-      if (res['status'] == 'S' && lawyers.isNotEmpty) {
-        setState(() {
-          _lawyers = lawyers; // ✅ สำคัญ!
-          _loadingLawyers = false;
-          _lawyerLoadError = null; // ✅ ไม่มี error
-        });
-      } else {
-        setState(() {
-          _loadingLawyers = false;
-          _lawyerLoadError = 'ไม่พบทนายความ';
-        });
-      }
-    } catch (e) {
+      setState(() {
+        _lawyers = lawyers;
+        _loadingLawyers = false;
+        _lawyerLoadError = lawyers.isEmpty ? 'ไม่พบทนายความ' : null;
+      });
+    } catch (e, st) {
+      debugPrint('❌ _loadLawyers error: $e\n$st');
       if (!mounted) return;
       setState(() {
         _loadingLawyers = false;
-        _lawyerLoadError = 'Error: $e';
+        _lawyerLoadError = 'ไม่พบทนายความ';
       });
     }
   }
 
+  void _mergeLawyerIntoList(Map<String, dynamic> lawyer) {
+    final code = lawyer['code']?.toString() ?? '';
+    if (code.isEmpty) return;
+
+    final normalized = _normalizeLawyerItem(lawyer);
+    final exists = _lawyers.any(
+      (item) => (item is Map ? item['code'] : null)?.toString() == code,
+    );
+    if (exists) return;
+
+    _lawyers = [..._lawyers, normalized];
+    _lawyerLoadError = null;
+  }
+
+  Future<List<dynamic>> _fetchLawyersFromApi() async {
+    final filters = <String>[
+      if (widget.subTopicTitle.trim().isNotEmpty) widget.subTopicTitle.trim(),
+      if (widget.topicTitle.trim().isNotEmpty) widget.topicTitle.trim(),
+      '',
+    ];
+
+    for (final filter in filters) {
+      final lawyers = await _readLawyers(subTopic: filter);
+      if (lawyers.isNotEmpty) return lawyers;
+    }
+    return const [];
+  }
+
+  Future<Map<String, dynamic>?> _postRegisterRead(
+    Map<String, dynamic> criteria,
+  ) async {
+    final dioResult = await postDio('${server}/m/register/read', criteria);
+    if (dioResult is Map) {
+      return Map<String, dynamic>.from(dioResult);
+    }
+
+    const storage = FlutterSecureStorage();
+    final profileCode = await storage.read(key: 'profileCode18');
+    final payload = <String, dynamic>{
+      ...criteria,
+      if (profileCode != null && profileCode.isNotEmpty)
+        'profileCode': profileCode,
+    };
+
+    final token = UserProfileStore.instance.token.trim();
+    final response = await http.post(
+      Uri.parse('${server}/m/register/read'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('❌ register/read HTTP ${response.statusCode}');
+      return null;
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    return null;
+  }
+
+  Future<List<dynamic>> _readLawyers({String subTopic = ''}) async {
+    final criteria = <String, dynamic>{
+      'userType': 'lawyer',
+      'limit': 100,
+    };
+    if (subTopic.isNotEmpty) {
+      criteria['subTopic'] = subTopic;
+    }
+
+    final res = await _postRegisterRead(criteria);
+    if (res == null) return [];
+
+    final lawyers = _normalizeLawyerList(res['objectData']);
+    debugPrint(
+      '📥 register/read subTopic="$subTopic" -> ${lawyers.length} lawyers',
+    );
+    return lawyers;
+  }
+
+  List<dynamic> _normalizeLawyerList(dynamic objectData) {
+    if (objectData is List) {
+      return objectData
+          .whereType<Map>()
+          .map((item) => _normalizeLawyerItem(item))
+          .toList();
+    }
+    if (objectData is Map) {
+      return [_normalizeLawyerItem(objectData)];
+    }
+    return const [];
+  }
+
+  Map<String, dynamic> _normalizeLawyerItem(Map raw) {
+    final map = raw is Map<String, dynamic>
+        ? raw
+        : Map<String, dynamic>.from(raw);
+    final first = map['firstName']?.toString() ?? '';
+    final last = map['lastName']?.toString() ?? '';
+    final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+
+    return {
+      ...map,
+      'name': (map['name']?.toString().trim().isNotEmpty == true)
+          ? map['name']
+          : fullName,
+      'lastLat': map['lastLat'] ?? map['lat'],
+      'lastLng': map['lastLng'] ?? map['lastLong'] ?? map['lng'],
+      'isOnline': map['isOnline'] ?? map['available'] ?? true,
+    };
+  }
+
+  Future<void> _updateUserLocationFromGps() async {
+    try {
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm != LocationPermission.whileInUse &&
+          perm != LocationPermission.always) {
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).timeout(const Duration(seconds: 5));
+
+      if (!mounted) return;
+
+      final loc = LatLng(pos.latitude, pos.longitude);
+      setState(() {
+        _currentPosition = pos;
+        _userLocation = loc;
+      });
+      try {
+        _mapController.move(loc, 14);
+      } catch (e) {
+        debugPrint('⚠️ MapController error: $e');
+      }
+    } catch (e) {
+      debugPrint('⚠️ GPS skipped for lawyer list: $e');
+    }
+  }
+
   void _onLawyerTap(dynamic lawyer) {
+    if (lawyer is! Map) return;
+    final lawyerMap = _normalizeLawyerItem(lawyer);
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ConsultDetailPage(
-          lawyer: lawyer,
+          lawyer: lawyerMap,
           topic: widget.topic,
           topicTitle: widget.topicTitle,
           subTopic: widget.subTopic,
@@ -726,22 +892,41 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     final userLat = _userLocation.latitude;
     final userLng = _userLocation.longitude;
 
-    final withDistance = _lawyers.map((l) {
+    final availableOnly = _lawyers.where(_isAvailable);
+
+    final withDistance = availableOnly.map((l) {
       final lat = _readLat(l);
       final lng = _readLng(l);
       double? distanceKm = _asDouble(l['distanceKm']);
       if (distanceKm == null && lat != null && lng != null) {
         distanceKm = _haversineKm(userLat, userLng, lat, lng);
       }
-      return {...l, '_distanceKm': distanceKm};
+      final item = l is Map ? _normalizeLawyerItem(l) : <String, dynamic>{};
+      return <String, dynamic>{...item, '_distanceKm': distanceKm};
     }).toList();
 
-    if (_selectedRadius == null) return withDistance;
+    void sortByDistance(List<dynamic> items) {
+      items.sort((a, b) {
+        final kmA = a['_distanceKm'] as double?;
+        final kmB = b['_distanceKm'] as double?;
+        if (kmA == null && kmB == null) return 0;
+        if (kmA == null) return 1;
+        if (kmB == null) return -1;
+        return kmA.compareTo(kmB);
+      });
+    }
 
-    return withDistance.where((l) {
+    if (_selectedRadius == null) {
+      sortByDistance(withDistance);
+      return withDistance;
+    }
+
+    final filtered = withDistance.where((l) {
       final km = l['_distanceKm'] as double?;
       return km == null || km <= _selectedRadius!;
     }).toList();
+    sortByDistance(filtered);
+    return filtered;
   }
 
   // เพิ่มหลัง _readLng()
@@ -838,6 +1023,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     _cardAnim.dispose();
     _textTimer?.cancel();
     _pollTimer?.cancel();
+    _broadcastTimer?.cancel();
     // _mapController.dispose();
     _lawyerDetailRetryTimer?.cancel();
     super.dispose();
@@ -848,9 +1034,11 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     try {
       dynamic model = {"code": widget.requestCode, 'userCode': UserProfileStore.instance.code,};
       final param = await postDio("${server}/m/caseRequest/cancel", model);
-      if (param['status'] == 'S') {
-        Navigator.pop(context);
-      }
+      print('>>>>>>>>>>>>>>> ${param}');
+      // if (param['status'] == 'S') {
+        
+      // }
+      Navigator.pop(context);
     } catch (_) {
     }
   }
@@ -894,7 +1082,9 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     return GestureDetector(
       onTap: () {
         setState(() => selectedIndex = i);
-        if (i == 1 && _lawyers.isEmpty && !_loadingLawyers) {
+        if (i == 1 &&
+            (_lawyers.isEmpty || _lawyerLoadError != null) &&
+            !_loadingLawyers) {
           _loadLawyers();
         }
       },
@@ -997,8 +1187,26 @@ class _ConsultMapPageState extends State<ConsultMapPage>
         if (widget.requestCode == null) _idleOverlay(),
         if (widget.requestCode != null && _phase == _Phase.searching)
           _searchingOverlay(),
-        if (widget.requestCode != null && _phase == _Phase.error)
+        if (widget.requestCode != null &&
+            _phase == _Phase.error &&
+            !_isNoLawyerError)
           _errorOverlay(),
+        if (widget.requestCode != null && _phase == _Phase.error && _isNoLawyerError) ...[
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(color: Colors.black.withOpacity(0.25)),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SlideTransition(
+              position: _slideOffset,
+              child: _noLawyerPanel(),
+            ),
+          ),
+        ],
         if (widget.requestCode != null && _phase == _Phase.found) ...[
           Positioned.fill(
             child: IgnorePointer(
@@ -1195,11 +1403,118 @@ class _ConsultMapPageState extends State<ConsultMapPage>
               icon: Icons.error_outline_rounded,
               title: 'ไม่สามารถกำหนดทนายได้',
               message: _errorMsg ?? 'เกิดข้อผิดพลาด',
-              onRetry: _startBroadcastListening,
+              onRetry: _retryBroadcastSearch,
             ),
           ),
         ),
       );
+
+  Widget _noLawyerPanel() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.person_search_outlined,
+                    color: Color(0xFFC62828),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ไม่พบทนาย',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Color(0xFF1A2340),
+                        ),
+                      ),
+                      Text(
+                        'ไม่มีทนายรับเคสในเวลาที่กำหนด',
+                        style: TextStyle(
+                          color: Color(0xFF9E9E9E),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFEEF2F5)),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            child: GestureDetector(
+              onTap: _retryBroadcastSearch,
+              child: Container(
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0262EC), Color(0xFF0485FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'โหลดใหม่',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _ring(Animation<double> a) => AnimatedBuilder(
         animation: a,
@@ -1469,44 +1784,22 @@ class _ConsultMapPageState extends State<ConsultMapPage>
                     ),
                   ),
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFDDE3EE)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<double?>(
-                        value: _selectedRadius,
-                        isDense: true,
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Color(0xFF0262EC),
-                          size: 18,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF0262EC),
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onChanged: (val) {
-                          setState(() => _selectedRadius = val);
-                          if (selectedIndex == 1) _loadLawyers();
-                        },
-                        items: _radiusOptions
-                            .map(
-                              (r) => DropdownMenuItem<double?>(
-                                value: r,
-                                child: Text(r == null ? 'ไม่จำกัด' : '$r กม.'),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
+                  AppDropdownCompact<double?>(
+                    value: _selectedRadius,
+                    items: _radiusOptions
+                        .map(
+                          (r) => DropdownMenuItem<double?>(
+                            value: r,
+                            child: Text(
+                              r == null ? 'ไม่จำกัด' : '$r กม.',
+                              style: AppDropdownStyles.itemStyle(),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() => _selectedRadius = val);
+                    },
                   ),
                 ],
               ),
@@ -1648,6 +1941,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
     required String message,
     bool isLoading = false,
     VoidCallback? onRetry,
+    String retryLabel = 'ลองใหม่',
   }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
@@ -1706,7 +2000,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
             TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('ลองใหม่'),
+              label: Text(retryLabel),
             ),
           ],
         ],
@@ -1861,7 +2155,7 @@ class _ConsultMapPageState extends State<ConsultMapPage>
       );
     }
 
-    if (_lawyerLoadError != null || _lawyers.isEmpty) {
+    if (_lawyers.isEmpty) {
       return _lawyerListStatus();
     }
 
@@ -1915,42 +2209,22 @@ class _ConsultMapPageState extends State<ConsultMapPage>
                 ),
               ),
               const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFDDE3EE)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<double?>(
-                    value: _selectedRadius,
-                    isDense: true,
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Color(0xFF0262EC),
-                      size: 18,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF0262EC),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onChanged: (val) {
-                      setState(() => _selectedRadius = val);
-                      _loadLawyers();
-                    },
-                    items: _radiusOptions
-                        .map(
-                          (r) => DropdownMenuItem<double?>(
-                            value: r,
-                            child: Text(r == null ? 'ไม่จำกัด' : '$r กม.'),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
+              AppDropdownCompact<double?>(
+                value: _selectedRadius,
+                items: _radiusOptions
+                    .map(
+                      (r) => DropdownMenuItem<double?>(
+                        value: r,
+                        child: Text(
+                          r == null ? 'ไม่จำกัด' : '$r กม.',
+                          style: AppDropdownStyles.itemStyle(),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) {
+                  setState(() => _selectedRadius = val);
+                },
               ),
             ],
           ),

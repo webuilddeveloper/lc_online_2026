@@ -7,6 +7,7 @@ import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:LawyerOnline/widgets/calendar/all_events_section.dart';
 import 'package:LawyerOnline/widgets/calendar/calendar_theme.dart';
 import 'package:LawyerOnline/widgets/calendar/timeline_section.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -532,16 +533,7 @@ class _CalendarPageState extends State<CalendarPage>
 
   Widget _calendarStatusBanner() {
     if (_isLoadingAppointments) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
+      return const AppLoadingInline(height: 48, size: 24, padding: EdgeInsets.symmetric(vertical: 8));
     }
 
     final error = _appointmentLoadError;

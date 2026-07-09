@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/notification-detail.dart';
 import 'package:LawyerOnline/notification_desktop_detail.dart';
 import 'package:LawyerOnline/notification.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -40,6 +41,7 @@ class _NotificationDropdownContentState
         n["isRead"] = true;
       }
     });
+    NotificationStore.instance.markAllRead();
   }
 
   Widget buildItem(item, index) {

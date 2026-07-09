@@ -208,7 +208,7 @@ class _ImageViewerState extends State<ImageViewer>
     with TickerProviderStateMixin {
   late PageController _pageController;
   late int _currentPageIndex;
-  final bool _isLocked = false;
+  bool _isLocked = false;
 
   late double _start;
   late AnimationController _offsetController;
@@ -251,13 +251,21 @@ class _ImageViewerState extends State<ImageViewer>
     super.dispose();
   }
 
-  // void _onScaleStateChanged(PhotoViewScaleState scaleState) {
-  //   setState(() => _isLocked = scaleState != PhotoViewScaleState.initial);
-  // }
+  void _onScaleStateChanged(PhotoViewScaleState scaleState) {
+    final locked = scaleState == PhotoViewScaleState.zoomedIn ||
+        scaleState == PhotoViewScaleState.covering ||
+        scaleState == PhotoViewScaleState.originalSize;
+    if (_isLocked != locked) {
+      setState(() => _isLocked = locked);
+    }
+  }
 
   void _onPageChanged(int index) {
-    setState(() => _currentPageIndex =
-        mapToRange(index, 0, widget.imageProviders.length - 1));
+    setState(() {
+      _currentPageIndex =
+          mapToRange(index, 0, widget.imageProviders.length - 1);
+      _isLocked = false;
+    });
   }
 
   void _onDragStart(DragStartDetails details) {
@@ -314,24 +322,23 @@ class _ImageViewerState extends State<ImageViewer>
 
     return ZoomableImage(
       imageProvider: provider,
-      // onScaleStateChanged: _onScaleStateChanged,
+      onScaleStateChanged: _onScaleStateChanged,
     );
   }
 
   Widget _wrapWithCloseGesture({required Widget child}) {
+    if (_isLocked) return child;
+
     return GestureDetector(
-      onVerticalDragStart: _isLocked ? null : _onDragStart,
-      onVerticalDragUpdate: _isLocked
-          ? null
-          : (details) {
-              _onDrag(details.globalPosition.dy - _start);
-            },
-      onVerticalDragCancel: _isLocked ? null : () => _onDragEnd(0.0),
-      onVerticalDragEnd: _isLocked
-          ? null
-          : (details) {
-              _onDragEnd(details.velocity.pixelsPerSecond.dy);
-            },
+      behavior: HitTestBehavior.deferToChild,
+      onVerticalDragStart: _onDragStart,
+      onVerticalDragUpdate: (details) {
+        _onDrag(details.globalPosition.dy - _start);
+      },
+      onVerticalDragCancel: () => _onDragEnd(0.0),
+      onVerticalDragEnd: (details) {
+        _onDragEnd(details.velocity.pixelsPerSecond.dy);
+      },
       child: child,
     );
   }
@@ -397,12 +404,11 @@ class ZoomableImage extends StatefulWidget {
   const ZoomableImage({
     super.key,
     required this.imageProvider,
-    // this.onScaleStateChanged,
+    this.onScaleStateChanged,
   });
 
   final ImageProvider imageProvider;
-
-  // final PhotoViewScaleStateChangedCallback onScaleStateChanged;
+  final ValueChanged<PhotoViewScaleState>? onScaleStateChanged;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -422,19 +428,15 @@ class _ZoomableImageState extends State<ZoomableImage> {
   Widget build(BuildContext context) {
     return PhotoView(
       imageProvider: widget.imageProvider,
-      // loadingChild: Center(
-      //   child: CupertinoActivityIndicator(),
-      // ),
       enableRotation: false,
       initialScale: PhotoViewComputedScale.contained,
       minScale: PhotoViewComputedScale.contained,
-      maxScale: 5.0,
+      maxScale: PhotoViewComputedScale.covered * 4,
       scaleStateController: _controller,
-      scaleStateChangedCallback: (s) {
-        // if (widget.onScaleStateChanged != null) {
-        //   widget.onScaleStateChanged(s);
-        // }
-        if (s == PhotoViewScaleState.originalSize) {
+      gestureDetectorBehavior: HitTestBehavior.opaque,
+      scaleStateChangedCallback: (scaleState) {
+        widget.onScaleStateChanged?.call(scaleState);
+        if (scaleState == PhotoViewScaleState.originalSize) {
           _controller.setInvisibly(PhotoViewScaleState.initial);
         }
       },
