@@ -7,6 +7,7 @@ import 'package:LawyerOnline/component/gallery_view.dart';
 import 'package:LawyerOnline/component/media_picker_sheet.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,6 +17,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/widgets/community/community_consult_cta.dart';
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
 
@@ -202,8 +204,8 @@ void _applyCommunityActionFields(dynamic post, dynamic objectData) {
       data['isBookmarked'] == true || data['isBookmark'] == true;
   final likes = int.tryParse(data['likes']?.toString() ?? '');
   final shares = int.tryParse(data['shares']?.toString() ?? '');
-  final views = int.tryParse(
-      data['views']?.toString() ?? data['view']?.toString() ?? '');
+  final views =
+      int.tryParse(data['views']?.toString() ?? data['view']?.toString() ?? '');
 
   if (post is CommunityPost) {
     if (data.containsKey('isLiked') || data.containsKey('isLike')) {
@@ -274,10 +276,8 @@ PostComment _mapCommunityComment(Map<String, dynamic> map) {
 }
 
 List<PostComment> _mapCommunityComments(List<dynamic> raw) {
-  final items = raw
-      .whereType<Map>()
-      .map((e) => Map<String, dynamic>.from(e))
-      .toList();
+  final items =
+      raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   final topLevel = <PostComment>[];
   final repliesByParent = <String, List<PostComment>>{};
 
@@ -553,7 +553,8 @@ class _CommunityPageState extends State<CommunityPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    if (!_hasMore || _isLoadingMore || _isInitialLoading || _isRefreshing) return;
+    if (!_hasMore || _isLoadingMore || _isInitialLoading || _isRefreshing)
+      return;
 
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 200) {
@@ -594,7 +595,8 @@ class _CommunityPageState extends State<CommunityPage> {
     setState(() {});
   }
 
-  void _updatePaginationState(List<dynamic> batch, int total, {bool loadMore = false}) {
+  void _updatePaginationState(List<dynamic> batch, int total,
+      {bool loadMore = false}) {
     if (loadMore && batch.isEmpty) {
       _hasMore = false;
       return;
@@ -631,7 +633,11 @@ class _CommunityPageState extends State<CommunityPage> {
 
   Future<void> callRead({bool refresh = false, bool loadMore = false}) async {
     if (loadMore) {
-      if (_isLoadingMore || _isRefreshing || _isInitialLoading || !_hasMore || _posts.isEmpty) {
+      if (_isLoadingMore ||
+          _isRefreshing ||
+          _isInitialLoading ||
+          !_hasMore ||
+          _posts.isEmpty) {
         return;
       }
     } else if (refresh) {
@@ -793,7 +799,8 @@ class _CommunityPageState extends State<CommunityPage> {
             (_posts[index] as CommunityPost).shares++;
           } else if (_posts[index] is Map) {
             final map = _posts[index] as Map;
-            map['shares'] = (int.tryParse(map['shares']?.toString() ?? '') ?? 0) + 1;
+            map['shares'] =
+                (int.tryParse(map['shares']?.toString() ?? '') ?? 0) + 1;
           }
         });
       } else {
@@ -830,7 +837,8 @@ class _CommunityPageState extends State<CommunityPage> {
           content: const Text('โพสต์สำเร็จแล้ว'),
           backgroundColor: const Color(0xFF2E7D32),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
         ),
@@ -1066,9 +1074,9 @@ class _CommunityPageState extends State<CommunityPage> {
         indicatorColor: const Color(0xFF5E4BFF),
         labelColor: const Color(0xFF5E4BFF),
         unselectedLabelColor: Colors.grey.shade600,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        labelStyle: AppTypography.prompt(fontWeight: FontWeight.w600, fontSize: 14),
         unselectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+            AppTypography.prompt(fontWeight: FontWeight.w500, fontSize: 14),
         indicatorWeight: 2,
         dividerColor: Colors.transparent,
         tabs: _tabs.map((tabKey) {
@@ -1164,7 +1172,8 @@ class _CommunityPageState extends State<CommunityPage> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
                     child: emptyState(),
                   ),
                 );
@@ -1452,7 +1461,8 @@ class _PostCardState extends State<PostCard>
                                         if (widget
                                             .post.displayTopicTitle.isNotEmpty)
                                           TextSpan(
-                                            text: ' > ${widget.post.displayTopicTitle}',
+                                            text:
+                                                ' > ${widget.post.displayTopicTitle}',
                                             style: GoogleFonts.prompt(
                                               fontWeight: FontWeight.w500,
                                               fontSize: 13,
@@ -1789,9 +1799,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         widget.post.isLiked = _isLikedFromMap(postMap);
         widget.post.isBookmarked =
             postMap['isBookmarked'] == true || postMap['isBookmark'] == true;
-        widget.post.subTopicTitle = postMap['subTopicTitle']?.toString().isNotEmpty == true
-            ? postMap['subTopicTitle'].toString()
-            : CommunityTopicLookup.resolveTitle(postMap);
+        widget.post.subTopicTitle =
+            postMap['subTopicTitle']?.toString().isNotEmpty == true
+                ? postMap['subTopicTitle'].toString()
+                : CommunityTopicLookup.resolveTitle(postMap);
       });
     }
 
@@ -1905,7 +1916,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         payload['parentCode'] = _replyTarget!.id;
       }
 
-      final result = await postObjectData('/m/community/comment/create', payload);
+      final result =
+          await postObjectData('/m/community/comment/create', payload);
       if (!mounted) return;
 
       if (result['status'] == 'S') {
@@ -1948,8 +1960,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final data = result?['objectData'];
     if (data is Map) {
       setState(() {
-        comment.isLiked =
-            data['isLiked'] == true || data['isLike'] == true;
+        comment.isLiked = data['isLiked'] == true || data['isLike'] == true;
         final likes = int.tryParse(data['likes']?.toString() ?? '');
         if (likes != null) comment.likes = likes;
       });
@@ -2005,7 +2016,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       });
       return;
     }
-    setState(() => _applyCommunityActionFields(widget.post, result?['objectData']));
+    setState(
+        () => _applyCommunityActionFields(widget.post, result?['objectData']));
   }
 
   Future<void> _togglePostBookmarkDetail() async {
@@ -2019,7 +2031,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       setState(() => widget.post.isBookmarked = wasBookmarked);
       return;
     }
-    setState(() => _applyCommunityActionFields(widget.post, result?['objectData']));
+    setState(
+        () => _applyCommunityActionFields(widget.post, result?['objectData']));
   }
 
   void _startReply(PostComment target) {
@@ -2102,124 +2115,130 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         return false;
       },
       child: Scaffold(
-      backgroundColor: isDesktop
-          ? const Color.fromARGB(255, 233, 242, 249)
-          : const Color(0xFFF5F4F0),
-      appBar: isDesktop
-          ? null
-          : appBarCustom(
-              title: "postDetailTitle".tr(),
-              backBtn: true,
-              isRightWidget: false,
-              backAction: () => goBack(),
-            ),
-      body: AppLayout(
-        child: Container(
-          clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
-          decoration: isDesktop
-              ? const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                )
-              : null,
-          child: Column(
-            children: [
-              if (isDesktop) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                        onPressed: () => goBack(),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "postDetailTitle".tr(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A2E),
+        backgroundColor: isDesktop
+            ? const Color.fromARGB(255, 233, 242, 249)
+            : const Color(0xFFF5F4F0),
+        appBar: isDesktop
+            ? null
+            : appBarCustom(
+                title: "postDetailTitle".tr(),
+                backBtn: true,
+                isRightWidget: false,
+                backAction: () => goBack(),
+              ),
+        body: AppLayout(
+          child: Container(
+            clipBehavior: isDesktop ? Clip.antiAlias : Clip.none,
+            decoration: isDesktop
+                ? const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  )
+                : null,
+            child: Column(
+              children: [
+                if (isDesktop) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                          onPressed: () => goBack(),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-              ],
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPostContent(),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Text(
-                            'commentsAndAnswers'.tr(),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A2E),
-                            ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "postDetailTitle".tr(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A2E),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A2E),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${_comments.length}',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPostContent(),
+                        if (UserProfileStore.instance.userType == 'user') ...{
+                          CommunityConsultCta(
+                            subTopicCode: widget.post.category,
+                            subTopicTitle: widget.post.subTopicTitle,
+                          ),
+                        },
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Text(
+                              'commentsAndAnswers'.tr(),
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
+                                color: Color(0xFF1A1A2E),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1A1A2E),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_comments.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ..._comments.map((c) => _buildCommentCard(c)),
+                        if (_comments.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.chat_bubble_outline_rounded,
+                                      size: 40, color: Colors.grey.shade300),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'noComments'.tr(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade400,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ..._comments.map((c) => _buildCommentCard(c)),
-                      if (_comments.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
-                            child: Column(
-                              children: [
-                                Icon(Icons.chat_bubble_outline_rounded,
-                                    size: 40, color: Colors.grey.shade300),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'noComments'.tr(),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade400,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _buildCommentInput(),
-            ],
+                _buildCommentInput(),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -2320,8 +2339,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          _statChip(Icons.chat_bubble_outline_rounded,
-              '${_comments.length}', const Color(0xFF1565C0)),
+          _statChip(Icons.chat_bubble_outline_rounded, '${_comments.length}',
+              const Color(0xFF1565C0)),
           const SizedBox(width: 12),
           GestureDetector(
             onTap: _sharePostDetail,
@@ -2716,7 +2735,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ? raw
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
-              .where((item) => (item['title'] as String? ?? '').trim().isNotEmpty)
+              .where(
+                  (item) => (item['title'] as String? ?? '').trim().isNotEmpty)
               .toList()
           : <Map<String, dynamic>>[];
 
@@ -2758,7 +2778,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           galleryUrls;
 
       return CommunityPost(
-        id: (apiData['id'] ?? apiData['code'] ?? 'p_${DateTime.now().millisecondsSinceEpoch}')
+        id: (apiData['id'] ??
+                apiData['code'] ??
+                'p_${DateTime.now().millisecondsSinceEpoch}')
             .toString(),
         author: currentUser,
         content: apiData['description']?.toString() ??
@@ -2842,7 +2864,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         return;
       }
 
-      _showError(result['message']?.toString() ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+      _showError(
+          result['message']?.toString() ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่');
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);

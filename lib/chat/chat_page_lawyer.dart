@@ -10,7 +10,8 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:hms_room_kit/hms_room_kit.dart';
+import 'package:LawyerOnline/services/video_call_launcher.dart';
+import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/services/chat_attachment_service.dart';
@@ -56,6 +57,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
 
   @override
   String get chatUserId => _myUserId;
+
+  @override
+  String get chatCaseCode => widget.model['code']?.toString() ?? '';
 
   @override
   void didChangeDependencies() {
@@ -104,6 +108,10 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     _chatService.setActiveRoom(widget.roomCode);
     await _chatService.loadHistory(widget.roomCode);
     await _chatService.markAsRead(widget.roomCode, _myUserId);
+    await WebRtcCallListenerService.instance.joinRoomForChat(
+      roomCode: widget.roomCode,
+      caseCode: chatCaseCode,
+    );
   }
 
   void _scrollToBottom() {
@@ -179,52 +187,16 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     } catch (_) {}
   }
 
-  void _showReminderBeforeJoin() {
-    DialogService.showConfirm(
-      context,
-      title: 'callReminderTitle'.tr(),
-      message: 'callReminderMessage'.tr(),
-      onConfirm: () async {
-        if (!Platform.isIOS) {
-          await Permission.camera.request();
-          await Permission.microphone.request();
-          final camDenied = await Permission.camera.isPermanentlyDenied;
-          final micDenied = await Permission.microphone.isPermanentlyDenied;
-          if (camDenied || micDenied) {
-            if (!mounted) return;
-            DialogService.showConfirm(
-              context,
-              title: 'permissionSettingsTitle'.tr(),
-              message: 'permissionSettingsMessage'.tr(),
-              onConfirm: () => openAppSettings(),
-            );
-            return;
-          }
-        }
-        await _callUser();
-        if (!mounted) return;
-        final navigator = Navigator.of(context);
-        final caseCode = widget.model['code']?.toString() ?? '';
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HMSPrebuilt(
-              roomCode: 'jle-wjbx-gyk',
-              onLeave: () {
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  navigator.pushAndRemoveUntil(
-                    // ── ส่งแค่ caseCode ──
-                    MaterialPageRoute(
-                      builder: (_) => ConsultStatusPage(caseCode: caseCode),
-                    ),
-                    (route) => route.isFirst,
-                  );
-                });
-              },
-            ),
-          ),
-        );
-      },
+  void _showReminderBeforeJoin() async {
+    await _callUser();
+    if (!mounted) return;
+    VideoCallLauncher.join(
+      context: context,
+      caseCode: widget.model['code']?.toString() ?? '',
+      caseData: widget.model is Map<String, dynamic>
+          ? Map<String, dynamic>.from(widget.model as Map)
+          : null,
+      messageRoomCode: widget.roomCode,
     );
   }
 
@@ -251,6 +223,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     _chatService.onMessageRead = null;
     _chatService.setActiveRoom(null);
     _chatService.leaveRoom(widget.roomCode, _myUserId);
+    WebRtcCallListenerService.instance.leaveCurrentRoom();
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();

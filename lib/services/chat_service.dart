@@ -109,7 +109,9 @@ class ChatService {
   void _registerListeners() {
     _connection!.on("ReceiveMessage", (data) {
       if (data != null && data.isNotEmpty) {
-        onReceiveMessage?.call(data[0] as Map<String, dynamic>);
+        final raw = data[0];
+        final msg = normalizeMessage(raw);
+        onReceiveMessage?.call(msg);
       }
     });
 

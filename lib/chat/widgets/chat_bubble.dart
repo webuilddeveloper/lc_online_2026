@@ -1,6 +1,7 @@
 import 'package:LawyerOnline/component/gallery_view.dart';
 import 'package:LawyerOnline/component/link_url_in.dart';
 import 'package:LawyerOnline/services/chat_attachment_service.dart';
+import 'package:LawyerOnline/services/video_call_log_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -128,6 +129,10 @@ class ChatBubble extends StatelessWidget {
       );
     }
 
+    if (type == 'video_call') {
+      return _buildVideoCallContent(isMe);
+    }
+
     if (type == 'file' && fileUrl.isNotEmpty) {
       return InkWell(
         onTap: () => launchInWebViewWithJavaScript(fileUrl),
@@ -177,6 +182,47 @@ class ChatBubble extends StatelessWidget {
         fontSize: 13,
         height: 1.4,
       ),
+    );
+  }
+
+  Widget _buildVideoCallContent(bool isMe) {
+    final data = VideoCallLogData.fromMessage(message);
+    final title = VideoCallLogService.bubbleTitle(data: data, isMe: isMe);
+    final duration = VideoCallLogService.formatDuration(data.durationSeconds);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.video_call_rounded,
+          color: isMe ? Colors.white : const Color(0xFF0262EC),
+          size: 22,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: isMe ? Colors.white : const Color(0xFF1A2340),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                duration,
+                style: TextStyle(
+                  color: isMe ? Colors.white70 : const Color(0xFF8593A8),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -33,6 +33,7 @@ const serverLC = 'https://lc.we-builds.com/lc-api/';
 // const serverElectionLc = 'http://lawyerselection2565.com/election-api/';
 
 String get caseRequestHubUrl => '$server/caseRequestHub';
+String get webrtcHubUrl => '$server/webrtcHub';
 
 List<String> get caseRequestHubCandidates => [caseRequestHubUrl];
 

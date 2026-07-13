@@ -1,4 +1,5 @@
 import 'package:LawyerOnline/services/chat_service.dart';
+import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:flutter/widgets.dart';
 
 /// Clears chat-room presence when the app goes to background so push
@@ -7,6 +8,7 @@ mixin ChatRoomLifecycleMixin<T extends StatefulWidget> on State<T>, WidgetsBindi
   ChatService get chatService;
   String get chatRoomCode;
   String get chatUserId;
+  String get chatCaseCode => '';
 
   @override
   void initState() {
@@ -27,9 +29,16 @@ mixin ChatRoomLifecycleMixin<T extends StatefulWidget> on State<T>, WidgetsBindi
     if (state == AppLifecycleState.paused) {
       chatService.setActiveRoom(null);
       chatService.leaveRoom(chatRoomCode, chatUserId);
+      WebRtcCallListenerService.instance.leaveCurrentRoom();
     } else if (state == AppLifecycleState.resumed) {
       chatService.setActiveRoom(chatRoomCode);
       chatService.joinRoom(chatRoomCode, chatUserId);
+      if (chatCaseCode.isNotEmpty) {
+        WebRtcCallListenerService.instance.joinRoomForChat(
+          roomCode: chatRoomCode,
+          caseCode: chatCaseCode,
+        );
+      }
     }
   }
 }

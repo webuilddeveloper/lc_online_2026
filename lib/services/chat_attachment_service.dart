@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:LawyerOnline/component/media_picker_sheet.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
+import 'package:LawyerOnline/services/video_call_log_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
@@ -34,6 +35,10 @@ class ChatAttachmentService {
     if (type == 'file') {
       final name = readFileName(message);
       return name.isNotEmpty ? name : 'chatAttachmentFile'.tr();
+    }
+    if (type == 'video_call') {
+      final data = VideoCallLogData.fromMessage(message);
+      return VideoCallLogService.formatDuration(data.durationSeconds);
     }
     return message['content']?.toString() ?? '';
   }

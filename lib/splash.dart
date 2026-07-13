@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/pdpa_consent_page.dart';
+import 'package:LawyerOnline/services/pdpa_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -41,11 +43,22 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _callNavigatorPage() async {
-    // โหลดจาก UserProfileStore (มี _SafeStorage ป้องกัน OperationError แล้ว)
     await UserProfileStore.instance.load();
     final userType = UserProfileStore.instance.userType;
     if (!mounted) return;
 
+    final accepted = await PdpaService.hasAcceptedPdpa();
+    if (!accepted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PdpaConsentPage(
+            onAccepted: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    }
+
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => MenuPage(userType: userType),

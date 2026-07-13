@@ -1,4 +1,7 @@
 import 'package:LawyerOnline/add-appointment.dart';
+import 'package:LawyerOnline/case_workspace_page.dart';
+import 'package:LawyerOnline/post_consultation_review_page.dart';
+import 'package:LawyerOnline/services/appointment_reminder_service.dart';
 import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
@@ -87,6 +90,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   void initState() {
     super.initState();
     callReadUser();
+    AppointmentReminderService.scheduleForCase(widget.appointment);
   }
 
   @override
@@ -321,6 +325,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                                         _stagger(1, _buildLawyerCard()),
                                         _gap(14),
                                         _stagger(2, _buildInfoCard()),
+                                        _gap(14),
+                                        _stagger(3, _buildWorkspaceCard()),
                                         if (appointmentModel['status'] == 3 &&
                                             appointmentModel['rating'] !=
                                                 null) ...[
@@ -365,6 +371,8 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                                 _stagger(1, _buildLawyerCard()),
                                 _gap(14),
                                 _stagger(2, _buildInfoCard()),
+                                _gap(14),
+                                _stagger(3, _buildWorkspaceCard()),
                                 // if (appointmentModel['caseStatus'] == 4 &&
                                 //     appointmentModel['rating'] != null) ...[
                                 //   _gap(14),
@@ -1512,6 +1520,40 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
     return s[i];
   }
 
+  Widget _buildWorkspaceCard() {
+    final code = appointmentModel['code']?.toString() ?? '';
+    if (code.isEmpty) return const SizedBox.shrink();
+    return _cardWrap(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(Icons.folder_open_rounded, 'caseWorkspaceTitle'.tr()),
+          const SizedBox(height: 10),
+          Text(
+            'caseWorkspaceSubtitle'.tr(),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF8593A8)),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CaseWorkspacePage(caseCode: code),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+              label: Text('caseWorkspaceOpen'.tr()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════════════════
   //  RATING CARD
   // ════════════════════════════════════════════════════════
@@ -1656,7 +1698,25 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                           filled: true,
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            showReviewDialog(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PostConsultationReviewPage(
+                                  caseCode:
+                                      appointmentModel['code']?.toString() ??
+                                          '',
+                                  lawyerRef:
+                                      appointmentModel['lawyer']?.toString() ??
+                                          '',
+                                  userRef: appointmentModel['userCode']
+                                          ?.toString() ??
+                                      '',
+                                  lawyerName:
+                                      '${lawyerModel['firstName'] ?? ''} ${lawyerModel['lastName'] ?? ''}'
+                                          .trim(),
+                                ),
+                              ),
+                            );
                           },
                         )
                       : _ctaBtn(

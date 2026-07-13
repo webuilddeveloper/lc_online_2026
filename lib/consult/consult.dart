@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/app_dropdown.dart';
 import 'package:LawyerOnline/consult/consult_sum.dart';
+import 'package:LawyerOnline/models/location/province_model.dart';
+import 'package:LawyerOnline/services/thailand_location_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,10 @@ class _ConsultPageState extends State<ConsultPage> {
   dynamic _selectedSubCase;
   bool isLoadingLawyers = true;
 
-  String? _selectedProvince = 'กรุงเทพมหานคร';
+  String? _selectedProvince;
+  String? _selectedProvinceCode;
+  String? _selectedDistrict;
+  String? _selectedDistrictCode;
 
   final TextEditingController _detailController = TextEditingController();
   final TextEditingController _demandController = TextEditingController();
@@ -30,19 +35,36 @@ class _ConsultPageState extends State<ConsultPage> {
   final ImagePicker _picker = ImagePicker();
 
   List<dynamic> _caseTypeList = [];
+  List<ProvinceModel> _provinceOptions = [];
+  List<DistrictModel> _districtOptions = [];
+  bool _loadingProvinces = true;
 
-  final List<String> _provinces = [
-    'กรุงเทพมหานคร',
-    'เชียงใหม่',
-    'ชลบุรี',
-    'ภูเก็ต',
-    'ขอนแก่น',
-    'นครราชสีมา',
-    'สุราษฎร์ธานี',
-    'อุดรธานี',
-    'นครสวรรค์',
-    'พิษณุโลก',
-  ];
+  Future<void> _loadProvinces() async {
+    setState(() => _loadingProvinces = true);
+    final list = await ThailandLocationService.provinces();
+    if (!mounted) return;
+    setState(() {
+      _provinceOptions = list;
+      _loadingProvinces = false;
+      if (_selectedProvince == null && list.isNotEmpty) {
+        _selectedProvince = list.first.title;
+        _selectedProvinceCode = list.first.code;
+      }
+    });
+    if (_selectedProvinceCode != null) {
+      await _loadDistricts(_selectedProvinceCode!);
+    }
+  }
+
+  Future<void> _loadDistricts(String provinceCode) async {
+    final list = await ThailandLocationService.districts(provinceCode);
+    if (!mounted) return;
+    setState(() {
+      _districtOptions = list;
+      _selectedDistrict = null;
+      _selectedDistrictCode = null;
+    });
+  }
 
   Future<void> readTopic() async {
     setState(() => isLoadingLawyers = true);
@@ -91,6 +113,7 @@ class _ConsultPageState extends State<ConsultPage> {
   void initState() {
     super.initState();
     readTopic();
+    _loadProvinces();
   }
 
   @override
@@ -166,13 +189,53 @@ class _ConsultPageState extends State<ConsultPage> {
                               ],
                               _buildDropdownField(
                                 label: 'จังหวัด',
-                                hint: 'เลือกจังหวัด',
+                                hint: _loadingProvinces
+                                    ? 'กำลังโหลด...'
+                                    : 'เลือกจังหวัด',
                                 icon: Icons.location_on_outlined,
                                 value: _selectedProvince,
-                                items: _provinces,
-                                onChanged: (val) =>
-                                    setState(() => _selectedProvince = val),
+                                items: _provinceOptions
+                                    .map((p) => p.title)
+                                    .toList(),
+                                onChanged: (val) {
+                                  final province = _provinceOptions.firstWhere(
+                                    (p) => p.title == val,
+                                    orElse: () =>
+                                        const ProvinceModel(code: '', title: ''),
+                                  );
+                                  setState(() {
+                                    _selectedProvince = val;
+                                    _selectedProvinceCode = province.code;
+                                  });
+                                  if (province.code.isNotEmpty) {
+                                    _loadDistricts(province.code);
+                                  }
+                                },
                               ),
+                              if (_districtOptions.isNotEmpty) ...[
+                                const SizedBox(height: 20),
+                                _buildDropdownField(
+                                  label: 'อำเภอ/เขต',
+                                  hint: 'เลือกอำเภอ/เขต',
+                                  icon: Icons.map_outlined,
+                                  value: _selectedDistrict,
+                                  items: _districtOptions
+                                      .map((d) => d.title)
+                                      .toList(),
+                                  onChanged: (val) {
+                                    final district =
+                                        _districtOptions.firstWhere(
+                                      (d) => d.title == val,
+                                      orElse: () => const DistrictModel(
+                                          code: '', title: '', provinceCode: ''),
+                                    );
+                                    setState(() {
+                                      _selectedDistrict = val;
+                                      _selectedDistrictCode = district.code;
+                                    });
+                                  },
+                                ),
+                              ],
                               const SizedBox(height: 20),
                               _buildTextArea(
                                 label: 'สรุปเหตุการณ์',

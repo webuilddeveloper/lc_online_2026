@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:LawyerOnline/lawyer-online-details.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -134,29 +135,49 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
 
   // ── Filter State ───────────────────────────────────────
   bool _filterAvailableOnly = false;
-  String _sortBy = 'none'; // none | rating | experience | distance
+  bool _filterVerifiedOnly = false;
+  double _minRating = 0;
+  String _sortBy = 'none'; // none | rating | experience | distance | price
   String _searchText = '';
   String _selectedProvince = 'ทั้งหมด';
   int? _selectedIdx;
+  bool _useApiData = false;
+  List<dynamic> _apiLawyers = [];
 
   // Provinces (derived from data + "ทั้งหมด")
   List<dynamic> _allProvinces = [];
 
   // ── Computed filtered + sorted list ───────────────────
+  List<dynamic> get _sourceLawyers =>
+      _useApiData && _apiLawyers.isNotEmpty ? _apiLawyers : lawyerOnlineList;
+
   List<dynamic> get _filteredLawyers {
-    var list = List<dynamic>.from(lawyerOnlineList);
+    var list = List<dynamic>.from(_sourceLawyers);
 
     if (_searchText.isNotEmpty) {
       list = list.where((l) {
         final name = (l['name'] as String).toLowerCase();
-        final skills = (l['skills'] as List).join(' ').toLowerCase();
+        final skills = (l['skills'] is List)
+            ? (l['skills'] as List).join(' ').toLowerCase()
+            : (l['specialty']?.toString() ?? '').toLowerCase();
         final q = _searchText.toLowerCase();
         return name.contains(q) || skills.contains(q);
       }).toList();
     }
 
     if (_filterAvailableOnly) {
-      list = list.where((l) => l['available'] as bool).toList();
+      list = list.where((l) => l['available'] == true || l['isOnline'] == true).toList();
+    }
+
+    if (_filterVerifiedOnly) {
+      list = list.where((l) => l['isVerified'] == true).toList();
+    }
+
+    if (_minRating > 0) {
+      list = list.where((l) {
+        final rating = (l['rating'] as num?)?.toDouble() ?? 0;
+        return rating >= _minRating;
+      }).toList();
     }
 
     if (_selectedProvince != 'ทั้งหมด') {
@@ -165,16 +186,21 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
 
     switch (_sortBy) {
       case 'rating':
-        list.sort(
-            (a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
+        list.sort((a, b) =>
+            ((b['rating'] as num?)?.toDouble() ?? 0)
+                .compareTo((a['rating'] as num?)?.toDouble() ?? 0));
         break;
       case 'experience':
-        list.sort((a, b) => (b['experienceYears'] as int)
-            .compareTo(a['experienceYears'] as int));
+        list.sort((a, b) => (b['experienceYears'] as int? ?? 0)
+            .compareTo(a['experienceYears'] as int? ?? 0));
         break;
       case 'distance':
-        list.sort((a, b) =>
-            (a['distanceKm'] as double).compareTo(b['distanceKm'] as double));
+        list.sort((a, b) => ((a['distanceKm'] as num?)?.toDouble() ?? 0)
+            .compareTo((b['distanceKm'] as num?)?.toDouble() ?? 0));
+        break;
+      case 'price':
+        list.sort((a, b) => ((a['price'] as num?)?.toDouble() ?? 0)
+            .compareTo((b['price'] as num?)?.toDouble() ?? 0));
         break;
     }
 
@@ -203,8 +229,46 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   @override
   void initState() {
     super.initState();
-    // getCurrentLocation();
     getProvince();
+    _loadLawyersFromApi();
+  }
+
+  Future<void> _loadLawyersFromApi() async {
+    try {
+      const repo = ApiLawyerRepository();
+      final lawyers = await repo.searchLawyers(
+        topic: widget.topic ?? '',
+        subTopic: widget.subTopic ?? '',
+      );
+      if (!mounted || lawyers.isEmpty) return;
+      setState(() {
+        _useApiData = true;
+        _apiLawyers = lawyers.map((l) {
+          return {
+            'code': l.code,
+            'name': l.name,
+            'title': l.title,
+            'rating': l.rating,
+            'cost': l.price > 0 ? '${l.price}' : 'Free',
+            'costUnit': '/hr',
+            'imageUrl': l.imageUrl,
+            'experience': l.experience,
+            'experienceYears': l.experienceYears,
+            'clientReviews': l.reviews,
+            'price': l.price,
+            'available': l.isOnline,
+            'isOnline': l.isOnline,
+            'distance': l.distance,
+            'distanceKm': l.distanceKm,
+            'province': l.province,
+            'skills': l.specialty.isNotEmpty ? [l.specialty] : <String>[],
+            'avatar': l.avatar,
+            'color': l.color,
+            'isVerified': true,
+          };
+        }).toList();
+      });
+    } catch (_) {}
   }
 
   Future<void> getCurrentLocation() async {
@@ -755,6 +819,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
         return 'ประสบการณ์';
       case 'distance':
         return 'ใกล้ที่สุด';
+      case 'price':
+        return 'ราคาต่ำ';
       default:
         return '';
     }
@@ -903,6 +969,39 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
             ),
             const SizedBox(height: 20),
 
+            const Text('คะแนนขั้นต่ำ',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A2340))),
+            Slider(
+              value: _minRating,
+              min: 0,
+              max: 5,
+              divisions: 10,
+              label: _minRating.toStringAsFixed(1),
+              activeColor: _kPrimary,
+              onChanged: (v) => setModalState(() => _minRating = v),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => setModalState(
+                  () => _filterVerifiedOnly = !_filterVerifiedOnly),
+              child: Row(children: [
+                Icon(
+                  _filterVerifiedOnly
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  color: _kPrimary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Text('เฉพาะทนายยืนยันตัวตน',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF1A2340))),
+              ]),
+            ),
+            const SizedBox(height: 20),
+
             // ── เรียงตาม ───────────────────────────────────
             const Text('เรียงตาม',
                 style: TextStyle(
@@ -923,6 +1022,9 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
               const SizedBox(width: 8),
               _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded,
                   setModalState),
+              const SizedBox(width: 8),
+              _sortChip('price', 'ราคาต่ำ', Icons.payments_outlined,
+                  setModalState),
             ]),
             const SizedBox(height: 24),
 
@@ -933,6 +1035,8 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
                   onTap: () {
                     setModalState(() {
                       _filterAvailableOnly = false;
+                      _filterVerifiedOnly = false;
+                      _minRating = 0;
                       _sortBy = 'none';
                       _selectedProvince = 'ทั้งหมด';
                     });

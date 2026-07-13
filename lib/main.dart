@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/appointment_reminder_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/services/in_app_notification_service.dart';
 import 'package:LawyerOnline/services/lawyer_apply_notification_handler.dart';
@@ -110,6 +111,7 @@ void main() async {
     );
 
     await NotificationService.init(onTap: _handleLocalNotificationTap);
+    await AppointmentReminderService.init();
 
     // แอปเปิดอยู่ → in-app popup + เสียง/สั่น (ยกเว้นอยู่ในห้องแชทเดียวกัน)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {

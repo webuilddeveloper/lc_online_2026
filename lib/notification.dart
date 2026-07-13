@@ -9,8 +9,7 @@ import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hms_room_kit/hms_room_kit.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:LawyerOnline/services/video_call_launcher.dart';
 
 /// Mock data สำหรับ notification dropdown (ยังไม่ได้ผูก API)
 List<Map<String, dynamic>> globalNotifications = [
@@ -625,81 +624,10 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   void _showReminderBeforeJoin(BuildContext context) {
-    showDialog(
+    VideoCallLauncher.join(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('notification.pre_consultation_instruction'.tr()),
-        content: Text('notification.pre_consultation_instruction_message'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('cancel'.tr()),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-
-              final statuses = await [
-                Permission.camera,
-                Permission.microphone,
-              ].request();
-
-              if (statuses.values.any((s) => s.isPermanentlyDenied)) {
-                if (!context.mounted) return;
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('permission.title'.tr()),
-                    content: Text('permission.content'.tr()),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text('cancel'.tr()),
-                      ),
-                      TextButton(
-                        onPressed: openAppSettings,
-                        child: Text('permission.open_settings'.tr()),
-                      ),
-                    ],
-                  ),
-                );
-                return;
-              }
-
-              final allGranted =
-                  statuses.values.every((status) => status.isGranted);
-
-              if (!context.mounted) return;
-              if (allGranted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HMSPrebuilt(
-                      roomCode: 'jle-wjbx-gyk',
-                    ),
-                  ),
-                );
-              } else {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('notification.permission_denied_title'.tr()),
-                    content:
-                        Text('notification.permission_denied_content'.tr()),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text('confirm'.tr()),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            },
-            child: Text('notification.join_now'.tr()),
-          ),
-        ],
-      ),
+      caseCode: 'incoming-call',
+      messageRoomCode: 'lc-incoming-call',
     );
   }
 }

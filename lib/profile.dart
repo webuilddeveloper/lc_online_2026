@@ -12,6 +12,8 @@ import 'package:LawyerOnline/profile-form.dart';
 import 'package:LawyerOnline/lawyer-profile-view.dart';
 import 'package:LawyerOnline/lawyer-edit-profile.dart';
 import 'package:LawyerOnline/lawyer_apply_page.dart';
+import 'package:LawyerOnline/lawyer_apply_status_page.dart';
+import 'package:LawyerOnline/lawyer_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -189,7 +191,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     ? Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 8),
-                        child: Container(
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LawyerApplyStatusPage(),
+                            ),
+                          ),
+                          child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
@@ -219,7 +228,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                         ),
-                      )
+                      ),
+                    )
                     : menuItem(
                         title: 'applyAsLawyer'.tr(),
                         onTap: () async {
@@ -277,6 +287,27 @@ class _ProfilePageState extends State<ProfilePage> {
                     )
                   : Container(),
 
+              userType == "lawyer"
+                  ? menuItem(
+                      title: 'lawyerDashboardTitle'.tr(),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LawyerDashboardPage(),
+                        ),
+                      ),
+                      titleStyle: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF0262EC),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      trailing: const Icon(
+                        Icons.analytics_outlined,
+                        size: 18,
+                        color: Color(0xFF0262EC),
+                      ),
+                    )
+                  : Container(),
               userType == "lawyer"
                   ? menuItem(
                       title: 'upgradetolawyerpro'.tr(),
