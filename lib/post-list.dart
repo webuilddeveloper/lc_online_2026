@@ -1074,7 +1074,8 @@ class _CommunityPageState extends State<CommunityPage> {
         indicatorColor: const Color(0xFF5E4BFF),
         labelColor: const Color(0xFF5E4BFF),
         unselectedLabelColor: Colors.grey.shade600,
-        labelStyle: AppTypography.prompt(fontWeight: FontWeight.w600, fontSize: 14),
+        labelStyle:
+            AppTypography.prompt(fontWeight: FontWeight.w600, fontSize: 14),
         unselectedLabelStyle:
             AppTypography.prompt(fontWeight: FontWeight.w500, fontSize: 14),
         indicatorWeight: 2,
@@ -1115,11 +1116,13 @@ class _CommunityPageState extends State<CommunityPage> {
             decoration: BoxDecoration(
                 color: const Color(0xFF1A1A2E),
                 borderRadius: BorderRadius.circular(10)),
-            child: Text('search'.tr(),
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              'search'.tr(),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
+            ),
           ),
         ]),
       ),
