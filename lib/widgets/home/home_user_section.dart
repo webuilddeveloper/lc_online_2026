@@ -268,11 +268,10 @@ class HomeUserSection extends StatelessWidget {
   // ── Case Status List ──────────────────────────────────────────────
   Widget _buildCaseStatusList(BuildContext context) {
     return SizedBox(
-      height: 146, // เพิ่ม 16px ให้ shadow ไม่โดน clip
+      height: 168,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(
-            18, 8, 18, 12), // top/bottom ให้ shadow หายใจได้
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
         itemCount: cases.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => _caseStatusItem(context, cases[i]),
@@ -296,32 +295,69 @@ class HomeUserSection extends StatelessWidget {
     return const AppLoadingInline(height: 72, size: 28);
   }
 
+  bool _isUrgentCase(dynamic model) {
+    final value = model is Map
+        ? (model['caseType'] ??
+            model['CaseType'] ??
+            model['case_type'] ??
+            model['type'])
+        : null;
+    if (value == 2 || value == '2' || value == 2.0) return true;
+    if (value == 1 || value == '1' || value == 1.0) return false;
+    if (value is num) return value.toInt() == 2;
+    final text = value?.toString().trim().toLowerCase() ?? '';
+    if (text == '2' ||
+        text == 'urgent' ||
+        text.contains('ด่วน') ||
+        text == 'broadcast') {
+      return true;
+    }
+    return false;
+  }
+
+  String _statusLabel(dynamic status) {
+    final s = status is int
+        ? status
+        : int.tryParse(status?.toString() ?? '') ?? -1;
+    switch (s) {
+      case 1:
+        return 'รอทนายยืนยัน';
+      case 2:
+        return 'รอปรึกษาทนาย';
+      case 3:
+        return 'กำลังปรึกษาทนายความ';
+      case 4:
+        return 'เสร็จสิ้น';
+      case 0:
+        return 'ยกเลิกเคสแล้ว';
+      default:
+        return 'ไม่ทราบสถานะ';
+    }
+  }
+
   Widget _caseStatusItem(BuildContext context, dynamic model) {
     final status = model['caseStatus'];
     final s = _statusStyle(status);
-    final lawyerModel = model['lawyerModel'] as Map?;
-    final lawyerName = lawyerModel?['name'] ?? '';
-    final lawyerImage = lawyerModel?['imageUrl'] ?? '';
-    final category = model['category'] ?? '';
-    final statusText = model['statusText'] ?? '';
+    final isUrgent = _isUrgentCase(model);
+    final typeColor =
+        isUrgent ? const Color(0xFFDC2626) : const Color(0xFF0262EC);
 
-    // คำนวณความกว้างของการ์ดให้พอดีกับหน้าจอ
     final screenW = MediaQuery.of(context).size.width;
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final isTablet = ResponsiveLayout.isTablet(context);
-
-    // ความกว้างของกรอบเนื้อหา
     final actualContentW =
         isDesktop ? math.min(screenW, RV.maxContentWidth(context)) : screenW;
 
-    double cardW;
+    final double cardW;
     if (isDesktop || isTablet) {
-      // Desktop/Tablet: แบ่ง 2 คอลัมน์ให้พอดีกรอบ
       cardW = (actualContentW - (18 * 2) - 12) / 2;
     } else {
-      // Mobile: กว้าง 72% เพื่อให้เห็นว่าเลื่อนได้
-      cardW = screenW * 0.72;
+      cardW = screenW * 0.78;
     }
+
+    final lawyerName = model['lawyerName']?.toString() ?? 'ไม่ระบุ';
+    final topic = model['topicTitle']?.toString() ?? '';
+    final subTopic = model['subTopicTitle']?.toString() ?? '';
 
     return GestureDetector(
       onTap: () {
@@ -330,113 +366,150 @@ class HomeUserSection extends StatelessWidget {
           _showRejectedCase(context, model);
           return;
         }
-        final caseMap = model is Map<String, dynamic>
-            ? model
-            : Map<String, dynamic>.from(model as Map);
-        // _guardedNavigate(
-        //   context,
-        //   AppointmentDetails(
-        //     appointment: UserCaseAdapter.forAppointmentDetails(caseMap),
-        //   ),
-
-        // );
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => AppointmentDetails(appointment: model),
+            builder: (_) => AppointmentDetails(
+              appointment: model is Map<String, dynamic>
+                  ? Map<String, dynamic>.from(model)
+                  : Map<String, dynamic>.from(model as Map),
+            ),
           ),
         ).then((_) {
-          // ✅ เมื่อ pop กลับมา เรียก callback
           if (onAppointmentClosed != null) {
             onAppointmentClosed!();
-            debugPrint('✅ Callback triggered after pop');
           }
         });
       },
       child: Container(
         width: cardW,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFD6D5D5),
-            width: 1,
-          ),
+          border: Border.all(color: typeColor, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: typeColor.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Row(children: [
-          Container(
-            width: 4,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: s.color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          // const SizedBox(width: 12),
-          // ClipRRect(
-          //   borderRadius: BorderRadius.circular(10),
-          //   child: Image.network(lawyerImage,
-          //       width: 48, height: 48, fit: BoxFit.cover),
-          // ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(model['lawyerName'],
-                    style: GoogleFonts.prompt(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _kText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(model['topicTitle'],
-                    style: GoogleFonts.prompt(fontSize: 11, color: _kText),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(model['subTopicTitle'],
-                    style: GoogleFonts.prompt(fontSize: 11, color: _kSub),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: s.bg,
-                    borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // แถบประเภทเต็มความกว้าง — มองเห็นทันที
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              color: typeColor,
+              child: Row(
+                children: [
+                  Icon(
+                    isUrgent
+                        ? Icons.bolt_rounded
+                        : Icons.event_available_rounded,
+                    size: 14,
+                    color: Colors.white,
                   ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(s.icon, size: 11, color: s.color),
-                    const SizedBox(width: 4),
-                    Text(
-                        model['caseStatus'] == 1
-                            ? 'รอทนายยืนยัน'
-                            : model['caseStatus'] == 2
-                                ? 'รอปรึกษาทนาย'
-                                : model['caseStatus'] == 3
-                                    ? 'กำลังปรึกาาทนายความ'
-                                    : model['caseStatus'] == 4
-                                        ? 'เสร็จสิ้น'
-                                        : 'ยกเลิกเคสแล้ว',
-                        style: GoogleFonts.prompt(
-                          fontSize: 12,
-                          color: s.color,
-                          fontWeight: FontWeight.w600,
-                        )),
-                  ]),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      isUrgent
+                          ? 'caseTypeUrgent'.tr()
+                          : 'caseTypeBooking'.tr(),
+                      style: GoogleFonts.prompt(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right_rounded,
-              size: 18, color: Colors.grey.shade400),
-        ]),
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            lawyerName,
+                            style: GoogleFonts.prompt(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: _kText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (topic.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              topic,
+                              style: GoogleFonts.prompt(
+                                  fontSize: 11, color: _kText),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          if (subTopic.isNotEmpty) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              subTopic,
+                              style: GoogleFonts.prompt(
+                                  fontSize: 10, color: _kSub),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: s.bg,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(s.icon, size: 11, color: s.color),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    _statusLabel(status),
+                                    style: GoogleFonts.prompt(
+                                      fontSize: 11,
+                                      color: s.color,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded,
+                        size: 18, color: Colors.grey.shade400),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

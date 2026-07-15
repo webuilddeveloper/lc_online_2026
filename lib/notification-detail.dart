@@ -15,6 +15,11 @@ class NotificationDetailPage extends StatelessWidget {
     if (type == 'chat_message' || page == 'chat') {
       return Icons.chat_bubble_outline_rounded;
     }
+    if (type == 'community_like' ||
+        type == 'community_comment' ||
+        page == 'community') {
+      return Icons.forum_outlined;
+    }
     if (page == 'appointment_detail' || page == 'case_request_detail') {
       return Icons.event_available_rounded;
     }
@@ -35,6 +40,11 @@ class NotificationDetailPage extends StatelessWidget {
 
   Color _accentForType(String? type, String? page) {
     if (type == 'chat_message' || page == 'chat') return _kPrimary;
+    if (type == 'community_like' ||
+        type == 'community_comment' ||
+        page == 'community') {
+      return const Color(0xFFE11D48);
+    }
     if (page == 'appointment_detail' || page == 'case_request_detail') {
       return const Color(0xFF7C4DFF);
     }
@@ -44,6 +54,9 @@ class NotificationDetailPage extends StatelessWidget {
 
   String _typeLabel(String? type, String? page) {
     if (type == 'chat_message' || page == 'chat') return 'ข้อความ';
+    if (type == 'community_like') return 'ถูกใจโพสต์';
+    if (type == 'community_comment') return 'ความคิดเห็น';
+    if (page == 'community') return 'ชุมชน';
     if (page == 'appointment_detail' || page == 'case_request_detail') {
       return 'การนัดหมาย';
     }

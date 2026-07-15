@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
@@ -7,16 +6,14 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:LawyerOnline/services/video_call_launcher.dart';
+import 'package:LawyerOnline/services/video_call_service.dart';
 import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
+import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:LawyerOnline/consult/consult_status.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/services/chat_attachment_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
-import 'package:LawyerOnline/menu.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ChatPageLawyer extends StatefulWidget {
@@ -48,6 +45,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   bool _isUploadingAttachment = false;
   String _typingUser = '';
   late String _myUserId;
+  Map<String, dynamic> _caseData = {};
 
   @override
   ChatService get chatService => _chatService;
@@ -59,7 +57,11 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   String get chatUserId => _myUserId;
 
   @override
-  String get chatCaseCode => widget.model['code']?.toString() ?? '';
+  String get chatCaseCode {
+    final code = widget.model['code']?.toString() ?? '';
+    if (code.isNotEmpty) return code;
+    return widget.model['caseCode']?.toString() ?? '';
+  }
 
   @override
   void didChangeDependencies() {
@@ -112,6 +114,39 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
       roomCode: widget.roomCode,
       caseCode: chatCaseCode,
     );
+    await _loadCase();
+  }
+
+  Future<void> _loadCase() async {
+    var code = chatCaseCode;
+    if (code.isEmpty && widget.roomCode.isNotEmpty) {
+      final active =
+          await NotificationNavigationService.resolveActiveCaseForRoom(
+              widget.roomCode);
+      if (active != null && mounted) {
+        setState(() => _caseData = active);
+        return;
+      }
+    }
+    if (code.isEmpty) return;
+    try {
+      final param = await postDio('${server}/m/case/read', {'code': code});
+      if (!mounted) return;
+      final raw = param['objectData'] is List
+          ? (param['objectData'] as List).first
+          : param['objectData'];
+      if (raw is Map) {
+        var caseMap = Map<String, dynamic>.from(raw);
+        final status = _asStatus(caseMap['caseStatus']);
+        if ((status == 4 || status == 0) && widget.roomCode.isNotEmpty) {
+          final active =
+              await NotificationNavigationService.resolveActiveCaseForRoom(
+                  widget.roomCode);
+          if (active != null) caseMap = active;
+        }
+        setState(() => _caseData = caseMap);
+      }
+    } catch (_) {}
   }
 
   void _scrollToBottom() {
@@ -126,7 +161,43 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     });
   }
 
+  Map<String, dynamic> get _caseMap {
+    final merged = Map<String, dynamic>.from(widget.model);
+    if (_caseData.isNotEmpty) {
+      merged.addAll(_caseData);
+      // คงชื่อ/avatar จาก chat model
+      if (widget.model['name'] != null) merged['name'] = widget.model['name'];
+      if (widget.model['avatar'] != null) {
+        merged['avatar'] = widget.model['avatar'];
+      }
+      // สถานะจาก API เป็นหลัก — อย่าใช้ caseSuccess ค้างจากเคสเก่า
+      final status = _asStatus(merged['caseStatus']);
+      merged['caseSuccess'] = status == 4 || status == 0;
+      if (merged['code'] == null || merged['code'].toString().isEmpty) {
+        merged['code'] = widget.model['code'] ?? widget.model['caseCode'];
+      }
+    }
+    return merged;
+  }
+
+  bool get _canInteract {
+    final status = _asStatus(_caseMap['caseStatus']);
+    if (status == 4 || status == 0) return false;
+    if (_caseData.isEmpty &&
+        (widget.model['caseSuccess'] as bool? ?? false)) {
+      return false;
+    }
+    return VideoCallService.canChatAndCall(_caseMap);
+  }
+
+  int _asStatus(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? -1;
+  }
+
   void _sendMessage() {
+    if (!_canInteract) return;
     final text = _chatController.text.trim();
     if (text.isEmpty || _isUploadingAttachment) return;
     _chatService.sendMessage(
@@ -139,7 +210,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   }
 
   Future<void> _pickAttachment() async {
-    if (_isUploadingAttachment) return;
+    if (!_canInteract || _isUploadingAttachment) return;
     await ChatAttachmentService.showPicker(
       context: context,
       chatService: _chatService,
@@ -187,32 +258,34 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     } catch (_) {}
   }
 
-  void _showReminderBeforeJoin() async {
-    await _callUser();
-    if (!mounted) return;
+  void _showReminderBeforeJoin() {
+    if (!_canInteract) return;
     VideoCallLauncher.join(
       context: context,
       caseCode: widget.model['code']?.toString() ?? '',
-      caseData: widget.model is Map<String, dynamic>
-          ? Map<String, dynamic>.from(widget.model as Map)
-          : null,
+      caseData: _caseMap,
       messageRoomCode: widget.roomCode,
+      peerName: widget.model['name']?.toString() ?? '',
+      onLeave: _rejoinChatAfterCall,
     );
   }
 
-  Future<void> _callUser() async {
-    const storage = FlutterSecureStorage();
-    final name = await storage.read(key: 'name') ?? 'ทนายความ';
-    await FirebaseFirestore.instance.collection('calls').add({
-      'callerType': 'lawyer',
-      'callerName': name,
-      'receiverType': 'user',
-      'status': 'ringing',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('callingUser'.tr())));
+  Future<void> _rejoinChatAfterCall() async {
+    if (!mounted || widget.roomCode.isEmpty) return;
+    try {
+      await _chatService.connect();
+      await _chatService.joinRoom(widget.roomCode, _myUserId);
+      _chatService.setActiveRoom(widget.roomCode);
+      _chatService.onReceiveMessage = (message) {
+        if (!mounted) return;
+        setState(() => _messages.add(ChatService.normalizeMessage(message)));
+        _scrollToBottom();
+      };
+      await WebRtcCallListenerService.instance.joinRoomForChat(
+        roomCode: widget.roomCode,
+        caseCode: chatCaseCode,
+      );
+    } catch (_) {}
   }
 
   @override
@@ -232,13 +305,28 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
   @override
   Widget build(BuildContext context) {
     final model = widget.model;
+    final caseMap = _caseMap;
     final isActive = model['active'] as bool? ?? true;
-    final caseSuccess = model['caseSuccess'] as bool? ?? false;
+    final caseSuccess = (_asStatus(caseMap['caseStatus']) == 4) ||
+        (_asStatus(caseMap['caseStatus']) == 0) ||
+        ((_caseData.isEmpty) && (model['caseSuccess'] as bool? ?? false));
+    final joinResult = VideoCallService.checkJoinWindow(caseMap);
+    final canInteract =
+        !caseSuccess && joinResult == VideoCallJoinResult.allowed;
+    final waitingForWindow =
+        !caseSuccess && joinResult == VideoCallJoinResult.tooEarly;
+    final windowExpired =
+        !caseSuccess && joinResult == VideoCallJoinResult.tooLate;
+    final appointmentDate = caseMap['caseDate']?.toString() ??
+        caseMap['appointmentDate']?.toString() ??
+        '';
+    final appointmentTime =
+        '${caseMap['startTime'] ?? ''} ${caseMap['endTime'] ?? ''}'.trim();
     final clientColor = model['clientColor'] != null
         ? Color(model['clientColor'] as int)
         : const Color(0xFF0262EC);
 
-    final actionButtons = !caseSuccess
+    final actionButtons = canInteract
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -282,7 +370,11 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
             name: model['name'] ?? '',
             statusText: caseSuccess
                 ? null
-                : (isActive ? 'activeNow'.tr() : 'notActive'.tr()),
+                : (canInteract
+                    ? (isActive ? 'activeNow'.tr() : 'notActive'.tr())
+                    : (waitingForWindow
+                        ? 'chatWindowWaitingTitle'.tr()
+                        : 'chatWindowHistoryOnly'.tr())),
             actions: actionButtons,
           );
 
@@ -293,7 +385,9 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
         children: [
           if (widget.embeddedMode)
             _buildEmbeddedHeader(
-                model, isActive, clientColor, actionButtons, caseSuccess),
+                model, isActive, clientColor, actionButtons, caseSuccess,
+                canInteract: canInteract,
+                waitingForWindow: waitingForWindow),
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
@@ -305,6 +399,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                 return ChatBubble(
                   message: msg,
                   isMe: isMe,
+                  currentUserId: _myUserId,
                   avatarAsset: widget.model['avatar'],
                 );
               },
@@ -315,7 +410,7 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                       : const SizedBox(),
             ),
           ),
-          if (_isTyping)
+          if (_isTyping && canInteract)
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -328,14 +423,19 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                 ),
               ),
             ),
-          caseSuccess
-              ? _buildEndedBanner()
-              : ChatInput(
-                  controller: _chatController,
-                  onSend: _sendMessage,
-                  onAttach: _pickAttachment,
-                  isUploading: _isUploadingAttachment,
-                ),
+          if (caseSuccess)
+            _buildEndedBanner()
+          else if (waitingForWindow)
+            _buildLockedBanner(appointmentDate, appointmentTime)
+          else if (windowExpired)
+            _buildExpiredBanner()
+          else
+            ChatInput(
+              controller: _chatController,
+              onSend: _sendMessage,
+              onAttach: _pickAttachment,
+              isUploading: _isUploadingAttachment,
+            ),
         ],
       ),
     );
@@ -346,8 +446,10 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     bool isActive,
     Color clientColor,
     Widget? actions,
-    bool caseSuccess,
-  ) {
+    bool caseSuccess, {
+    bool canInteract = false,
+    bool waitingForWindow = false,
+  }) {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -384,7 +486,14 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 if (!caseSuccess)
-                  Text(isActive ? 'activeNow'.tr() : 'notActive'.tr(),
+                  Text(
+                      canInteract
+                          ? (isActive
+                              ? 'activeNow'.tr()
+                              : 'notActive'.tr())
+                          : (waitingForWindow
+                              ? 'chatWindowWaitingTitle'.tr()
+                              : 'chatWindowHistoryOnly'.tr()),
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF8593A8))),
               ],
@@ -448,6 +557,124 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
                     fontSize: 13,
                     color: Color(0xFF8593A8),
                     fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedBanner(String date, String time) {
+    final hasSchedule = date.isNotEmpty || time.isNotEmpty;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+          top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border:
+            Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F6FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: const Color(0xFF0262EC).withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0262EC).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_clock_rounded,
+                  size: 18, color: Color(0xFF0262EC)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('chatWindowWaitingTitle'.tr(),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0262EC))),
+                  if (hasSchedule) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        if (date.isNotEmpty) date,
+                        if (time.isNotEmpty) time,
+                      ].join(' • '),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF5B6E8A)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredBanner() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+          top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border:
+            Border(top: BorderSide(color: Color(0xFFEEF2F5), width: 1.5)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF6F0),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: const Color(0xFFE87B3A).withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE87B3A).withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.history_toggle_off_rounded,
+                  size: 18, color: Color(0xFFE87B3A)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('chatWindowExpiredTitle'.tr(),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFC45A1A))),
+                  const SizedBox(height: 3),
+                  Text('chatWindowExpiredMessage'.tr(),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF8A6A55))),
+                ],
+              ),
+            ),
           ],
         ),
       ),

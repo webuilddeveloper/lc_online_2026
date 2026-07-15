@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:LawyerOnline/services/case_audit_service.dart';
+import 'package:LawyerOnline/services/offline_cache_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -60,14 +62,25 @@ class CaseWorkspaceService {
   static String _cacheKey(String caseCode) => 'case_workspace_$caseCode';
 
   static Future<CaseWorkspaceData> load(String caseCode) async {
-    final result = await postDio('${server}/m/case/read', {'code': caseCode});
     Map<String, dynamic> caseData = {};
-    if (result['status'] == 'S' &&
-        result['objectData'] is List &&
-        (result['objectData'] as List).isNotEmpty) {
-      caseData = Map<String, dynamic>.from(
-        (result['objectData'] as List).first as Map,
-      );
+    try {
+      final result = await postDio('${server}/m/case/read', {'code': caseCode});
+      if (result['status'] == 'S' &&
+          result['objectData'] is List &&
+          (result['objectData'] as List).isNotEmpty) {
+        caseData = Map<String, dynamic>.from(
+          (result['objectData'] as List).first as Map,
+        );
+        await OfflineCacheService.cacheWorkspace(caseCode, caseData);
+      }
+    } catch (_) {
+      final cachedCase = await OfflineCacheService.loadCachedWorkspace(caseCode);
+      if (cachedCase != null) caseData = cachedCase;
+    }
+
+    if (caseData.isEmpty) {
+      final cachedCase = await OfflineCacheService.loadCachedWorkspace(caseCode);
+      if (cachedCase != null) caseData = cachedCase;
     }
 
     final cached = await _readCache(caseCode);
@@ -78,14 +91,57 @@ class CaseWorkspaceService {
 
     final docsRaw = caseData['caseDocuments'] ?? cached['documents'];
     final documents = _parseDocuments(docsRaw);
-    final timeline = _buildTimeline(caseData);
+    final baseTimeline = _buildTimeline(caseData);
+    final auditEvents = await _loadAuditTimeline(caseCode);
+    final timeline = [...baseTimeline, ...auditEvents];
+
+    final aiSummary = caseData['aiConsultSummary']?.toString() ?? '';
+    final mergedSummary = summary.isNotEmpty
+        ? summary
+        : (aiSummary.isNotEmpty ? aiSummary : cached['summary']?.toString() ?? '');
 
     return CaseWorkspaceData(
       caseData: caseData,
-      summary: summary,
+      summary: mergedSummary,
       documents: documents,
       timeline: timeline,
     );
+  }
+
+  static Future<List<CaseTimelineEvent>> _loadAuditTimeline(String caseCode) async {
+    try {
+      final events = await CaseAuditService.load(caseCode);
+      return events
+          .map((e) => CaseTimelineEvent(
+                title: _auditActionLabel(e.action),
+                subtitle: e.detail.isNotEmpty ? e.detail : e.actorName,
+                at: e.at,
+              ))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static String _auditActionLabel(String action) {
+    switch (action) {
+      case 'payment':
+        return 'ชำระเงิน';
+      case 'reschedule':
+        return 'เลื่อนนัด';
+      case 'no_show':
+        return 'ไม่มาตามนัด';
+      case 'ai_summary':
+        return 'สรุปอัตโนมัติ';
+      case 'summary_update':
+        return 'อัปเดตสรุป';
+      case 'document_update':
+        return 'อัปเดตเอกสาร';
+      case 'status_change':
+        return 'เปลี่ยนสถานะ';
+      default:
+        return action;
+    }
   }
 
   static Future<void> saveSummary({

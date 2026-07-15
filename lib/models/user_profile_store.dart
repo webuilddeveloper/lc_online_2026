@@ -344,6 +344,7 @@ class UserProfileStore extends ChangeNotifier {
       _storage.write(key: 'idcard', value: m.idcard),
       _storage.write(key: 'lastLat', value: m.lastLat.toString()),
       _storage.write(key: 'lastLong', value: m.lastLong.toString()),
+      _storage.write(key: 'isOnline', value: m.isOnline.toString()),
     ]);
   }
 }

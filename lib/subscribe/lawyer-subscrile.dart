@@ -28,6 +28,8 @@ class _SubscribePageState extends State<SubscribePage>
   final _store = LawyerProfileStore.instance;
   bool _isYearly = false;
   late String _selectedPlan;
+  late CurrentPlan _observedPlan;
+  late BillingCycle _observedBillingCycle;
 
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
@@ -130,6 +132,8 @@ class _SubscribePageState extends State<SubscribePage>
     super.initState();
     _store.addListener(_onStoreChanged);
     // เริ่มต้น selected plan ตาม current plan จริงจาก store
+    _observedPlan = _store.currentPlan;
+    _observedBillingCycle = _store.billingCycle;
     _selectedPlan = _store.isPro ? 'pro' : 'free';
     _isYearly = _store.billingCycle.isYearly;
 
@@ -141,6 +145,16 @@ class _SubscribePageState extends State<SubscribePage>
 
   void _onStoreChanged() {
     if (!mounted) return;
+
+    // LawyerProfileStore แจ้งเตือนเมื่อข้อมูลโปรไฟล์ทั่วไปเปลี่ยนด้วย
+    // จึงอัปเดตตัวเลือกในหน้านี้เฉพาะเมื่อ subscription เปลี่ยนจริง
+    // เพื่อไม่ให้ Pro / รายเดือน / รายปีเด้งกลับหลังผู้ใช้กดเลือก
+    final planChanged = _observedPlan != _store.currentPlan;
+    final billingChanged = _observedBillingCycle != _store.billingCycle;
+    if (!planChanged && !billingChanged) return;
+
+    _observedPlan = _store.currentPlan;
+    _observedBillingCycle = _store.billingCycle;
     setState(() {
       _selectedPlan = _store.isPro ? 'pro' : 'free';
       _isYearly = _store.billingCycle.isYearly;
@@ -339,7 +353,7 @@ class _SubscribePageState extends State<SubscribePage>
         ),
         const SizedBox(height: 16),
         Text(
-          'ยกระดับการให้บริการด้วย Lawyer Pro',
+          'ยกระดับการให้บริการด้วย\nLawyer Pro',
           textAlign: TextAlign.center,
           style: AppTypography.prompt(
               fontSize: 20,

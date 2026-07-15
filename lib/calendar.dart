@@ -471,63 +471,68 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   Widget _buildMobileBody() {
-    return IndexedStack(
-      index: _showAllView ? 1 : 0,
-      children: [
-        FadeTransition(
-          opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
-          child: Column(
-            children: [
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _showMonthCalendar
-                    ? MonthCalendarPanel(
-                        focusedDay: _focusedDay,
-                        selectedDay: _selectedDay,
-                        getEventsForDay: _getEventsForDay,
-                        onDaySelected: (s, f) => setState(() {
-                          _selectedDay = s;
-                          _focusedDay = f;
-                        }),
-                        onPageChanged: (f) => setState(() => _focusedDay = f),
-                      )
-                    : WeekStrip(
-                        focusedDay: _focusedDay,
-                        selectedDay: _selectedDay,
-                        getEventsForDay: _getEventsForDay,
-                        onDaySelected: (d) => setState(() {
-                          _selectedDay = d;
-                          _focusedDay = d;
-                        }),
-                      ),
-              ),
-              ToggleArrow(
-                showMonthCalendar: _showMonthCalendar,
-                onTap: _toggleCalendarPanel,
-              ),
-              _calendarStatusBanner(),
-              DayEventListMobile(
-                events: _getEventsForDay(_selectedDay),
-                onEventTap: _navigateToEvent,
-              ),
-              Expanded(
-                child: TimelineView(
-                  selectedDay: _selectedDay,
+    return RefreshIndicator(
+      color: const Color(0xFF0262EC),
+      onRefresh: _loadAppointments,
+      child: IndexedStack(
+        index: _showAllView ? 1 : 0,
+        children: [
+          FadeTransition(
+            opacity: _fadeAnim ?? const AlwaysStoppedAnimation(1.0),
+            child: Column(
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: _showMonthCalendar
+                      ? MonthCalendarPanel(
+                          focusedDay: _focusedDay,
+                          selectedDay: _selectedDay,
+                          getEventsForDay: _getEventsForDay,
+                          onDaySelected: (s, f) => setState(() {
+                            _selectedDay = s;
+                            _focusedDay = f;
+                          }),
+                          onPageChanged: (f) =>
+                              setState(() => _focusedDay = f),
+                        )
+                      : WeekStrip(
+                          focusedDay: _focusedDay,
+                          selectedDay: _selectedDay,
+                          getEventsForDay: _getEventsForDay,
+                          onDaySelected: (d) => setState(() {
+                            _selectedDay = d;
+                            _focusedDay = d;
+                          }),
+                        ),
+                ),
+                ToggleArrow(
+                  showMonthCalendar: _showMonthCalendar,
+                  onTap: _toggleCalendarPanel,
+                ),
+                _calendarStatusBanner(),
+                DayEventListMobile(
                   events: _getEventsForDay(_selectedDay),
-                  scrollController: _timelineScroll,
                   onEventTap: _navigateToEvent,
                 ),
-              ),
-            ],
+                Expanded(
+                  child: TimelineView(
+                    selectedDay: _selectedDay,
+                    events: _getEventsForDay(_selectedDay),
+                    scrollController: _timelineScroll,
+                    onEventTap: _navigateToEvent,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        AllAppointmentsViewMobile(
-          itemEvents: itemEvents,
-          scrollController: _allViewScroll,
-          onEventTap: _navigateToEvent,
-        ),
-      ],
+          AllAppointmentsViewMobile(
+            itemEvents: itemEvents,
+            scrollController: _allViewScroll,
+            onEventTap: _navigateToEvent,
+          ),
+        ],
+      ),
     );
   }
 

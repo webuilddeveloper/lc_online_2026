@@ -48,6 +48,8 @@ class VideoCallLogService {
       'durationSeconds': durationSeconds,
     });
 
+    // ใช้ singleton ของหน้าแชท — ห้าม disconnect เด็ดขาด
+    // (disconnect แล้วกลับมาแชทส่งข้อความไม่ขึ้นจนกว่าจะเข้าใหม่)
     final chat = ChatService();
     try {
       await chat.connect();
@@ -59,8 +61,6 @@ class VideoCallLogService {
       );
     } catch (_) {
       // ไม่ block การวางสายถ้าบันทึกแชทไม่สำเร็จ
-    } finally {
-      await chat.disconnect();
     }
   }
 
@@ -81,9 +81,21 @@ class VideoCallLogService {
 
   static String bubbleTitle({
     required VideoCallLogData data,
-    required bool isMe,
+    required String currentUserId,
   }) {
-    if (isMe) return 'chatVideoCallYouStarted'.tr();
+    return bubbleTitleForUser(
+      initiatedBy: data.initiatedBy,
+      currentUserId: currentUserId,
+    );
+  }
+
+  static String bubbleTitleForUser({
+    required String initiatedBy,
+    required String currentUserId,
+  }) {
+    if (initiatedBy.isNotEmpty && initiatedBy == currentUserId) {
+      return 'chatVideoCallYouStarted'.tr();
+    }
     return 'chatVideoCallPeerStarted'.tr();
   }
 }

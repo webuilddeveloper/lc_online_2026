@@ -5,6 +5,7 @@ import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/register_page.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/services/device_session_service.dart';
 import 'package:LawyerOnline/services/fcm_service.dart';
 import 'package:LawyerOnline/services/location_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
@@ -686,6 +687,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       );
 
       FcmService.registerFcmToken(user.code);
+      await DeviceSessionService.registerCurrentDevice(
+        userCode: user.code,
+        token: session.token,
+      );
 
       if (!mounted) return;
       Navigator.pushReplacement(

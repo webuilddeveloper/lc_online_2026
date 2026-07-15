@@ -87,6 +87,10 @@ class NotificationSettingsStore extends ChangeNotifier {
       return NotificationCategory.message;
     }
 
+    if (page == 'incoming_call' || type == 'incoming_call') {
+      return NotificationCategory.appointment;
+    }
+
     const appointmentPages = {
       'appointment_detail',
       'case_request_detail',

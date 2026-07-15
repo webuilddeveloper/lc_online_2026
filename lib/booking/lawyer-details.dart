@@ -2,6 +2,7 @@ import 'package:LawyerOnline/booking/schedule-page.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -755,6 +756,12 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
   // ════════════════════════════════════════════════════════
 
   Widget _buildBookingButton(Color color) {
+    final lawyer = widget.lawyer is Map
+        ? Map<String, dynamic>.from(widget.lawyer as Map)
+        : <String, dynamic>{};
+    final urgentActive = lawyer['isAllowCase'] == true ||
+        lawyer['isAllowCase']?.toString() == 'true';
+
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, 10, 16, MediaQuery.of(context).padding.bottom + 14),
@@ -765,6 +772,22 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
       child: GestureDetector(
         onTap: () {
           HapticFeedback.mediumImpact();
+          if (urgentActive) {
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text('urgentCaseBlockBookingTitle'.tr()),
+                content: Text('urgentCaseBlockBookingMessage'.tr()),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -782,14 +805,16 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
           height: 54,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [color, color.withOpacity(0.8)],
+              colors: urgentActive
+                  ? [Colors.grey, Colors.grey.shade400]
+                  : [color, color.withOpacity(0.8)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
+                color: (urgentActive ? Colors.grey : color).withOpacity(0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 5),
               ),
@@ -804,16 +829,25 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.calendar_month_rounded,
-                    color: Colors.white, size: 16),
+                child: Icon(
+                  urgentActive
+                      ? Icons.bolt_rounded
+                      : Icons.calendar_month_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 10),
-              const Text('จองนัดหมาย',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      letterSpacing: 0.2)),
+              Text(
+                urgentActive
+                    ? 'urgentCaseBlockBookingTitle'.tr()
+                    : 'จองนัดหมาย',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.2),
+              ),
             ],
           ),
         ),

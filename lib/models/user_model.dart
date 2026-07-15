@@ -29,6 +29,7 @@ class UserModel {
   final double experienceYears;
   final String isAvailable;
   final bool isAllowCase;
+  final bool isOnline;
   final String lv0;
   final String lv1;
   final String lv2;
@@ -69,6 +70,7 @@ class UserModel {
     this.experienceYears = 0,
     this.isAvailable = 'T',
     this.isAllowCase = false,
+    this.isOnline = false,
     this.lv0 = '',
     this.lv1 = '',
     this.lv2 = '',
@@ -108,6 +110,12 @@ class UserModel {
     return DateTime.tryParse(raw.toString());
   }
 
+  static bool _parseBool(dynamic raw) {
+    if (raw == true || raw == 1) return true;
+    final text = raw?.toString().trim().toLowerCase() ?? '';
+    return text == 'true' || text == '1' || text == 't' || text == 'y';
+  }
+
   factory UserModel.fromJson(dynamic json) {
     return UserModel(
       code: json['code']?.toString() ?? '',
@@ -142,8 +150,8 @@ class UserModel {
       isAvailable: json['isAvailable']?.toString().isNotEmpty == true
           ? json['isAvailable'].toString()
           : 'T',
-      isAllowCase: json['isAllowCase'] == true ||
-          json['isAllowCase']?.toString() == 'true',
+      isAllowCase: _parseBool(json['isAllowCase']),
+      isOnline: _parseBool(json['isOnline']),
       lv0: json['lv0']?.toString() ?? '',
       lv1: json['lv1']?.toString() ?? '',
       lv2: json['lv2']?.toString() ?? '',
@@ -186,6 +194,7 @@ class UserModel {
       'experienceYears': experienceYears,
       'isAvailable': isAvailable,
       'isAllowCase': isAllowCase,
+      'isOnline': isOnline,
       'lv0': lv0,
       'lv1': lv1,
       'lv2': lv2,
@@ -238,6 +247,7 @@ class UserModel {
     double? experienceYears,
     String? isAvailable,
     bool? isAllowCase,
+    bool? isOnline,
     String? lv0,
     String? lv1,
     String? lv2,
@@ -278,6 +288,7 @@ class UserModel {
       experienceYears: experienceYears ?? this.experienceYears,
       isAvailable: isAvailable ?? this.isAvailable,
       isAllowCase: isAllowCase ?? this.isAllowCase,
+      isOnline: isOnline ?? this.isOnline,
       lv0: lv0 ?? this.lv0,
       lv1: lv1 ?? this.lv1,
       lv2: lv2 ?? this.lv2,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class TopNotificationBanner extends StatefulWidget {
   final String title;
   final String body;
+  final String? imageUrl;
   final VoidCallback? onTap;
   final VoidCallback onDismiss;
 
@@ -10,6 +11,7 @@ class TopNotificationBanner extends StatefulWidget {
     super.key,
     required this.title,
     required this.body,
+    this.imageUrl,
     this.onTap,
     required this.onDismiss,
   });
@@ -51,6 +53,35 @@ class _TopNotificationBannerState extends State<TopNotificationBanner>
     super.dispose();
   }
 
+  Widget _buildAvatar() {
+    final url = widget.imageUrl?.trim() ?? '';
+    if (url.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          url,
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _fallbackIcon(),
+        ),
+      );
+    }
+    return _fallbackIcon();
+  }
+
+  Widget _fallbackIcon() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0262EC).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(Icons.notifications, color: Color(0xFF0262EC)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -87,16 +118,7 @@ class _TopNotificationBannerState extends State<TopNotificationBanner>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0262EC).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.notifications,
-                          color: Color(0xFF0262EC)),
-                    ),
+                    _buildAvatar(),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

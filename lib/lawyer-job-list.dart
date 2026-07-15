@@ -330,32 +330,42 @@ class _LawyerJobListPageState extends State<LawyerJobListPage>
 
               // ── List ───────────────────────────────────────
               Expanded(
-                child: filtered.isEmpty
-                    ? _buildEmpty()
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) {
-                          final item = filtered[i];
-                          final delay = (i * 0.1).clamp(0.0, 0.6);
-                          return AnimatedBuilder(
-                            animation: _entryCtrl,
-                            builder: (_, child) {
-                              final t = Curves.easeOutCubic.transform(
-                                ((_entryCtrl.value - delay) / (1 - delay))
-                                    .clamp(0.0, 1.0),
-                              );
-                              return Opacity(
-                                opacity: t,
-                                child: Transform.translate(
-                                    offset: Offset(0, 20 * (1 - t)),
-                                    child: child),
-                              );
-                            },
-                            child: _buildJobCard(item),
-                          );
-                        },
-                      ),
+                child: RefreshIndicator(
+                  color: const Color(0xFF0262EC),
+                  onRefresh: () async => _loadApiJobs(),
+                  child: filtered.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(height: 320, child: _buildEmpty()),
+                          ],
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, i) {
+                            final item = filtered[i];
+                            final delay = (i * 0.1).clamp(0.0, 0.6);
+                            return AnimatedBuilder(
+                              animation: _entryCtrl,
+                              builder: (_, child) {
+                                final t = Curves.easeOutCubic.transform(
+                                  ((_entryCtrl.value - delay) / (1 - delay))
+                                      .clamp(0.0, 1.0),
+                                );
+                                return Opacity(
+                                  opacity: t,
+                                  child: Transform.translate(
+                                      offset: Offset(0, 20 * (1 - t)),
+                                      child: child),
+                                );
+                              },
+                              child: _buildJobCard(item),
+                            );
+                          },
+                        ),
+                ),
               ),
             ],
           ),

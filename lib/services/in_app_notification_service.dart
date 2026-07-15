@@ -31,6 +31,7 @@ class InAppNotificationService {
       builder: (context) => TopNotificationBanner(
         title: title,
         body: body,
+        imageUrl: _readImageUrl(data),
         onTap: onTap,
         onDismiss: () {
           _entry?.remove();
@@ -40,5 +41,20 @@ class InAppNotificationService {
     );
 
     overlay.insert(_entry!);
+  }
+
+  static String? _readImageUrl(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    for (final key in const [
+      'imageUrl',
+      'senderImageUrl',
+      'senderImage',
+      'avatar',
+      'imageUrlCreateBy',
+    ]) {
+      final v = data[key]?.toString().trim() ?? '';
+      if (v.isNotEmpty) return v;
+    }
+    return null;
   }
 }

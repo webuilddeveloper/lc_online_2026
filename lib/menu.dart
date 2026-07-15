@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:LawyerOnline/calendar.dart';
@@ -17,6 +18,8 @@ import 'package:flutter/physics.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
+import 'package:LawyerOnline/services/location_service.dart';
+import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -47,6 +50,7 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
   );
 
   late final AnimationController _tabAnimCtrl;
+  Timer? _lawyerBroadcastDebounce;
 
   int _currentPage = 0;
   double _slideDirection = 1.0;
@@ -96,21 +100,38 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     UserProfileStore.instance.addListener(_onStoreChanged);
     LawyerProfileStore.instance.addListener(_syncLawyerBroadcast);
     NotificationStore.instance.addListener(_onNotificationChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncLawyerBroadcast());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncLawyerBroadcast();
+      WebRtcCallListenerService.instance.startGlobal();
+    });
   }
 
   @override
   void dispose() {
     _tabAnimCtrl.dispose();
+    _lawyerBroadcastDebounce?.cancel();
     UserProfileStore.instance.removeListener(_onStoreChanged);
     LawyerProfileStore.instance.removeListener(_syncLawyerBroadcast);
     NotificationStore.instance.removeListener(_onNotificationChanged);
     LawyerCaseBroadcastService.instance.stop();
+    WebRtcCallListenerService.instance.stop();
     super.dispose();
   }
 
+  void _syncUrgentLocationService() {
+    if (UserProfileStore.instance.userType != 'lawyer') return;
+    if (LawyerProfileStore.instance.isUrgentCaseEnabled) {
+      LocationService.startPeriodicUpdate();
+    } else {
+      LocationService.stopPeriodicUpdate();
+    }
+  }
+
   void _syncLawyerBroadcast() {
-    LawyerCaseBroadcastService.instance.sync();
+    _lawyerBroadcastDebounce?.cancel();
+    _lawyerBroadcastDebounce = Timer(const Duration(milliseconds: 400), () {
+      LawyerCaseBroadcastService.instance.sync();
+    });
   }
 
   void _onStoreChanged() {
@@ -124,8 +145,10 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     });
     if (store.isLoggedIn) {
       NotificationStore.instance.refresh();
+      WebRtcCallListenerService.instance.startGlobal();
     } else {
       NotificationStore.instance.clearUnread();
+      WebRtcCallListenerService.instance.stop();
     }
   }
 
@@ -148,9 +171,9 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     }
     await LawyerProfileStore.instance.load();
     if (UserProfileStore.instance.userType == 'lawyer' &&
-        UserProfileStore.instance.user != null) {
-      await LawyerProfileStore.instance
-          .syncFromUserModel(UserProfileStore.instance.user!);
+        UserProfileStore.instance.isLoggedIn) {
+      await UserProfileStore.instance.refreshFromApi();
+      _syncUrgentLocationService();
     }
 
     final store = UserProfileStore.instance;

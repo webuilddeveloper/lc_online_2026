@@ -236,6 +236,7 @@ class _LightLoadingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minWidth: 140, maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -252,10 +253,11 @@ class _LightLoadingCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AppRingSpinner(color: AppLoadingColors.primary, size: 48),
-          const SizedBox(height: 16),
+          const AppRingSpinner(color: AppLoadingColors.primary, size: 40),
+          const SizedBox(height: 14),
           Text(
             message,
+            textAlign: TextAlign.center,
             style: AppTypography.prompt(
               fontSize: 13,
               color: AppLoadingColors.muted,

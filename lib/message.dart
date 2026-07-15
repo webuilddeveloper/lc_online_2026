@@ -8,6 +8,7 @@ import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/models/chat/chat_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /*
@@ -68,9 +69,11 @@ class _MessagePageState extends State<MessagePage> {
         "/m/chat/readList", {'userType': type, 'reference': userId});
     print('----======----- ${result}');
     if (result['status'] == 'S') {
+      final raw = result['objectData'];
+      final list = raw is List ? List<dynamic>.from(raw) : <dynamic>[];
+      list.sort(_compareConversationsByRecent);
       setState(() {
-        _conversations = result['objectData'];
-        // เปิดหน้าแชท
+        _conversations = list;
       });
     }
 
@@ -85,6 +88,24 @@ class _MessagePageState extends State<MessagePage> {
         _selectedConv = convs.first;
       }
     });
+  }
+
+  int _compareConversationsByRecent(dynamic a, dynamic b) {
+    final ta = _conversationTime(a);
+    final tb = _conversationTime(b);
+    return tb.compareTo(ta);
+  }
+
+  DateTime _conversationTime(dynamic conv) {
+    if (conv is! Map) return DateTime.fromMillisecondsSinceEpoch(0);
+    for (final key in ['lastMessageTime', 'updateDate', 'docDate', 'createDate']) {
+      final raw = conv[key];
+      if (raw == null) continue;
+      if (raw is DateTime) return raw;
+      final parsed = DateTime.tryParse(raw.toString());
+      if (parsed != null) return parsed;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   void _onTapConversation(dynamic conv, bool isDesktop) async {
@@ -115,22 +136,40 @@ class _MessagePageState extends State<MessagePage> {
     final roomCode = result['objectData']?['roomCode']?.toString() ?? '';
     if (roomCode.isEmpty || !mounted) return;
 
+    // ใช้เคสที่ยังเปิดอยู่ของห้องนี้ ไม่ใช่ caseCode เก่าใน chatRoom
+    final activeCase =
+        await NotificationNavigationService.resolveActiveCaseForRoom(roomCode);
+    final caseCode = activeCase?['code']?.toString() ??
+        result['objectData']?['caseCode']?.toString() ??
+        conv['caseCode']?.toString() ??
+        '';
+    final caseStatus = activeCase == null
+        ? -1
+        : (activeCase['caseStatus'] is int
+            ? activeCase['caseStatus'] as int
+            : int.tryParse(activeCase['caseStatus']?.toString() ?? '') ?? -1);
+    final caseSuccess = caseStatus == 4 || caseStatus == 0;
+
     final chatModel = _userType == 'lawyer'
         ? {
+            if (activeCase != null) ...activeCase,
             'name':
                 '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
             'avatar': conv['user2Model']['imageUrl'],
-            'caseCode': result['objectData']?['caseCode'],
-            'active': true,
-            'caseSuccess': false,
+            'caseCode': caseCode,
+            'code': caseCode,
+            'active': !caseSuccess,
+            'caseSuccess': caseSuccess,
           }
         : {
+            if (activeCase != null) ...activeCase,
             'name':
                 '${conv['user2Model']['firstName']} ${conv['user2Model']['lastName']}',
             'imageUrl': conv['user2Model']['imageUrl'],
-            'caseCode': result['objectData']?['caseCode'],
-            'active': true,
-            'caseSuccess': false,
+            'caseCode': caseCode,
+            'code': caseCode,
+            'active': !caseSuccess,
+            'caseSuccess': caseSuccess,
             'lawyer': result['objectData']?['userB'],
           };
 
@@ -186,16 +225,26 @@ class _MessagePageState extends State<MessagePage> {
       ),
       body: _isLoading
           ? AppLoadingView(message: 'loading'.tr())
-          : _conversations.isEmpty
-              ? Center(
-                  child: Text('noConversations'.tr(),
-                      style: const TextStyle(color: Color(0xFF8593A8))))
-              : Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Expanded(child: _buildList(isDesktop: false)),
-                  ],
-                ),
+          : RefreshIndicator(
+              color: const Color(0xFF0262EC),
+              onRefresh: _load,
+              child: _conversations.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Center(
+                            child: Text(
+                              'noConversations'.tr(),
+                              style: const TextStyle(color: Color(0xFF8593A8)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : _buildList(isDesktop: false),
+            ),
     );
   }
 
@@ -241,12 +290,28 @@ class _MessagePageState extends State<MessagePage> {
                 Expanded(
                   child: _isLoading
                       ? AppLoadingView(message: 'loading'.tr(), expand: false)
-                      : _conversations.isEmpty
-                          ? Center(
-                              child: Text('noConversations'.tr(),
-                                  style: const TextStyle(
-                                      color: Color(0xFF8593A8))))
-                          : _buildList(isDesktop: true),
+                      : RefreshIndicator(
+                          color: const Color(0xFF0262EC),
+                          onRefresh: _load,
+                          child: _conversations.isEmpty
+                              ? ListView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  children: [
+                                    SizedBox(
+                                      height: 240,
+                                      child: Center(
+                                        child: Text(
+                                          'noConversations'.tr(),
+                                          style: const TextStyle(
+                                              color: Color(0xFF8593A8)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : _buildList(isDesktop: true),
+                        ),
                 ),
               ],
             ),
@@ -305,9 +370,10 @@ class _MessagePageState extends State<MessagePage> {
   // ── Conversation list ──────────────────────────────────
   Widget _buildList({required bool isDesktop}) {
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 12 : 20,
-        vertical: isDesktop ? 12 : 0,
+        vertical: isDesktop ? 12 : 20,
       ),
       itemCount: _conversations.length,
       separatorBuilder: (_, __) => SizedBox(height: isDesktop ? 4 : 10),

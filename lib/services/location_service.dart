@@ -35,8 +35,9 @@ class LocationService {
           debugPrint(
             'LocationService: no position available (GPS off, denied, or timeout)',
           );
-        }
-        if (!isOnline) {
+          // ยังต้องตั้ง isOnline ไว้ ไม่เช่นนั้น FCM เคสด่วนจะไม่ถูกส่ง
+          await _sendToServer(isOnline: true);
+        } else {
           await _sendToServer(isOnline: false);
         }
         return;

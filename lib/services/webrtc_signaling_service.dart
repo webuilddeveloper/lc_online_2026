@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/webrtc_hub_service.dart';
 
 typedef WebRtcSignalHandler = void Function(WebRtcSignal signal);
@@ -9,12 +10,16 @@ class WebRtcSignalingService {
     required this.userId,
     required this.caseCode,
     this.peerName = '',
+    this.toUserId = '',
+    this.isInitiator = false,
   });
 
   final String roomCode;
   final String userId;
   final String caseCode;
   final String peerName;
+  final String toUserId;
+  final bool isInitiator;
 
   final _hub = WebRtcHubService.instance;
   WebRtcSignalHandler? onSignal;
@@ -30,12 +35,19 @@ class WebRtcSignalingService {
       userId: userId,
       caseCode: caseCode,
     );
-    await _hub.startCall(
-      roomCode: roomCode,
-      fromUserId: userId,
-      caseCode: caseCode,
-      peerName: peerName,
-    );
+
+    // เฉพาะฝั่งที่กดโทรเท่านั้นที่ StartCall — ส่งชื่อ/รูปของฝั่งโทรให้ฝั่งรับ
+    if (isInitiator) {
+      final me = UserProfileStore.instance;
+      await _hub.startCall(
+        roomCode: roomCode,
+        fromUserId: userId,
+        caseCode: caseCode,
+        peerName: me.name,
+        peerImageUrl: me.imageUrl,
+        toUserId: toUserId,
+      );
+    }
   }
 
   Future<void> stop() async {

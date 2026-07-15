@@ -644,7 +644,7 @@ class DialogService {
     );
   }
 
-  /// LOADING
+  /// LOADING — การ์ดกลางจอ ไม่กินเต็มจอ
   static showLoading(BuildContext context, {String? message}) {
     showDialog(
       context: context,
@@ -653,7 +653,10 @@ class DialogService {
       builder: (ctx) => PopScope(
         canPop: false,
         child: Center(
-          child: AppLoadingCard(message: message ?? 'loading'.tr()),
+          child: Material(
+            color: Colors.transparent,
+            child: AppLoadingCard(message: message ?? 'loading'.tr()),
+          ),
         ),
       ),
     );

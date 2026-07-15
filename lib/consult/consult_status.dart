@@ -200,16 +200,6 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
   // ── เปิดแชท (logic เก่า) ──────────────────────────────────────────────────
   void _openChat() async {
     if (_caseData == null) return;
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (_) => ChatPageUser(
-    //       model: _caseData,
-    //       roomCode: _caseData!['messageRoomCode'] ?? '',
-    //       caseCode: widget.caseCode,
-    //     ),
-    //   ),
-    // );
     var roomCode;
     // สร้าง roomCode
     List<String> ids = [
@@ -217,52 +207,46 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
       _caseData['lawyer']
     ]..sort();
 
+    final currentCaseCode = _caseData['code']?.toString() ??
+        widget.caseCode.toString();
+
     var model = {
       "members": ids,
       "userA": _caseData['userCode'],
       "userB": _caseData['lawyer'],
-      "caseCode": _caseData['code'],
+      "caseCode": currentCaseCode,
     };
 
     final result = await postObjectData("/m/chat/room/create", model);
-    if (result['status'] == 'S') {
-      setState(
-        () {
-          roomCode = result['objectData']['roomCode'];
-          print(roomCode);
-          // เปิดหน้าแชท
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (_) => ChatPage(
-          //       roomCode: roomCode,
-          //       userId: myUserId,
-          //     ),
-          //   ),
-          // );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatPageUser(
-                model: {
-                  'name':
-                      '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
-                  'imageUrl': lawyerModel['imageUrl'],
-                  'caseCode': result['objectData']['caseCode'],
-                  'active': true,
-                  'caseSuccess': false,
-                  ..._caseData
-                },
-                roomCode: roomCode,
-                userId: UserProfileStore.instance.code,
-                caseCode: result['objectData']?['caseCode']?.toString() ?? '',
-              ),
-            ),
-          );
-          // .then((_) => _load());
-        },
-      );
-    }
+    if (result['status'] != 'S' || !mounted) return;
+
+    roomCode = result['objectData']['roomCode'];
+    await postObjectData('/m/case/update', {
+      'code': currentCaseCode,
+      'messageRoomCode': roomCode,
+    });
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatPageUser(
+          model: {
+            ...Map<String, dynamic>.from(_caseData as Map),
+            'name':
+                '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
+            'imageUrl': lawyerModel['imageUrl'],
+            'caseCode': currentCaseCode,
+            'code': currentCaseCode,
+            'active': true,
+            'caseSuccess': false,
+          },
+          roomCode: roomCode,
+          userId: UserProfileStore.instance.code,
+          caseCode: currentCaseCode,
+        ),
+      ),
+    );
   }
 
   // ── Rating Dialog ──────────────────────────────────────────────────────────

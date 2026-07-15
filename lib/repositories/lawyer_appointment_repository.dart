@@ -70,25 +70,34 @@ class ApiLawyerAppointmentRepository implements LawyerAppointmentRepository {
       debugPrint('✅ Got ${cases.length} cases from API');
 
       final appointments = <Map<String, dynamic>>[];
+      final bookingJobs = <Map<String, dynamic>>[];
       for (var i = 0; i < cases.length; i++) {
         try {
-          final apt = CaseAppointmentMapper.fromCase(
-            cases[i] as Map<String, dynamic>,
-            colorIndex: i % 6,
-          );
-          appointments.add(apt);
-          debugPrint('✅ Mapped appointment $i: ${apt['code']}');
+          final caseMap = Map<String, dynamic>.from(cases[i] as Map);
+          bookingJobs.add(CaseAppointmentMapper.jobFromCase(caseMap));
+
+          // ปฏิทินแสดงเฉพาะนัดหมายล่วงหน้า (caseType=1) — เคสด่วนไปที่ LawyerJobListPage
+          if (!CaseAppointmentMapper.isUrgentCase(caseMap)) {
+            final apt = CaseAppointmentMapper.fromCase(
+              caseMap,
+              colorIndex: i % 6,
+            );
+            appointments.add(apt);
+            debugPrint('✅ Mapped appointment $i: ${apt['code']}');
+          }
         } catch (e) {
           debugPrint('⚠️ Error mapping case $i: $e');
           continue;
         }
       }
 
-      debugPrint('✅ Final appointments: ${appointments.length}');
-      
+      debugPrint(
+        '✅ Final appointments: ${appointments.length}, jobs: ${bookingJobs.length}',
+      );
+
       return LawyerScheduleSnapshot(
         appointments: appointments,
-        bookingJobs: [],
+        bookingJobs: bookingJobs,
       );
     } catch (e, st) {
       debugPrint('❌ readScheduleForLawyer error: $e');

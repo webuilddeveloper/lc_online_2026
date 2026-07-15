@@ -84,6 +84,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
       setState(() {
         _notifications = list;
+        _sortNotifications();
         _isLoading = false;
       });
 
@@ -140,27 +141,116 @@ class _NotificationPageState extends State<NotificationPage> {
     };
   }
 
-  DateTime? _parseDate(Map<String, dynamic> item) {
-    final raw = item['docDate'];
-    if (raw is DateTime) return raw;
-    if (raw is String && raw.isNotEmpty) {
-      return DateTime.tryParse(raw);
+  void _sortNotifications() {
+    _notifications.sort(_compareNotification);
+  }
+
+  int _compareNotification(
+    Map<String, dynamic> a,
+    Map<String, dynamic> b,
+  ) {
+    final aRead = a['isRead'] == true;
+    final bRead = b['isRead'] == true;
+    if (aRead != bRead) return aRead ? 1 : -1;
+
+    final aDt = _parseDate(a);
+    final bDt = _parseDate(b);
+    if (aDt != null && bDt != null) return bDt.compareTo(aDt);
+    if (aDt != null) return -1;
+    if (bDt != null) return 1;
+    return 0;
+  }
+
+  (int, int) _parseTimeParts(dynamic raw) {
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return (0, 0);
+
+    if (value.contains(':')) {
+      final parts = value.split(':');
+      return (
+        int.tryParse(parts[0]) ?? 0,
+        parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0,
+      );
     }
-    final date = item['createDate']?.toString() ?? '';
-    final time = item['createTime']?.toString() ?? '';
-    if (date.length >= 8) {
+
+    if (value.length >= 4) {
+      return (
+        int.tryParse(value.substring(0, 2)) ?? 0,
+        int.tryParse(value.substring(2, 4)) ?? 0,
+      );
+    }
+    return (0, 0);
+  }
+
+  DateTime? _parseDocDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw.toLocal();
+    if (raw is num) {
+      return DateTime.fromMillisecondsSinceEpoch(raw.toInt()).toLocal();
+    }
+    if (raw is Map) {
+      final inner = raw[r'$date'] ?? raw['date'];
+      if (inner is num) {
+        return DateTime.fromMillisecondsSinceEpoch(inner.toInt()).toLocal();
+      }
+      if (inner != null) {
+        return DateTime.tryParse(inner.toString())?.toLocal();
+      }
+    }
+    if (raw is String && raw.isNotEmpty) {
+      return DateTime.tryParse(raw)?.toLocal();
+    }
+    return null;
+  }
+
+  DateTime? _parseDate(Map<String, dynamic> item) {
+    final createDate = item['createDate']?.toString().trim() ?? '';
+
+    // API ใช้ yyyyMMddHHmmss (14 หลัก)
+    if (createDate.length >= 14) {
       try {
-        final y = int.parse(date.substring(0, 4));
-        final m = int.parse(date.substring(4, 6));
-        final d = int.parse(date.substring(6, 8));
-        int h = 0, min = 0;
-        if (time.length >= 4) {
-          h = int.tryParse(time.substring(0, 2)) ?? 0;
-          min = int.tryParse(time.substring(2, 4)) ?? 0;
-        }
-        return DateTime(y, m, d, h, min);
+        return DateTime(
+          int.parse(createDate.substring(0, 4)),
+          int.parse(createDate.substring(4, 6)),
+          int.parse(createDate.substring(6, 8)),
+          int.parse(createDate.substring(8, 10)),
+          int.parse(createDate.substring(10, 12)),
+          int.parse(createDate.substring(12, 14)),
+        );
       } catch (_) {}
     }
+
+    // yyyyMMdd + createTime/docTime
+    if (createDate.length >= 8) {
+      try {
+        final (h, m) = _parseTimeParts(
+          item['createTime'] ?? item['docTime'] ?? '',
+        );
+        return DateTime(
+          int.parse(createDate.substring(0, 4)),
+          int.parse(createDate.substring(4, 6)),
+          int.parse(createDate.substring(6, 8)),
+          h,
+          m,
+        );
+      } catch (_) {}
+    }
+
+    final docDate = _parseDocDate(item['docDate']);
+    if (docDate != null) {
+      final (h, m) = _parseTimeParts(item['docTime'] ?? item['createTime']);
+      if (h != 0 || m != 0) {
+        return DateTime(
+          docDate.year,
+          docDate.month,
+          docDate.day,
+          h,
+          m,
+        );
+      }
+      return docDate;
+    }
+
     return null;
   }
 
@@ -183,9 +273,9 @@ class _NotificationPageState extends State<NotificationPage> {
     if (dt != null) {
       return DateFormat('HH:mm').format(dt);
     }
-    final time = item['createTime']?.toString() ?? '';
-    if (time.length >= 4) {
-      return '${time.substring(0, 2)}:${time.substring(2, 4)}';
+    final (h, m) = _parseTimeParts(item['createTime'] ?? item['docTime']);
+    if (h != 0 || m != 0) {
+      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
     }
     return '';
   }
@@ -199,6 +289,15 @@ class _NotificationPageState extends State<NotificationPage> {
         Icons.chat_bubble_outline_rounded,
         Color(0xFF0262EC),
         Color(0xFFE8F1FF),
+      );
+    }
+    if (type == 'community_like' ||
+        type == 'community_comment' ||
+        page == 'community') {
+      return const _NotificationStyle(
+        Icons.forum_outlined,
+        Color(0xFFE11D48),
+        Color(0xFFFFE4E8),
       );
     }
     if (page == 'appointment_detail' ||
@@ -297,10 +396,12 @@ class _NotificationPageState extends State<NotificationPage> {
                         if (unreadCount > 0) ...[
                           _buildUnreadBanner(),
                           const SizedBox(height: 16),
+                          _buildUnreadSection(),
                         ],
-                        _buildSection('timeline.today'.tr(), 'today'),
-                        _buildSection('timeline.yesterday'.tr(), 'yesterday'),
-                        _buildSection('timeline.earlier'.tr(), 'old'),
+                        _buildSection('timeline.today'.tr(), 'today', readOnly: true),
+                        _buildSection(
+                            'timeline.yesterday'.tr(), 'yesterday', readOnly: true),
+                        _buildSection('timeline.earlier'.tr(), 'old', readOnly: true),
                       ],
                     ),
             ),
@@ -403,9 +504,36 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _buildSection(String title, String group) {
+  Widget _buildUnreadSection() {
     final items =
-        _notifications.where((n) => _dateGroup(n) == group).toList();
+        _notifications.where((n) => n['isRead'] != true).toList(growable: false);
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10, top: 8),
+          child: Text(
+            'unreadNotifications'.tr(),
+            style: AppTypography.prompt(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+        ),
+        ...items.map(_buildNotificationCard),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildSection(String title, String group, {bool readOnly = false}) {
+    final items = _notifications.where((n) {
+      if (readOnly && n['isRead'] != true) return false;
+      return _dateGroup(n) == group;
+    }).toList();
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Column(

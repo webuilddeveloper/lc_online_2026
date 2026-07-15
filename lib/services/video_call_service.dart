@@ -1,6 +1,12 @@
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:intl/intl.dart';
 
+enum VideoCallJoinResult {
+  allowed,
+  tooEarly,
+  tooLate,
+}
+
 /// จัดการห้อง video call ต่อเคส — ไม่ใช้ room code คงที่
 class VideoCallService {
   VideoCallService._();
@@ -34,12 +40,43 @@ class VideoCallService {
     return roomCodeFromCase(caseCode);
   }
 
-  /// ตรวจว่าอยู่ในช่วงเวลานัดหรือไม่ (buffer ก่อน/หลัง)
   static bool canJoinNow(
     Map<String, dynamic> caseData, {
     int minutesBefore = 15,
-    int minutesAfter = 60,
+    int minutesAfter = 15,
+  }) =>
+      checkJoinWindow(
+        caseData,
+        minutesBefore: minutesBefore,
+        minutesAfter: minutesAfter,
+      ) ==
+      VideoCallJoinResult.allowed;
+
+  /// แชท + วิดีโอคอล ใช้ได้เฉพาะในช่วงเวลานัด
+  static bool canChatAndCall(
+    Map<String, dynamic> caseData, {
+    int minutesBefore = 15,
+    int minutesAfter = 15,
+  }) =>
+      canJoinNow(
+        caseData,
+        minutesBefore: minutesBefore,
+        minutesAfter: minutesAfter,
+      );
+
+  /// ตรวจช่วงเวลานัด (ก่อนนัด [minutesBefore] ถึงหลังจบ [minutesAfter])
+  /// เคสด่วนใช้ caseDate + startTime + endTime/hour เช่นกัน
+  /// ไม่มีกำหนดวันเวลาเลย → อนุญาต
+  static VideoCallJoinResult checkJoinWindow(
+    Map<String, dynamic> caseData, {
+    int minutesBefore = 15,
+    int minutesAfter = 15,
   }) {
+    final status = _asInt(caseData['caseStatus'] ?? caseData['status']);
+    if (status == 0 || status == 4) {
+      return VideoCallJoinResult.tooLate;
+    }
+
     final dateStr = _first(caseData, const [
       'caseDate',
       'appointmentDate',
@@ -50,15 +87,24 @@ class VideoCallService {
       'timeStart',
       'appointmentTime',
     ]);
-    if (dateStr.isEmpty) return true;
+    final hourRaw = _first(caseData, const ['hour', 'durationHours']);
+    final durationMinutes = _asInt(caseData['durationMinutes']);
 
-    final date = _parseDate(dateStr);
-    if (date == null) return true;
+    // ไม่มีกำหนดนัด → ไม่ล็อกด้วยเวลา
+    if (dateStr.isEmpty && startStr.isEmpty && hourRaw.isEmpty && durationMinutes <= 0) {
+      return VideoCallJoinResult.allowed;
+    }
 
-    final start = _parseTime(startStr.split(' - ').first);
+    final date = dateStr.isNotEmpty ? _parseDate(dateStr) : DateTime.now();
+    if (date == null) return VideoCallJoinResult.allowed;
+
+    final start = _parseTime(startStr.split(RegExp(r'\s*[-–—]\s*')).first);
     final endRaw = _first(caseData, const ['endTime', 'timeEnd']);
+    final endParts = startStr.split(RegExp(r'\s*[-–—]\s*'));
     final end = _parseTime(
-      endRaw.isNotEmpty ? endRaw : startStr.split(' - ').last,
+      endRaw.isNotEmpty
+          ? endRaw
+          : (endParts.length > 1 ? endParts.last : ''),
     );
 
     final startAt = DateTime(
@@ -68,25 +114,56 @@ class VideoCallService {
       start?.hour ?? 0,
       start?.minute ?? 0,
     );
-    final endAt = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      end?.hour ?? (start?.hour ?? 23),
-      end?.minute ?? (start?.minute ?? 59),
-    );
+
+    DateTime endAt;
+    if (end != null) {
+      endAt = DateTime(date.year, date.month, date.day, end.hour, end.minute);
+      // ข้ามคืน
+      if (!endAt.isAfter(startAt)) {
+        endAt = endAt.add(const Duration(days: 1));
+      }
+    } else if (durationMinutes > 0) {
+      endAt = startAt.add(Duration(minutes: durationMinutes));
+    } else {
+      final hours = double.tryParse(hourRaw) ?? 0;
+      if (hours > 0) {
+        endAt = startAt.add(Duration(minutes: (hours * 60).round()));
+      } else if (start != null) {
+        endAt = startAt.add(const Duration(hours: 1));
+      } else {
+        endAt = DateTime(date.year, date.month, date.day, 23, 59);
+      }
+    }
 
     final now = DateTime.now();
-    final windowStart = startAt.subtract(Duration(minutes: minutesBefore));
-    final windowEnd = endAt.add(Duration(minutes: minutesAfter));
-    return !now.isBefore(windowStart) && !now.isAfter(windowEnd);
+    final caseType = _asInt(caseData['caseType']);
+    final isUrgent = caseType == 2 || caseType == 0;
+    // เคสด่วนเริ่มได้ทันทีหลังเปิดเคส ไม่ต้อง buffer ก่อนเริ่ม
+    final before = isUrgent ? 0 : minutesBefore;
+    final after = isUrgent ? 0 : minutesAfter;
+    final windowStart = startAt.subtract(Duration(minutes: before));
+    final windowEnd = endAt.add(Duration(minutes: after));
+
+    if (now.isBefore(windowStart)) return VideoCallJoinResult.tooEarly;
+    if (now.isAfter(windowEnd)) return VideoCallJoinResult.tooLate;
+    return VideoCallJoinResult.allowed;
   }
 
   static String joinWindowMessage(Map<String, dynamic> caseData) {
     final dateStr = _first(caseData, const ['caseDate', 'appointmentDate']);
     final startStr = _first(caseData, const ['startTime', 'timeStart']);
+    final endStr = _first(caseData, const ['endTime', 'timeEnd']);
     if (dateStr.isEmpty) return '';
-    return '$dateStr ${startStr.isNotEmpty ? startStr : ''}'.trim();
+    final time = endStr.isNotEmpty
+        ? '$startStr - $endStr'
+        : startStr;
+    return '$dateStr ${time.trim()}'.trim();
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? -1;
   }
 
   static String _first(Map<String, dynamic> source, List<String> keys) {
@@ -100,13 +177,20 @@ class VideoCallService {
   }
 
   static DateTime? _parseDate(String value) {
+    final raw = value.trim();
+    if (RegExp(r'^\d{8}(\d{6})?$').hasMatch(raw)) {
+      final y = int.parse(raw.substring(0, 4));
+      final m = int.parse(raw.substring(4, 6));
+      final d = int.parse(raw.substring(6, 8));
+      return DateTime(y, m, d);
+    }
     for (final pattern in const ['dd/MM/yyyy', 'yyyy-MM-dd', 'dd-MM-yyyy']) {
       try {
-        return DateFormat(pattern).parseStrict(value.trim());
+        return DateFormat(pattern).parseStrict(raw);
       } catch (_) {}
     }
     try {
-      return DateTime.parse(value.trim());
+      return DateTime.parse(raw);
     } catch (_) {
       return null;
     }

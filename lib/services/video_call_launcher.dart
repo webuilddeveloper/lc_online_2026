@@ -19,16 +19,25 @@ class VideoCallLauncher {
     Map<String, dynamic>? caseData,
     String? messageRoomCode,
     String? peerName,
+    String? toUserId,
     VoidCallback? onLeave,
   }) async {
-    if (caseData != null && !VideoCallService.canJoinNow(caseData)) {
-      final window = VideoCallService.joinWindowMessage(caseData);
-      DialogService.showError(
-        context,
-        title: 'videoCallNotYetTitle'.tr(),
-        message: 'videoCallNotYetMessage'.tr(args: [window]),
-      );
-      return;
+    if (caseData != null) {
+      final result = VideoCallService.checkJoinWindow(caseData);
+      if (result != VideoCallJoinResult.allowed) {
+        final window = VideoCallService.joinWindowMessage(caseData);
+        final isTooLate = result == VideoCallJoinResult.tooLate;
+        DialogService.showError(
+          context,
+          title: isTooLate
+              ? 'videoCallExpiredTitle'.tr()
+              : 'videoCallNotYetTitle'.tr(),
+          message: isTooLate
+              ? 'videoCallExpiredMessage'.tr(args: [window])
+              : 'videoCallNotYetMessage'.tr(args: [window]),
+        );
+        return;
+      }
     }
 
     if (!await PdpaService.hasAcceptedVideoConsent()) {
@@ -65,6 +74,13 @@ class VideoCallLauncher {
           messageRoomCode: messageRoomCode,
         );
         final userId = UserProfileStore.instance.code;
+        var peerId = toUserId?.trim() ?? '';
+        if (peerId.isEmpty && caseData != null) {
+          final a = caseData['userCode']?.toString() ?? '';
+          final b = caseData['lawyer']?.toString() ?? '';
+          if (a == userId) peerId = b;
+          else if (b == userId) peerId = a;
+        }
 
         await Navigator.push(
           context,
@@ -74,6 +90,7 @@ class VideoCallLauncher {
               caseCode: caseCode,
               userId: userId,
               peerName: peerName ?? '',
+              toUserId: peerId,
               isInitiator: true,
             ),
           ),

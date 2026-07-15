@@ -5,26 +5,8 @@ import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
 import 'package:LawyerOnline/widgets/home/home_lawyer_section.dart';
 import 'package:LawyerOnline/widgets/home/home_user_section.dart';
 import 'package:LawyerOnline/widgets/home/home_action_cards.dart';
+import 'package:LawyerOnline/widgets/quick_actions_panel.dart';
 import 'dart:async';
-// import 'package:LawyerOnline/appointment-details-lawyer.dart';
-// import 'package:LawyerOnline/booking/topic-page.dart';
-// import 'package:LawyerOnline/carousel_form.dart';
-// import 'package:LawyerOnline/case-status-all.dart';
-// import 'package:LawyerOnline/component/appbar.dart';
-// import 'package:LawyerOnline/component/comming-soon.dart';
-// import 'package:LawyerOnline/component/link_url_in.dart';
-// import 'package:LawyerOnline/consult/consult.dart';
-// import 'package:LawyerOnline/consult/consult_status.dart';
-// import 'package:LawyerOnline/law_type_all_page.dart';
-// import 'package:LawyerOnline/lawyer-job-list.dart';
-// import 'package:LawyerOnline/lawyer-online-details.dart';
-// import 'package:LawyerOnline/lawyer-online-list.dart';
-// import 'package:LawyerOnline/consultation-schedule.dart';
-// import 'package:LawyerOnline/menu.dart';
-// import 'package:LawyerOnline/notification.dart';
-// import 'package:LawyerOnline/shared/api_provider.dart';
-// import 'package:cached_network_image/cached_network_image.dart';
-// import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -212,6 +194,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     await UserProfileStore.instance.load();
     await LawyerProfileStore.instance.load();
 
+    if (UserProfileStore.instance.userType == 'lawyer' &&
+        UserProfileStore.instance.isLoggedIn) {
+      await UserProfileStore.instance.refreshFromApi();
+      if (LawyerProfileStore.instance.isUrgentCaseEnabled) {
+        LocationService.startPeriodicUpdate();
+      } else {
+        LocationService.stopPeriodicUpdate();
+      }
+    }
+
     final store = UserProfileStore.instance;
     setState(() {
       userType = store.userType;
@@ -301,14 +293,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     //   _appointmentLoadError = null;
     // });
     try {
-      // final realAppointments =
-      //     await _appointmentRepository.readScheduleForLawyer(lawyerCode);
-      // if (!mounted) return;
-      final param =
-          await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
+      final snapshot =
+          await _appointmentRepository.readScheduleForLawyer(lawyerCode);
+      if (!mounted) return;
       setState(() {
-        appointmentList = param['objectData'];
-        _lawyerAppointments = param['objectData'];
+        _apiBookingJobs = snapshot.bookingJobs;
+        appointmentList = snapshot.appointments;
+        _lawyerAppointments = snapshot.appointments;
         _isLoadingAppointments = false;
       });
     } catch (_) {
@@ -453,6 +444,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       );
       final data = param['objectData'];
       if (!mounted) return;
+      if (data is List) {
+        for (final item in data) {
+          if (item is Map) {
+            debugPrint(
+              '🏠 home case ${item['code']} caseType=${item['caseType']}',
+            );
+          }
+        }
+      }
       setState(() {
         caseList = data is List ? data : const [];
         if (userType == 'lawyer') {
@@ -475,10 +475,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
           backgroundColor: const Color.fromARGB(255, 233, 242, 249),
-          body: FadeTransition(
-            opacity: _fadeAnim,
+          body: RefreshIndicator(
+            color: const Color(0xFF0262EC),
+            onRefresh: () async {
+              await callRead();
+              if (UserProfileStore.instance.isLoggedIn) {
+                await callReadCase();
+              }
+            },
             child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
               // physics: const ClampingScrollPhysics(),
               slivers: [
                 // desktop ไม่แสดง SliverAppBar เพราะมี TopNav ใน menu.dart แล้ว
@@ -556,7 +564,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
 
-            const SizedBox(height: 24),
+            // const SizedBox(height: 16),
+            // const QuickActionsPanel(),
+            // const SizedBox(height: 24),
 
             // ── Banner (shared) ──────────────────────────────────
             HomeBannerSection(

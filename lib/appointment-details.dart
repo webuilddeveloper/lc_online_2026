@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/receipt_page.dart';
 import 'package:LawyerOnline/add-appointment.dart';
 import 'package:LawyerOnline/case_workspace_page.dart';
 import 'package:LawyerOnline/post_consultation_review_page.dart';
@@ -89,6 +90,39 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
   @override
   void initState() {
     super.initState();
+    debugPrint(
+      'AppointmentDetails caseType=${widget.appointment['caseType']} '
+      'code=${widget.appointment['code']}',
+    );
+
+    _scrollCtrl = ScrollController()
+      ..addListener(() {
+        if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
+      });
+
+    _enterCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+
+    _anims = List.generate(7, (i) {
+      final start = i * 0.09;
+      return CurvedAnimation(
+        parent: _enterCtrl,
+        curve: Interval(
+          start.clamp(0, 0.8),
+          (start + 0.45).clamp(0, 1.0),
+          curve: Curves.easeOutExpo,
+        ),
+      );
+    });
+    _enterCtrl.forward();
+
     callReadUser();
     AppointmentReminderService.scheduleForCase(widget.appointment);
   }
@@ -103,41 +137,27 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   Future<void> callReadUser() async {
     try {
-      final param = await postDio(
-          "${server}/m/register/read", {"code": widget.appointment['lawyer']});
+      final lawyerCode = widget.appointment['lawyer']?.toString() ??
+          widget.appointment['lawyerCode']?.toString() ??
+          '';
+      if (lawyerCode.isEmpty) {
+        if (mounted) setState(() => isLoadingLawyers = false);
+        return;
+      }
+      final param =
+          await postDio("${server}/m/register/read", {"code": lawyerCode});
+      if (!mounted) return;
+      final raw = param['objectData'];
       setState(() {
-        lawyerModel = param['objectData'][0];
+        if (raw is List && raw.isNotEmpty) {
+          lawyerModel = raw[0];
+        } else if (raw is Map) {
+          lawyerModel = raw;
+        }
         isLoadingLawyers = false;
-        // _specialtyOptions = [...param['objectData']];
-        _scrollCtrl = ScrollController()
-          ..addListener(() {
-            setState(() => _scrollOffset = _scrollCtrl.offset);
-          });
-
-        _enterCtrl = AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 1000),
-        )..forward();
-
-        _pulseCtrl = AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 1600),
-        )..repeat(reverse: true);
-
-        _anims = List.generate(7, (i) {
-          final start = i * 0.09;
-          return CurvedAnimation(
-            parent: _enterCtrl,
-            curve: Interval(
-              start.clamp(0, 0.8),
-              (start + 0.45).clamp(0, 1.0),
-              curve: Curves.easeOutExpo,
-            ),
-          );
-        });
       });
     } catch (_) {
-      isLoadingLawyers = false;
+      if (mounted) setState(() => isLoadingLawyers = false);
     }
   }
 
@@ -236,6 +256,34 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
   // ── Shorthand getters ────────────────────────────────────
   Map<String, dynamic> get appointmentModel => widget.appointment;
+
+  bool get _isUrgentCase {
+    final value = appointmentModel['caseType'] ??
+        appointmentModel['CaseType'] ??
+        appointmentModel['case_type'] ??
+        appointmentModel['type'];
+    if (value == 2 || value == '2' || value == 2.0) return true;
+    if (value == 1 || value == '1' || value == 1.0) return false;
+    if (value is num) return value.toInt() == 2;
+    final text = value?.toString().trim().toLowerCase() ?? '';
+    if (text == '2' ||
+        text == 'urgent' ||
+        text.contains('ด่วน') ||
+        text == 'broadcast') {
+      return true;
+    }
+    return false;
+  }
+
+  Color get _caseTypeColor =>
+      _isUrgentCase ? const Color(0xFFDC2626) : const Color(0xFF0262EC);
+
+  String get _caseTypeLabel =>
+      _isUrgentCase ? 'caseTypeUrgent'.tr() : 'caseTypeBooking'.tr();
+
+  IconData get _caseTypeIcon =>
+      _isUrgentCase ? Icons.bolt_rounded : Icons.event_available_rounded;
+
   int get status {
     final raw = appointmentModel['status'] ?? appointmentModel['caseStatus'];
     if (raw is int) return raw.clamp(0, 4);
@@ -446,27 +494,14 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                       ),
                     ),
                   ),
-                  // Positioned(
-                  //   right: 40,
-                  //   top: 60,
-                  //   child: Container(
-                  //     width: 90,
-                  //     height: 90,
-                  //     decoration: BoxDecoration(
-                  //       shape: BoxShape.circle,
-                  //       color: Colors.white.withOpacity(0.05),
-                  //     ),
-                  //   ),
-                  // ),
                   Positioned(
                     right: -5,
                     top: 15,
                     child: Container(
                       width: 140,
                       height: 140,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        // color: Colors.white.withOpacity(0.08),
                       ),
                       child: Icon(
                         Icons.gavel_rounded,
@@ -499,46 +534,6 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // const SizedBox(height: 80),
-                  // Status pill
-                  // AnimatedBuilder(
-                  //   animation: _pulseCtrl,
-                  //   builder: (_, __) => Container(
-                  //     padding: const EdgeInsets.symmetric(
-                  //         horizontal: 12, vertical: 6),
-                  //     decoration: BoxDecoration(
-                  //       color: Colors.white.withOpacity(0.18),
-                  //       borderRadius: BorderRadius.circular(999),
-                  //       border: Border.all(
-                  //         color: Colors.white.withOpacity(
-                  //             isActive ? 0.4 + _pulseCtrl.value * 0.3 : 0.3),
-                  //       ),
-                  //     ),
-                  //     child: Row(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       children: [
-                  //         if (isActive)
-                  //           Container(
-                  //             width: 6, height: 6,
-                  //             margin: const EdgeInsets.only(right: 6),
-                  //             decoration: const BoxDecoration(
-                  //               color: Colors.white,
-                  //               shape: BoxShape.circle,
-                  //             ),
-                  //           ),
-                  //         Icon(_statusIcons[status],
-                  //             size: 12, color: Colors.white),
-                  //         const SizedBox(width: 5),
-                  //         Text(_statusLabels[status],
-                  //             style: const TextStyle(
-                  //                 fontSize: 12,
-                  //                 fontWeight: FontWeight.w700,
-                  //                 color: Colors.white)),
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
-                  // SizedBox(height: 10),
                   Text(
                     'appointmentInfo.title'.tr(),
                     style: const TextStyle(
@@ -691,17 +686,17 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
       _pill(
           Icons.calendar_today_rounded,
           'appointmentInfo.appointmentDate'.tr(),
-          appointmentModel['caseDate'] as String,
+          appointmentModel['caseDate']?.toString() ?? '-',
           _blue),
       const SizedBox(width: 10),
       _pill(
           Icons.schedule_rounded,
           'appointmentInfo.appointmentTime'.tr(),
-          "${appointmentModel['startTime']} - ${appointmentModel['endTime']}",
+          "${appointmentModel['startTime'] ?? ''} - ${appointmentModel['endTime'] ?? ''}",
           _green),
       const SizedBox(width: 10),
-      _pill(Icons.videocam_rounded, 'appointmentInfo.serviceType'.tr(),
-          'appointmentInfo.videoCall'.tr(), const Color(0xFF8B5CF6)),
+      _pill(_caseTypeIcon, 'appointmentInfo.caseType'.tr(), _caseTypeLabel,
+          _caseTypeColor),
     ]);
   }
 
@@ -1299,29 +1294,37 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
         children: [
           _cardTitle(Icons.info_outline_rounded, 'appointmentInfo.title'.tr()),
           const SizedBox(height: 14),
+          _infoRow(
+            'appointmentInfo.caseType'.tr(),
+            _caseTypeLabel,
+            accent: true,
+            valueColor: _caseTypeColor,
+          ),
+          _divider(),
           _infoRow('appointmentInfo.topic'.tr(),
-              appointmentModel['topicTitle'] as String),
+              appointmentModel['topicTitle']?.toString() ?? ''),
           _divider(),
           _infoRow('appointmentInfo.subTopic'.tr(),
-              appointmentModel['subTopicTitle'] as String),
+              appointmentModel['subTopicTitle']?.toString() ?? ''),
           _divider(),
           _infoRow('appointmentInfo.serviceType'.tr(),
               'appointmentInfo.videoCall'.tr()),
-          _divider(),
-          // _infoRow('appointmentInfo.appointmentCode'.tr(),
-          //     '# ${appointmentModel['id']}',
-          //     accent: true),
         ],
       ),
     );
   }
 
-  Widget _infoRow(String label, String value, {bool accent = false}) {
+  Widget _infoRow(
+    String label,
+    String value, {
+    bool accent = false,
+    Color? valueColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(children: [
         SizedBox(
-          width: 90,
+          width: 110,
           child: Text(label,
               style: const TextStyle(
                   fontSize: 12, color: _slate, fontWeight: FontWeight.w500)),
@@ -1332,7 +1335,7 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: accent ? _blue : _ink)),
+                  color: valueColor ?? (accent ? _blue : _ink))),
         ),
       ]),
     );
@@ -1534,6 +1537,26 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
             style: const TextStyle(fontSize: 12, color: Color(0xFF8593A8)),
           ),
           const SizedBox(height: 12),
+          if (appointmentModel['isPay'] == true ||
+              appointmentModel['isPay']?.toString() == 'true')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReceiptPage(caseCode: code),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.receipt_long_rounded, size: 18),
+                  label: Text('receiptView'.tr()),
+                ),
+              ),
+            ),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

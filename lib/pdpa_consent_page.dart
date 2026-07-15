@@ -40,7 +40,15 @@ class _PdpaConsentPageState extends State<PdpaConsentPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text('pdpaSubtitle'.tr(), style: AppTypography.hint()),
+              Text(
+                'pdpaSubtitle'.tr(),
+                style: AppTypography.prompt(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF8593A8),
+                  height: 1.5,
+                ),
+              ),
               const SizedBox(height: 24),
               Expanded(
                 child: SingleChildScrollView(
@@ -128,12 +136,36 @@ class _PdpaConsentPageState extends State<PdpaConsentPage> {
             value: value,
             activeColor: const Color(0xFF0262EC),
             onChanged: (v) => onChanged(v ?? false),
-            title: Text(title,
-                style: AppTypography.prompt(fontWeight: FontWeight.w600)),
-            subtitle: Text(subtitle, style: AppTypography.hint()),
+            title: Text(
+              title,
+              style: AppTypography.prompt(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1A2340),
+              ),
+            ),
+            subtitle: Text(
+              subtitle,
+              style: AppTypography.prompt(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF8593A8),
+                height: 1.45,
+              ),
+            ),
             controlAffinity: ListTileControlAffinity.leading,
           ),
-          TextButton(onPressed: onLink, child: Text(linkLabel)),
+          TextButton(
+            onPressed: onLink,
+            child: Text(
+              linkLabel,
+              style: AppTypography.prompt(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0262EC),
+              ),
+            ),
+          ),
         ],
       ),
     );

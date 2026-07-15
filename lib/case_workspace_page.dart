@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
+import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/consultation_summary_service.dart';
 import 'package:LawyerOnline/services/case_workspace_service.dart';
-import 'package:LawyerOnline/services/pdpa_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -70,6 +71,28 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         context,
         title: 'successTitle'.tr(),
         message: 'caseWorkspaceSummarySaved'.tr(),
+      );
+      await _load();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _generateAiSummary() async {
+    setState(() => _saving = true);
+    try {
+      final text = await ConsultationSummaryService.generate(
+        widget.caseCode,
+        updateBy: UserProfileStore.instance.code,
+      );
+      if (text != null && text.isNotEmpty) {
+        _summaryCtrl.text = text;
+      }
+      if (!mounted) return;
+      DialogService.showSuccess(
+        context,
+        title: 'successTitle'.tr(),
+        message: 'caseWorkspaceAiGenerated'.tr(),
       );
       await _load();
     } finally {
@@ -186,6 +209,15 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                       const SizedBox(height: 20),
                       _sectionTitle('caseWorkspaceSummary'.tr()),
                       const SizedBox(height: 10),
+                      if (widget.canEditSummary)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: OutlinedButton.icon(
+                            onPressed: _saving ? null : _generateAiSummary,
+                            icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                            label: Text('caseWorkspaceGenerateAi'.tr()),
+                          ),
+                        ),
                       TextField(
                         controller: _summaryCtrl,
                         readOnly: !widget.canEditSummary,

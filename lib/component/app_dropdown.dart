@@ -576,7 +576,7 @@ class AppDropdownFilter<T> extends StatelessWidget {
             color: active ? color : AppDropdownStyles.titleColor,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
           ),
-          itemHeight: isDense ? 44 : null,
+          itemHeight: isDense ? kMinInteractiveDimension : null,
         ),
       ),
     );
@@ -627,7 +627,7 @@ class AppDropdownCompact<T> extends StatelessWidget {
             color: color,
             fontWeight: FontWeight.w600,
           ),
-          itemHeight: 44,
+          itemHeight: kMinInteractiveDimension,
         ),
       ),
     );

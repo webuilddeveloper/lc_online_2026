@@ -2,7 +2,7 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 typedef WebRtcHubSignalHandler = void Function(Map<String, dynamic> signal);
-typedef WebRtcIncomingCallHandler = void Function(Map<String, dynamic> payload);
+typedef WebRtcIncomingCallHandler = void Function(Map<String, dynamic> signal);
 
 /// SignalR hub แยกจาก chatHub — relay-only ไม่บันทึก DB
 class WebRtcHubService {
@@ -12,6 +12,10 @@ class WebRtcHubService {
   HubConnection? _connection;
   String? _joinedRoom;
   String? _joinedUserId;
+  String? _joinedPersonalUserId;
+
+  /// ผู้ที่กดเริ่มสายจริงของห้องนี้
+  final Map<String, String> _roomInitiator = {};
 
   WebRtcHubSignalHandler? onReceiveSignal;
   WebRtcIncomingCallHandler? onIncomingCall;
@@ -20,6 +24,17 @@ class WebRtcHubService {
 
   bool get isConnected =>
       _connection?.state == HubConnectionState.Connected;
+
+  String? initiatorOf(String roomCode) => _roomInitiator[roomCode];
+
+  void markInitiator(String roomCode, String userId) {
+    if (roomCode.isEmpty || userId.isEmpty) return;
+    _roomInitiator.putIfAbsent(roomCode, () => userId);
+  }
+
+  void clearInitiator(String roomCode) {
+    _roomInitiator.remove(roomCode);
+  }
 
   Future<void> connect() async {
     if (isConnected) return;
@@ -45,7 +60,13 @@ class WebRtcHubService {
       if (data == null || data.isEmpty) return;
       final raw = data[0];
       if (raw is! Map) return;
-      onIncomingCall?.call(Map<String, dynamic>.from(raw));
+      final map = Map<String, dynamic>.from(raw);
+      final room = map['roomCode']?.toString() ?? '';
+      final from = map['fromUserId']?.toString() ?? '';
+      if (room.isNotEmpty && from.isNotEmpty) {
+        markInitiator(room, from);
+      }
+      onIncomingCall?.call(map);
     });
 
     _connection!.on('PeerJoined', (data) {
@@ -63,6 +84,20 @@ class WebRtcHubService {
     });
 
     await _connection!.start();
+  }
+
+  /// Join personal channel เพื่อรับสายแม้ไม่อยู่ในหน้าแชท
+  Future<void> joinUser(String userId) async {
+    if (userId.isEmpty) return;
+    await connect();
+    _joinedPersonalUserId = userId;
+    await _connection?.invoke('JoinUser', args: [userId]);
+  }
+
+  Future<void> leaveUser(String userId) async {
+    if (userId.isEmpty || !isConnected) return;
+    await _connection?.invoke('LeaveUser', args: [userId]);
+    if (_joinedPersonalUserId == userId) _joinedPersonalUserId = null;
   }
 
   Future<void> joinRoom({
@@ -102,22 +137,31 @@ class WebRtcHubService {
   }
 
   /// แจ้งคู่สนทนาว่ามีสายเข้า (ไม่บันทึก DB)
+  /// [peerName]/[peerImageUrl] = ชื่อ/รูปของฝั่งที่กดโทร (โชว์ที่ฝั่งรับ)
   Future<void> startCall({
     required String roomCode,
     required String fromUserId,
     required String caseCode,
     String peerName = '',
+    String peerImageUrl = '',
+    String toUserId = '',
   }) async {
     await connect();
+    markInitiator(roomCode, fromUserId);
     await _connection?.invoke('StartCall', args: [
       roomCode,
       fromUserId,
       caseCode,
       peerName,
+      toUserId,
+      peerImageUrl,
     ]);
   }
 
   Future<void> disconnect() async {
+    if (_joinedPersonalUserId != null) {
+      await leaveUser(_joinedPersonalUserId!);
+    }
     if (_joinedRoom != null && _joinedUserId != null) {
       await leaveRoom(roomCode: _joinedRoom!, userId: _joinedUserId!);
     }

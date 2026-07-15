@@ -50,6 +50,21 @@ class CaseRequestService {
     debugPrint('CaseRequestService JoinLawyerChannel: $lawyerCode');
   }
 
+  /// เชื่อมต่อ + join ช่องทนายอีกครั้งถ้าหลุด (ใช้ก่อน claim)
+  Future<void> ensureLawyerConnected() async {
+    await UserProfileStore.instance.load();
+    final lawyerCode = UserProfileStore.instance.code;
+    if (lawyerCode.isEmpty) {
+      throw Exception('lawyerCode is empty');
+    }
+
+    if (isConnected && _joinedLawyerCode == lawyerCode) {
+      return;
+    }
+
+    await connectAsLawyer();
+  }
+
   Future<void> _connect() async {
     if (_connection?.state == HubConnectionState.Connected) return;
 
@@ -130,30 +145,30 @@ class CaseRequestService {
   void _registerLawyerEvents() {
     _connection!.off('ReceiveNewCaseRequest');
     _connection!.on('ReceiveNewCaseRequest', (args) {
-      if (args == null || args.isEmpty) return;
-      onNewCaseRequest?.call(_asMap(args[0]));
+      final data = _parseSignalRPayload(args);
+      debugPrint('ReceiveNewCaseRequest: $data');
+      if (data.isEmpty) return;
+      onNewCaseRequest?.call(data);
     });
 
     _connection!.off('CaseRequestTaken');
     _connection!.on('CaseRequestTaken', (args) {
-      final data = args != null && args.isNotEmpty
-          ? _asMap(args[0])
-          : <String, dynamic>{};
+      final data = _parseSignalRPayload(args);
       onCaseRequestTaken?.call(data);
     });
 
     _connection!.off('CaseRequestExpired');
     _connection!.on('CaseRequestExpired', (args) {
-      final data = args != null && args.isNotEmpty
-          ? _asMap(args[0])
-          : <String, dynamic>{};
+      final data = _parseSignalRPayload(args);
       onRequestExpired?.call(data);
     });
   }
 
   Future<void> claimCaseRequest(String requestCode) async {
+    await ensureLawyerConnected();
+
     if (_connection == null || !isConnected) {
-      throw Exception('ยังไม่ได้เชื่อมต่อ CaseRequest hub');
+      throw Exception('เชื่อมต่อ CaseRequest hub ไม่สำเร็จ กรุณาลองใหม่');
     }
 
     await UserProfileStore.instance.load();
@@ -247,6 +262,7 @@ class CaseRequestService {
       'caseType': caseType,
       'lat': lat,
       'lng': lng,
+      'searchRadiusKm': 20,
       'userCode': UserProfileStore.instance.code,
       'userName': UserProfileStore.instance.name,
       'broadcastTimeoutSeconds': broadcastTimeoutSeconds,
@@ -291,6 +307,29 @@ class CaseRequestService {
       'code': requestCode,
       'userCode': UserProfileStore.instance.code,
     });
+  }
+
+  /// ลูกความกดโหลดใหม่ → broadcast หาทนายอีกครั้ง
+  Future<Map<String, dynamic>> rebroadcastCaseRequest(String requestCode) async {
+    await UserProfileStore.instance.load();
+    final res = await postDio('$server/m/CaseRequest/rebroadcast', {
+      'code': requestCode,
+      'userCode': UserProfileStore.instance.code,
+    });
+    if (res == null) {
+      return {'success': false, 'message': 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'};
+    }
+    if (res['status'] == 'S') {
+      return {
+        'success': true,
+        'message': res['message']?.toString() ?? '',
+        'data': res['objectData'],
+      };
+    }
+    return {
+      'success': false,
+      'message': res['message']?.toString() ?? 'broadcast ไม่สำเร็จ',
+    };
   }
 
   /// ยืนยันชำระเงิน → สร้าง Case จริง + ลบ caseRequest
@@ -338,6 +377,51 @@ class CaseRequestService {
     }
     if (raw is Map) return Map<String, dynamic>.from(raw);
     return {};
+  }
+
+  /// รายการเคสด่วนที่ยังเปิดอยู่ (requestStatus=1) สำหรับ polling สำรองฝั่งทนาย
+  Future<List<Map<String, dynamic>>> getOpenCaseRequests({int limit = 30}) async {
+    final res = await postDio('$server/m/CaseRequest/read', {
+      'limit': limit,
+    });
+    if (res == null || res['status'] != 'S') return [];
+
+    final raw = res['objectData'] ?? [];
+    if (raw is! List) return [];
+
+    final now = DateTime.now();
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .where((req) {
+      final status = req['status'] ?? req['requestStatus'];
+      if (status != 1 && status != '1') return false;
+
+      // กรองฝั่ง client อีกชั้น: ไม่เกิน 2 นาทีจาก broadcastAt
+      final at = _parseBroadcastAt(req);
+      if (at == null) return false;
+      final age = now.difference(at);
+      return !age.isNegative && age.inMinutes < 2;
+    }).toList();
+  }
+
+  static DateTime? _parseBroadcastAt(Map<String, dynamic> req) {
+    final raw = req['broadcastAt'] ?? req['BroadcastAt'];
+    if (raw is DateTime) return raw;
+    if (raw != null) {
+      try {
+        return DateTime.parse(raw.toString());
+      } catch (_) {}
+    }
+    final createDate = req['createDate']?.toString() ?? '';
+    final createTime = req['createTime']?.toString() ?? '';
+    if (createDate.length >= 10) {
+      try {
+        final time = createTime.length >= 5 ? createTime.substring(0, 5) : '00:00';
+        return DateTime.parse('$createDate $time');
+      } catch (_) {}
+    }
+    return null;
   }
 
   /// ใช้ POST /m/CaseRequest/read + filter lawyer (pendingLawyer)

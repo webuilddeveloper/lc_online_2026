@@ -219,8 +219,13 @@ class LawyerProfileStore extends ChangeNotifier {
   }
 
   void _applyUrgentSettingsFromApi(Map<String, dynamic> data) {
-    _isUrgentCaseEnabled =
-        data['isAllowCase'] == true || data['isAllowCase']?.toString() == 'true';
+    if (data.containsKey('isOnline')) {
+      _isUrgentCaseEnabled = data['isOnline'] == true ||
+          data['isOnline']?.toString() == 'true';
+    } else {
+      _isUrgentCaseEnabled = data['isAllowCase'] == true ||
+          data['isAllowCase']?.toString() == 'true';
+    }
     final scope = data['urgentCaseScope']?.toString() ?? 'expertise';
     _urgentCaseScope = scope == 'all' ? 'all' : 'expertise';
   }
@@ -231,6 +236,7 @@ class LawyerProfileStore extends ChangeNotifier {
     await UserProfileStore.instance.applyUserModel(
       user.copyWith(
         isAllowCase: _isUrgentCaseEnabled,
+        isOnline: _isUrgentCaseEnabled,
         urgentCaseScope: _urgentCaseScope,
       ),
       persist: true,
@@ -260,7 +266,7 @@ class LawyerProfileStore extends ChangeNotifier {
         ? model.province
         : 'กรุงเทพมหานคร';
     _isAvailable = model.isAvailable != 'F';
-    _isUrgentCaseEnabled = model.isAllowCase;
+    _isUrgentCaseEnabled = model.isOnline;
     _urgentCaseScope = model.urgentCaseScope == 'all' ? 'all' : 'expertise';
     _facebook = model.facebookID;
     _instagram = model.lv0;

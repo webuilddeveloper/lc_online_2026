@@ -3,6 +3,8 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/about-us.dart';
 import 'package:LawyerOnline/change-password.dart';
 import 'package:LawyerOnline/delete-account.dart';
+import 'package:LawyerOnline/device_sessions_page.dart';
+import 'package:LawyerOnline/referral_page.dart';
 import 'package:LawyerOnline/favorite-lawyers.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
@@ -372,6 +374,20 @@ class _ProfilePageState extends State<ProfilePage> {
               menuItem(
                 title: 'changelanguage'.tr(),
                 onTap: () => {showLanguagePicker(context)},
+              ),
+              menuItem(
+                title: 'referralTitle'.tr(),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReferralPage()),
+                ),
+              ),
+              menuItem(
+                title: 'deviceSessionsTitle'.tr(),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DeviceSessionsPage()),
+                ),
               ),
               menuItem(
                 title: 'aboutUs'.tr(),

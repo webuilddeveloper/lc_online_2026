@@ -103,8 +103,19 @@ class _CaseListPageState extends State<CaseListPage>
       final res = await postDio('${server}/m/case/read', {});
       if (!mounted) return;
 
+      final raw = res['objectData'] ?? [];
+      final list = raw is List ? List<dynamic>.from(raw) : <dynamic>[];
+
+      for (final item in list) {
+        if (item is! Map) continue;
+        debugPrint(
+          '📋 case ${item['code']} caseType=${item['caseType']} '
+          '(${item['caseType']?.runtimeType}) status=${item['caseStatus']}',
+        );
+      }
+
       setState(() {
-        _caseList = res['objectData'] ?? [];
+        _caseList = list;
         _isLoading = false;
       });
 
@@ -271,6 +282,24 @@ class _CaseListPageState extends State<CaseListPage>
                         _buildFilterBar(f),
                         if (f.hasActiveFilter) _buildActiveFilterChips(f),
                         Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Row(
+                            children: [
+                              _typeLegendChip(
+                                color: const Color(0xFFDC2626),
+                                icon: Icons.bolt_rounded,
+                                label: 'caseTypeUrgent'.tr(),
+                              ),
+                              const SizedBox(width: 8),
+                              _typeLegendChip(
+                                color: const Color(0xFF0262EC),
+                                icon: Icons.event_available_rounded,
+                                label: 'caseTypeBooking'.tr(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                           child: Row(children: [
                             Text(
@@ -283,40 +312,56 @@ class _CaseListPageState extends State<CaseListPage>
                           ]),
                         ),
                         Expanded(
-                          child: filtered.isEmpty
-                              ? _buildEmpty(f.hasActiveFilter)
-                              : Container(
-                                  color: const Color(0xFFF2F6FF),
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16, 8, 16, 32),
-                                    itemCount: filtered.length,
-                                    itemBuilder: (_, i) {
-                                      final item = filtered[i];
-                                      final delay =
-                                          (i * 0.08).clamp(0.0, 0.7);
-                                      return AnimatedBuilder(
-                                        animation: _entryCtrl,
-                                        builder: (_, child) {
-                                          final t = Curves.easeOutCubic
-                                              .transform(
-                                            ((_entryCtrl.value - delay) /
-                                                    (1 - delay))
-                                                .clamp(0.0, 1.0),
-                                          );
-                                          return Opacity(
-                                            opacity: t,
-                                            child: Transform.translate(
-                                              offset: Offset(0, 24 * (1 - t)),
-                                              child: child,
-                                            ),
-                                          );
-                                        },
-                                        child: _buildCard(item),
-                                      );
-                                    },
+                          child: RefreshIndicator(
+                            color: const Color(0xFF0262EC),
+                            onRefresh: _loadCases,
+                            child: filtered.isEmpty
+                                ? ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: 320,
+                                        child: _buildEmpty(f.hasActiveFilter),
+                                      ),
+                                    ],
+                                  )
+                                : Container(
+                                    color: const Color(0xFFF2F6FF),
+                                    child: ListView.builder(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.fromLTRB(
+                                          16, 8, 16, 32),
+                                      itemCount: filtered.length,
+                                      itemBuilder: (_, i) {
+                                        final item = filtered[i];
+                                        final delay =
+                                            (i * 0.08).clamp(0.0, 0.7);
+                                        return AnimatedBuilder(
+                                          animation: _entryCtrl,
+                                          builder: (_, child) {
+                                            final t = Curves.easeOutCubic
+                                                .transform(
+                                              ((_entryCtrl.value - delay) /
+                                                      (1 - delay))
+                                                  .clamp(0.0, 1.0),
+                                            );
+                                            return Opacity(
+                                              opacity: t,
+                                              child: Transform.translate(
+                                                offset:
+                                                    Offset(0, 24 * (1 - t)),
+                                                child: child,
+                                              ),
+                                            );
+                                          },
+                                          child: _buildCard(item),
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
                         const SizedBox(height: 50),
                       ],
@@ -417,6 +462,35 @@ class _CaseListPageState extends State<CaseListPage>
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _typeLegendChip({
+    required Color color,
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.white),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -577,13 +651,52 @@ class _CaseListPageState extends State<CaseListPage>
     );
   }
 
+  bool _isUrgentCase(Map<String, dynamic> item) {
+    final value = item['caseType'] ??
+        item['CaseType'] ??
+        item['case_type'] ??
+        item['type'];
+
+    if (value == 2 || value == '2' || value == 2.0) return true;
+    if (value == 1 || value == '1' || value == 1.0) return false;
+    if (value is num) return value.toInt() == 2;
+
+    final text = value?.toString().trim().toLowerCase() ?? '';
+    if (text == '2' ||
+        text == 'urgent' ||
+        text.contains('ด่วน') ||
+        text == 'broadcast') {
+      return true;
+    }
+    if (text == '1' ||
+        text == 'booking' ||
+        text.contains('นัด') ||
+        text == 'appointment') {
+      return false;
+    }
+
+    // fallback: เคสด่วนมักไม่มีช่วงเวลานัดที่ชัด
+    final start = item['startTime']?.toString().trim() ?? '';
+    final end = item['endTime']?.toString().trim() ?? '';
+    final date = item['caseDate']?.toString().trim() ?? '';
+    if (start.isEmpty && end.isEmpty && (date.isEmpty || date == '-')) {
+      return true;
+    }
+    return false;
+  }
+
   Widget _buildCard(Map<String, dynamic> item) {
-    final status = item['caseStatus'] as int? ?? 0;
+    final status = item['caseStatus'] as int? ??
+        int.tryParse(item['caseStatus']?.toString() ?? '') ??
+        0;
     final color = _statusColor(status);
     const lawyerColor = Color(0xFF0262EC);
-    final isDone = status == 4;
-    final isConsulting = status == 3;
     final isWaiting = status == 1;
+    final isUrgent = _isUrgentCase(item);
+    final typeColor =
+        isUrgent ? const Color(0xFFDC2626) : const Color(0xFF0262EC);
+    final typeBg =
+        isUrgent ? const Color(0xFFDC2626) : const Color(0xFF0262EC);
 
     return GestureDetector(
       onTap: () {
@@ -600,255 +713,278 @@ class _CaseListPageState extends State<CaseListPage>
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: isConsulting
-              ? Border.all(
-                  color: const Color(0xFF059669).withOpacity(0.4), width: 1.5)
-              : isWaiting
-                  ? Border.all(
-                      color: const Color(0xFFEA580C).withOpacity(0.4),
-                      width: 1.5)
-                  : Border.all(color: const Color(0xFFE2E8F4)),
+          border: Border.all(color: typeColor, width: 2),
           boxShadow: [
             BoxShadow(
-              color: isConsulting
-                  ? const Color(0xFF059669).withOpacity(0.08)
-                  : isWaiting
-                      ? const Color(0xFFEA580C).withOpacity(0.08)
-                      : Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
+              color: typeColor.withOpacity(0.18),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(children: [
-          if (isWaiting)
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── แถบประเภทเคส (เด่นชัด) ─────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEA580C).withOpacity(0.08),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
-                ),
-              ),
-              child: Row(children: [
-                _blinkingDot(const Color(0xFFEA580C)),
-                const SizedBox(width: 7),
-                const Text('รอทนายยืนยัน',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFEA580C))),
-              ]),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  color: const Color(0xFFF2F4F7),
-                  child: Center(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              color: typeBg,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      isUrgent
+                          ? Icons.bolt_rounded
+                          : Icons.event_available_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Text(
-                      (item['lawyerName']?.toString() ?? 'ท')
-                          .characters
-                          .first,
+                      isUrgent
+                          ? 'caseTypeUrgent'.tr()
+                          : 'caseTypeBooking'.tr(),
                       style: const TextStyle(
-                          fontSize: 24,
-                          color: lawyerColor,
-                          fontWeight: FontWeight.bold),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  if (isWaiting) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.hourglass_top_rounded,
+                              size: 12, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'รอทนายยืนยัน',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    color: const Color(0xFFF2F4F7),
+                    child: Center(
+                      child: Text(
+                        (item['lawyerName']?.toString() ?? 'ท')
+                            .characters
+                            .first,
+                        style: const TextStyle(
+                            fontSize: 24,
+                            color: lawyerColor,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Expanded(
-                          child: Text(
-                              item['lawyerName']?.toString() ?? 'ไม่ระบุ',
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A2340))),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(_statusIcon(status), size: 11, color: color),
-                            const SizedBox(width: 4),
-                            Text(_statusLabel(status),
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: color,
-                                    fontWeight: FontWeight.w700)),
-                          ]),
-                        ),
-                      ]),
-                      const SizedBox(height: 2),
-                      Text('ทนายความ',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey[500])),
-                    ]),
-              ),
-            ]),
-          ),
-          const Divider(height: 1, color: Color(0xFFF0F4F8)),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(children: [
-              Row(children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: lawyerColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.label_outline_rounded,
-                      size: 14, color: lawyerColor),
-                ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item['topicTitle']?.toString() ?? '',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A2340))),
-                        if ((item['subTopicTitle']?.toString() ?? '')
-                            .isNotEmpty)
-                          Text(item['subTopicTitle']?.toString() ?? '',
-                              style: TextStyle(
-                                  fontSize: 10, color: Colors.grey[500])),
+                        Row(children: [
+                          Expanded(
+                            child: Text(
+                                item['lawyerName']?.toString() ?? 'ไม่ระบุ',
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1A2340))),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                              Icon(_statusIcon(status),
+                                  size: 11, color: color),
+                              const SizedBox(width: 4),
+                              Text(_statusLabel(status),
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: color,
+                                      fontWeight: FontWeight.w700)),
+                            ]),
+                          ),
+                        ]),
+                        const SizedBox(height: 2),
+                        Text('ทนายความ',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey[500])),
                       ]),
                 ),
               ]),
-              const SizedBox(height: 8),
-              Row(children: [
-                Expanded(
-                  child: _detailChip(Icons.calendar_today_rounded,
-                      item['caseDate']?.toString() ?? ''),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _detailChip(Icons.access_time_rounded,
-                      '${item['startTime'] ?? ''} - ${item['endTime'] ?? ''}'),
-                ),
-              ]),
-              if (isDone) ...[
+            ),
+            const Divider(height: 1, color: Color(0xFFF0F4F8)),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(children: [
+                Row(children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: lawyerColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.label_outline_rounded,
+                        size: 14, color: lawyerColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['topicTitle']?.toString() ?? '',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A2340))),
+                          if ((item['subTopicTitle']?.toString() ?? '')
+                              .isNotEmpty)
+                            Text(item['subTopicTitle']?.toString() ?? '',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey[500])),
+                        ]),
+                  ),
+                ]),
                 const SizedBox(height: 8),
                 Row(children: [
-                  Text('# ${item['code'] ?? item['id']}',
-                      style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                  Expanded(
+                    child: _detailChip(Icons.calendar_today_rounded,
+                        item['caseDate']?.toString() ?? ''),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _detailChip(Icons.access_time_rounded,
+                        '${item['startTime'] ?? ''} - ${item['endTime'] ?? ''}'),
+                  ),
                 ]),
-              ] else ...[
                 const SizedBox(height: 6),
                 Row(children: [
                   Text('# ${item['code'] ?? item['id']}',
-                      style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                      style:
+                          TextStyle(fontSize: 10, color: Colors.grey[400])),
                 ]),
-              ],
-            ]),
-          ),
-          if (isWaiting)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: Row(children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showCancelDialog(item['code'] as String),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEA580C).withOpacity(0.06),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0xFFEA580C).withOpacity(0.25)),
-                      ),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.close_rounded,
-                                size: 14, color: Color(0xFFEA580C)),
-                            const SizedBox(width: 6),
-                            const Text('ยกเลิกเคส',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFEA580C))),
-                          ]),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => HapticFeedback.lightImpact(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0262EC),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                              color: const Color(0xFF0262EC).withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3))
-                        ],
-                      ),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.visibility_outlined,
-                                size: 14, color: Colors.white),
-                            const SizedBox(width: 6),
-                            const Text('ดูรายละเอียด',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white)),
-                          ]),
-                    ),
-                  ),
-                ),
               ]),
             ),
-        ]),
+            if (isWaiting)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: Row(children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () =>
+                          _showCancelDialog(item['code'] as String),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEA580C).withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: const Color(0xFFEA580C)
+                                  .withOpacity(0.25)),
+                        ),
+                        child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.close_rounded,
+                                  size: 14, color: Color(0xFFEA580C)),
+                              SizedBox(width: 6),
+                              Text('ยกเลิกเคส',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFEA580C))),
+                            ]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => HapticFeedback.lightImpact(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0262EC),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                                color: const Color(0xFF0262EC)
+                                    .withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3))
+                          ],
+                        ),
+                        child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.visibility_outlined,
+                                  size: 14, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text('ดูรายละเอียด',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white)),
+                            ]),
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _blinkingDot(Color color) => TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.3, end: 1.0),
-        duration: const Duration(milliseconds: 800),
-        builder: (_, v, __) => Opacity(
-          opacity: v,
-          child: Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-        ),
-        onEnd: () => setState(() {}),
-      );
+  // unused blinking helper removed with solid type banner
 
   void _showCancelDialog(String id) {
     showDialog(

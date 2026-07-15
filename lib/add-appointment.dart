@@ -49,6 +49,7 @@ class _AppAppointmentState extends State<AppAppointment> {
   List<dynamic> _lawyerOpenDays = [];
   bool _slotsLoading            = false;
   bool _scheduleLoaded          = false;
+  bool _isUrgentCaseActive      = false;
 
   // ── topic list ──────────────────────────────────────────
   List<dynamic> _caseTypeList    = [];
@@ -132,6 +133,8 @@ class _AppAppointmentState extends State<AppAppointment> {
       );
 
       final objectData = param['objectData'];
+      final urgentActive = objectData['isUrgentCaseActive'] == true ||
+          objectData['isUrgentCaseActive']?.toString() == 'true';
 
       // โหลด lawyerSchedule ครั้งแรกครั้งเดียว
       if (!_scheduleLoaded && objectData['lawyerSchedule'] != null) {
@@ -141,10 +144,14 @@ class _AppAppointmentState extends State<AppAppointment> {
       }
 
       final dateCheck = objectData['dateCheck'];
-      final slots     = List<dynamic>.from(dateCheck?['slots'] ?? []);
+      final slots     = urgentActive
+          ? <dynamic>[]
+          : List<dynamic>.from(dateCheck?['slots'] ?? []);
 
       setState(() {
+        _isUrgentCaseActive = urgentActive;
         _timeSlots    = slots;
+        _selectedTime = null;
         _slotsLoading = false;
       });
     } catch (e) {
@@ -542,6 +549,42 @@ class _AppAppointmentState extends State<AppAppointment> {
   //  Time Slots
   // ════════════════════════════════════════════════════════
   Widget _buildTimeSlots() {
+    if (_isUrgentCaseActive) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF4E5),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.5)),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.bolt_rounded, color: Color(0xFFE65100), size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'ไม่สามารถนัดหมายได้',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFE65100),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 6),
+            Text(
+              'ทนายเปิดรับเคสด่วนอยู่ชั่วคราว จึงยังไม่เปิดให้นัดหมาย กรุณาลองใหม่อีกครั้งภายหลัง หรือเลือกทนายท่านอื่น',
+              style: TextStyle(fontSize: 12, height: 1.4, color: Color(0xFF5D4037)),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

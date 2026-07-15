@@ -32,6 +32,14 @@ class UserCaseAdapter {
     data['startTime'] ??= '';
     data['endTime'] ??= '';
 
+    // คง caseType ไว้ (1=นัดหมายล่วงหน้า, 2=เคสด่วน)
+    final caseType = data['caseType'] ?? data['CaseType'] ?? data['case_type'];
+    if (caseType != null) {
+      data['caseType'] = caseType is num
+          ? caseType.toInt()
+          : int.tryParse(caseType.toString()) ?? caseType;
+    }
+
     return data;
   }
 

@@ -380,7 +380,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          '*ชำระเงินเมื่อค้นหาทนายความ และทนายความกดรับเคยแล้ว*',
+                          '*ชำระเงินเมื่อค้นหาทนายความ และทนายความกดรับเคสแล้ว*',
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,

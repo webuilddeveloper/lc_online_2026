@@ -26,6 +26,9 @@ mixin ChatRoomLifecycleMixin<T extends StatefulWidget> on State<T>, WidgetsBindi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (chatRoomCode.isEmpty || chatUserId.isEmpty) return;
 
+    // ตอนวิดีโอคอล / แชร์หน้าจอ ระบบจะ pause app — ห้าม leave room ไม่งั้นสายหลุด/เด้ง
+    if (WebRtcCallListenerService.instance.inCallPage) return;
+
     if (state == AppLifecycleState.paused) {
       chatService.setActiveRoom(null);
       chatService.leaveRoom(chatRoomCode, chatUserId);

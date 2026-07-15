@@ -11,6 +11,7 @@ import 'package:LawyerOnline/post-details.dart';
 import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/services/lawyer_apply_notification_handler.dart';
 import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
+import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +28,7 @@ class NotificationNavigationService {
     final page = data['page']?.toString() ?? '';
     final type = data['type']?.toString() ?? '';
     if (type == 'call') return false;
+    if (type == 'incoming_call' || page == 'incoming_call') return true;
     if (page == 'lawyer_apply_approved' || type == 'lawyer_apply_approved') {
       return true;
     }
@@ -57,39 +59,61 @@ class NotificationNavigationService {
     }
 
     final type = data['type']?.toString() ?? '';
-    if (type == 'call') return false;
-
     final page = data['page']?.toString() ?? '';
+    if (type == 'call') return false;
+    if (type == 'incoming_call' || page == 'incoming_call') {
+      return _handleIncomingCall(data);
+    }
+
     final code = extractCode(data);
 
     if (page.isEmpty && code.isEmpty) return false;
 
+    var loadingShown = false;
     if (showLoading && context.mounted) {
       DialogService.showLoading(context);
+      loadingShown = true;
+    }
+
+    Future<void> dismissLoading() async {
+      if (!loadingShown) return;
+      loadingShown = false;
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
     }
 
     try {
+      // ปิด loading ก่อน push หน้าใหม่ กัน dialog ค้าง / maybePop ปิดหน้าผิด
       switch (page) {
         case 'chat':
+          await dismissLoading();
+          if (!context.mounted) return false;
           return await _openChat(context, code: code, type: type);
         case 'appointment_detail':
+          await dismissLoading();
+          if (!context.mounted) return false;
           return await _openAppointment(context, code: code);
         case 'case_request_detail':
+          await dismissLoading();
+          if (!context.mounted) return false;
           return await _openCaseRequest(context, code: code, type: type);
         case 'community':
+          await dismissLoading();
+          if (!context.mounted) return false;
           return await _openCommunity(context, code: code);
         case 'lawyer_apply_approved':
+          await dismissLoading();
           await LawyerApplyNotificationHandler.handle(showDialog: true);
           return true;
         default:
+          await dismissLoading();
+          if (!context.mounted) return false;
           return await _openByType(context, type: type, code: code);
       }
     } catch (_) {
+      await dismissLoading();
       return false;
-    } finally {
-      if (showLoading && context.mounted) {
-        Navigator.of(context, rootNavigator: true).maybePop();
-      }
     }
   }
 
@@ -116,6 +140,10 @@ class NotificationNavigationService {
       case 'new_case_request':
       case 'case_request_rejected':
         return _openCaseRequest(context, code: code, type: type);
+      case 'community':
+      case 'community_like':
+      case 'community_comment':
+        return _openCommunity(context, code: code);
       case 'lawyer_apply_approved':
         await LawyerApplyNotificationHandler.handle(showDialog: true);
         return true;
@@ -171,19 +199,48 @@ class NotificationNavigationService {
     required String userType,
     required String myUserId,
     bool allowMinimal = false,
+    String? caseCodeOverride,
+    Map<String, dynamic>? caseDataOverride,
   }) async {
-    final conv = await _findConversation(roomCode);
-    if (conv != null) {
-      final other = conv['user2Model'] as Map?;
-      final chatModel = {
-        'name': other?['name']?.toString() ??
-            '${other?['firstName'] ?? ''} ${other?['lastName'] ?? ''}'.trim(),
-        'imageUrl': other?['imageUrl']?.toString() ?? '',
-        'caseCode': conv['caseCode']?.toString() ?? '',
-        'active': true,
-        'caseSuccess': false,
-      };
+    // หาเคสที่ยังเปิดอยู่ของห้องนี้ก่อน (อย่าใช้ caseCode เก่าที่จบแล้ว)
+    final activeCase = caseDataOverride ??
+        await _findActiveCaseForRoom(roomCode) ??
+        (caseCodeOverride != null && caseCodeOverride.isNotEmpty
+            ? await _fetchCase(caseCodeOverride)
+            : null);
 
+    final conv = await _findConversation(roomCode);
+    final other = conv?['user2Model'] as Map?;
+    final resolvedCaseCode = activeCase?['code']?.toString() ??
+        caseCodeOverride?.toString() ??
+        conv?['caseCode']?.toString() ??
+        '';
+
+    final caseStatus = _asInt(
+        activeCase?['caseStatus'] ?? activeCase?['status']);
+    final caseSuccess = caseStatus == 4 || caseStatus == 0;
+
+    final chatModel = <String, dynamic>{
+      if (activeCase != null) ...activeCase,
+      'name': other?['name']?.toString() ??
+          '${other?['firstName'] ?? ''} ${other?['lastName'] ?? ''}'.trim(),
+      'imageUrl': other?['imageUrl']?.toString() ??
+          activeCase?['imageUrl']?.toString() ??
+          '',
+      'avatar': other?['imageUrl']?.toString() ?? '',
+      'caseCode': resolvedCaseCode,
+      'code': resolvedCaseCode,
+      'active': !caseSuccess,
+      'caseSuccess': caseSuccess,
+    };
+
+    if (chatModel['name']?.toString().trim().isEmpty == true) {
+      chatModel['name'] = userType == 'lawyer'
+          ? (activeCase?['userName']?.toString() ?? 'ลูกความ')
+          : (activeCase?['lawyerName']?.toString() ?? 'ทนายความ');
+    }
+
+    if (conv != null || allowMinimal) {
       if (!context.mounted) return false;
       await Navigator.push(
         context,
@@ -198,40 +255,14 @@ class NotificationNavigationService {
                   model: chatModel,
                   roomCode: roomCode,
                   userId: myUserId,
-                  caseCode: chatModel['caseCode']?.toString() ?? '',
+                  caseCode: resolvedCaseCode,
                 ),
         ),
       );
       return true;
     }
 
-    if (!allowMinimal) return false;
-    if (!context.mounted) return false;
-
-    final minimalModel = {
-      'name': 'แชท',
-      'imageUrl': '',
-      'active': true,
-      'caseSuccess': false,
-    };
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => userType == 'lawyer'
-            ? ChatPageLawyer(
-                model: minimalModel,
-                roomCode: roomCode,
-                userId: myUserId,
-              )
-            : ChatPageUser(
-                model: minimalModel,
-                roomCode: roomCode,
-                userId: myUserId,
-                caseCode: '',
-              ),
-      ),
-    );
-    return true;
+    return false;
   }
 
   static Future<bool> _openChatFromCase(
@@ -240,6 +271,7 @@ class NotificationNavigationService {
     required String userType,
     required String myUserId,
   }) async {
+    final caseCode = caseData['code']?.toString() ?? '';
     final existingRoom = caseData['messageRoomCode']?.toString() ?? '';
     if (existingRoom.isNotEmpty) {
       return _openChatByRoomCode(
@@ -248,6 +280,8 @@ class NotificationNavigationService {
         userType: userType,
         myUserId: myUserId,
         allowMinimal: true,
+        caseCodeOverride: caseCode,
+        caseDataOverride: caseData,
       );
     }
 
@@ -260,7 +294,7 @@ class NotificationNavigationService {
       'members': ids,
       'userA': userCode,
       'userB': lawyerCode,
-      'caseCode': caseData['code'],
+      'caseCode': caseCode,
     });
     if (result['status'] != 'S') return false;
 
@@ -268,7 +302,7 @@ class NotificationNavigationService {
     if (roomCode.isEmpty) return false;
 
     await postObjectData('/m/case/update', {
-      'code': caseData['code'],
+      'code': caseCode,
       'messageRoomCode': roomCode,
     });
 
@@ -276,13 +310,15 @@ class NotificationNavigationService {
         ? caseData['userName']?.toString() ?? 'ลูกความ'
         : caseData['lawyerName']?.toString() ?? 'ทนายความ';
 
+    final caseStatus = _asInt(caseData['caseStatus'] ?? caseData['status']);
     final chatModel = {
+      ...caseData,
       'name': otherName,
       'imageUrl': '',
-      'caseCode': caseData['code']?.toString() ?? '',
-      'active': true,
-      'caseSuccess': false,
-      ...caseData,
+      'caseCode': caseCode,
+      'code': caseCode,
+      'active': caseStatus != 4 && caseStatus != 0,
+      'caseSuccess': caseStatus == 4 || caseStatus == 0,
     };
 
     if (!context.mounted) return false;
@@ -299,7 +335,7 @@ class NotificationNavigationService {
                 model: chatModel,
                 roomCode: roomCode,
                 userId: myUserId,
-                caseCode: caseData['code']?.toString() ?? '',
+                caseCode: caseCode,
               ),
       ),
     );
@@ -443,6 +479,57 @@ class NotificationNavigationService {
     return null;
   }
 
+  /// หาเคสที่ยังปรึกษาอยู่ของห้องแชทนี้ (ข้ามเคสจบแล้วของคู่เดิม)
+  static Future<Map<String, dynamic>?> resolveActiveCaseForRoom(
+          String roomCode) =>
+      _findActiveCaseForRoom(roomCode);
+
+  static Future<Map<String, dynamic>?> _findActiveCaseForRoom(
+      String roomCode) async {
+    if (roomCode.isEmpty) return null;
+    await UserProfileStore.instance.load();
+    final me = UserProfileStore.instance.code;
+    final userType = UserProfileStore.instance.userType;
+    if (me.isEmpty) return null;
+
+    final body = <String, dynamic>{
+      'limit': 50,
+      if (userType == 'lawyer') 'lawyer': me else 'userCode': me,
+    };
+
+    try {
+      final res = await postDio('${server}/m/case/read', body);
+      if (res == null || res['status'] != 'S') return null;
+      final raw = res['objectData'];
+      if (raw is! List) return null;
+
+      Map<String, dynamic>? bestActive;
+      Map<String, dynamic>? bestAny;
+      for (final item in raw) {
+        if (item is! Map) continue;
+        final m = Map<String, dynamic>.from(item);
+        final room = m['messageRoomCode']?.toString() ?? '';
+        if (room != roomCode) continue;
+
+        bestAny ??= m;
+        final status = _asInt(m['caseStatus'] ?? m['status']);
+        if (status == 2 || status == 3) {
+          bestActive = m;
+          break; // list เรียงใหม่→เก่าอยู่แล้ว
+        }
+      }
+      return bestActive ?? bestAny;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? -1;
+  }
+
   static Future<Map<String, dynamic>?> _findConversation(String roomCode) async {
     final type = UserProfileStore.instance.userType;
     final userId = UserProfileStore.instance.code;
@@ -459,7 +546,13 @@ class NotificationNavigationService {
       if (item is! Map) continue;
       final conv = Map<String, dynamic>.from(item);
       if (conv['code']?.toString() == roomCode) return conv;
+      if (conv['roomCode']?.toString() == roomCode) return conv;
     }
     return null;
+  }
+
+  static Future<bool> _handleIncomingCall(Map<String, dynamic> data) async {
+    WebRtcCallListenerService.instance.handlePushPayload(data);
+    return true;
   }
 }

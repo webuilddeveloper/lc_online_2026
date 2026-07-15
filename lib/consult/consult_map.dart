@@ -304,25 +304,56 @@ class _ConsultMapPageState extends State<ConsultMapPage>
           await _caseReqService.getRequestDetail(widget.requestCode!);
       if (!mounted || detail.isEmpty) return;
 
-      final statusNum = int.tryParse(detail['status'] ??
-          detail['requestStatus'] ??
-          detail['Status'] ??
-          detail['RequestStatus']);
-      final pendingLawyer = detail['PendingLawyerName']?.toString() ?? '';
-      final pendingLawyerName = detail['PendingLawyerName']?.toString() ?? '';
-      final lat = detail['lat'];
-      final lng = detail['lng'];
+      final statusNum = _parseRequestStatus(detail);
+      final pendingLawyer = _pickStr(detail, const [
+        'pendingLawyer',
+        'PendingLawyer',
+        'lawyerCode',
+        'LawyerCode',
+      ]);
+      final pendingLawyerName = _pickStr(detail, const [
+        'pendingLawyerName',
+        'PendingLawyerName',
+        'lawyerName',
+        'LawyerName',
+      ]);
+      final lat = detail['lat'] ?? detail['Lat'];
+      final lng = detail['lng'] ?? detail['Lng'];
 
-      if (statusNum == 2 && pendingLawyer.isNotEmpty) {
+      // มีทนายกดรับแล้ว (รอลูกความยืนยัน) → โชว์ panel ให้เลือกรับ
+      if (statusNum == 2 &&
+          (pendingLawyer.isNotEmpty || pendingLawyerName.isNotEmpty)) {
         await _handleLawyerClaim({
           'requestCode': widget.requestCode,
           'lawyerCode': pendingLawyer,
           'lawyerName': pendingLawyerName,
           'lat': lat,
-          'lng': lng
+          'lng': lng,
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('_checkExistingClaim error: $e');
+    }
+  }
+
+  int? _parseRequestStatus(Map<String, dynamic> detail) {
+    final raw = detail['status'] ??
+        detail['requestStatus'] ??
+        detail['Status'] ??
+        detail['RequestStatus'];
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw?.toString() ?? '');
+  }
+
+  String _pickStr(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final v = source[key];
+      if (v != null && v.toString().trim().isNotEmpty) {
+        return v.toString().trim();
+      }
+    }
+    return '';
   }
 
   double? _getDistance(dynamic lawyer) {
@@ -363,6 +394,24 @@ class _ConsultMapPageState extends State<ConsultMapPage>
 
   Future<void> _retryBroadcastSearch() async {
     if (widget.requestCode == null) return;
+
+    try {
+      final detail =
+          await _caseReqService.getRequestDetail(widget.requestCode!);
+      final statusNum = _parseRequestStatus(detail);
+
+      // มีทนายรับไว้แล้ว → แค่เปิดฟังใหม่แล้วโชว์ panel ให้เลือกรับ
+      if (statusNum == 2) {
+        await _startBroadcastListening();
+        return;
+      }
+
+      // ยังไม่มีคนรับ / หมดเวลาฝั่ง UI → broadcast หาทนายใหม่
+      await _caseReqService.rebroadcastCaseRequest(widget.requestCode!);
+    } catch (e) {
+      debugPrint('_retryBroadcastSearch error: $e');
+    }
+
     await _startBroadcastListening();
   }
 

@@ -17,6 +17,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/community_moderation_service.dart';
 import 'package:LawyerOnline/widgets/community/community_consult_cta.dart';
 
 // ─── Data Models ───────────────────────────────────────────────────────────────
@@ -1286,6 +1287,51 @@ class _PostCardState extends State<PostCard>
     super.dispose();
   }
 
+  Future<void> _reportPost(BuildContext context) async {
+    if (widget.typeLogin == 'null') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage(isBack: true)),
+      );
+      return;
+    }
+
+    final reasons = [
+      'communityReportSpam'.tr(),
+      'communityReportIllegal'.tr(),
+      'communityReportHarassment'.tr(),
+      'communityReportOther'.tr(),
+    ];
+
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text('communityReportTitle'.tr()),
+        children: reasons
+            .map((r) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, r),
+                  child: Text(r),
+                ))
+            .toList(),
+      ),
+    );
+    if (reason == null || !context.mounted) return;
+
+    final ok = await CommunityModerationService.report(
+      targetCode: widget.post.id,
+      reporterCode: UserProfileStore.instance.code,
+      reason: reason,
+    );
+    if (!context.mounted) return;
+    if (ok) {
+      DialogService.showSuccess(
+        context,
+        title: 'successTitle'.tr(),
+        message: 'communityReportSuccess'.tr(),
+      );
+    }
+  }
+
   void _handleLike() {
     _likeCtrl.forward(from: 0);
     HapticFeedback.lightImpact();
@@ -1505,6 +1551,12 @@ class _PostCardState extends State<PostCard>
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _reportPost(context),
+                        child: Icon(Icons.flag_outlined,
+                            size: 20, color: Colors.grey.shade400),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(

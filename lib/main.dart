@@ -6,8 +6,10 @@ import 'package:LawyerOnline/services/appointment_reminder_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/services/in_app_notification_service.dart';
 import 'package:LawyerOnline/services/lawyer_apply_notification_handler.dart';
+import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
 import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:LawyerOnline/services/notification_service.dart';
+import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:LawyerOnline/shared/notification_settings_store.dart';
 import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -114,12 +116,34 @@ void main() async {
     await AppointmentReminderService.init();
 
     // แอปเปิดอยู่ → in-app popup + เสียง/สั่น (ยกเว้นอยู่ในห้องแชทเดียวกัน)
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      final type = message.data['type']?.toString() ?? '';
+      final page = message.data['page']?.toString() ?? '';
+      if (type == 'incoming_call' || page == 'incoming_call') {
+        WebRtcCallListenerService.instance.handlePushPayload(message.data);
+        if (UserProfileStore.instance.isLoggedIn) {
+          NotificationStore.instance.refresh();
+        }
+        return;
+      }
+
       if (_shouldSuppressChatForegroundNotification(message)) {
         if (UserProfileStore.instance.isLoggedIn) {
           NotificationStore.instance.refresh();
         }
         return;
+      }
+
+      // เคสด่วนใหม่ — แอปเปิดอยู่ให้เด้ง popup ไม่แสดง in-app banner
+      if (LawyerCaseBroadcastService.isForegroundCaseRequest(message.data)) {
+        final handled = await LawyerCaseBroadcastService.instance
+            .handleForegroundCaseRequest(message.data);
+        if (handled) {
+          if (UserProfileStore.instance.isLoggedIn) {
+            NotificationStore.instance.refresh();
+          }
+          return;
+        }
       }
 
       if (!NotificationSettingsStore.instance.shouldNotify(message.data)) {

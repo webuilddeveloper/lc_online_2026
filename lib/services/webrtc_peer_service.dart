@@ -1,7 +1,11 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'dart:async';
+
 import 'package:LawyerOnline/services/webrtc_config.dart';
 import 'package:LawyerOnline/services/webrtc_signaling_service.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 enum WebRtcCallState {
   idle,
@@ -19,36 +23,69 @@ class WebRtcPeerService {
     required this.userId,
     required this.caseCode,
     this.peerName = '',
+    this.toUserId = '',
+    this.isInitiator = false,
     required this.onStateChanged,
     required this.onRemoteStream,
+    this.onQualityChanged,
+    this.onRemoteEnded,
   });
 
   final String roomCode;
   final String userId;
   final String caseCode;
   final String peerName;
+  final String toUserId;
+  final bool isInitiator;
   final ValueChanged<WebRtcCallState> onStateChanged;
   final ValueChanged<MediaStream> onRemoteStream;
+  final ValueChanged<WebRtcQualityInfo>? onQualityChanged;
+  final ValueChanged<String>? onRemoteEnded;
 
   RTCPeerConnection? _pc;
   MediaStream? _localStream;
+  MediaStream? _screenStream;
   WebRtcSignalingService? _signaling;
   String? _peerId;
   bool _makingOffer = false;
   bool _remoteDescriptionSet = false;
-  final List<RTCIceCandidate> _pendingCandidates = [];
+  bool _screenSharing = false;
+  bool _iceRestarting = false;
+  Timer? _qualityTimer;
+  Timer? _disconnectTimer;
+  final List<RTCIceCandidate> _pendingRemoteCandidates = [];
+  final List<RTCIceCandidate> _pendingLocalCandidates = [];
+  bool _disposed = false;
+  MediaStream? _remoteStream;
+  WebRtcCallState _state = WebRtcCallState.idle;
 
   MediaStream? get localStream => _localStream;
   RTCPeerConnection? get peerConnection => _pc;
+  bool get isScreenSharing => _screenSharing;
+
+  void _setState(WebRtcCallState next) {
+    if (_disposed || _state == next) return;
+    // ไม่ให้ failed/ended ถูกทับด้วย connecting ระหว่าง teardown
+    if ((_state == WebRtcCallState.ended || _state == WebRtcCallState.failed) &&
+        next != WebRtcCallState.ended) {
+      return;
+    }
+    _state = next;
+    onStateChanged(next);
+  }
 
   Future<void> start() async {
-    onStateChanged(WebRtcCallState.connecting);
+    _setState(WebRtcCallState.connecting);
+
+    await WebRtcConfig.ensureLoaded();
 
     _signaling = WebRtcSignalingService(
       roomCode: roomCode,
       userId: userId,
       caseCode: caseCode,
       peerName: peerName,
+      toUserId: toUserId,
+      isInitiator: isInitiator,
     );
     _signaling!.onSignal = _onSignal;
     await _signaling!.start();
@@ -58,50 +95,176 @@ class WebRtcPeerService {
     );
 
     _pc = await createPeerConnection(WebRtcConfig.peerConnectionConfig());
-    _localStream!.getTracks().forEach((track) {
-      _pc!.addTrack(track, _localStream!);
-    });
+    for (final track in _localStream!.getTracks()) {
+      await _pc!.addTrack(track, _localStream!);
+    }
+    await _tuneVideoSender();
 
     _pc!.onIceCandidate = (candidate) {
-      if (candidate.candidate == null || _peerId == null) return;
-      _signaling?.send(WebRtcSignal(
-        action: 'ice',
-        from: userId,
-        candidate: candidate.toMap(),
-      ));
+      if (candidate.candidate == null || candidate.candidate!.isEmpty) return;
+      if (_peerId == null) {
+        _pendingLocalCandidates.add(candidate);
+        return;
+      }
+      unawaited(_sendIce(candidate));
     };
 
     _pc!.onTrack = (event) {
-      if (event.streams.isNotEmpty) {
-        onStateChanged(WebRtcCallState.connected);
-        onRemoteStream(event.streams.first);
+      unawaited(_handleTrackEvent(event));
+    };
+
+    _pc!.onIceConnectionState = (state) {
+      debugPrint('WebRTC iceConnectionState=$state');
+      if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
+        _disconnectTimer?.cancel();
+        _iceRestarting = false;
+        _setState(WebRtcCallState.connected);
+      } else if (state ==
+          RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+        _scheduleDisconnectRecovery();
+      } else if (state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        unawaited(_tryIceRestart());
       }
     };
 
     _pc!.onConnectionState = (state) {
+      debugPrint('WebRTC connectionState=$state');
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-        onStateChanged(WebRtcCallState.connected);
+        _disconnectTimer?.cancel();
+        _iceRestarting = false;
+        _setState(WebRtcCallState.connected);
+        unawaited(_tuneVideoSender());
       } else if (state ==
-              RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
-          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-        onStateChanged(WebRtcCallState.failed);
+          RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        unawaited(_tryIceRestart());
+      } else if (state ==
+          RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _scheduleDisconnectRecovery();
       }
     };
 
-    onStateChanged(WebRtcCallState.waitingPeer);
+    _setState(WebRtcCallState.waitingPeer);
     await _signaling!.send(WebRtcSignal(action: 'ready', from: userId));
+    _startQualityMonitor();
+  }
+
+  Future<void> _sendIce(RTCIceCandidate candidate) async {
+    await _signaling?.send(WebRtcSignal(
+      action: 'ice',
+      from: userId,
+      candidate: candidate.toMap(),
+    ));
+  }
+
+  Future<void> _flushLocalCandidates() async {
+    if (_pendingLocalCandidates.isEmpty) return;
+    final pending = List<RTCIceCandidate>.from(_pendingLocalCandidates);
+    _pendingLocalCandidates.clear();
+    for (final c in pending) {
+      await _sendIce(c);
+    }
+  }
+
+  Future<void> _tuneVideoSender() async {
+    final pc = _pc;
+    if (pc == null) return;
+    try {
+      final senders = await pc.getSenders();
+      for (final sender in senders) {
+        if (sender.track?.kind != 'video') continue;
+        final params = sender.parameters;
+        final encodings = params.encodings;
+        if (encodings != null && encodings.isNotEmpty) {
+          for (final encoding in encodings) {
+            encoding.maxBitrate = WebRtcConfig.videoMaxBitrate;
+            encoding.maxFramerate = WebRtcConfig.videoMaxFramerate;
+          }
+        } else {
+          params.encodings = [
+            RTCRtpEncoding(
+              maxBitrate: WebRtcConfig.videoMaxBitrate,
+              maxFramerate: WebRtcConfig.videoMaxFramerate,
+            ),
+          ];
+        }
+        await sender.setParameters(params);
+      }
+    } catch (e) {
+      debugPrint('WebRTC tuneVideoSender: $e');
+    }
+  }
+
+  void _startQualityMonitor() {
+    _qualityTimer?.cancel();
+    if (onQualityChanged == null) return;
+    _qualityTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (_disposed) return;
+      final info = await getQualityInfo();
+      onQualityChanged?.call(info);
+    });
+  }
+
+  Future<WebRtcQualityInfo> getQualityInfo() async {
+    if (_pc == null) {
+      return const WebRtcQualityInfo(
+        quality: WebRtcCallQuality.unknown,
+        rttMs: 0,
+        packetsLost: 0,
+      );
+    }
+
+    try {
+      final reports = await _pc!.getStats();
+      var packetsLost = 0;
+      var rttMs = 0;
+
+      for (final report in reports) {
+        if (report.type == 'inbound-rtp' && report.values['kind'] == 'video') {
+          packetsLost = int.tryParse(
+                report.values['packetsLost']?.toString() ?? '',
+              ) ??
+              packetsLost;
+        }
+        if (report.type == 'candidate-pair' &&
+            report.values['state']?.toString() == 'succeeded') {
+          final rtt = report.values['currentRoundTripTime'];
+          if (rtt is num) rttMs = (rtt * 1000).round();
+        }
+      }
+
+      final quality = packetsLost > 50 || rttMs > 400
+          ? WebRtcCallQuality.poor
+          : packetsLost > 10 || rttMs > 200
+              ? WebRtcCallQuality.fair
+              : WebRtcCallQuality.good;
+
+      return WebRtcQualityInfo(
+        quality: quality,
+        rttMs: rttMs,
+        packetsLost: packetsLost,
+      );
+    } catch (_) {
+      return const WebRtcQualityInfo(
+        quality: WebRtcCallQuality.unknown,
+        rttMs: 0,
+        packetsLost: 0,
+      );
+    }
   }
 
   Future<void> _onSignal(WebRtcSignal signal) async {
     switch (signal.action) {
       case 'ready':
         _peerId ??= signal.from;
+        await _flushLocalCandidates();
         if (_shouldCreateOffer()) {
           await _createOffer();
         }
         break;
       case 'offer':
         _peerId = signal.from;
+        await _flushLocalCandidates();
         await _handleOffer(signal.sdp ?? '');
         break;
       case 'answer':
@@ -111,24 +274,105 @@ class WebRtcPeerService {
         await _handleIce(signal.candidate);
         break;
       case 'hangup':
-        onStateChanged(WebRtcCallState.ended);
+        onRemoteEnded?.call('hangup');
+        _setState(WebRtcCallState.ended);
         break;
+      case 'reject':
+        onRemoteEnded?.call('reject');
+        _setState(WebRtcCallState.ended);
+        break;
+    }
+  }
+
+  Future<void> _handleTrackEvent(RTCTrackEvent event) async {
+    MediaStream? stream;
+    if (event.streams.isNotEmpty) {
+      stream = event.streams.first;
+    } else {
+      final track = event.track;
+      stream = _remoteStream ?? await createLocalMediaStream('remote');
+      final existing =
+          stream.getTracks().any((t) => t.id == track.id);
+      if (!existing) {
+        await stream.addTrack(track);
+      }
+    }
+    _bindRemoteStream(stream);
+    _setState(WebRtcCallState.connected);
+  }
+
+  void _bindRemoteStream(MediaStream stream) {
+    _remoteStream = stream;
+    // แจ้งทุกครั้งที่ track มา (audio/video แยก) — อย่าข้ามเพราะ stream id เดิม
+    onRemoteStream(stream);
+  }
+
+  void _scheduleDisconnectRecovery() {
+    _disconnectTimer?.cancel();
+    // ICE หลุดชั่วคราวบ่อย — รอแล้วยิง iceRestart ก่อนตัดสาย
+    _disconnectTimer = Timer(const Duration(seconds: 5), () {
+      if (_disposed) return;
+      unawaited(_tryIceRestart());
+    });
+  }
+
+  Future<void> _tryIceRestart() async {
+    if (_disposed || _pc == null || _iceRestarting) return;
+    if (!isInitiator) {
+      // ฝั่งรับรอ offer ใหม่จาก initiator
+      _disconnectTimer?.cancel();
+      _disconnectTimer = Timer(const Duration(seconds: 12), () {
+        if (_disposed) return;
+        if (_state != WebRtcCallState.connected) {
+          _setState(WebRtcCallState.failed);
+        }
+      });
+      return;
+    }
+
+    _iceRestarting = true;
+    debugPrint('WebRTC attempting ICE restart');
+    try {
+      final offer = await _pc!.createOffer({
+        'offerToReceiveAudio': true,
+        'offerToReceiveVideo': true,
+        'iceRestart': true,
+      });
+      await _pc!.setLocalDescription(offer);
+      await _signaling?.send(WebRtcSignal(
+        action: 'offer',
+        from: userId,
+        sdp: offer.sdp,
+      ));
+      _disconnectTimer?.cancel();
+      _disconnectTimer = Timer(const Duration(seconds: 12), () {
+        if (_disposed) return;
+        if (_state != WebRtcCallState.connected) {
+          _setState(WebRtcCallState.failed);
+        }
+      });
+    } catch (e) {
+      debugPrint('WebRTC iceRestart error: $e');
+      _setState(WebRtcCallState.failed);
+    } finally {
+      _iceRestarting = false;
     }
   }
 
   bool _shouldCreateOffer() {
     if (_peerId == null) return false;
     if (_makingOffer) return false;
-    return userId.compareTo(_peerId!) < 0;
+    return isInitiator;
   }
 
-  Future<void> _createOffer() async {
+  Future<void> _createOffer({bool iceRestart = false}) async {
     if (_pc == null || _makingOffer) return;
     _makingOffer = true;
     try {
       final offer = await _pc!.createOffer({
         'offerToReceiveAudio': true,
         'offerToReceiveVideo': true,
+        if (iceRestart) 'iceRestart': true,
       });
       await _pc!.setLocalDescription(offer);
       await _signaling?.send(WebRtcSignal(
@@ -142,10 +386,10 @@ class WebRtcPeerService {
   }
 
   Future<void> _handleOffer(String sdp) async {
-    if (_pc == null) return;
+    if (_pc == null || sdp.isEmpty) return;
     await _pc!.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
     _remoteDescriptionSet = true;
-    await _flushPendingCandidates();
+    await _flushPendingRemoteCandidates();
     final answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
     await _signaling?.send(WebRtcSignal(
@@ -156,10 +400,10 @@ class WebRtcPeerService {
   }
 
   Future<void> _handleAnswer(String sdp) async {
-    if (_pc == null) return;
+    if (_pc == null || sdp.isEmpty) return;
     await _pc!.setRemoteDescription(RTCSessionDescription(sdp, 'answer'));
     _remoteDescriptionSet = true;
-    await _flushPendingCandidates();
+    await _flushPendingRemoteCandidates();
   }
 
   Future<void> _handleIce(Map<String, dynamic>? raw) async {
@@ -172,18 +416,27 @@ class WebRtcPeerService {
           : int.tryParse(raw['sdpMLineIndex']?.toString() ?? ''),
     );
     if (!_remoteDescriptionSet) {
-      _pendingCandidates.add(candidate);
+      _pendingRemoteCandidates.add(candidate);
       return;
     }
-    await _pc!.addCandidate(candidate);
+    try {
+      await _pc!.addCandidate(candidate);
+    } catch (e) {
+      debugPrint('WebRTC addCandidate: $e');
+    }
   }
 
-  Future<void> _flushPendingCandidates() async {
+  Future<void> _flushPendingRemoteCandidates() async {
     if (_pc == null) return;
-    for (final c in _pendingCandidates) {
-      await _pc!.addCandidate(c);
+    final pending = List<RTCIceCandidate>.from(_pendingRemoteCandidates);
+    _pendingRemoteCandidates.clear();
+    for (final c in pending) {
+      try {
+        await _pc!.addCandidate(c);
+      } catch (e) {
+        debugPrint('WebRTC flushCandidate: $e');
+      }
     }
-    _pendingCandidates.clear();
   }
 
   Future<void> toggleMute(bool muted) async {
@@ -204,18 +457,169 @@ class WebRtcPeerService {
     await Helper.switchCamera(tracks.first);
   }
 
+  /// Returns error message on failure, null on success.
+  Future<String?> toggleScreenShare() async {
+    if (_pc == null) return 'webrtcShareFailed'.tr();
+
+    try {
+      if (_screenSharing) {
+        final tracks = _localStream?.getVideoTracks() ?? [];
+        final cameraTrack = tracks.isNotEmpty ? tracks.first : null;
+        final senders = await _pc!.getSenders();
+        for (final sender in senders) {
+          if (sender.track?.kind == 'video' && cameraTrack != null) {
+            await sender.replaceTrack(cameraTrack);
+          }
+        }
+        final screenTracks = _screenStream?.getTracks() ?? [];
+        for (final t in screenTracks) {
+          await t.stop();
+        }
+        await _screenStream?.dispose();
+        _screenStream = null;
+        _screenSharing = false;
+        await _stopScreenShareForeground();
+        await _tuneVideoSender();
+        return null;
+      }
+
+      // Android 14+: MediaProjection permission → FGS → getDisplayMedia
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final granted = await Helper.requestCapturePermission();
+        if (!granted) {
+          debugPrint('screen share permission denied');
+          return 'webrtcShareDenied'.tr();
+        }
+        final ready = await _startScreenShareForeground();
+        if (!ready) {
+          return 'webrtcShareFailed'.tr();
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+
+      _screenStream = await navigator.mediaDevices.getDisplayMedia({
+        'video': {
+          'mandatory': {
+            'minWidth': 640,
+            'minHeight': 480,
+            'maxFrameRate': 30,
+          },
+        },
+        'audio': false,
+      });
+      final screenTracks = _screenStream?.getVideoTracks() ?? [];
+      final screenTrack = screenTracks.isNotEmpty ? screenTracks.first : null;
+      if (screenTrack == null) {
+        await _screenStream?.dispose();
+        _screenStream = null;
+        await _stopScreenShareForeground();
+        return 'webrtcShareFailed'.tr();
+      }
+
+      screenTrack.onEnded = () {
+        if (_screenSharing) {
+          toggleScreenShare();
+        }
+      };
+
+      final senders = await _pc!.getSenders();
+      var replaced = false;
+      for (final sender in senders) {
+        if (sender.track?.kind == 'video') {
+          await sender.replaceTrack(screenTrack);
+          replaced = true;
+        }
+      }
+      if (!replaced) {
+        await _pc!.addTrack(screenTrack, _screenStream!);
+      }
+      _screenSharing = true;
+      return null;
+    } catch (e, st) {
+      debugPrint('toggleScreenShare error: $e\n$st');
+      try {
+        await _screenStream?.dispose();
+      } catch (_) {}
+      _screenStream = null;
+      _screenSharing = false;
+      await _stopScreenShareForeground();
+      return 'webrtcShareFailed'.tr();
+    }
+  }
+
+  Future<bool> _startScreenShareForeground() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return true;
+    }
+    try {
+      const androidConfig = FlutterBackgroundAndroidConfig(
+        notificationTitle: 'LC Online',
+        notificationText: 'กำลังแชร์หน้าจอ',
+        notificationImportance: AndroidNotificationImportance.normal,
+        notificationIcon:
+            AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+        shouldRequestBatteryOptimizationsOff: false,
+      );
+      final ok = await FlutterBackground.initialize(androidConfig: androidConfig);
+      if (!ok) return false;
+      if (!FlutterBackground.isBackgroundExecutionEnabled) {
+        return await FlutterBackground.enableBackgroundExecution();
+      }
+      return true;
+    } catch (e, st) {
+      debugPrint('screen share FGS error: $e\n$st');
+      return false;
+    }
+  }
+
+  Future<void> _stopScreenShareForeground() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      if (FlutterBackground.isBackgroundExecutionEnabled) {
+        await FlutterBackground.disableBackgroundExecution();
+      }
+    } catch (e) {
+      debugPrint('stop screen share FGS error: $e');
+    }
+  }
+
   Future<void> hangUp() async {
-    await _signaling?.send(WebRtcSignal(action: 'hangup', from: userId));
-    await dispose();
+    try {
+      await _signaling?.send(WebRtcSignal(action: 'hangup', from: userId));
+    } catch (_) {}
+    // แจ้ง ended ก่อน dispose — หลัง dispose จะบล็อก _setState
+    _state = WebRtcCallState.ended;
     onStateChanged(WebRtcCallState.ended);
+    await dispose();
   }
 
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    _disconnectTimer?.cancel();
+    _disconnectTimer = null;
+    _qualityTimer?.cancel();
+    _qualityTimer = null;
+    _pendingLocalCandidates.clear();
+    _pendingRemoteCandidates.clear();
     await _signaling?.stop();
     _signaling = null;
-    await _localStream?.dispose();
+    _screenSharing = false;
+    await _stopScreenShareForeground();
+    try {
+      await _screenStream?.dispose();
+    } catch (_) {}
+    _screenStream = null;
+    try {
+      for (final t in _localStream?.getTracks() ?? []) {
+        await t.stop();
+      }
+      await _localStream?.dispose();
+    } catch (_) {}
     _localStream = null;
-    await _pc?.close();
+    try {
+      await _pc?.close();
+    } catch (_) {}
     _pc = null;
   }
 }

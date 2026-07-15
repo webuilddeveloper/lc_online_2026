@@ -10,12 +10,14 @@ class ChatBubble extends StatelessWidget {
   final Map<String, dynamic> message;
   final bool isMe;
   final String avatarAsset;
+  final String currentUserId;
 
   const ChatBubble({
     super.key,
     required this.message,
     required this.isMe,
     this.avatarAsset = '',
+    this.currentUserId = '',
   });
 
   @override
@@ -187,7 +189,13 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildVideoCallContent(bool isMe) {
     final data = VideoCallLogData.fromMessage(message);
-    final title = VideoCallLogService.bubbleTitle(data: data, isMe: isMe);
+    final senderId = message['senderId']?.toString() ?? '';
+    // ใช้ initiatedBy จาก content — ถ้าไม่มีใช้ senderId ของข้อความนี้
+    final effective = data.initiatedBy.isNotEmpty ? data.initiatedBy : senderId;
+    final title = VideoCallLogService.bubbleTitleForUser(
+      initiatedBy: effective,
+      currentUserId: currentUserId,
+    );
     final duration = VideoCallLogService.formatDuration(data.durationSeconds);
 
     return Row(

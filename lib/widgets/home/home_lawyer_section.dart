@@ -8,6 +8,7 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
@@ -52,13 +53,13 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
 
   @override
   Widget build(BuildContext context) {
-    final activeUrgentJobs = [
-      ...widget.jobRequests.where((j) =>
-          (j['jobSource'] ?? 'urgent') == 'urgent' &&
-          j['status'] == 'accepted'),
-      ...widget.jobRequests.where((j) =>
-          (j['jobSource'] ?? 'urgent') == 'urgent' && j['status'] == 'pending'),
-    ];
+    final activeUrgentJobs = widget.jobRequests.where((j) {
+      if ((j['jobSource'] ?? 'urgent') != 'urgent') return false;
+      final status = j['status']?.toString() ?? '';
+      return status == 'pending' ||
+          status == 'accepted' ||
+          status == 'in_session';
+    }).toList();
     final pendingBookings = widget.jobRequests
         .where((j) =>
             (j['jobSource'] ?? 'urgent') == 'booking' &&
@@ -223,12 +224,13 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
           await postDio("${server}/m/case/read", {"lawyer": lawyerCode});
 
       if (param['status'] == 'S') {
-        // final allCases = List<dynamic>.from(param['objectData'] ?? []);
-        // final filtered = allCases.where((x) => x['caseStatus'] == 2).toList();
-        // for (var i = 0; i < filtered.length; i++) {
-
-        // }
-        appointmentsList = param['objectData'];
+        final allCases = List<dynamic>.from(param['objectData'] ?? []);
+        appointmentsList = allCases.where((item) {
+          if (item is! Map) return false;
+          return !CaseAppointmentMapper.isUrgentCase(
+            Map<String, dynamic>.from(item),
+          );
+        }).toList();
       }
 
       setState(() {

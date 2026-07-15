@@ -35,6 +35,111 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
   dynamic userModel = const {};
   bool isLoadingLawyers = true;
 
+  Map<String, dynamic> get _job => widget.job is Map
+      ? Map<String, dynamic>.from(widget.job as Map)
+      : <String, dynamic>{};
+
+  Map<String, dynamic>? get _rawPayload {
+    final rawCase = _job['rawCase'];
+    if (rawCase is Map) return Map<String, dynamic>.from(rawCase);
+    final rawRequest = _job['rawRequest'];
+    if (rawRequest is Map) return Map<String, dynamic>.from(rawRequest);
+    return null;
+  }
+
+  bool get _isCaseRequest => _job['isCaseRequest'] == true;
+
+  int get _caseStatusInt {
+    final direct = _job['caseStatusInt'];
+    if (direct is int) return direct;
+    final parsedDirect = int.tryParse(direct?.toString() ?? '');
+    if (parsedDirect != null) return parsedDirect;
+
+    final caseStatus = _job['caseStatus'];
+    if (caseStatus is int) return caseStatus;
+    final parsedCaseStatus = int.tryParse(caseStatus?.toString() ?? '');
+    if (parsedCaseStatus != null) return parsedCaseStatus;
+
+    final raw = _rawPayload;
+    if (raw != null) {
+      if (_isCaseRequest) {
+        final reqStatus = raw['requestStatus'] ?? raw['status'];
+        if (reqStatus is int) return reqStatus;
+        return int.tryParse(reqStatus?.toString() ?? '') ?? 1;
+      }
+      final cs = raw['caseStatus'];
+      if (cs is int) return cs;
+      return int.tryParse(cs?.toString() ?? '') ?? 1;
+    }
+
+    switch (_job['status']?.toString() ?? '') {
+      case 'pending':
+        return 1;
+      case 'accepted':
+      case 'confirmed':
+        return 2;
+      case 'in_session':
+        return 3;
+      case 'done':
+        return 4;
+      case 'rejected':
+        return 0;
+      default:
+        return 1;
+    }
+  }
+
+  String get _clientCode =>
+      _job['clientCode']?.toString() ??
+      _job['userCode']?.toString() ??
+      _rawPayload?['userCode']?.toString() ??
+      '';
+
+  String get _caseCode =>
+      _job['code']?.toString() ??
+      _job['caseCode']?.toString() ??
+      _job['id']?.toString() ??
+      _rawPayload?['code']?.toString() ??
+      '';
+
+  String get _clientName =>
+      _job['clientName']?.toString() ??
+      _job['userName']?.toString() ??
+      _rawPayload?['userName']?.toString() ??
+      '';
+
+  String get _createDate =>
+      _rawPayload?['createDate']?.toString() ??
+      _job['requestedAt']?.toString() ??
+      '';
+
+  String get _caseDate =>
+      _job['caseDate']?.toString() ??
+      _job['date']?.toString() ??
+      _rawPayload?['caseDate']?.toString() ??
+      '';
+
+  String get _price =>
+      _job['price']?.toString() ??
+      _job['budget']?.toString() ??
+      _rawPayload?['price']?.toString() ??
+      '500';
+
+  String get _startTime =>
+      _job['startTime']?.toString() ??
+      _rawPayload?['startTime']?.toString() ??
+      '';
+
+  String get _endTime =>
+      _job['endTime']?.toString() ??
+      _rawPayload?['endTime']?.toString() ??
+      '';
+
+  String get _reasonCancel =>
+      _job['reasonCancel']?.toString() ??
+      _rawPayload?['reasonCancel']?.toString() ??
+      '';
+
   Color _safeClientColor(dynamic raw) {
     if (raw == null) return const Color(0xFF0262EC);
     if (raw is int) return Color(raw);
@@ -43,13 +148,17 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
   }
 
   Future<void> callReadUser() async {
+    final clientCode = _clientCode;
+    if (clientCode.isEmpty) {
+      setState(() => isLoadingLawyers = false);
+      return;
+    }
     try {
       final param = await postDio(
-          "${server}/m/register/read", {"code": widget.job['userCode']});
+          "${server}/m/register/read", {"code": clientCode});
       setState(() {
         userModel = param['objectData'][0];
         isLoadingLawyers = false;
-        // _specialtyOptions = [...param['objectData']];
       });
     } catch (_) {
       isLoadingLawyers = false;
@@ -67,7 +176,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
           context,
           title: "รับเคสสำเร็จ",
           message:
-              "คุณได้ทำการรับงานจากลูกความจาก คุณ${widget.job['userName']} เรียบร้อยแล้ว",
+              "คุณได้ทำการรับงานจากลูกความจาก คุณ$_clientName เรียบร้อยแล้ว",
           onClose: () {
             Navigator.pop(context);
           },
@@ -100,11 +209,11 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
     DialogService.showLoading(context);
     try {
       dynamic model = {
-        "code": widget.job['code'],
+        "code": _caseCode,
         "caseStatus": caseStatus,
         "reasonCancel": reasonCancel,
         "userType": "lawyer",
-        "userCode": widget.job['userCode'],
+        "userCode": _clientCode,
         "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
       };
@@ -116,7 +225,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
           context,
           title: "ยกเลิกนัดหมายแล้ว",
           message:
-              "คุณได้ทำการยกเลิกนัดหมายลูกความจาก คุณ${widget.job['userName']} เรียบร้อยแล้ว",
+              "คุณได้ทำการยกเลิกนัดหมายลูกความจาก คุณ$_clientName เรียบร้อยแล้ว",
           onClose: () {
             Navigator.pop(context);
             Navigator.pop(context);
@@ -154,18 +263,10 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final caseStatus = widget.job['rawRequest']['requestStatus'];
-    // ✅ Parse String to Int safely
-    final caseStatusInt = caseStatus is int
-        ? caseStatus
-        : int.tryParse(caseStatus?.toString() ?? '') ?? 0;
-    // final isPending = caseStatusInt == 1;
-    // final isAccepted = caseStatusInt == 2;
+    final caseStatusInt = _caseStatusInt;
 
     final clientColor = _safeClientColor(widget.job['clientColor']);
     final isDesktop = ResponsiveLayout.isDesktop(context);
-
-    print('===---==== ${widget.job}');
 
     return Scaffold(
       backgroundColor:
@@ -191,7 +292,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                       child: Column(children: [
                         _buildStatusCard(caseStatusInt),
                         const SizedBox(height: 14),
-                        if (widget.job['caseStatus'] == 0) ...[
+                        if (caseStatusInt == 0) ...[
                           _buildDetailReasonCancelCard(clientColor),
                           const SizedBox(height: 14),
                         ],
@@ -199,17 +300,16 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                         const SizedBox(height: 14),
                         _buildDetailCard(clientColor),
                         const SizedBox(height: 14),
-                        if ((widget.job['caseDate']?.toString() ?? '')
-                            .isNotEmpty) ...[
+                        if (_caseDate.isNotEmpty) ...[
                           _buildScheduleCard(),
                           const SizedBox(height: 14),
                         ],
                       ]),
                     ),
                   ),
-                  if (widget.job['caseStatusInt'] == 1 && widget.onAccept != null)
+                  if (caseStatusInt == 1 && widget.onAccept != null)
                     _buildPendingButtons(context)
-                  else if (widget.job['caseStatusInt'] == 2)
+                  else if (caseStatusInt == 2 || caseStatusInt == 3)
                     _buildAcceptedButton(context),
                 ],
               ),
@@ -274,7 +374,10 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
               Row(children: [
                 Icon(Icons.schedule_rounded, size: 12, color: Colors.grey[400]),
                 const SizedBox(width: 4),
-                Text('ส่งคำขอ ${ dateStringToDateStringFormat(widget.job['rawRequest']['createDate'] ?? '')}',
+                Text(
+                    _createDate.isNotEmpty
+                        ? 'ส่งคำขอ ${dateStringToDateStringFormat(_createDate)}'
+                        : 'ส่งคำขอ',
                     style: TextStyle(fontSize: 11, color: Colors.grey[400])),
               ]),
               const SizedBox(height: 6),
@@ -287,7 +390,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    (widget.job['price'] ?? '500฿').toString(),
+                    _price,
                     style: const TextStyle(
                         fontSize: 12,
                         color: _kPrimary,
@@ -324,7 +427,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            (widget.job['detail'] ?? '-').toString(),
+            (widget.job['detail'] ?? _rawPayload?['details'] ?? '-').toString(),
             style:
                 TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.6),
           ),
@@ -349,7 +452,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            (widget.job['reasonCancel'] ?? '-').toString(),
+            _reasonCancel.isNotEmpty ? _reasonCancel : '-',
             style:
                 TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.6),
           ),
@@ -370,14 +473,16 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
           Expanded(
             child: _scheduleChip(
                 Icons.calendar_today_rounded,
-                (widget.job['caseDate'] ?? '').toString(),
+                _caseDate,
                 const Color(0xFF0262EC)),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: _scheduleChip(
                 Icons.access_time_rounded,
-                '${widget.job['startTime']}-${widget.job['endTime']}',
+                _startTime.isNotEmpty && _endTime.isNotEmpty
+                    ? '$_startTime-$_endTime'
+                    : (_job['time']?.toString() ?? '-'),
                 const Color(0xFF059669)),
           ),
         ]),
@@ -527,7 +632,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                 title: "รับงาน",
                 message: "คุณยืนยันที่จะรับคำขอนี้ใช่หรือไม่",
                 onConfirm: () {
-                  updateStatusConfirmCase(widget.job['code'], 2);
+                  updateStatusConfirmCase(_caseCode, 2);
                   // widget.onAccept?.call();
                   // if (context.mounted) Navigator.pop(context);
                 },
@@ -575,24 +680,7 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
         border: Border(top: BorderSide(color: Color(0xFFEEF2F5))),
       ),
       child: GestureDetector(
-        onTap: () => {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (_) => ChatPageLawyer(
-          //       // jobId: widget.job['id']?.toString(),
-          //       model: {
-          //         'name': widget.job['clientName'] ?? '',
-          //         'avatar': widget.job['clientAvatar'] ?? '',
-          //         'active': true,
-          //         'caseSuccess': false,
-          //         'clientColor': widget.job['clientColor'],
-          //       },
-          //     ),
-          //   ),
-          // ),
-          print('==============123 ${widget.job}')
-        },
+        onTap: _startConsultation,
         child: Container(
           height: 52,
           decoration: BoxDecoration(
@@ -623,66 +711,87 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
     );
   }
 
-  void _onTapConversation(dynamic conv) async {
-    setState(() {
-      // appointmentList = param['objectData'];
-      // _lawyerAppointments = param['objectData'];
-      // _isLoadingAppointments = false;
-    });
-    String myUserId = UserProfileStore.instance.code;
-    dynamic lawyerModel = {};
+  Future<void> _startConsultation() async {
+    final myUserId = UserProfileStore.instance.code.trim();
+    final clientCode = _clientCode.isNotEmpty
+        ? _clientCode
+        : userModel['code']?.toString().trim() ?? '';
+    final lawyerCode = _rawPayload?['lawyer']?.toString().trim() ??
+        _job['lawyerCode']?.toString().trim() ??
+        myUserId;
+    final caseCode = _caseCode;
 
-    await postDio("${server}/m/register/read", {"code": conv['lawyer']}).then(
-      (paramLawyer) => {
-        setState(
-          () {
-            lawyerModel = paramLawyer['objectData'][0];
-          },
+    if (caseCode.isEmpty || clientCode.isEmpty || lawyerCode.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ไม่พบข้อมูลเคสหรือลูกความ')),
+      );
+      return;
+    }
+
+    DialogService.showLoading(context);
+
+    try {
+      final existingRoom =
+          _rawPayload?['messageRoomCode']?.toString().trim() ??
+              _job['messageRoomCode']?.toString().trim() ??
+              '';
+
+      String roomCode = existingRoom;
+      if (roomCode.isEmpty) {
+        final ids = [clientCode, lawyerCode]..sort();
+        final result = await postObjectData('/m/chat/room/create', {
+          'members': ids,
+          'userA': clientCode,
+          'userB': lawyerCode,
+          'caseCode': caseCode,
+        });
+        if (result['status'] != 'S') {
+          throw Exception(result['message']?.toString() ?? 'สร้างห้องแชทไม่สำเร็จ');
+        }
+        roomCode = result['objectData']?['roomCode']?.toString() ?? '';
+        if (roomCode.isEmpty) {
+          throw Exception('ไม่พบรหัสห้องแชท');
+        }
+      }
+
+      await postObjectData('/m/case/update', {
+        'code': caseCode,
+        'messageRoomCode': roomCode,
+        'caseStatus': 3,
+      });
+
+      final clientName = [
+        userModel['firstName']?.toString() ?? '',
+        userModel['lastName']?.toString() ?? '',
+      ].where((s) => s.trim().isNotEmpty).join(' ');
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatPageLawyer(
+            model: {
+              'code': caseCode,
+              'name': clientName.isNotEmpty ? clientName : _clientName,
+              'avatar': userModel['imageUrl'] ?? '',
+              'active': true,
+              'caseSuccess': false,
+            },
+            roomCode: roomCode,
+            userId: myUserId,
+          ),
         ),
-      },
-    );
-
-    List<String> ids = [userModel['code'], lawyerModel['code']]..sort();
-    var model = {
-      "members": ids,
-      "userA": userModel['code'],
-      "userB": lawyerModel['code'],
-      "caseCode": widget.job['code'],
-    };
-    var roomCode;
-    await postObjectData("/m/chat/room/create", model).then(
-      (result) async => {
-        if (result['status'] == 'S')
-          {
-            setState(() {
-              roomCode = result['objectData']['roomCode'];
-            }),
-            await postObjectData("/m/case/update",
-                {"code": widget.job['code'], "messageRoomCode": roomCode}).then(
-              (res) => {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => ChatPageLawyer(
-                            model: {
-                              'code': widget.job['code'],
-                              'name':
-                                  '${userModel['firstName']} ${userModel['lastName']}',
-                              'avatar': userModel['imageUrl'],
-                              // 'clientColor': conv.clientColor,
-                              'active': true,
-                              'caseSuccess': false,
-                            },
-                            // jobId: conv.id,
-                            roomCode: roomCode,
-                            userId: myUserId,
-                          )),
-                ),
-              },
-            ),
-          }
-      },
-    );
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เริ่มปรึกษาไม่สำเร็จ กรุณาลองใหม่')),
+      );
+    }
   }
 
   Widget _infoRow(String label, String value) => Row(

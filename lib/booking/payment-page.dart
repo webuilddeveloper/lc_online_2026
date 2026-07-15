@@ -5,6 +5,7 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -390,8 +391,14 @@ class _PaymentPageState extends State<PaymentPage> {
             );
           },
         );
+      } else {
+        DialogService.showError(
+          context,
+          title: "ไม่สามารถนัดหมายได้",
+          message: param['message']?.toString() ??
+              'urgentCaseBlockBookingMessage'.tr(),
+        );
       }
-      
     } catch (_) {
       Navigator.pop(context);
       DialogService.showError(

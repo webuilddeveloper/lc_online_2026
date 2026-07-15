@@ -155,6 +155,74 @@ class CaseAppointmentMapper {
     };
   }
 
+  static int caseTypeInt(Map<String, dynamic> source) {
+    final value = source['caseType'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 1;
+  }
+
+  static bool isUrgentCase(Map<String, dynamic> source) =>
+      caseTypeInt(source) == 2;
+
+  /// แปลง Case จาก API เป็น job card สำหรับ LawyerJobListPage / Home ทนาย
+  static Map<String, dynamic> jobFromCase(Map<String, dynamic> source) {
+    final code = _string(_first(source, const ['code', 'id', '_id']));
+    final isUrgent = isUrgentCase(source);
+    final caseStatus = source['caseStatus'];
+    final status = _jobStatusFromCaseStatus(caseStatus, isUrgent: isUrgent);
+
+    final clientName = _string(_first(source, const [
+      'clientName',
+      'userName',
+      'name',
+    ]));
+    final topic = _string(_first(source, const ['topicTitle', 'topic']));
+    final subTopic =
+        _string(_first(source, const ['subTopicTitle', 'subTopic']));
+    final date = _dateString(_first(source, const [
+      'caseDate',
+      'case_date',
+      'appointmentDate',
+      'date',
+    ]));
+    final start = _timeString(_first(source, const [
+      'startTime',
+      'start_time',
+      'timeStart',
+    ]));
+    final end = _timeString(_first(source, const [
+      'endTime',
+      'end_time',
+      'timeEnd',
+    ]));
+    final time = _appointmentTime(start, end);
+
+    return {
+      'id': code,
+      'caseCode': code,
+      'lawyerCode': _string(_first(source, const ['lawyerCode', 'lawyer'])),
+      'clientCode': _string(_first(source, const ['clientCode', 'userCode'])),
+      'clientName': clientName,
+      'clientAvatar': clientName.isNotEmpty ? clientName[0] : '?',
+      'clientColor': 0xFF0262EC,
+      'topic': topic,
+      'subTopic': subTopic,
+      'detail': _string(_first(source, const ['details', 'requirement'])),
+      'date': date,
+      'time': time,
+      'status': status,
+      'requestedAt': date.isNotEmpty ? '$date • $time' : '',
+      'jobSource': isUrgent ? 'urgent' : 'booking',
+      'budget': _string(source['price']),
+      'isApiCase': true,
+      'rawCase': source,
+      'caseStatusInt': caseStatus is int
+          ? caseStatus
+          : int.tryParse(caseStatus?.toString() ?? ''),
+    };
+  }
+
   static Map<DateTime, List<dynamic>> eventMapFromAppointments(
     List<dynamic> appointments,
   ) {
@@ -345,14 +413,21 @@ class CaseAppointmentMapper {
   }
 
   static String _jobStatus(dynamic value) {
+    return _jobStatusFromCaseStatus(value, isUrgent: false);
+  }
+
+  static String _jobStatusFromCaseStatus(
+    dynamic value, {
+    required bool isUrgent,
+  }) {
     final raw = value?.toString().trim().toLowerCase() ?? '';
     if (raw == '1' || raw == 'pending') return 'pending';
     if (raw == '2' || raw == 'confirmed' || raw == 'accepted') {
-      return 'confirmed';
+      return isUrgent ? 'accepted' : 'confirmed';
     }
     if (raw == '3' || raw == 'in_session') return 'in_session';
     if (raw == '4' || raw == 'done' || raw == 'success') return 'done';
-    if (raw == '5' || raw == 'rejected' || raw == 'cancelled') {
+    if (raw == '0' || raw == '5' || raw == 'rejected' || raw == 'cancelled') {
       return 'rejected';
     }
     return 'pending';
