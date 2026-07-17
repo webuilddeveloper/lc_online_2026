@@ -1,12 +1,11 @@
+import 'package:LawyerOnline/services/notification_list_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:LawyerOnline/notification.dart';
 
 class NotificationDesktopDetailPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const NotificationDesktopDetailPage({Key? key, this.initialData})
-      : super(key: key);
+  const NotificationDesktopDetailPage({super.key, this.initialData});
 
   @override
   State<NotificationDesktopDetailPage> createState() =>
@@ -16,28 +15,46 @@ class NotificationDesktopDetailPage extends StatefulWidget {
 class _NotificationDesktopDetailPageState
     extends State<NotificationDesktopDetailPage> {
   Map<String, dynamic>? selectedItem;
-
-  List<Map<String, dynamic>> get notifications => globalNotifications;
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     selectedItem = widget.initialData;
+    _load();
   }
 
-  void markAllRead() {
+  Future<void> _load() async {
+    final list = await NotificationListService.load();
+    if (!mounted) return;
     setState(() {
-      for (var n in notifications) {
-        n["isRead"] = true;
-      }
+      _notifications = list;
+      _isLoading = false;
+      selectedItem ??= list.isNotEmpty ? list.first : null;
     });
+  }
+
+  String _dateLabel(String date) {
+    return switch (date) {
+      'today' => 'timeline.today'.tr(),
+      'yesterday' => 'timeline.yesterday'.tr(),
+      'earlier' => 'timeline.earlier'.tr(),
+      _ => date,
+    };
+  }
+
+  Future<void> markAllRead() async {
+    await NotificationListService.markAllRead(_notifications);
+    if (!mounted) return;
+    setState(() {});
   }
 
   Widget _buildLeftPane() {
     // Group notifications by date
     Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var n in notifications) {
-      grouped.putIfAbsent(n["date"], () => []).add(n);
+    for (var n in _notifications) {
+      grouped.putIfAbsent(n['date']?.toString() ?? 'earlier', () => []).add(n);
     }
 
     return Container(
@@ -81,7 +98,16 @@ class _NotificationDesktopDetailPageState
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
           // List
           Expanded(
-            child: ListView.builder(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _notifications.isEmpty
+                    ? Center(
+                        child: Text(
+                          'notification.empty'.tr(),
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      )
+                    : ListView.builder(
               itemCount: grouped.keys.length,
               itemBuilder: (context, index) {
                 String date = grouped.keys.elementAt(index);
@@ -90,14 +116,13 @@ class _NotificationDesktopDetailPageState
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section Header
                     Container(
                       width: double.infinity,
                       color: const Color(0xFFF9FAFB),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       child: Text(
-                        date,
+                        _dateLabel(date),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
@@ -111,9 +136,10 @@ class _NotificationDesktopDetailPageState
                       bool isRead = item["isRead"] == true;
 
                       return InkWell(
-                        onTap: () {
+                        onTap: () async {
+                          await NotificationListService.markOneRead(item);
+                          if (!mounted) return;
                           setState(() {
-                            item["isRead"] = true;
                             selectedItem = item;
                           });
                         },

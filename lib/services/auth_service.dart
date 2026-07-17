@@ -29,6 +29,22 @@ class PasswordIncorrectException implements Exception {
   String toString() => message;
 }
 
+/// บัญชีถูกระงับชั่วคราว / ปิดถาวร
+class AccountBlockedException implements Exception {
+  final String message;
+  final String accountStatus;
+  final int remainingDays;
+
+  AccountBlockedException(
+    this.message, {
+    this.accountStatus = 'S',
+    this.remainingDays = 1,
+  });
+
+  @override
+  String toString() => message;
+}
+
 class AuthService {
   static const String _loginUrl = '$server/m/register/login';
   static const String _registerUrl = '$server/m/register/create';
@@ -82,6 +98,17 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (data['status'] != 'S') {
+        final objectData = data['objectData'];
+        if (objectData is Map && objectData['accountBlocked'] == true) {
+          throw AccountBlockedException(
+            data['message']?.toString() ??
+                'ขออภัยในความไม่สะดวก บัญชีนี้อยู่ในช่วงโดนระงับ',
+            accountStatus: objectData['accountStatus']?.toString() ?? 'S',
+            remainingDays:
+                int.tryParse(objectData['remainingDays']?.toString() ?? '') ??
+                    1,
+          );
+        }
         throw Exception(data['message']?.toString() ?? 'Login failed');
       }
 

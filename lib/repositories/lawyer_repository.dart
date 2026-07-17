@@ -165,6 +165,19 @@ class CaseAppointmentMapper {
   static bool isUrgentCase(Map<String, dynamic> source) =>
       caseTypeInt(source) == 2;
 
+  static int caseStatusInt(Map<String, dynamic> source) {
+    final value = source['caseStatus'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? -1;
+  }
+
+  /// หน้าแรกแสดงเฉพาะเคสที่ยังดำเนินการ (ไม่รวมยกเลิก=0 / เสร็จสิ้น=4)
+  static bool isVisibleOnHome(Map<String, dynamic> source) {
+    final status = caseStatusInt(source);
+    return status != 0 && status != 4;
+  }
+
   /// แปลง Case จาก API เป็น job card สำหรับ LawyerJobListPage / Home ทนาย
   static Map<String, dynamic> jobFromCase(Map<String, dynamic> source) {
     final code = _string(_first(source, const ['code', 'id', '_id']));

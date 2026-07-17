@@ -3,6 +3,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/case_cancel_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,27 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   late Animation<Offset> _slideAnim;
   bool isLoadingLawyers = true;
   dynamic userModel = const {};
+
+  int get _caseStatusInt {
+    final raw = widget.model?['caseStatus'];
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw?.toString() ?? '') ?? 1;
+  }
+
+  Future<void> _loadCaseDetails() async {
+    final code = widget.model?['code']?.toString();
+    if (code == null || code.isEmpty) return;
+    try {
+      final param = await postDio("${server}/m/case/read", {"code": code});
+      final list = param['objectData'];
+      if (list is List && list.isNotEmpty && mounted) {
+        setState(() {
+          widget.model = Map<String, dynamic>.from(list[0] as Map);
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> callReadUser() async {
     try {
@@ -59,6 +81,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   @override
   void initState() {
     super.initState();
+    _loadCaseDetails();
     callReadUser();
   }
 
@@ -133,8 +156,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
     );
   }
 
-  // สถานะการนัดหมาย (mock: '1' = รอยืนยัน, '2' = ยืนยันแล้ว)
-  int get appointmentStatus => widget.model?['caseStatus'] ?? 1;
+  // สถานะการนัดหมาย (0=ยกเลิก, 1=รอยืนยัน, 2=ยืนยันแล้ว, 3=กำลังปรึกษา, 4=เสร็จสิ้น)
+  int get appointmentStatus => _caseStatusInt;
   String get paymentStatus => widget.model?['isPay'] ?? false;
 
   // รายละเอียดนัดหมาย กดจากหน้าแรก
@@ -161,7 +184,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                   children: [
                     _buildClientHeader(),
                     const SizedBox(height: 16),
-                    if (widget.model?['caseStatus'] == 0) ...[
+                    if (_caseStatusInt == 0) ...[
                       _buildCancelCard(),
                       const SizedBox(height: 16),
                     ],
@@ -179,7 +202,9 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                 ),
               ),
             ),
-      bottomNavigationBar: widget.model['caseStatus'] == 1 || widget.model['caseStatus'] == 3 ? _buildBottomActions() : const SizedBox(),
+      bottomNavigationBar: _caseStatusInt == 1 || _caseStatusInt == 3
+          ? _buildBottomActions()
+          : const SizedBox(),
     );
   }
 
@@ -286,7 +311,12 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   }
 
   Widget _appointmentBadge(int status) {
-    // final isConfirmed = status != '1';
+    final dotColor = status == 0
+        ? _kDanger
+        : status == 2 || status == 3 || status == 4
+            ? _kSuccess
+            : Colors.amber;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -301,7 +331,7 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
             width: 7,
             height: 7,
             decoration: BoxDecoration(
-              color: status == 2 ? _kSuccess : Colors.amber,
+              color: dotColor,
               shape: BoxShape.circle,
             ),
           ),
@@ -327,7 +357,23 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   // ── Status Row: Payment + Appointment ──────────────────
   Widget _buildStatusRow() {
     final isPaid = widget.model?['isPay'];
-    final isConfirmed = appointmentStatus != '1';
+    final cs = _caseStatusInt;
+    final appointmentLabel = cs == 0
+        ? 'ยกเลิกแล้ว'
+        : cs == 2
+            ? 'ยืนยันแล้ว'
+            : cs == 1
+                ? 'รอยืนยัน'
+                : cs == 3
+                    ? 'กำลังปรึกษา'
+                    : cs == 4
+                        ? 'เสร็จสิ้น'
+                        : 'รอยืนยัน';
+    final appointmentColor = cs == 0
+        ? _kDanger
+        : cs == 2 || cs == 3 || cs == 4
+            ? _kSuccess
+            : Colors.orange;
 
     return Row(
       children: [
@@ -344,8 +390,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           child: _statusCard(
             icon: Icons.event_available_outlined,
             label: 'การนัดหมาย',
-            value: isConfirmed ? 'ยืนยันแล้ว' : 'รอยืนยัน',
-            color: isConfirmed ? _kSuccess : Colors.orange,
+            value: appointmentLabel,
+            color: appointmentColor,
           ),
         ),
       ],
@@ -487,13 +533,13 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
         _infoRow(
           icon: Icons.calendar_today,
           label: 'วันที่ยกเลิก',
-          value: widget.model?['topicTitle'] ?? '-',
+          value: widget.model?['cancelDate']?.toString() ?? '-',
         ),
         _divider(),
         _infoRow(
           icon: Icons.alarm,
           label: 'เวลาที่ยกเลิก',
-          value: widget.model?['subTopicTitle'] ?? '-',
+          value: widget.model?['cancelTime']?.toString() ?? '-',
         ),
         _divider(),
         _infoRowMultiLine(
@@ -670,54 +716,97 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           ),
         ],
       ),
-      child: widget.model['caseStatus'] == 3
-          ? GestureDetector(
-              onTap: () {
-                _onTapConversation(widget.model);
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (_) => ChatPageLawyer(
-                //       // jobId: userModel['code']?.toString(),
-                //       model: {
-                //         'name':
-                //             '${userModel['firstName']} ${userModel['lastName']}',
-                //         'avatar': userModel['imageUrl'] ?? '',
-                //         'active': true,
-                //         'caseSuccess': false,
-                //         'clientColor': userModel['clientColor'],
-                //       },
-                //     ),
-                //   ),
-                // );
-              },
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                        color: _kPrimary.withOpacity(0.4),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4))
-                  ],
+      child: _caseStatusInt == 3
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    _onTapConversation(widget.model);
+                  },
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                            color: _kPrimary.withOpacity(0.4),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4))
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.headset_mic_rounded,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text('เริ่มปรึกษา / แชทกับลูกความ',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15)),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.headset_mic_rounded,
-                        color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text('เริ่มปรึกษา / แชทกับลูกความ',
+                if ((widget.model['cancelReviewStatus']?.toString() ?? '') ==
+                    'pending') ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDBA74)),
+                    ),
+                    child: const Text(
+                      'คำขอยกเลิกอยู่ระหว่างรอแอดมินตรวจสอบเหตุผล',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF9A3412),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      DialogService.showConfirmRejectJob(
+                        context,
+                        title: 'ขอยกเลิกการปรึกษา',
+                        message:
+                            'คุณยืนยันที่จะขอยกเลิกขณะกำลังปรึกษาใช่หรือไม่? จะต้องระบุเหตุผลเพื่อให้แอดมินตรวจสอบ',
+                        onConfirm: () {
+                          showReasonCancelDialog(context);
+                        },
+                      );
+                    },
+                    child: Container(
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEBEE),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Text(
+                        'ขอยกเลิก (ระบุเหตุผล)',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15)),
-                  ],
-                ),
-              ),
+                          color: Color(0xFFC62828),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             )
           : Row(
               children: [
@@ -1091,42 +1180,69 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   Future<void> updateStatusRejectCase(reasonCancel, caseStatus) async {
     DialogService.showLoading(context);
     try {
+      if (_caseStatusInt == 3 || caseStatus == 3) {
+        final param = await CaseCancelService.requestCancel(
+          caseCode: widget.model['code']?.toString() ?? '',
+          reasonCancel: reasonCancel.toString(),
+          requesterCode: UserProfileStore.instance.code,
+          userType: 'lawyer',
+        );
+        if (!mounted) return;
+        Navigator.pop(context); // loading
+        if (param['status'] == 'S') {
+          Navigator.pop(context); // reason dialog
+          setState(() {
+            widget.model['cancelReviewStatus'] = 'pending';
+            widget.model['reasonCancel'] = reasonCancel.toString();
+          });
+          DialogService.showSuccess(
+            context,
+            title: 'ส่งคำขอยกเลิกแล้ว',
+            message:
+                'คำขอยกเลิกถูกส่งให้แอดมินตรวจสอบเหตุผลแล้ว จะแจ้งผลเมื่อดำเนินการเสร็จ',
+            onClose: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => MenuPage(pageIndex: 0)),
+                (route) => false,
+              );
+            },
+          );
+        } else {
+          DialogService.showError(
+            context,
+            title: 'ส่งคำขอยกเลิกไม่สำเร็จ',
+            message: param['message']?.toString() ?? 'กรุณาลองใหม่',
+          );
+        }
+        return;
+      }
+
       dynamic model = {
         "code": widget.model['code'],
         "caseStatus": caseStatus,
         "reasonCancel": reasonCancel,
         "userType": "lawyer",
         "userCode": widget.model['userCode'],
+        "lawyer": widget.model['lawyer'] ?? UserProfileStore.instance.code,
+        "userName": widget.model['userName'],
+        "lawyerName": widget.model['lawyerName'],
+        "updateBy": UserProfileStore.instance.code,
         "cancelDate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
         "cancelTime": DateFormat('HH:mm:ss').format(DateTime.now()),
       };
-      print(model);
       final param = await postDio("${server}/m/case/update", model);
       if (param['status'] == 'S') {
         Navigator.pop(context);
-        // DialogService.showSuccess(
-        //   context,
-        //   title: "ยกเลิกนัดหมายแล้ว",
-        //   message:
-        //       "คุณได้ทำการยกเลิกนัดหมายทนายความกับ คุณ${widget.model['userName']}} เรียบร้อยแล้ว",
-        //   onClose: () {
-        //     Navigator.pushAndRemoveUntil(
-        //         context,
-        //         MaterialPageRoute(
-        //             builder: (_) => MenuPage(pageIndex: 0)), (route) => false);
-        //   },
-        // );
+        setState(() {
+          widget.model['caseStatus'] = caseStatus;
+          widget.model['reasonCancel'] = reasonCancel.toString();
+          widget.model['cancelDate'] = model['cancelDate'];
+          widget.model['cancelTime'] = model['cancelTime'];
+        });
         _showResultDialog(isApprove: false);
       }
-     
     } catch (_) {
-      // if (!mounted) return;
-      // setState(() {
-      //   _lawyersForYou = const [];
-      //   _trendingLawyers = const [];
-      //   _lawyerLoadError = 'genericError'.tr();
-      //   _isLoadingLawyers = false;
-      // });
     }
   }
 
@@ -1248,7 +1364,13 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
               GestureDetector(
                 onTap: () {
                   Navigator.pop(ctx);
-                  goBack();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MenuPage(pageIndex: 0),
+                    ),
+                    (route) => false,
+                  );
                 },
                 child: Container(
                   width: double.infinity,

@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/services/home_refresh_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
@@ -926,6 +927,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
+              HomeRefreshService.instance.requestRefresh();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
                   builder: (_) => MenuPage(),

@@ -176,14 +176,29 @@ class _ChatPageUserState extends State<ChatPageUser>
     }
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({int retry = 0}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!_scrollController.hasClients) return;
+      final max = _scrollController.position.maxScrollExtent;
+
+      // บางครั้ง maxScrollExtent ยังเป็น 0 ตอนแรกที่เรนเดอร์
+      // ให้ลองซ้ำ 2-3 เฟรมเพื่อให้ scroll ลงสุดจริง
+      if (max <= 0 && retry < 3 && _messages.isNotEmpty) {
+        _scrollToBottom(retry: retry + 1);
+        return;
+      }
+
+      try {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          max,
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
+      } catch (_) {
+        // animateTo อาจล้มเหลวถ้าความยาวยังไม่เสถียร
+        try {
+          _scrollController.jumpTo(max);
+        } catch (_) {}
       }
     });
   }

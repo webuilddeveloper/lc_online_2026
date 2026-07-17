@@ -9,6 +9,7 @@ import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_profile_store.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
+import 'package:LawyerOnline/subscribe/lawyer-subscrile.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/shared/app_typography.dart';
 import 'package:LawyerOnline/widgets/profile/lawyer/lawyer_profile_widgets.dart';
@@ -574,7 +575,17 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
   // ════════════════════════════════════════════════════════
   //  Tab 3 — โซเชียลมีเดีย
   // ════════════════════════════════════════════════════════
+  bool get _isPro => LawyerProfileStore.instance.isPro;
+
   Widget _buildSocialTab() {
+    if (!_isPro) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+        children: [
+          _buildSocialProLock(),
+        ],
+      );
+    }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
       children: [
@@ -633,6 +644,74 @@ class _LawyerEditProfilePageState extends State<LawyerEditProfilePage>
             ],
           ),
       ],
+    );
+  }
+
+  Widget _buildSocialProLock() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4E6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.workspace_premium_rounded,
+                size: 34, color: Color(0xFFFFB020)),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'เชื่อม Social Media (Lawyer Pro)',
+            textAlign: TextAlign.center,
+            style: AppTypography.prompt(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1A2340),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'เชื่อมต่อ Facebook, Instagram, X และ LinkedIn เข้ากับโปรไฟล์ของคุณ '
+            'เป็นฟีเจอร์สำหรับสมาชิก Lawyer Pro',
+            textAlign: TextAlign.center,
+            style: AppTypography.prompt(
+              fontSize: 12.5,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 18),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => SubscribePage()),
+            ),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0262EC),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                'อัปเกรดเป็น Pro',
+                style: AppTypography.prompt(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

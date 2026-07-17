@@ -8,6 +8,7 @@ import 'package:LawyerOnline/chat/chat_page_lawyer.dart';
 import 'package:LawyerOnline/models/chat/chat_repository.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
+import 'package:LawyerOnline/services/chat_list_preview_service.dart';
 import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -98,14 +99,9 @@ class _MessagePageState extends State<MessagePage> {
 
   DateTime _conversationTime(dynamic conv) {
     if (conv is! Map) return DateTime.fromMillisecondsSinceEpoch(0);
-    for (final key in ['lastMessageTime', 'updateDate', 'docDate', 'createDate']) {
-      final raw = conv[key];
-      if (raw == null) continue;
-      if (raw is DateTime) return raw;
-      final parsed = DateTime.tryParse(raw.toString());
-      if (parsed != null) return parsed;
-    }
-    return DateTime.fromMillisecondsSinceEpoch(0);
+    final map = Map<String, dynamic>.from(conv);
+    return ChatListPreviewService.lastMessageAt(map) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   void _onTapConversation(dynamic conv, bool isDesktop) async {
@@ -416,8 +412,15 @@ class _ConversationItemState extends State<_ConversationItem> {
 
   @override
   Widget build(BuildContext context) {
-    final conv = widget.conv;
+    final conv = Map<String, dynamic>.from(widget.conv as Map);
     final isDesktop = widget.isDesktop;
+    final myUserId = UserProfileStore.instance.code;
+    final unread = ChatListPreviewService.unreadCount(conv);
+    final subtitle = ChatListPreviewService.subtitle(conv, myUserId);
+    final subtitleBold = ChatListPreviewService.isSubtitleBold(conv, myUserId);
+    final nameBold = ChatListPreviewService.isNameBold(conv);
+    final headerTime = ChatListPreviewService.headerTimeLabel(conv);
+    final peerName = ChatListPreviewService.peerName(conv);
 
     final bool showHover = _isHovered && !widget.isSelected;
     final Color bgColor;
@@ -465,7 +468,7 @@ class _ConversationItemState extends State<_ConversationItem> {
               // ── Avatar ─────────────────────────────────────
               Stack(
                 children: [
-                  conv['user2Model']['imageUrl'] != ""
+                  (conv['user2Model']?['imageUrl']?.toString() ?? '') != ''
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(100),
                           child: Image.network(
@@ -512,60 +515,75 @@ class _ConversationItemState extends State<_ConversationItem> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${conv['user2Model']['firstName']} ${conv['user2Model']['firstName']}',
+                            peerName,
                             style: TextStyle(
                               fontSize: 14,
-                              // fontWeight: conv.unreadCount > 0
-                              //     ? FontWeight.w700
-                              //     : FontWeight.w500,
+                              fontWeight: nameBold
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: const Color(0xFF1A2540),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          conv['lastMessageTime'].toString(),
-                          style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF8593A8)),
-                        ),
+                        if (headerTime.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            headerTime,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: unread > 0
+                                  ? const Color(0xFF0262EC)
+                                  : const Color(0xFF8593A8),
+                              fontWeight: unread > 0
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            conv['user2Model']['lastMessage'] ?? "",
+                            subtitle,
                             style: TextStyle(
                               fontSize: 13,
-                              // color: conv['user2Model']['unreadCount'] > 0
-                              //     ? Colors.black
-                              //     : const Color(0xFF8593A8),
-                              // fontWeight: conv.unreadCount > 0
-                              //     ? FontWeight.w600
-                              //     : FontWeight.w400,
+                              color: unread > 0 && !subtitleBold
+                                  ? const Color(0xFF0262EC)
+                                  : const Color(0xFF8593A8),
+                              fontWeight: subtitleBold
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // if (conv.unreadCount > 0)
-                        //   Container(
-                        //     width: 20,
-                        //     height: 20,
-                        //     decoration: BoxDecoration(
-                        //       color: const Color(0xFF0262EC),
-                        //       borderRadius: BorderRadius.circular(100),
-                        //     ),
-                        //     alignment: Alignment.center,
-                        //     child: Text(
-                        //       conv.unreadCount.toString(),
-                        //       style: const TextStyle(
-                        //           fontSize: 12, color: Colors.white),
-                        //     ),
-                        //   ),
+                        if (unread > 1) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0262EC),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              unread > 99 ? '99+' : '$unread',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],

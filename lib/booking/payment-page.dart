@@ -1,3 +1,4 @@
+import 'package:LawyerOnline/services/home_refresh_service.dart';
 import 'package:LawyerOnline/booking/booking-success.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
@@ -5,7 +6,6 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/auth_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -374,7 +374,7 @@ class _PaymentPageState extends State<PaymentPage> {
           seconds: 3,
           isBtn: false,
           onClose: () {
-            // โค้ดเปลี่ยนหน้าไป BookingSuccessPage เดิม...
+            HomeRefreshService.instance.requestRefresh();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -396,7 +396,7 @@ class _PaymentPageState extends State<PaymentPage> {
           context,
           title: "ไม่สามารถนัดหมายได้",
           message: param['message']?.toString() ??
-              'urgentCaseBlockBookingMessage'.tr(),
+              'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
         );
       }
     } catch (_) {

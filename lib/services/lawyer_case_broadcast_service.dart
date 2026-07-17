@@ -19,6 +19,7 @@ class LawyerCaseBroadcastService {
   static final instance = LawyerCaseBroadcastService._();
 
   static const _skippedPrefsKey = 'urgent_case_skipped_codes';
+
   /// เคสที่ broadcast นานกว่านี้ไม่โชว์จาก polling (กันเด้งซ้ำตอนเปิดแอป)
   static const _maxPollAge = Duration(minutes: 2);
 
@@ -63,9 +64,7 @@ class LawyerCaseBroadcastService {
     if (_starting) return;
 
     // ฟังอยู่แล้วและยังเชื่อมต่อ — ไม่ต้อง start ซ้ำ
-    if (_listening &&
-        _caseReqService.isConnected &&
-        _pollTimer != null) {
+    if (_listening && _caseReqService.isConnected && _pollTimer != null) {
       _bindHandlers();
       return;
     }
@@ -180,6 +179,10 @@ class LawyerCaseBroadcastService {
           await _rememberSkipped(code);
           continue;
         }
+        if (!_isEligibleRecipient(data, lawyerCode)) {
+          await _rememberSkipped(code);
+          continue;
+        }
         if (!_matchesUrgentCaseScope(data)) {
           await _rememberSkipped(code);
           continue;
@@ -217,8 +220,8 @@ class LawyerCaseBroadcastService {
       final combined = createTime.isNotEmpty
           ? '$createDate ${createTime.length >= 5 ? createTime.substring(0, 5) : createTime}'
           : createDate;
-      final parsed = _tryParseDateTime(combined) ??
-          _tryParseDateTime(createDate);
+      final parsed =
+          _tryParseDateTime(combined) ?? _tryParseDateTime(createDate);
       if (parsed != null) return parsed;
     }
 
@@ -308,6 +311,11 @@ class LawyerCaseBroadcastService {
       await _rememberSkipped(requestCode);
       return;
     }
+    if (!_isEligibleRecipient(data, lawyerCode)) {
+      debugPrint('LawyerCaseBroadcastService: not eligible $lawyerCode');
+      await _rememberSkipped(requestCode);
+      return;
+    }
     if (!_matchesUrgentCaseScope(data)) {
       debugPrint('LawyerCaseBroadcastService: scope mismatch for $requestCode');
       await _rememberSkipped(requestCode);
@@ -383,6 +391,12 @@ class LawyerCaseBroadcastService {
     final excluded = data['excludedLawyerCodes'];
     if (excluded is! List) return false;
     return excluded.map((e) => e.toString()).contains(lawyerCode);
+  }
+
+  bool _isEligibleRecipient(Map<String, dynamic> data, String lawyerCode) {
+    final eligible = data['eligibleLawyerCodes'];
+    if (eligible is! List || eligible.isEmpty) return true;
+    return eligible.map((e) => e.toString()).contains(lawyerCode);
   }
 
   Future<bool> _isWithinRadius(Map<String, dynamic> data) async {
@@ -474,17 +488,21 @@ class LawyerCaseBroadcastService {
 
     // แจ้งเตือนเก่า/เคสหมดอายุ — ไม่โชว์
     final status = data['status'] ?? data['requestStatus'];
-    final statusInt = status is int
-        ? status
-        : int.tryParse(status?.toString() ?? '') ?? -1;
+    final statusInt =
+        status is int ? status : int.tryParse(status?.toString() ?? '') ?? -1;
     if (statusInt != 1) {
-      debugPrint(
-          'LawyerCaseBroadcastService: skip present, status=$statusInt');
+      debugPrint('LawyerCaseBroadcastService: skip present, status=$statusInt');
       return;
     }
     if (!_isFreshForPoll(data)) {
       debugPrint(
           'LawyerCaseBroadcastService: skip present, stale request $requestCode');
+      await _rememberSkipped(requestCode);
+      return;
+    }
+    if (!_isEligibleRecipient(data, UserProfileStore.instance.code)) {
+      debugPrint(
+          'LawyerCaseBroadcastService: skip present, not in eligible lawyers');
       await _rememberSkipped(requestCode);
       return;
     }
@@ -496,7 +514,8 @@ class LawyerCaseBroadcastService {
   Future<void> claimCase(String requestCode) async {
     try {
       if (!_caseReqService.isConnected) {
-        debugPrint('LawyerCaseBroadcastService: hub disconnected, reconnecting before claim');
+        debugPrint(
+            'LawyerCaseBroadcastService: hub disconnected, reconnecting before claim');
         await _caseReqService.ensureLawyerConnected();
         _bindHandlers();
         _listening = true;
@@ -541,15 +560,19 @@ class LawyerCaseBroadcastService {
   Map<String, dynamic> _normalizeCaseData(Map<String, dynamic> data) {
     return {
       ...data,
-      'requestCode': _pick(data, const ['requestCode', 'RequestCode', 'code', 'Code']),
-      'userName': _pick(data, const [
-        'userName',
-        'UserName',
-        'clientName',
-        'ClientName',
-        'name',
-        'Name',
-      ], 'ลูกความ'),
+      'requestCode':
+          _pick(data, const ['requestCode', 'RequestCode', 'code', 'Code']),
+      'userName': _pick(
+          data,
+          const [
+            'userName',
+            'UserName',
+            'clientName',
+            'ClientName',
+            'name',
+            'Name',
+          ],
+          'ลูกความ'),
       'topicTitle': _pick(data, const [
         'topicTitle',
         'TopicTitle',
@@ -618,8 +641,7 @@ class LawyerCaseBroadcastService {
     const seconds = CaseRequestService.broadcastTimeoutSeconds;
     _dismissTimer = Timer(const Duration(seconds: seconds), () {
       if (_activeRequestCode == requestCode) {
-        _closeDialogIfOpen(
-            message: 'หมดเวลารับเคส', rememberSkip: true);
+        _closeDialogIfOpen(message: 'หมดเวลารับเคส', rememberSkip: true);
       }
     });
 
@@ -629,7 +651,7 @@ class LawyerCaseBroadcastService {
         _dialogOpen = false;
         return;
       }
-      
+
       showGeneralDialog(
         context: ctx,
         useRootNavigator: true,

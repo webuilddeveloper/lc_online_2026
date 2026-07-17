@@ -186,7 +186,70 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     }
   }
 
+  void _showProScheduleUpsell() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('upgradeScheduleNote'.tr()),
+        backgroundColor: const Color(0xFFFFB020),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'upgradeLink'.tr(),
+          textColor: Colors.white,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => SubscribePage()),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleProBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4E6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFB020).withOpacity(0.35)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.workspace_premium_rounded,
+            size: 22, color: Color(0xFFFFB020)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'upgradeScheduleNote'.tr(),
+            style: AppTypography.prompt(
+              fontSize: 12.5,
+              color: const Color(0xFF5A4A2A),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => SubscribePage()),
+          ),
+          child: Text(
+            'upgradeLink'.tr(),
+            style: AppTypography.prompt(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0262EC),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
   void _clearAll() {
+    if (!isLawyerPro) {
+      _showProScheduleUpsell();
+      return;
+    }
     setState(() {
       for (final day in _allDays) {
         day['isOpen'] = true;
@@ -247,6 +310,10 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
           MediaQuery.of(context).padding.bottom + 100,
         ),
         children: [
+          if (!isLawyerPro) ...[
+            _buildScheduleProBanner(),
+            const SizedBox(height: 16),
+          ],
           _sectionLabel('วันที่เปิดรับ', Icons.calendar_month_rounded),
           const SizedBox(height: 12),
           _buildDaySelector(),
@@ -358,6 +425,10 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
         final isOpen = d['isOpen'] == true;
         return GestureDetector(
           onTap: () {
+            if (!isLawyerPro) {
+              _showProScheduleUpsell();
+              return;
+            }
             setState(() {
               d['isOpen'] = !isOpen;
             });
@@ -554,7 +625,13 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => _togglePeriod(period, !allOpen),
+                  onTap: () {
+                    if (!isLawyerPro) {
+                      _showProScheduleUpsell();
+                      return;
+                    }
+                    _togglePeriod(period, !allOpen);
+                  },
                   child: Text(
                     allOpen ? 'deselectAll'.tr() : 'selectAll'.tr(),
                     style: AppTypography.prompt(
@@ -587,7 +664,13 @@ class _ConsultationScheduleState extends State<ConsultationSchedule> {
     final label = parts.length >= 2 ? '${parts[0]} - ${parts[1]}' : title;
 
     return GestureDetector(
-      onTap: () => setState(() => slot['isOpen'] = !isOpen),
+      onTap: () {
+        if (!isLawyerPro) {
+          _showProScheduleUpsell();
+          return;
+        }
+        setState(() => slot['isOpen'] = !isOpen);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

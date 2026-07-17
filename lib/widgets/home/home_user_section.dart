@@ -370,9 +370,11 @@ class HomeUserSection extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => AppointmentDetails(
-              appointment: model is Map<String, dynamic>
-                  ? Map<String, dynamic>.from(model)
-                  : Map<String, dynamic>.from(model as Map),
+              appointment: UserCaseAdapter.forAppointmentDetails(
+                model is Map<String, dynamic>
+                    ? Map<String, dynamic>.from(model)
+                    : Map<String, dynamic>.from(model as Map),
+              ),
             ),
           ),
         ).then((_) {

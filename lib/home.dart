@@ -1,4 +1,8 @@
+import 'package:LawyerOnline/services/home_refresh_service.dart';
+import 'package:LawyerOnline/services/home_lawyer_ranking_service.dart';
+import 'package:LawyerOnline/services/banner_service.dart';
 import 'package:LawyerOnline/services/location_service.dart';
+import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:LawyerOnline/widgets/home/home_app_bar.dart';
 import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
@@ -18,7 +22,6 @@ import 'package:LawyerOnline/models/lawyer/lawyer_model.dart';
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
-import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
@@ -52,6 +55,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {"code": "0", "imageUrl": "assets/images/banner1.png"},
     {"code": "1", "imageUrl": "assets/images/banner2.png"},
   ];
+
+  List<dynamic> _bannerList = [];
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
   Timer? _profileDebounce;
@@ -111,31 +116,118 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String typeLogin = "";
 
   List<dynamic> caseList = [];
+  int _homeRefreshToken = 0;
+  bool _isRefreshingHome = false;
+  bool _refreshQueued = false;
+  bool _didInitialLawyerProfileSync = false;
 
-  void _toggleUrgentCase(bool value) {
+  Future<void> refreshAllData({bool force = false}) async {
+    // กัน loop: ถ้ารีเฟรชอยู่แล้ว ให้คิวไว้รอบเดียว ห้ามซ้อน force วนไม่จบ
+    if (_isRefreshingHome) {
+      _refreshQueued = true;
+      return;
+    }
+    _isRefreshingHome = true;
+    try {
+      do {
+        _refreshQueued = false;
+        await UserProfileStore.instance.load();
+        await LawyerProfileStore.instance.load();
+
+        final store = UserProfileStore.instance;
+        if (store.userType == 'lawyer' && store.isLoggedIn) {
+          // sync profile จาก API แค่ครั้งแรก — อย่าเรียกทุก refresh
+          // (refreshFromApi จะ notifyListeners → เคยวน refresh ไม่จบ)
+          if (!_didInitialLawyerProfileSync) {
+            _didInitialLawyerProfileSync = true;
+            await UserProfileStore.instance.refreshFromApi();
+          }
+          if (LawyerProfileStore.instance.isUrgentCaseEnabled) {
+            LocationService.startPeriodicUpdate();
+          } else {
+            LocationService.stopPeriodicUpdate();
+          }
+        }
+
+        if (!mounted) return;
+        setState(() {
+          userType = store.userType;
+          name = store.name;
+          imageUrl = store.imageUrl;
+          typeLogin = store.typeLogin;
+          _homeRefreshToken++;
+        });
+
+        await _loadRealHomeData(force: force);
+        if (store.isLoggedIn && store.userType != 'lawyer') {
+          await callReadCase(force: force);
+        }
+      } while (_refreshQueued && mounted);
+    } finally {
+      _isRefreshingHome = false;
+    }
+  }
+
+  void _onHomeRefreshRequested() {
+    if (!mounted) return;
+    refreshAllData(force: true);
+  }
+
+  Future<void> _toggleUrgentCase(bool value) async {
     if (value == true) {
       LocationService.startPeriodicUpdate();
     } else {
       LocationService.stopPeriodicUpdate();
     }
 
-    LawyerProfileStore.instance.setUrgentCase(value);
+    final effectiveValue =
+        await LawyerProfileStore.instance.setUrgentCase(value);
+    if (!effectiveValue) {
+      LocationService.stopPeriodicUpdate();
+    }
+    if (!mounted || !value || effectiveValue) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'ระบบพักรับเคสด่วนอัตโนมัติ เพราะมีนัดหมายภายใน 1 ชั่วโมง',
+        ),
+      ),
+    );
   }
 
   @override
   void initState() {
     super.initState();
+    // fallback แสดงรูปเดิมก่อน แล้วค่อยอัปเดตจาก API
+    _bannerList = mockBannerList;
     _fadeCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     callRead();
+    _loadBanners();
     UserProfileStore.instance.addListener(_onProfileChanged);
     LawyerJobsStore.instance.addListener(_onJobsChanged);
+    HomeRefreshService.instance.addListener(_onHomeRefreshRequested);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       requestPermissions();
       _fadeCtrl.forward();
     });
     print('------- ><><><><><><>< ------- ${_caseRequestJobs}');
+  }
+
+  @override
+  void didUpdateWidget(HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isTabActive && widget.isTabActive) {
+      refreshAllData(force: true);
+    }
+  }
+
+  Future<void> _loadBanners() async {
+    final banners = await BannerService.loadMainBanners();
+    if (!mounted) return;
+    setState(() => _bannerList = banners);
   }
 
   // Future<void> _callReadLawyer() async {
@@ -152,12 +244,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     UserProfileStore.instance.removeListener(_onProfileChanged);
     _profileDebounce?.cancel();
     LawyerJobsStore.instance.removeListener(_onJobsChanged);
+    HomeRefreshService.instance.removeListener(_onHomeRefreshRequested);
     _fadeCtrl.dispose();
     super.dispose();
   }
 
   void _onProfileChanged() {
     if (!mounted) return;
+    // อัปเดตแค่ UI — ห้ามเรียก refreshAllData ที่นี่
+    // (location update / refreshFromApi จะ notifyListeners บ่อยมาก)
     final store = UserProfileStore.instance;
     setState(() {
       name = store.name;
@@ -165,18 +260,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       userType = store.userType;
       typeLogin = store.typeLogin;
     });
-    _profileDebounce?.cancel();
-    _profileDebounce = Timer(const Duration(milliseconds: 400), () {
-      if (!mounted) return;
-      _loadRealHomeData();
-    });
   }
 
   void _onJobsChanged() {
+    // ListenableBuilder rebuild จาก store อยู่แล้ว — ไม่ต้องยิง API ซ้ำ
     if (!mounted) return;
-    if (UserProfileStore.instance.userType == 'lawyer') {
-      _loadLawyerAppointments();
-    }
+    setState(() {});
   }
 
   Future<void> requestPermissions() async {
@@ -190,41 +279,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   callRead() async {
-    // โหลด UserProfileStore (ครั้งแรกเท่านั้น — subsequent calls return immediately)
-    await UserProfileStore.instance.load();
-    await LawyerProfileStore.instance.load();
-
-    if (UserProfileStore.instance.userType == 'lawyer' &&
-        UserProfileStore.instance.isLoggedIn) {
-      await UserProfileStore.instance.refreshFromApi();
-      if (LawyerProfileStore.instance.isUrgentCaseEnabled) {
-        LocationService.startPeriodicUpdate();
-      } else {
-        LocationService.stopPeriodicUpdate();
-      }
-    }
-
-    final store = UserProfileStore.instance;
-    setState(() {
-      userType = store.userType;
-      name = store.name;
-      imageUrl = store.imageUrl;
-      typeLogin = store.typeLogin;
-    });
-    _loadRealHomeData();
-    if (store.isLoggedIn) {
-      callReadCase();
-    }
+    await refreshAllData(force: true);
   }
 
-  Future<void> _loadRealHomeData() async {
+  Future<void> _loadRealHomeData({bool force = false}) async {
     if (UserProfileStore.instance.userType != 'lawyer') {
-      _loadHomeLawyers();
+      await _loadHomeLawyers(force: force);
     }
 
     if (UserProfileStore.instance.userType == 'lawyer') {
-      _loadLawyerAppointments();
-      _loadLawyerCaseRequests();
+      await Future.wait([
+        _loadLawyerAppointments(force: force),
+        _loadLawyerCaseRequests(),
+      ]);
     } else if (mounted) {
       setState(() {
         _lawyerAppointments = const [];
@@ -235,26 +302,36 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _loadHomeLawyers() async {
-    if (_isLoadingLawyers) return;
+  Future<void> _loadHomeLawyers({bool force = false}) async {
+    if (_isLoadingLawyers && !force) return;
+    if (!mounted) return;
     setState(() {
       _isLoadingLawyers = true;
       _lawyerLoadError = null;
     });
     try {
-      dynamic model = {"limit": 10, "userType": "lawyer"};
+      dynamic model = {"limit": 50, "userType": "lawyer"};
       final param = await postDio("${server}/m/register/read", model);
 
       final resulte = param['objectData'] ?? [];
+      final lawyers = List<dynamic>.from(resulte is List ? resulte : const []);
+
+      // หมอความมาแรง: โปร (รีวิวดี) -> หน้าใหม่ (ยังไม่โปร)
+      final trending =
+          HomeLawyerRankingService.instance.rankTrending(lawyers);
+
+      // หมอความสำหรับคุณ: กรองจากเคส/นัดหมาย + โพสในชุมชนของผู้ใช้
+      final interests = await HomeLawyerRankingService.instance
+          .deriveInterests(userCode: UserProfileStore.instance.code);
+      final forYou =
+          HomeLawyerRankingService.instance.rankForYou(lawyers, interests);
+
       if (!mounted) return;
       setState(() {
-        _lawyersForYou = resulte.take(10).toList(growable: false);
-        _trendingLawyers = [...resulte]..sort((a, b) =>
-            ((b['scroll'] as num?) ?? 0).compareTo((a['scroll'] as num?) ?? 0));
-        _trendingLawyers = _trendingLawyers.take(10).toList(growable: false);
+        _lawyersForYou = forYou;
+        _trendingLawyers = trending;
         _isLoadingLawyers = false;
       });
-      // print('------------------- ${mapped}');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -266,51 +343,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _loadLawyerAppointments() async {
+  Future<void> _loadLawyerAppointments({bool force = false}) async {
     final lawyerCode = UserProfileStore.instance.code;
-    // if (lawyerCode.isEmpty) return;
-    // final localAppointments =
-    //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
-    // if (_isLoadingAppointments) {
-    //   // if (localAppointments.isNotEmpty && mounted) {
-    //   //   setState(() {
-    //   //     _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-    //   //       _lawyerAppointments,
-    //   //       localAppointments,
-    //   //     );
-    //   //   });
-    //   // }
-    //   return;
-    // }
-    // setState(() {
-    //   if (localAppointments.isNotEmpty) {
-    //     _lawyerAppointments = CaseAppointmentMapper.mergeAppointments(
-    //       _lawyerAppointments,
-    //       localAppointments,
-    //     );
-    //   }
-    //   _isLoadingAppointments = true;
-    //   _appointmentLoadError = null;
-    // });
+    if (!mounted) return;
+    setState(() {
+      _isLoadingAppointments = true;
+      _appointmentLoadError = null;
+    });
     try {
       final snapshot =
           await _appointmentRepository.readScheduleForLawyer(lawyerCode);
       if (!mounted) return;
       setState(() {
-        _apiBookingJobs = snapshot.bookingJobs;
-        appointmentList = snapshot.appointments;
-        _lawyerAppointments = snapshot.appointments;
+        _apiBookingJobs = snapshot.bookingJobs
+            .where((job) => _isActiveHomeJob(job))
+            .toList(growable: false);
+        appointmentList = snapshot.appointments
+            .where((apt) => _isActiveHomeAppointment(apt))
+            .toList(growable: false);
+        _lawyerAppointments = appointmentList;
         _isLoadingAppointments = false;
       });
     } catch (_) {
-      // if (!mounted) return;
-      // final fallbackAppointments =
-      //     LawyerJobsStore.instance.bookingAppointmentsForLawyer(lawyerCode);
+      if (!mounted) return;
       setState(() {
-        // _lawyerAppointments = fallbackAppointments;
-        // _apiBookingJobs = const [];
-        // _appointmentLoadError =
-        //     fallbackAppointments.isEmpty ? 'genericError'.tr() : null;
+        _appointmentLoadError = 'genericError'.tr();
         _isLoadingAppointments = false;
       });
     }
@@ -349,6 +406,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       if (id.isNotEmpty) byId[id] = Map<String, dynamic>.from(job);
     }
     return byId.values.toList(growable: false);
+  }
+
+  bool _isActiveHomeJob(dynamic job) {
+    if (job is! Map) return false;
+    final raw = job['rawCase'];
+    if (raw is Map) {
+      return CaseAppointmentMapper.isVisibleOnHome(
+        Map<String, dynamic>.from(raw),
+      );
+    }
+    return job['status']?.toString() != 'rejected';
+  }
+
+  bool _isActiveHomeAppointment(dynamic apt) {
+    if (apt is! Map) return false;
+    final raw = apt['rawCase'];
+    if (raw is Map) {
+      return CaseAppointmentMapper.isVisibleOnHome(
+        Map<String, dynamic>.from(raw),
+      );
+    }
+    final status = apt['caseStatus'] ?? apt['appointmentStatus'];
+    final statusInt = status is int
+        ? status
+        : int.tryParse(status?.toString() ?? '') ?? -1;
+    return statusInt != 0 && statusInt != 4;
   }
 
   Future<void> _handleLawyerJobStatusChanged(
@@ -432,10 +515,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     } catch (_) {}
   }
 
-  Future<void> callReadCase() async {
+  Future<void> callReadCase({bool force = false}) async {
     await UserProfileStore.instance.load();
     final store = UserProfileStore.instance;
     if (!store.isLoggedIn || store.code.isEmpty) return;
+    // ฝั่งทนายโหลดผ่าน _loadLawyerAppointments / _loadLawyerCaseRequests แล้ว
+    if (store.userType == 'lawyer') return;
 
     try {
       final param = await postDio(
@@ -454,11 +539,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
       }
       setState(() {
-        caseList = data is List ? data : const [];
-        if (userType == 'lawyer') {
-          _loadLawyerAppointments();
-          _loadLawyerCaseRequests();
-        }
+        caseList = data is List
+            ? data.where((item) {
+                if (item is! Map) return false;
+                return CaseAppointmentMapper.isVisibleOnHome(
+                  Map<String, dynamic>.from(item),
+                );
+              }).toList()
+            : const [];
       });
     } catch (_) {}
   }
@@ -477,12 +565,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           backgroundColor: const Color.fromARGB(255, 233, 242, 249),
           body: RefreshIndicator(
             color: const Color(0xFF0262EC),
-            onRefresh: () async {
-              await callRead();
-              if (UserProfileStore.instance.isLoggedIn) {
-                await callReadCase();
-              }
-            },
+            onRefresh: () => refreshAllData(force: true),
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
@@ -570,7 +653,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // ── Banner (shared) ──────────────────────────────────
             HomeBannerSection(
-              banners: mockBannerList,
+              banners: _bannerList,
               autoPlayEnabled: widget.isTabActive,
             ),
 
@@ -592,7 +675,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   lawyerLoadError: _lawyerLoadError,
                   onAppointmentClosed: () {
                     debugPrint('📱 AppointmentDetails closed, refreshing...');
-                    callRead(); // ✅ เรียก callRead() ใหม่
+                    refreshAllData(force: true);
                   },
                 ),
               ),
@@ -602,7 +685,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ListenableBuilder(
                 listenable: LawyerJobsStore.instance,
                 builder: (_, __) => HomeLawyerSection(
-                  // appointments: appointmentList,
+                  refreshToken: _homeRefreshToken,
                   isLoadingAppointments: _isLoadingAppointments,
                   appointmentLoadError: _appointmentLoadError,
                   jobRequests: _lawyerJobRequests,

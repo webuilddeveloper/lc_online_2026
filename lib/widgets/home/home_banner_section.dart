@@ -181,31 +181,39 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
               },
             ),
             items: widget.banners.map((item) {
+              final imageUrl = item['imageUrl']?.toString() ?? '';
+              final isNetwork = imageUrl.startsWith('http');
               return GestureDetector(
                 onTap: () => _onBannerTap(item),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     image: DecorationImage(
-                      image: AssetImage(item['imageUrl']),
+                      image: isNetwork ? NetworkImage(imageUrl) : AssetImage(imageUrl),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
-                        const Color.fromARGB(
-                          133,
-                          55,
-                          55,
-                          55,
-                        ).withValues(alpha: 0.5),
+                        const Color.fromARGB(133, 55, 55, 55)
+                            .withValues(alpha: 0.5),
                         BlendMode.srcATop,
                       ),
                     ),
                   ),
-                  child: Image.asset(
-                    item['imageUrl'],
-                    fit: BoxFit.contain,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
+                  child: isNetwork
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (_, __, ___) => const ColoredBox(
+                            color: Color(0xFFEEF2F5),
+                          ),
+                        )
+                      : Image.asset(
+                          imageUrl,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
                 ),
               );
             }).toList(),

@@ -827,37 +827,72 @@ Widget _statContent(String emoji, String value, String label) => Column(
   //  Social Card — action เดิม → launch URL
   // ════════════════════════════════════════════════════════
 
+  String? _normalizeSocialUrl(dynamic raw) {
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return null;
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('@')) {
+      return 'https://instagram.com/${value.substring(1)}';
+    }
+    return 'https://$value';
+  }
+
+  List<Map<String, dynamic>> _socialLinksFromModel() {
+    final links = <Map<String, dynamic>>[];
+    void add(
+      dynamic raw,
+      String icon,
+      String label,
+      Color color,
+      Color bg,
+    ) {
+      final url = _normalizeSocialUrl(raw);
+      if (url == null) return;
+      links.add({
+        'icon': icon,
+        'label': label,
+        'url': url,
+        'color': color,
+        'bg': bg,
+      });
+    }
+
+    add(
+      model['facebookID'],
+      'assets/icons/facebook.png',
+      'Facebook',
+      const Color(0xFF1877F2),
+      const Color(0xFFEEF4FF),
+    );
+    add(
+      model['lv0'],
+      'assets/icons/ig.png',
+      'Instagram',
+      const Color(0xFFE1306C),
+      const Color(0xFFFFF0F5),
+    );
+    add(
+      model['lv1'],
+      'assets/icons/x.png',
+      'X',
+      const Color(0xFF111111),
+      const Color(0xFFF5F5F5),
+    );
+    add(
+      model['lv2'],
+      'assets/icons/linkin.png',
+      'LinkedIn',
+      const Color(0xFF0A66C2),
+      const Color(0xFFEEF5FF),
+    );
+    return links;
+  }
+
   Widget _buildSocialCard(Color color) {
-    final socials = [
-      {
-        'icon': 'assets/icons/facebook.png',
-        'label': 'Facebook',
-        'url': 'https://www.facebook.com/',
-        'color': const Color(0xFF1877F2),
-        'bg': const Color(0xFFEEF4FF),
-      },
-      {
-        'icon': 'assets/icons/ig.png',
-        'label': 'Instagram',
-        'url': 'https://www.instagram.com/',
-        'color': const Color(0xFFE1306C),
-        'bg': const Color(0xFFFFF0F5),
-      },
-      {
-        'icon': 'assets/icons/x.png',
-        'label': 'X',
-        'url': 'https://x.com/',
-        'color': const Color(0xFF111111),
-        'bg': const Color(0xFFF5F5F5),
-      },
-      {
-        'icon': 'assets/icons/linkin.png',
-        'label': 'LinkedIn',
-        'url': 'https://www.linkedin.com/',
-        'color': const Color(0xFF0A66C2),
-        'bg': const Color(0xFFEEF5FF),
-      },
-    ];
+    final socials = _socialLinksFromModel();
+    if (socials.isEmpty) return const SizedBox.shrink();
 
     return _AnimCard(
       delay: 0.35,

@@ -126,6 +126,7 @@
   "priceHint": "บาท/ชั่วโมง",
   "priceSuffix": "บาท",
   "upgradePriceNote": "อัปเกรดเป็น Lawyer Pro เพื่อตั้งราคาเองได้",
+  "upgradeScheduleNote": "จัดการตารางรับเคส (เลือกวัน/เวลาเอง) เป็นฟีเจอร์ของ Lawyer Pro",
   "upgradeLink": "อัปเกรด",
   "clearAll": "ล้างค่าทั้งหมด",
   "save": "บันทึก",
@@ -197,6 +198,7 @@
     "reason5": "อื่นๆ"
   },
   "favoriteLawyers": "ทนายที่ถูกใจ",
+  "favoriteLawyersEmpty": "ยังไม่มีทนายที่ถูกใจ",
   "online": "ออนไลน์",
   "offline": "ออฟไลน์",
   "privacy_policy": {
@@ -318,6 +320,16 @@
   "messages": "กล่องข้อความ",
   "noConversations": "ยังไม่มีการสนทนา",
   "selectConversation": "เลือกการสนทนาเพื่อเริ่มแชท",
+  "chatNewMessage": "ข้อความใหม่",
+  "chatNewMessages": "{} ข้อความใหม่ · {}",
+  "chatJustNow": "เมื่อสักครู่",
+  "chatMinutesAgo": "{} นาทีที่แล้ว",
+  "chatHoursAgo": "{} ชม.ที่แล้ว",
+  "chatSentJustNow": "ส่งเมื่อสักครู่",
+  "chatSentMinutesAgo": "ส่งเมื่อ {} นาทีที่แล้ว",
+  "chatSentHoursAgo": "ส่งเมื่อ {} ชม.ที่แล้ว",
+  "chatSentYesterday": "ส่งเมื่อวาน",
+  "chatSentOnDate": "ส่งเมื่อ {}",
   "typeMessage": "พิมพ์ข้อความ...",
   "chatAttachTitle": "ส่งไฟล์แนบ",
   "chatUploading": "กำลังอัปโหลด...",
@@ -508,6 +520,7 @@
     "allRead": "อ่านทั้งหมด",
     "listAll": "ดูทั้งหมด",
     "allItems": "รายการทั้งหมด",
+    "empty": "ยังไม่มีการแจ้งเตือน",
     "msg":{
       "read": "อ่านแล้ว",
       "new": "ใหม่"

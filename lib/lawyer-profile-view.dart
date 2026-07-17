@@ -12,7 +12,7 @@ import 'package:LawyerOnline/widgets/profile/lawyer/lawyer_profile_widgets.dart'
 //  LawyerProfileViewPage
 //  หน้าดูโปรไฟล์ตัวเองของทนาย (style เหมือน LawyerOnlineDetails)
 //  - มีปุ่ม "แก้ไขโปรไฟล์" พร้อมข้อความที่ AppBar ด้านบนขวาแทนปุ่ม Favorite
-//  - แสดงคะแนนรีวิวตลอดเวลา (ถ้ายังไม่มีคะแนนหรือเป็น 0.0 จะขึ้น 5.0 เป็นค่าเริ่มต้น)
+//  - แสดงคะแนนรีวิวเมื่อมีข้อมูลจริง (ถ้ายังไม่มีจะแสดง "ยังไม่มีรีวิว")
 // ══════════════════════════════════════════════════════════
 
 class LawyerProfileViewPage extends StatefulWidget {
@@ -42,11 +42,13 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
         .toList();
   }
 
+  bool get _hasRating => _rateAverage > 0 || LawyerProfileStore.instance.rating > 0;
+
   double get _displayRating {
     if (_rateAverage > 0) return _rateAverage;
     final rating = LawyerProfileStore.instance.rating;
     if (rating > 0) return rating;
-    return 5.0;
+    return 0;
   }
 
   Color get _lawyerColor {
@@ -402,16 +404,19 @@ class _LawyerProfileViewPageState extends State<LawyerProfileViewPage>
                               color: Color(0xFFFFC107), size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            '${_displayRating.toStringAsFixed(1)}',
+                            _hasRating
+                                ? '${_displayRating.toStringAsFixed(1)}'
+                                : 'ยังไม่มีรีวิว',
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 13),
                           ),
-                          Text(' / 5.0',
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.65),
-                                  fontSize: 11)),
+                          if (_hasRating)
+                            Text(' / 5.0',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.65),
+                                    fontSize: 11)),
                         ]),
                       ),
                       const SizedBox(height: 10),

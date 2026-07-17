@@ -9,31 +9,11 @@ import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:LawyerOnline/services/notification_list_service.dart';
 import 'package:LawyerOnline/services/video_call_launcher.dart';
 
-/// Mock data สำหรับ notification dropdown (ยังไม่ได้ผูก API)
-List<Map<String, dynamic>> globalNotifications = [
-  {
-    "type": "call",
-    "title": "สายที่ไม่ได้รับ",
-    "detail": "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์",
-    "time": "10:19",
-    "date": "today",
-    "isRead": false,
-    "fullDetail":
-        "คุณไม่ได้รับสายจากทนายศักดิ์สิทธิ์เมื่อเวลา 10:19 น. กรุณาติดต่อกลับเมื่อสะดวก"
-  },
-  {
-    "type": "booking",
-    "title": "นัดหมายคดี",
-    "detail": "คดีความกำลังจะมาถึง",
-    "time": "10:20",
-    "date": "today",
-    "isRead": false,
-    "fullDetail":
-        "การนัดหมายปรึกษาคดีของคุณกับทนายศักดิ์สิทธิ์ ได้รับการยืนยันแล้ว กรุณาเตรียมเอกสารที่เกี่ยวข้องให้พร้อมก่อนถึงเวลานัดหมาย"
-  },
-];
+/// แจ้งเตือน — ใช้ NotificationListService แทน mock data
+List<Map<String, dynamic>> globalNotifications = [];
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -59,46 +39,13 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> _loadNotifications() async {
-    final code = UserProfileStore.instance.code;
-    if (code.isEmpty) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    try {
-      final result = await postDio('$server/m/notification/read', {
-        'code': code,
-        'skip': 0,
-        'limit': 50,
-      });
-
-      if (!mounted) return;
-
-      final raw = result['objectData'];
-      final list = raw is List
-          ? raw
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
-          : <Map<String, dynamic>>[];
-
-      setState(() {
-        _notifications = list;
-        _sortNotifications();
-        _isLoading = false;
-      });
-
-      final total = result['totalData'];
-      if (total != null) {
-        NotificationStore.instance.setUnread(
-          total is int
-              ? total
-              : int.tryParse(total.toString()) ?? unreadCount,
-        );
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    setState(() => _isLoading = true);
+    final list = await NotificationListService.load();
+    if (!mounted) return;
+    setState(() {
+      _notifications = list;
+      _isLoading = false;
+    });
   }
 
   Future<void> _markAllRead() async {

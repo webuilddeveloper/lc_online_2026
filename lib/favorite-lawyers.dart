@@ -1,4 +1,6 @@
 import 'package:LawyerOnline/lawyer-online-details.dart';
+import 'package:LawyerOnline/services/favorite_lawyer_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/component/appbar.dart';
@@ -13,44 +15,41 @@ class FavoriteLawyersPage extends StatefulWidget {
 }
 
 class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
-  List<dynamic> favoriteLawyers = [
-    {
-      "code": "0",
-      "name": "ศักดิ์สิทธิ์ พิพากษ์",
-      "imageUrl": "assets/images/lawyer-avatar-1.png",
-      "category": "กฎหมายครอบครัว",
-      "experience": "11+ years",
-      "rating": "4.8",
-      "reviews": "60+",
-      "skills": ["Family lawyer", "Estate planning lawyer"],
-      "status": "online",
-    },
-    {
-      "code": "1",
-      "name": "ธนากร นิติศักดิ์",
-      "imageUrl": "assets/images/lawyer-avatar-2.png",
-      "category": "กฎหมายอาญา",
-      "experience": "19+ years",
-      "rating": "4.1",
-      "reviews": "120+",
-      "skills": ["Criminal lawyer", "Corporate lawyer"],
-      "status": "offline",
-    },
-  ];
+  List<Map<String, dynamic>> favoriteLawyers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    setState(() => _isLoading = true);
+    final list = await FavoriteLawyerService.loadFavorites();
+    if (!mounted) return;
+    setState(() {
+      favoriteLawyers = list;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFEEF2F5),
-      appBar: isDesktop ? null : appBar(
-        title: "favoriteLawyers".tr(),
-        backBtn: true,
-        rightBtn: false,
-        backAction: () => goBack(),
-        rightAction: () {},
-      ),
+      backgroundColor:
+          isDesktop ? const Color(0xFFE9F2F9) : const Color(0xFFEEF2F5),
+      appBar: isDesktop
+          ? null
+          : appBar(
+              title: 'favoriteLawyers'.tr(),
+              backBtn: true,
+              rightBtn: false,
+              backAction: () => goBack(),
+              rightAction: () {},
+            ),
       body: AppLayout(
         child: Container(
           decoration: isDesktop
@@ -90,7 +89,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                       ),
                       const SizedBox(width: 14),
                       Text(
-                        "favoriteLawyers".tr(),
+                        'favoriteLawyers'.tr(),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -100,7 +99,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                     ],
                   ),
                 ),
-              Expanded(child: _buildFavoriteList()),
+              Expanded(child: _buildBody()),
             ],
           ),
         ),
@@ -108,27 +107,50 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
     );
   }
 
-  _buildFavoriteList() {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-      itemCount: favoriteLawyers.length,
-      itemBuilder: (context, index) =>
-          _favoriteItem(favoriteLawyers[index], onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                LawyerOnlineDetails(code: favoriteLawyers[index]['code']),
-          ),
-        );
-      }),
-      separatorBuilder: (context, index) => const SizedBox(height: 15),
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (favoriteLawyers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.favorite_border_rounded,
+                size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              'favoriteLawyersEmpty'.tr(),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadFavorites,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+        itemCount: favoriteLawyers.length,
+        itemBuilder: (context, index) =>
+            _favoriteItem(favoriteLawyers[index], onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  LawyerOnlineDetails(code: favoriteLawyers[index]['code']),
+            ),
+          );
+        }),
+        separatorBuilder: (context, index) => const SizedBox(height: 15),
+      ),
     );
   }
 
-  _favoriteItem(dynamic model, {Function? onTap}) {
+  Widget _favoriteItem(Map<String, dynamic> model, {VoidCallback? onTap}) {
+    final imageUrl = model['imageUrl']?.toString() ?? '';
     return GestureDetector(
-      onTap: () => onTap!(),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
         decoration: BoxDecoration(
@@ -139,26 +161,37 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Avatar
               ClipRRect(
                 borderRadius: BorderRadius.circular(100),
-                child: Image.asset(
-                  model['imageUrl'],
-                  height: 55,
-                  width: 55,
-                  fit: BoxFit.cover,
-                ),
+                child: imageUrl.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        height: 55,
+                        width: 55,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Image.asset(
+                          'assets/images/lawyer-avatar-1.png',
+                          height: 55,
+                          width: 55,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        imageUrl.isNotEmpty
+                            ? imageUrl
+                            : 'assets/images/lawyer-avatar-1.png',
+                        height: 55,
+                        width: 55,
+                        fit: BoxFit.cover,
+                      ),
               ),
-
               const SizedBox(width: 15),
-
-              /// Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      model['name'],
+                      model['name']?.toString() ?? '',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -166,7 +199,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      model['category'],
+                      model['category']?.toString() ?? '-',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color.fromARGB(255, 109, 109, 111),
@@ -178,12 +211,12 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                         const Icon(Icons.star, color: Colors.orange, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          model['rating'],
+                          model['rating']?.toString() ?? '0',
                           style: const TextStyle(fontSize: 12),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          "(${model['reviews']})",
+                          '(${model['reviews'] ?? '0'})',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color.fromARGB(255, 109, 109, 111),
@@ -193,7 +226,7 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      model['experience'],
+                      model['experience']?.toString() ?? '-',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color.fromARGB(255, 109, 109, 111),
@@ -202,16 +235,10 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                   ],
                 ),
               ),
-
-              /// Favorite + Status
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                    size: 20,
-                  ),
+                  const Icon(Icons.favorite, color: Colors.red, size: 20),
                   const SizedBox(height: 15),
                   Row(
                     children: [
@@ -228,14 +255,14 @@ class _FavoriteLawyersPageState extends State<FavoriteLawyersPage> {
                       const SizedBox(width: 5),
                       Text(
                         model['status'] == 'online'
-                            ? "online".tr()
-                            : "offline".tr(),
+                            ? 'online'.tr()
+                            : 'offline'.tr(),
                         style: const TextStyle(fontSize: 12),
-                      )
+                      ),
                     ],
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

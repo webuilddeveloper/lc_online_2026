@@ -21,8 +21,8 @@ const _kAccent = Color(0xFF2F80ED);
 const _kText = Color(0xFF0D1B2A);
 
 class HomeLawyerSection extends StatefulWidget {
-  // final List<dynamic> appointments;
   final List<dynamic> jobRequests;
+  final int refreshToken;
   final bool isLoadingAppointments;
   final String? appointmentLoadError;
   final Future<void> Function(dynamic job, String newStatus)?
@@ -30,8 +30,8 @@ class HomeLawyerSection extends StatefulWidget {
 
   const HomeLawyerSection({
     super.key,
-    // required this.appointments,
     required this.jobRequests,
+    this.refreshToken = 0,
     this.isLoadingAppointments = false,
     this.appointmentLoadError,
     this.onJobStatusChanged,
@@ -48,7 +48,14 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
   void initState() {
     super.initState();
     _loadLawyerappointmentsList();
-    // appointmentsList = widget.appointments;
+  }
+
+  @override
+  void didUpdateWidget(HomeLawyerSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      _loadLawyerappointmentsList();
+    }
   }
 
   @override
@@ -225,18 +232,22 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
 
       if (param['status'] == 'S') {
         final allCases = List<dynamic>.from(param['objectData'] ?? []);
-        appointmentsList = allCases.where((item) {
+        final filtered = allCases.where((item) {
           if (item is! Map) return false;
+          if (!CaseAppointmentMapper.isVisibleOnHome(
+            Map<String, dynamic>.from(item),
+          )) {
+            return false;
+          }
           return !CaseAppointmentMapper.isUrgentCase(
             Map<String, dynamic>.from(item),
           );
         }).toList();
+        if (!mounted) return;
+        setState(() {
+          appointmentsList = filtered;
+        });
       }
-
-      setState(() {
-        // _lawyerappointmentsList = param['objectData'];
-        // _isLoadingAppointments = false;
-      });
     } catch (_) {
       // if (!mounted) return;
       // final fallbackappointmentsList =
@@ -901,57 +912,10 @@ class _HomeLawyerSectionState extends State<HomeLawyerSection> {
                 context,
                 MaterialPageRoute(
                   builder: (detailCtx) => LawyerJobDetailPage(
-                      job: job,
-                      onAccept: () {
-                        print('1');
-                      },
-                      // isPending
-                      //     ? () {
-                      //         DialogService.showConfirmAcceptJob(
-                      //           detailCtx,
-                      //           title: "acceptJob".tr(),
-                      //           message: "acceptJobConfirm".tr(),
-                      //           onConfirm: () {
-                      //             if (isBooking) {
-                      //               if (job['isApiCase'] != true) {
-                      //                 LawyerJobsStore.instance
-                      //                     .confirmBooking(job['id'] as String);
-                      //               }
-                      //             } else {
-                      //               LawyerJobsStore.instance
-                      //                   .acceptJob(job['id'] as String);
-                      //             }
-                      //             if (detailCtx.mounted) {
-                      //               Navigator.pop(detailCtx);
-                      //               widget.onJobStatusChanged?.call(job,
-                      //                   isBooking ? 'confirmed' : 'accepted');
-                      //             }
-                      //           },
-                      //         );
-                      //       }
-                      //     : null,
-                      onReject: () {
-                        print('2');
-                      }
-                      // isPending
-                      //     ? () {
-                      //         DialogService.showConfirmRejectJob(
-                      //           detailCtx,
-                      //           title: "rejectJob".tr(),
-                      //           message: "rejectJobConfirm".tr(),
-                      //           onConfirm: () {
-                      //             LawyerJobsStore.instance
-                      //                 .rejectJob(job['id'] as String);
-                      //             if (detailCtx.mounted) {
-                      //               Navigator.pop(detailCtx);
-                      //               widget.onJobStatusChanged
-                      //                   ?.call(job, 'rejected');
-                      //             }
-                      //           },
-                      //         );
-                      //       }
-                      //     : null,
-                      ),
+                    job: job,
+                    onAccept: null,
+                    onReject: null,
+                  ),
                 ),
               );
             },

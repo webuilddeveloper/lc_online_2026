@@ -81,7 +81,9 @@ class _CalendarPageState extends State<CalendarPage>
   }
 
   void _onJobsChanged() {
-    if (mounted) _loadAppointments();
+    // store เปลี่ยน → rebuild UI จากข้อมูลที่มี ไม่ยิง API ซ้ำ
+    // (home refresh จะอัปเดต LawyerJobsStore บ่อย ทำให้เคยวนโหลดปฏิทินไม่จบ)
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadAppointments() async {

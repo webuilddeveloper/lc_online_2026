@@ -42,7 +42,6 @@ class _SchedulePageState extends State<SchedulePage> {
 
   bool _slotsLoading = false;
   bool _scheduleLoaded = false;
-  bool _isUrgentCaseActive = false;
 
   final _thMonths = [
     '',
@@ -89,8 +88,6 @@ class _SchedulePageState extends State<SchedulePage> {
       );
 
       final objectData = param['objectData'];
-      final urgentActive = objectData['isUrgentCaseActive'] == true ||
-          objectData['isUrgentCaseActive']?.toString() == 'true';
 
       // ── โหลด lawyerSchedule ครั้งแรก ──────────────────────
       if (!_scheduleLoaded && objectData['lawyerSchedule'] != null) {
@@ -104,30 +101,27 @@ class _SchedulePageState extends State<SchedulePage> {
       final dateCheck = objectData['dateCheck'];
       var slots = List<dynamic>.from(dateCheck?['slots'] ?? []);
 
-      if (!urgentActive) {
-        final booked = await AppointmentBookingService.loadBookedSlots(
-          lawyerCode: widget.lawyer['code']?.toString() ?? '',
-          caseDate: date,
-        );
-        final bookedStarts = booked.map((b) => b.startTime).toSet();
-        slots = slots.map((slot) {
-          if (slot is Map) {
-            final copy = Map<String, dynamic>.from(slot);
-            final title = copy['title']?.toString() ?? '';
-            if (bookedStarts.contains(title)) {
-              copy['isOpen'] = false;
-              copy['booked'] = true;
-              copy['available'] = false;
-            }
-            return copy;
+      final booked = await AppointmentBookingService.loadBookedSlots(
+        lawyerCode: widget.lawyer['code']?.toString() ?? '',
+        caseDate: date,
+      );
+      final bookedStarts = booked.map((b) => b.startTime).toSet();
+      slots = slots.map((slot) {
+        if (slot is Map) {
+          final copy = Map<String, dynamic>.from(slot);
+          final title = copy['title']?.toString() ?? '';
+          if (bookedStarts.contains(title)) {
+            copy['isOpen'] = false;
+            copy['booked'] = true;
+            copy['available'] = false;
           }
-          return slot;
-        }).toList();
-      }
+          return copy;
+        }
+        return slot;
+      }).toList();
 
       setState(() {
-        _isUrgentCaseActive = urgentActive;
-        _timeSlots = urgentActive ? [] : slots;
+        _timeSlots = slots;
         _selectedTime = null;
         _slotsLoading = false;
       });
@@ -214,49 +208,6 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  Widget _buildUrgentCaseBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.bolt_rounded, color: Color(0xFFE65100), size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'urgentCaseBlockBookingTitle'.tr(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFE65100),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'urgentCaseBlockBookingMessage'.tr(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final days = _getDaysInMonth();
@@ -284,10 +235,6 @@ class _SchedulePageState extends State<SchedulePage> {
 
                   // ── วันที่เปิด ──────────────────────────────
                   _buildOpenDaysInfo(),
-                  if (_isUrgentCaseActive) ...[
-                    const SizedBox(height: 12),
-                    _buildUrgentCaseBanner(),
-                  ],
                   const SizedBox(height: 14),
 
                   // ── Calendar Card ───────────────────────────
@@ -458,7 +405,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   ),
 
                   // ── Time Slots ──────────────────────────────
-                  if (_selectedDate != null && !_isUrgentCaseActive) ...[
+                  if (_selectedDate != null) ...[
                     const SizedBox(height: 20),
                     const Text('เลือกเวลา',
                         style: TextStyle(

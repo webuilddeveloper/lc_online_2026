@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/appointment_reminder_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
+import 'package:LawyerOnline/services/home_refresh_service.dart';
 import 'package:LawyerOnline/services/in_app_notification_service.dart';
 import 'package:LawyerOnline/services/lawyer_apply_notification_handler.dart';
 import 'package:LawyerOnline/services/lawyer_case_broadcast_service.dart';
@@ -142,6 +143,7 @@ void main() async {
           if (UserProfileStore.instance.isLoggedIn) {
             NotificationStore.instance.refresh();
           }
+          HomeRefreshService.instance.requestRefresh();
           return;
         }
       }
@@ -166,6 +168,22 @@ void main() async {
 
       if (UserProfileStore.instance.isLoggedIn) {
         NotificationStore.instance.refresh();
+      }
+
+      final refreshHomeTypes = {
+        'create_case',
+        'case_accepted',
+        'case_rejected',
+        'case_payment_confirmed',
+        'payment_confirmed',
+        'create_case_request',
+        'new_case_request',
+        'lawyer_claim_request',
+        'cancel_review_pending',
+        'cancel_review_approved',
+      };
+      if (refreshHomeTypes.contains(type)) {
+        HomeRefreshService.instance.requestRefresh();
       }
     });
 

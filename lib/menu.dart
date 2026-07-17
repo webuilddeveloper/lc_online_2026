@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:LawyerOnline/services/home_refresh_service.dart';
 import 'package:LawyerOnline/calendar.dart';
 import 'package:LawyerOnline/case-status-all.dart';
 import 'package:LawyerOnline/home.dart';
@@ -277,10 +278,17 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
   }
 
   void _onNavTap(int index) {
-    if (index == _currentPage) return;
+    // กดแท็บเดิมซ้ำ — refresh เฉพาะหน้าแรก (intentional pull-like)
+    if (index == _currentPage) {
+      if (index == 0) {
+        HomeRefreshService.instance.requestRefresh();
+      }
+      return;
+    }
     _slideDirection = index > _currentPage ? 1.0 : -1.0;
     setState(() => _currentPage = index);
     _playTabTransition();
+    // สลับมาหน้าแรก: HomePage.didUpdateWidget จะ refresh เอง — ไม่ยิงซ้ำที่นี่
     if (UserProfileStore.instance.isLoggedIn) {
       NotificationStore.instance.refresh();
     }

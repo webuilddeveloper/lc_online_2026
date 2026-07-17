@@ -75,7 +75,8 @@ class LawyerProfileStore extends ChangeNotifier {
 
   /// วันทดลองใช้คงเหลือ (null = ไม่ได้อยู่ในช่วงทดลอง)
   int? get trialDaysRemaining {
-    if (_currentPlan != CurrentPlan.pro || _proTrialEndDate == null) return null;
+    if (_currentPlan != CurrentPlan.pro || _proTrialEndDate == null)
+      return null;
     final now = DateTime.now();
     if (now.isAfter(_proTrialEndDate!)) return 0;
     final diff = _proTrialEndDate!.difference(now).inHours;
@@ -173,14 +174,14 @@ class LawyerProfileStore extends ChangeNotifier {
   }
 
   // ── Urgent case ────────────────────────────────────────────────────
-  Future<void> setUrgentCase(bool value) async {
-    if (_isUrgentCaseEnabled == value) return;
+  Future<bool> setUrgentCase(bool value) async {
+    if (_isUrgentCaseEnabled == value) return _isUrgentCaseEnabled;
     _isUrgentCaseEnabled = value;
     notifyListeners();
     await _storage.write(key: 'urgentCaseEnabled', value: value.toString());
 
     final code = UserProfileStore.instance.code;
-    if (code.isEmpty) return;
+    if (code.isEmpty) return _isUrgentCaseEnabled;
 
     final result = await UrgentCaseService.updateSettings(
       code: code,
@@ -189,9 +190,12 @@ class LawyerProfileStore extends ChangeNotifier {
     );
     if (result != null) {
       _applyUrgentSettingsFromApi(result);
+      await _storage.write(
+          key: 'urgentCaseEnabled', value: _isUrgentCaseEnabled.toString());
       notifyListeners();
       await _syncUserUrgentFields();
     }
+    return _isUrgentCaseEnabled;
   }
 
   Future<void> setUrgentCaseScope(String scope) async {
@@ -220,8 +224,8 @@ class LawyerProfileStore extends ChangeNotifier {
 
   void _applyUrgentSettingsFromApi(Map<String, dynamic> data) {
     if (data.containsKey('isOnline')) {
-      _isUrgentCaseEnabled = data['isOnline'] == true ||
-          data['isOnline']?.toString() == 'true';
+      _isUrgentCaseEnabled =
+          data['isOnline'] == true || data['isOnline']?.toString() == 'true';
     } else {
       _isUrgentCaseEnabled = data['isAllowCase'] == true ||
           data['isAllowCase']?.toString() == 'true';
@@ -262,9 +266,7 @@ class LawyerProfileStore extends ChangeNotifier {
     _casesWon = model.lv3;
     _bio = model.description;
     _skills = List<String>.from(model.expertiseList);
-    _province = model.province.isNotEmpty
-        ? model.province
-        : 'กรุงเทพมหานคร';
+    _province = model.province.isNotEmpty ? model.province : 'กรุงเทพมหานคร';
     _isAvailable = model.isAvailable != 'F';
     _isUrgentCaseEnabled = model.isOnline;
     _urgentCaseScope = model.urgentCaseScope == 'all' ? 'all' : 'expertise';
@@ -375,9 +377,8 @@ class LawyerProfileStore extends ChangeNotifier {
         ? BillingCycle.yearly
         : BillingCycle.monthly;
     final rawEnd = data['proTrialEndDate'];
-    _proTrialEndDate = rawEnd == null
-        ? null
-        : DateTime.tryParse(rawEnd.toString());
+    _proTrialEndDate =
+        rawEnd == null ? null : DateTime.tryParse(rawEnd.toString());
   }
 
   Future<void> _persistSubscription() => Future.wait([

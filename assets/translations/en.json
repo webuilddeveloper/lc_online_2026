@@ -126,6 +126,7 @@
   "priceHint": "Baht/hour",
   "priceSuffix": "Baht",
   "upgradePriceNote": "Upgrade to Lawyer Pro to set your own price",
+  "upgradeScheduleNote": "Managing your schedule (choosing your own days/times) is a Lawyer Pro feature",
   "upgradeLink": "Upgrade",
   "clearAll": "Clear All",
   "save": "Save",
@@ -197,6 +198,7 @@
     "reason5": "Other"
   },
   "favoriteLawyers": "Favorite Lawyers",
+  "favoriteLawyersEmpty": "No favorite lawyers yet",
   "online": "Online",
   "offline": "Offline",
   "privacy_policy": {
@@ -316,6 +318,16 @@
   "messages": "Messages",
   "noConversations": "No conversations yet",
   "selectConversation": "Select a conversation to start chatting",
+  "chatNewMessage": "New message",
+  "chatNewMessages": "{} new messages · {}",
+  "chatJustNow": "Just now",
+  "chatMinutesAgo": "{} min ago",
+  "chatHoursAgo": "{} hr ago",
+  "chatSentJustNow": "Sent just now",
+  "chatSentMinutesAgo": "Sent {} min ago",
+  "chatSentHoursAgo": "Sent {} hr ago",
+  "chatSentYesterday": "Sent yesterday",
+  "chatSentOnDate": "Sent on {}",
   "typeMessage": "Type a message...",
   "chatAttachTitle": "Send Attachment",
   "chatUploading": "Uploading...",
@@ -506,6 +518,7 @@
     "allRead": "All Read",
     "listAll": "See All",
     "allItems": "all items",
+    "empty": "No notifications yet",
     "msg":{
       "read": "Read",
       "new": "New"

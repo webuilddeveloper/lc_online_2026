@@ -149,14 +149,27 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     } catch (_) {}
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({int retry = 0}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!_scrollController.hasClients) return;
+      final max = _scrollController.position.maxScrollExtent;
+
+      // บางครั้งค่า maxScrollExtent ยังไม่อัปเดตตอนเฟรมแรก
+      if (max <= 0 && retry < 3 && _messages.isNotEmpty) {
+        _scrollToBottom(retry: retry + 1);
+        return;
+      }
+
+      try {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          max,
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
+      } catch (_) {
+        try {
+          _scrollController.jumpTo(max);
+        } catch (_) {}
       }
     });
   }

@@ -704,12 +704,41 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       setState(() {
         isLoading = false;
       });
+      if (error is AccountBlockedException) {
+        _showAccountBlockedDialog(error);
+        return;
+      }
       DialogService.showError(
         context,
         title: 'loginFailed'.tr(),
         message: _friendlyLoginError(error),
       );
     }
+  }
+
+  void _showAccountBlockedDialog(AccountBlockedException error) {
+    final isBanned = error.accountStatus == 'B';
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isBanned ? 'บัญชีถูกปิดใช้งานถาวร' : 'บัญชีถูกระงับชั่วคราว',
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        content: Text(
+          error.message,
+          style: const TextStyle(fontSize: 14, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ตกลง'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _friendlyLoginError(Object error) {

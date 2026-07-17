@@ -142,14 +142,14 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   String _selectedProvince = 'ทั้งหมด';
   int? _selectedIdx;
   bool _useApiData = false;
+  bool _isLoadingLawyers = true;
+  String? _loadError;
   List<dynamic> _apiLawyers = [];
+
+  List<dynamic> get _sourceLawyers => _apiLawyers;
 
   // Provinces (derived from data + "ทั้งหมด")
   List<dynamic> _allProvinces = [];
-
-  // ── Computed filtered + sorted list ───────────────────
-  List<dynamic> get _sourceLawyers =>
-      _useApiData && _apiLawyers.isNotEmpty ? _apiLawyers : lawyerOnlineList;
 
   List<dynamic> get _filteredLawyers {
     var list = List<dynamic>.from(_sourceLawyers);
@@ -234,13 +234,17 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
   }
 
   Future<void> _loadLawyersFromApi() async {
+    setState(() {
+      _isLoadingLawyers = true;
+      _loadError = null;
+    });
     try {
       const repo = ApiLawyerRepository();
       final lawyers = await repo.searchLawyers(
         topic: widget.topic ?? '',
         subTopic: widget.subTopic ?? '',
       );
-      if (!mounted || lawyers.isEmpty) return;
+      if (!mounted) return;
       setState(() {
         _useApiData = true;
         _apiLawyers = lawyers.map((l) {
@@ -267,8 +271,16 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
             'isVerified': true,
           };
         }).toList();
+        _isLoadingLawyers = false;
       });
-    } catch (_) {}
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _apiLawyers = [];
+        _isLoadingLawyers = false;
+        _loadError = 'ไม่สามารถโหลดรายชื่อทนายได้ กรุณาลองใหม่อีกครั้ง';
+      });
+    }
   }
 
   Future<void> getCurrentLocation() async {
@@ -358,9 +370,13 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
                   ]),
                 ),
                 Expanded(
-                  child: filtered.isEmpty
-                      ? _buildEmpty()
-                      : ListView.builder(
+                  child: _isLoadingLawyers
+                      ? const Center(child: CircularProgressIndicator())
+                      : _loadError != null
+                          ? _buildLoadError()
+                          : filtered.isEmpty
+                              ? _buildEmpty()
+                              : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: filtered.length,
                           itemBuilder: (_, i) => _buildLawyerCard(filtered[i]),
@@ -732,6 +748,27 @@ class _LawyerOnlineListState extends State<LawyerOnlineList>
       ),
     );
   }
+
+  Widget _buildLoadError() => Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.cloud_off_rounded, color: Colors.grey[400], size: 48),
+          const SizedBox(height: 12),
+          Text(
+            _loadError ?? '',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: _loadLawyersFromApi,
+            child: const Text('ลองใหม่'),
+          ),
+        ]),
+      );
 
   Widget _buildEmpty() => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
