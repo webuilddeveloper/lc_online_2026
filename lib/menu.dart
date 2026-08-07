@@ -27,7 +27,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 // ══════════════════════════════════════════════════════════
 //  MenuPage — Navigation shell
-//  Mobile/Tablet → FloatingBottomNav (glass effect)
+//  Mobile/Tablet → Liquid Glass floating bottom bar
 //  Desktop       → TopNav bar (ตามดีไซน์)
 // ══════════════════════════════════════════════════════════
 
@@ -299,7 +299,7 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
     if (currentBackPressTime == null ||
         now.difference(currentBackPressTime!) > const Duration(seconds: 2)) {
       currentBackPressTime = now;
-      Fluttertoast.showToast(msg: 'กดอีกครั้งเพื่อออก');
+      Fluttertoast.showToast(msg: 'pressBackAgainToExit'.tr());
       return Future.value(false);
     }
     return Future.value(true);
@@ -308,6 +308,7 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       extendBody: !isDesktop,
@@ -339,59 +340,397 @@ class _MenuPageState extends State<MenuPage> with SingleTickerProviderStateMixin
         ),
       ),
 
-      // ── Mobile/Tablet BottomNav ────────────────────────
+      // ── Mobile/Tablet BottomNav — Liquid Glass ──────────
       bottomNavigationBar: isDesktop
           ? null
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(15, 10, 15, 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(35),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    height: 75,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF010101).withOpacity(0.50),
-                      borderRadius: BorderRadius.circular(67),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: _navItems
-                          .map((item) => Expanded(
-                                child: _BottomNavItem(
-                                  item: item,
-                                  isSelected: _currentPage == item.index,
-                                  badgeCount: typeLogin != 'null'
-                                      ? NotificationStore.instance
-                                          .badgeCountForNavIndex(item.index)
-                                      : 0,
-                                  showBadgeSlot: item.showBadge,
-                                  onTap: () => _onNavTap(item.index),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                ),
-              ),
+          : _LiquidGlassBottomBar(
+              items: _navItems,
+              currentIndex: _currentPage,
+              bottomInset: bottomInset,
+              badgeCountFor: (index) => typeLogin != 'null'
+                  ? NotificationStore.instance.badgeCountForNavIndex(index)
+                  : 0,
+              onTap: _onNavTap,
             ),
     );
   }
 }
 
-// ── Mobile/Tablet bottom nav item ────────────────────────
-class _BottomNavItem extends StatelessWidget {
+// ══════════════════════════════════════════════════════════
+//  Liquid Glass Bottom Bar — iOS-inspired frosted capsule
+// ══════════════════════════════════════════════════════════
+
+class _LiquidGlassBottomBar extends StatelessWidget {
+  static const _primary = Color(0xFF085DD3);
+  static const _inkMuted = Color(0xFF64748B);
+  static const _barHeight = 70.0;
+  static const _radius = 35.0;
+
+  // Soft saturation boost behind the frost — makes refracted colors pop.
+  static final _glassBackdrop = ImageFilter.compose(
+    outer: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+    inner: const ColorFilter.matrix(<double>[
+      1.15, -0.05, -0.05, 0, 6,
+      -0.05, 1.15, -0.05, 0, 6,
+      -0.05, -0.05, 1.20, 0, 10,
+      0, 0, 0, 1, 0,
+    ]),
+  );
+
+  final List<NavItem> items;
+  final int currentIndex;
+  final double bottomInset;
+  final int Function(int index) badgeCountFor;
+  final ValueChanged<int> onTap;
+
+  const _LiquidGlassBottomBar({
+    required this.items,
+    required this.currentIndex,
+    required this.bottomInset,
+    required this.badgeCountFor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = _radius;
+    const primary = _primary;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 10 + bottomInset),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.14),
+              blurRadius: 36,
+              offset: const Offset(0, 16),
+              spreadRadius: -6,
+            ),
+            BoxShadow(
+              color: primary.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.55),
+              blurRadius: 8,
+              offset: const Offset(0, -1),
+              spreadRadius: -2,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: BackdropFilter(
+            filter: _glassBackdrop,
+            child: SizedBox(
+              height: _LiquidGlassBottomBar._barHeight,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Ultra-light frost — lets page colors bleed through
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.42),
+                          const Color(0xFFE8F1FF).withValues(alpha: 0.28),
+                          const Color(0xFFD6E4FF).withValues(alpha: 0.22),
+                          Colors.white.withValues(alpha: 0.34),
+                        ],
+                        stops: const [0.0, 0.35, 0.7, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // Iridescent color wash (เหลื่อมสี)
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: const Alignment(-1.2, -0.8),
+                          end: const Alignment(1.2, 1.0),
+                          colors: [
+                            const Color(0xFF60A5FA).withValues(alpha: 0.18),
+                            const Color(0xFFA78BFA).withValues(alpha: 0.10),
+                            const Color(0xFF34D399).withValues(alpha: 0.08),
+                            const Color(0xFF38BDF8).withValues(alpha: 0.14),
+                          ],
+                          stops: const [0.0, 0.35, 0.65, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Soft caustic blobs
+                  IgnorePointer(
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: -20,
+                          top: -28,
+                          child: _GlassBlob(
+                            size: 90,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        Positioned(
+                          right: 40,
+                          top: -18,
+                          child: _GlassBlob(
+                            size: 70,
+                            color: const Color(0xFF93C5FD)
+                                .withValues(alpha: 0.35),
+                          ),
+                        ),
+                        Positioned(
+                          right: -10,
+                          bottom: -30,
+                          child: _GlassBlob(
+                            size: 80,
+                            color: const Color(0xFFC4B5FD)
+                                .withValues(alpha: 0.28),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Static diagonal gloss
+                  IgnorePointer(
+                    child: Transform.rotate(
+                      angle: -0.55,
+                      child: Align(
+                        alignment: const Alignment(-0.35, 0),
+                        child: Container(
+                          width: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.white.withValues(alpha: 0.0),
+                                Colors.white.withValues(alpha: 0.22),
+                                Colors.white.withValues(alpha: 0.0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Top specular rim
+                  const IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: FractionallySizedBox(
+                        heightFactor: 0.45,
+                        widthFactor: 1,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0xA6FFFFFF),
+                                Color(0x33FFFFFF),
+                                Color(0x00FFFFFF),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Bottom refraction edge
+                  IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FractionallySizedBox(
+                        heightFactor: 0.28,
+                        widthFactor: 1,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                primary.withValues(alpha: 0.10),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Glass edge (Fresnel)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(radius),
+                      border: Border.all(
+                        width: 1.4,
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.35),
+                          Colors.white.withValues(alpha: 0.05),
+                          Colors.white.withValues(alpha: 0.22),
+                        ],
+                      ),
+                      backgroundBlendMode: BlendMode.softLight,
+                    ),
+                  ),
+
+                  // Inner rim
+                  Padding(
+                    padding: const EdgeInsets.all(1),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(radius - 1),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          width: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Sliding liquid pill + items
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 6,
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final count = items.length;
+                        final itemW = constraints.maxWidth / count;
+                        final pillH = constraints.maxHeight;
+                        return Stack(
+                          children: [
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 420),
+                              curve: Curves.easeOutCubic,
+                              left: currentIndex * itemW + 2,
+                              width: itemW - 4,
+                              top: 0,
+                              height: pillH,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(26),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 8,
+                                    sigmaY: 8,
+                                  ),
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(26),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.white.withValues(alpha: 0.78),
+                                          const Color(0xFFEFF6FF)
+                                              .withValues(alpha: 0.55),
+                                          Colors.white.withValues(alpha: 0.68),
+                                        ],
+                                      ),
+                                      border: Border.all(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.85),
+                                        width: 1,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              primary.withValues(alpha: 0.22),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.9),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, -1),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                for (final item in items)
+                                  Expanded(
+                                    child: _LiquidGlassNavItem(
+                                      item: item,
+                                      isSelected: currentIndex == item.index,
+                                      badgeCount: badgeCountFor(item.index),
+                                      showBadgeSlot: item.showBadge,
+                                      onTap: () => onTap(item.index),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassBlob extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _GlassBlob({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color,
+            color.withValues(alpha: 0),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LiquidGlassNavItem extends StatelessWidget {
   final NavItem item;
   final bool isSelected;
   final bool showBadgeSlot;
   final int badgeCount;
   final VoidCallback onTap;
 
-  const _BottomNavItem({
+  const _LiquidGlassNavItem({
     required this.item,
     required this.isSelected,
     required this.showBadgeSlot,
@@ -401,48 +740,41 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = item.isLogo ? 30.0 : 22.0;
+    final color = isSelected
+        ? _LiquidGlassBottomBar._primary
+        : _LiquidGlassBottomBar._inkMuted;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Center(
-        // ← ใส่ Center หุ้มเพื่อให้ AnimatedContainer อยู่กลาง
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          // ลบ width/height: double.infinity ออก ← ให้ขนาดพอดีกับเนื้อหา
-          padding: item.isLogo
-              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 8)
-              : const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFFF8F9FD).withOpacity(0.9)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? const Color(0xFF085DD3).withOpacity(0.3)
-                    : Colors.transparent,
-                blurRadius: 12,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+        child: AnimatedScale(
+          scale: isSelected ? 1.08 : 1.0,
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutBack,
           child: Stack(
             clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              Image.asset(
-                item.icon,
-                width: item.isLogo ? 34 : 22,
-                height: item.isLogo ? 34 : 22,
-                color: isSelected ? const Color(0xFF085DD3) : Colors.white70,
+              AnimatedOpacity(
+                opacity: isSelected ? 1 : 0.82,
+                duration: const Duration(milliseconds: 220),
+                child: Image.asset(
+                  item.icon,
+                  width: iconSize,
+                  height: iconSize,
+                  color: item.isLogo && !isSelected ? null : color,
+                  colorBlendMode:
+                      item.isLogo && !isSelected ? null : BlendMode.srcIn,
+                ),
               ),
               if (showBadgeSlot)
                 NotificationBadgeDot(
                   count: badgeCount,
                   size: 7,
-                  top: -1,
-                  right: -2,
+                  top: -2,
+                  right: -4,
                 ),
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:LawyerOnline/main.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/webrtc_hub_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:LawyerOnline/webrtc_call_page.dart';
 import 'package:LawyerOnline/widgets/incoming_call_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -31,6 +32,7 @@ class WebRtcCallListenerService {
     if (userId.isEmpty) return;
 
     _hub.onIncomingCall = _handleIncoming;
+    _hub.onCallEnded = _handleCallEnded;
     await _hub.connect();
     await _hub.joinUser(userId);
   }
@@ -47,6 +49,9 @@ class WebRtcCallListenerService {
     }
     if (_hub.onIncomingCall == _handleIncoming) {
       _hub.onIncomingCall = null;
+    }
+    if (_hub.onCallEnded == _handleCallEnded) {
+      _hub.onCallEnded = null;
     }
   }
 
@@ -177,6 +182,17 @@ class WebRtcCallListenerService {
         ),
       ).whenComplete(() => _dialogShowing = false);
     });
+  }
+
+  void _handleCallEnded(Map<String, dynamic> payload) {
+    if (_dialogShowing) {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null && ctx.mounted && Navigator.canPop(ctx)) {
+        Navigator.pop(ctx);
+      }
+      _dialogShowing = false;
+    }
+    unawaited(NotificationStore.instance.refresh());
   }
 
   Future<void> _sendCallReject({

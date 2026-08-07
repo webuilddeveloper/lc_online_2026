@@ -14,31 +14,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'dart:math' as math;
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
-
-// ─── Status helpers ───────────────────────────────────────────────
-dynamic _buildLawyerForConsult(Map? m, Map caseModel) {
-  if (m == null) return null;
-  return {
-    'id': caseModel['id'],
-    'jobId': caseModel['id'],
-    'code': m['code'],
-    'name': m['name'] ?? '',
-    'avatar': (m['name'] as String? ?? 'ท').characters.first,
-    'title': (m['skills'] as List?)?.isNotEmpty == true
-        ? (m['skills'] as List).first
-        : m['experience'] ?? '',
-    'rating': m['scroll'] ?? 0,
-    'imageUrl': m['imageUrl'] ?? '',
-    'appointmentDate': caseModel['appointmentDate'],
-    'appointmentTime': caseModel['appointmentTime'],
-    'active': caseModel['jobStatus'] == 'accepted' ||
-        caseModel['jobStatus'] == 'in_session',
-    'caseSuccess': caseModel['jobStatus'] == 'done',
-    'chatLocked': caseModel['jobStatus'] == 'confirmed',
-    'jobStatus': caseModel['jobStatus'],
-    'jobSource': caseModel['jobSource'],
-  };
-}
+import 'package:LawyerOnline/widgets/home/home_theme.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
 
 const _kPrimary = Color(0xFF0262EC);
 const _kAccent = Color(0xFF2F80ED);
@@ -78,6 +55,8 @@ Widget _lawyerCardImage(String url) {
 // รวม: case status list, law categories, lawyer online, new lawyers
 // StatelessWidget → rebuild เฉพาะเมื่อ props เปลี่ยนเท่านั้น
 class HomeUserSection extends StatelessWidget {
+  static Future<List<Map<String, dynamic>>>? _lawCategoriesApiFuture;
+
   final List<dynamic> cases;
   final List<Map<String, dynamic>> lawCategories;
   final List<dynamic> lawyers;
@@ -98,6 +77,149 @@ class HomeUserSection extends StatelessWidget {
       this.lawyerLoadError,
       this.onAppointmentClosed});
 
+  /// หน้าแรกแสดง 4 หมวด เริ่มจากรายการที่ 2 (index 1)
+  static List<Map<String, dynamic>> _homeLawCategoryItems(
+    List<Map<String, dynamic>> source,
+  ) {
+    if (source.isEmpty) return const [];
+    const showCount = 4;
+    final start = source.length > 1 ? 1 : 0;
+    final result = <Map<String, dynamic>>[];
+    for (var i = 0; i < showCount; i++) {
+      if (source.length == 1) {
+        result.add(source[0]);
+        break;
+      }
+      result.add(source[(start + i) % source.length]);
+    }
+    return result;
+  }
+
+  static String _caseField(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty && value != '-') return value;
+    }
+    return '';
+  }
+
+  static Map<String, dynamic> _normalizeCasePreview(dynamic model) {
+    final raw = model is Map<String, dynamic>
+        ? Map<String, dynamic>.from(model)
+        : Map<String, dynamic>.from(model as Map);
+    final data = UserCaseAdapter.forAppointmentDetails(raw);
+
+    var topic = _caseField(data, const [
+      'topicTitle',
+      'topic',
+      'category',
+      'caseTypeTitle',
+    ]);
+    final subTopic = _caseField(data, const [
+      'subTopicTitle',
+      'subTopic',
+      'subCaseType',
+    ]);
+    final caseDate = _caseField(data, const [
+      'caseDate',
+      'appointmentDate',
+      'case_date',
+      'date',
+    ]);
+    final startTime = _caseField(data, const ['startTime', 'start_time']);
+    final endTime = _caseField(data, const ['endTime', 'end_time']);
+    var timeRange = _caseField(data, const ['appointmentTime']);
+    if (timeRange.isEmpty && (startTime.isNotEmpty || endTime.isNotEmpty)) {
+      timeRange = '$startTime - $endTime'.replaceAll(RegExp(r'\s*-\s*$'), '');
+    }
+    final details = _caseField(data, const [
+      'story',
+      'details',
+      'requirement',
+      'detail',
+    ]);
+    if (topic.isEmpty && details.isNotEmpty) {
+      topic = details.length > 48 ? '${details.substring(0, 48)}…' : details;
+    }
+    final code = _caseField(data, const ['code', 'id', '_id']);
+    var lawyerName = _caseField(data, const ['lawyerName', 'name']);
+    final status = data['caseStatus'];
+    final s = status is int
+        ? status
+        : int.tryParse(status?.toString() ?? '') ?? -1;
+    if (lawyerName.isEmpty) {
+      lawyerName = s == 1 ? 'รอทนายยืนยัน' : 'ไม่ระบุ';
+    }
+
+    return {
+      'topic': topic,
+      'subTopic': subTopic,
+      'caseDate': caseDate,
+      'timeRange': timeRange,
+      'code': code,
+      'lawyerName': lawyerName,
+    };
+  }
+
+  Widget _caseDetailChip(IconData icon, String text, Color color) {
+    final label = text.trim();
+    if (label.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.prompt(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: _kText,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchLawCategoriesFromApi() async {
+    try {
+      final param = await postDio('$server/m/topic/read', {});
+      final objectData = param is Map ? param['objectData'] : null;
+      if (objectData is! List) return lawCategories;
+
+      // ให้กลับมาอยู่รูปแบบเดียวกับเดิม (title/icon/topic)
+      return objectData
+          .whereType<Map>()
+          .map((e) {
+            final title = e['title']?.toString().trim() ?? '';
+            final code = e['code']?.toString().trim() ?? '';
+            final imageUrl = e['imageUrl']?.toString().trim() ?? '';
+            if (title.isEmpty) return <String, dynamic>{};
+            return <String, dynamic>{
+              'title': title,
+              'icon': imageUrl,
+              // ใช้ code ถ้ามี เพื่อให้หน้าจองจับคู่ topic ได้ชัวร์
+              'topic': code.isNotEmpty ? code : title,
+              'topicTitle': title,
+            };
+          })
+          .where((m) => (m['title']?.toString().trim() ?? '').isNotEmpty)
+          .toList(growable: false);
+    } catch (_) {
+      return lawCategories;
+    }
+  }
+
   void _guardedNavigate(BuildContext context, Widget page) {
     if (isGuest) {
       Navigator.push(
@@ -115,9 +237,9 @@ class HomeUserSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(
-          context,
+        HomeSectionHeader(
           title: 'lawyersForYou'.tr(),
+          icon: Icons.person_search_rounded,
           onMore: () => _openPage(context, LawyerOnlineList()),
         ),
         if (isLoadingLawyers)
@@ -170,34 +292,32 @@ class HomeUserSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Case Status (แสดงเฉพาะเมื่อ login แล้ว) ───────────────
-        if (!isGuest) ...[
-          _sectionHeader(context,
-              title: 'caseStatus'.tr(),
-              onMore: () => {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CaseListPage(),
-                      ),
-                    ).then((_) {
-                      // ✅ เมื่อ pop กลับมา เรียก callback
-                      if (onAppointmentClosed != null) {
-                        onAppointmentClosed!();
-                        debugPrint('✅ Callback triggered after pop');
-                      }
-                    }),
-                  }),
-          if (cases.isNotEmpty)
-            _buildCaseStatusList(context)
-          else
-            _emptyState('noCases'.tr()),
+        // ── Case Status (แสดงเมื่อ login แล้ว และมีนัดหมาย/เคสด่วน) ─
+        if (!isGuest && cases.isNotEmpty) ...[
+          HomeSectionHeader(
+            title: 'caseStatus'.tr(),
+            icon: Icons.folder_open_rounded,
+            onMore: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CaseListPage(),
+                ),
+              ).then((_) {
+                if (onAppointmentClosed != null) {
+                  onAppointmentClosed!();
+                  debugPrint('✅ Callback triggered after pop');
+                }
+              });
+            },
+          ),
+          _buildCaseStatusList(context),
           const SizedBox(height: 20),
         ],
         // ── Law Categories ───────────────────────────────────────
-        _sectionHeader(
-          context,
+        HomeSectionHeader(
           title: 'lawCategories'.tr(),
+          icon: Icons.category_rounded,
           onMore: () => _guardedNavigate(context, LawTypeAllPage()),
         ),
         const SizedBox(height: 8),
@@ -211,9 +331,9 @@ class HomeUserSection extends StatelessWidget {
         if (!isGuest) _buildLawyersForYouSection(context),
 
         // ── New Lawyers ──────────────────────────────────────────
-        _sectionHeader(
-          context,
+        HomeSectionHeader(
           title: 'trendingLawyers'.tr(),
+          icon: Icons.local_fire_department_rounded,
           onMore: () => _guardedNavigate(context, LawyerOnlineList()),
         ),
         if (isLoadingLawyers)
@@ -229,46 +349,10 @@ class HomeUserSection extends StatelessWidget {
     );
   }
 
-  // ── Section header with "ดูทั้งหมด" ──────────────────────────────
-  Widget _sectionHeader(
-    BuildContext context, {
-    required String title,
-    VoidCallback? onMore,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.prompt(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: _kText,
-            ),
-          ),
-          const Spacer(),
-          if (onMore != null)
-            GestureDetector(
-              onTap: onMore,
-              child: Text(
-                'viewAll'.tr(),
-                style: GoogleFonts.prompt(
-                  fontSize: 12,
-                  color: _kAccent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   // ── Case Status List ──────────────────────────────────────────────
   Widget _buildCaseStatusList(BuildContext context) {
     return SizedBox(
-      height: 168,
+      height: 220,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
@@ -355,9 +439,13 @@ class HomeUserSection extends StatelessWidget {
       cardW = screenW * 0.78;
     }
 
-    final lawyerName = model['lawyerName']?.toString() ?? 'ไม่ระบุ';
-    final topic = model['topicTitle']?.toString() ?? '';
-    final subTopic = model['subTopicTitle']?.toString() ?? '';
+    final preview = _normalizeCasePreview(model);
+    final lawyerName = preview['lawyerName'] as String;
+    final topic = preview['topic'] as String;
+    final subTopic = preview['subTopic'] as String;
+    final caseDate = preview['caseDate'] as String;
+    final timeRange = preview['timeRange'] as String;
+    final caseCode = preview['code'] as String;
 
     return GestureDetector(
       onTap: () {
@@ -385,17 +473,11 @@ class HomeUserSection extends StatelessWidget {
       },
       child: Container(
         width: cardW,
-        decoration: BoxDecoration(
+        decoration: HomeTheme.cardDecoration(
+          radius: HomeTheme.radiusCardLg,
           color: _kCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: typeColor, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: typeColor.withOpacity(0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderColor: typeColor.withValues(alpha: 0.22),
+          shadowTint: typeColor,
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -432,82 +514,123 @@ class HomeUserSection extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            lawyerName,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          lawyerName,
+                          style: GoogleFonts.prompt(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _kText,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: s.bg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(s.icon, size: 11, color: s.color),
+                            const SizedBox(width: 4),
+                            Text(
+                              _statusLabel(status),
+                              style: GoogleFonts.prompt(
+                                fontSize: 10,
+                                color: s.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (topic.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.label_outline_rounded,
+                            size: 12, color: typeColor),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            topic,
                             style: GoogleFonts.prompt(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: _kText,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (topic.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              topic,
-                              style: GoogleFonts.prompt(
-                                  fontSize: 11, color: _kText),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (subTopic.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: Text(
+                        subTopic,
+                        style: GoogleFonts.prompt(fontSize: 10, color: _kSub),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  if (!isUrgent && (caseDate.isNotEmpty || timeRange.isNotEmpty))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          if (caseDate.isNotEmpty)
+                            Expanded(
+                              child: _caseDetailChip(
+                                Icons.calendar_today_rounded,
+                                caseDate,
+                                typeColor,
+                              ),
                             ),
-                          ],
-                          if (subTopic.isNotEmpty) ...[
-                            const SizedBox(height: 1),
-                            Text(
-                              subTopic,
-                              style: GoogleFonts.prompt(
-                                  fontSize: 10, color: _kSub),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          if (caseDate.isNotEmpty && timeRange.isNotEmpty)
+                            const SizedBox(width: 6),
+                          if (timeRange.isNotEmpty)
+                            Expanded(
+                              child: _caseDetailChip(
+                                Icons.access_time_rounded,
+                                timeRange,
+                                typeColor,
+                              ),
                             ),
-                          ],
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: s.bg,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(s.icon, size: 11, color: s.color),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    _statusLabel(status),
-                                    style: GoogleFonts.prompt(
-                                      fontSize: 11,
-                                      color: s.color,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded,
-                        size: 18, color: Colors.grey.shade400),
+                  if (caseCode.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '# $caseCode',
+                      style: GoogleFonts.prompt(
+                        fontSize: 10,
+                        color: Colors.grey.shade400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],
@@ -518,56 +641,170 @@ class HomeUserSection extends StatelessWidget {
 
   // ── Law Categories ────────────────────────────────────────────────
   Widget _buildLawCategories(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        children: lawCategories
-            .map((cat) => Expanded(
-                  child: _lawCategoryItem(
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _lawCategoriesApiFuture ??=
+          _fetchLawCategoriesFromApi(),
+      builder: (context, snapshot) {
+        final apiData = snapshot.data;
+        final source = (apiData != null && apiData.isNotEmpty)
+            ? apiData
+            : lawCategories;
+        final items = _homeLawCategoryItems(source);
+
+        return SizedBox(
+          height: 112,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: items.asMap().entries.map((entry) {
+                final i = entry.key;
+                final v = entry.value;
+              final title = v['title']?.toString() ?? '';
+              final icon = v['icon']?.toString() ?? '';
+              final topic = v['topic']?.toString() ?? title;
+              final topicTitle = v['topicTitle']?.toString() ?? title;
+
+              return Expanded(
+                child: _lawCategoryItem(
+                  context,
+                  index: i,
+                  title: title,
+                  icon: icon,
+                  onTap: () => _guardedNavigate(
                     context,
-                    title: cat['title']!,
-                    icon: cat['icon']!,
-                    onTap: () => _guardedNavigate(
-                      context,
-                      LawyerOnlineList(topic: cat['topic']),
+                    LawyerOnlineList(
+                      topic: topicTitle.isNotEmpty ? topicTitle : topic,
                     ),
                   ),
-                ))
-            .toList(),
-      ),
+                ),
+              );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _lawCategoryItem(
     BuildContext context, {
+    required int index,
     required String title,
     required String icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _kCard,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFFD6D5D5),
-                width: 1,
+    final bg = HomeTheme.categoryTints[index % HomeTheme.categoryTints.length];
+    final fg =
+        HomeTheme.categoryIconColors[index % HomeTheme.categoryIconColors.length];
+
+    final iconUrl = icon.trim();
+    final fallbackIcon =
+        'assets/icons/law-type-${(index % 4) + 1}.png';
+    final isNetwork = iconUrl.startsWith('http');
+
+    Widget buildIcon() {
+      if (iconUrl.isEmpty) {
+        return Image.asset(
+          fallbackIcon,
+          width: 36,
+          height: 36,
+          fit: BoxFit.contain,
+          color: fg,
+        );
+      }
+      if (isNetwork) {
+        // รูปจาก API เป็นภาพสีจริง — อย่าใส่ color tint (จะกลายเป็นสีทึบ)
+        return CachedNetworkImage(
+          imageUrl: iconUrl,
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+          memCacheWidth: 120,
+          placeholder: (_, __) => Center(
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: fg.withValues(alpha: 0.5),
               ),
             ),
-            child: Image.asset(icon,
-                height: 34, fit: BoxFit.contain, color: _kPrimary),
           ),
-          const SizedBox(height: 8),
-          Text(title,
-              style: GoogleFonts.prompt(
-                  fontSize: 10.5, color: _kText, height: 1.4),
-              textAlign: TextAlign.center),
-        ],
+          errorWidget: (_, __, ___) => Image.asset(
+            fallbackIcon,
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
+            color: fg,
+          ),
+        );
+      }
+      return Image.asset(
+        iconUrl,
+        width: 36,
+        height: 36,
+        fit: BoxFit.contain,
+        color: fg,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: HomeTheme.brCardMd,
+          child: Container(
+            decoration: HomeTheme.cardDecoration(
+              radius: HomeTheme.radiusCardMd,
+              color: bg,
+              borderColor: fg.withValues(alpha: 0.15),
+              shadowTint: fg,
+              shadows: [
+                BoxShadow(
+                  color: fg.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+              child: Column(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: buildIcon(),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Text(
+                      title.replaceAll('\n', ' '),
+                      style: GoogleFonts.prompt(
+                        fontSize: 10.5,
+                        color: HomeTheme.ink,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -608,19 +845,17 @@ class HomeUserSection extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 148,
-        decoration: BoxDecoration(
+        decoration: HomeTheme.cardDecoration(
+          radius: HomeTheme.radiusCardLg,
           color: _kCard,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFFD6D5D5),
-            width: 0.6,
-          ),
+          shadowTint: HomeTheme.primary,
         ),
         child: Column(
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(18)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(HomeTheme.radiusCardLg),
+              ),
               child: Stack(children: [
                 _lawyerCardImage(model['imageUrl'] ?? ''),
                 Positioned(

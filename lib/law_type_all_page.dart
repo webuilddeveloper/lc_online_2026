@@ -1,8 +1,11 @@
 import 'package:LawyerOnline/component/appbar.dart';
+import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/lawyer-online-list.dart';
+import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LawTypeAllPage extends StatefulWidget {
   const LawTypeAllPage({super.key});
@@ -15,182 +18,89 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
   dynamic _selectedTopic;
   dynamic _selectedSubTopic;
   String _search = '';
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _caseTypeList = [];
 
-  // ── caseTypeList + emoji + color (เหมือน ConsultPage) ─
-  final List<Map<String, dynamic>> _caseTypeList = [
-    {
-      'code': '0',
-      'title': 'ทั่วไป',
-      'emoji': '💬',
-      'color': 0xFF64748B,
-      'subCase': <Map<String, dynamic>>[],
-    },
-    {
-      'code': '1',
-      'title': 'คดีที่พบบ่อย',
-      'emoji': '⭐',
-      'color': 0xFF0262EC,
-      'subCase': [
-        {'code': '0', 'title': 'หนี้กู้ยืมเงิน / ลูกหนี้-เจ้าหนี้ / ดอกเบี้ย'},
-        {'code': '1', 'title': 'ตรวจร่างสัญญา / สัญญาธุรกิจ'},
-        {'code': '2', 'title': 'พินัยกรรม / มรดก'},
-        {'code': '3', 'title': 'อุบัติเหตุจราจร'},
-        {'code': '4', 'title': 'หมิ่นประมาททางออนไลน์ / พ.ร.บ.คอมฯ'},
-        {'code': '5', 'title': 'โดนโกงออนไลน์'},
-        {'code': '6', 'title': 'ทำร้ายร่างกาย-ชีวิต / อาชญากรรม'},
-        {'code': '7', 'title': 'พรากผู้เยาว์ / ความรุนแรงในครอบครัว'},
-      ],
-    },
-    {
-      'code': '2',
-      'title': 'ครอบครัวและมรดก',
-      'emoji': '👨‍👩‍👧',
-      'color': 0xFFE11D48,
-      'subCase': [
-        {'code': '0', 'title': 'ฟ้องชู้ / เรียกค่าทดแทน'},
-        {'code': '1', 'title': 'พินัยกรรม / มรดก'},
-        {'code': '2', 'title': 'ฟ้องหย่า / แบ่งสินสมรส'},
-        {'code': '3', 'title': 'รับรองบุตร / อำนาจปกครองบุตร / เด็ก-ผู้เยาว์'},
-        {'code': '4', 'title': 'พรากผู้เยาว์ / ความรุนแรงในครอบครัว'},
-      ],
-    },
-    {
-      'code': '3',
-      'title': 'หนี้สินและการเงิน',
-      'emoji': '💰',
-      'color': 0xFFFF6B35,
-      'subCase': [
-        {'code': '0', 'title': 'หนี้กู้ยืมเงิน / ลูกหนี้-เจ้าหนี้ / ดอกเบี้ย'},
-        {'code': '1', 'title': 'อายัดบัญชี / บัญชีม้า'},
-        {'code': '2', 'title': 'เช่าซื้อ / ค้ำประกัน'},
-        {'code': '3', 'title': 'จำนำ / จำนอง / ขายฝาก'},
-        {'code': '4', 'title': 'สินเชื่อส่วนบุคคล / ไฟแนนซ์'},
-        {'code': '5', 'title': 'บัตรเครดิต / เช็คเด้ง / ธุรกรรมการเงิน'},
-        {'code': '6', 'title': 'ล้มละลาย / ฟื้นฟูกิจการ'},
-        {'code': '7', 'title': 'บังคับคดี / ยึดทรัพย์ / สืบทรัพย์'},
-      ],
-    },
-    {
-      'code': '4',
-      'title': 'อาญาและอาชญากรรม',
-      'emoji': '🔒',
-      'color': 0xFFDC2626,
-      'subCase': [
-        {'code': '0', 'title': 'ลักทรัพย์ / วิ่งราว / ชิงทรัพย์ / ปล้น'},
-        {'code': '1', 'title': 'หมิ่นประมาท / ดูหมิ่น'},
-        {'code': '2', 'title': 'ความผิดเกี่ยวกับเพศ'},
-        {'code': '3', 'title': 'ทำร้ายร่างกาย-ชีวิต / อาชญากรรม'},
-        {'code': '4', 'title': 'ฉ้อโกง / ยักยอกทรัพย์'},
-        {'code': '5', 'title': 'พรากผู้เยาว์ / ความรุนแรงในครอบครัว'},
-        {'code': '6', 'title': 'คดียาเสพติด'},
-        {'code': '7', 'title': 'ประกันตัว / ชั้นตำรวจ / ชั้นศาล'},
-        {'code': '8', 'title': 'ปลอมแปลง / เอกสารปลอม'},
-      ],
-    },
-    {
-      'code': '5',
-      'title': 'ทรัพย์สินและที่ดิน',
-      'emoji': '🏠',
-      'color': 0xFF059669,
-      'subCase': [
-        {'code': '0', 'title': 'ซื้อขายที่ดิน / โอนที่ดิน'},
-        {'code': '1', 'title': 'เช่าบ้าน / ขับไล่ผู้เช่า'},
-        {'code': '2', 'title': 'บุกรุก / ครอบครองปรปักษ์'},
-        {'code': '3', 'title': 'ซื้อ-ขายทรัพย์สิน'},
-        {'code': '5', 'title': 'เช่าทรัพย์ / ยืม-ฝากทรัพย์'},
-        {'code': '6', 'title': 'ภาระจำยอม / ทางจำเป็น'},
-        {'code': '7', 'title': 'ก่อสร้าง / ผู้รับเหมาทิ้งงาน'},
-      ],
-    },
-    {
-      'code': '6',
-      'title': 'ธุรกิจและบริษัท',
-      'emoji': '🏢',
-      'color': 0xFF7C3AED,
-      'subCase': [
-        {'code': '0', 'title': 'จดทะเบียนบริษัท / ห้างหุ้นส่วน / ผู้ถือหุ้น'},
-        {'code': '1', 'title': 'ตรวจร่างสัญญา'},
-        {'code': '2', 'title': 'ซื้อกิจการ / ควบรวมบริษัท'},
-        {'code': '3', 'title': 'ภาษีอากร / บัญชี / การวางแผนภาษี'},
-        {
-          'code': '5',
-          'title': 'ทรัพย์สินทางปัญญา (สิทธิบัตร, ลิขสิทธิ์, เครื่องหมายการค้า)'
-        },
-        {'code': '6', 'title': 'นายหน้า / ตัวแทน'},
-      ],
-    },
-    {
-      'code': '7',
-      'title': 'คดีออนไลน์และเทคโนโลยี',
-      'emoji': '💻',
-      'color': 0xFF0891B2,
-      'subCase': [
-        {'code': '0', 'title': 'หลอกโอนเงินออนไลน์ / แก๊งคอลเซ็นเตอร์'},
-        {'code': '1', 'title': 'หมิ่นประมาททางออนไลน์ / พ.ร.บ.คอมฯ'},
-        {'code': '2', 'title': 'ธุรกรรมทางอิเล็กทรอนิกส์'},
-        {'code': '3', 'title': 'โดนโกงออนไลน์'},
-      ],
-    },
-    {
-      'code': '8',
-      'title': 'แรงงานและการจ้างงาน',
-      'emoji': '👷',
-      'color': 0xFFD97706,
-      'subCase': [
-        {'code': '0', 'title': 'กฎหมายแรงงาน'},
-        {'code': '1', 'title': 'สัญญาจ้างงาน / ข้อบังคับทำงาน'},
-        {'code': '2', 'title': 'เลิกจ้างไม่เป็นธรรม / เงินชดเชย'},
-        {'code': '3', 'title': 'จ้างทำของ / ฟรีแลนซ์'},
-        {'code': '4', 'title': 'แรงงานต่างด้าว'},
-        {'code': '5', 'title': 'สหภาพแรงงาน'},
-      ],
-    },
-    {
-      'code': '9',
-      'title': 'ประกันภัยและผู้บริโภค',
-      'emoji': '🛡️',
-      'color': 0xFFDB2777,
-      'subCase': [
-        {'code': '0', 'title': 'ประกันภัย / เคลมประกัน คปภ.'},
-        {
-          'code': '1',
-          'title': 'คดีผู้บริโภค (กรณีสินค้าไม่ตรงปก / สินค้าอันตราย ฯลฯ)'
-        },
-        {'code': '2', 'title': 'อุบัติเหตุจราจร'},
-        {'code': '3', 'title': 'ฟ้องแพทย์ / โรงพยาบาล / อาหารและยา'},
-      ],
-    },
-    {
-      'code': '10',
-      'title': 'ฟ้องศาล เรียกค่าเสียหาย',
-      'emoji': '⚖️',
-      'color': 0xFF6D28D9,
-      'subCase': [
-        {'code': '0', 'title': 'ละเมิดฟ้องเรียกค่าเสียหาย'},
-        {'code': '1', 'title': 'อุบัติเหตุจราจร'},
-        {'code': '2', 'title': 'เหตุเดือดร้อนรำคาญ'},
-        {'code': '3', 'title': 'ทำร้ายร่างกาย-ชีวิต / อาชญากรรม'},
-      ],
-    },
-    {
-      'code': '11',
-      'title': 'อื่นๆและระหว่างประเทศ',
-      'emoji': '🌐',
-      'color': 0xFF0F766E,
-      'subCase': [
-        {'code': '0', 'title': 'โนตาลีรับรองเอกสาร (Notarial Public Attorney)'},
-        {'code': '1', 'title': 'Visa / Work Permit'},
-        {'code': '2', 'title': 'กฎหมายการค้าระหว่างประเทศ'},
-        {'code': '3', 'title': 'นำเข้า-ส่งออก / ศุลกากร'},
-      ],
-    },
+  static const _palette = <int>[
+    0xFF64748B,
+    0xFF0262EC,
+    0xFFE11D48,
+    0xFFFF6B35,
+    0xFFDC2626,
+    0xFF059669,
+    0xFF7C3AED,
+    0xFF0891B2,
+    0xFFD97706,
+    0xFFDB2777,
+    0xFF6D28D9,
+    0xFF0F766E,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _readTopic();
+  }
+
+  Future<void> _readTopic() async {
+    setState(() => _isLoading = true);
+    try {
+      final param = await postDio('$server/m/topic/read', {});
+      final objectData = param is Map ? param['objectData'] : null;
+      if (!mounted) return;
+
+      final list = <Map<String, dynamic>>[];
+      if (objectData is List) {
+        for (var i = 0; i < objectData.length; i++) {
+          final raw = objectData[i];
+          if (raw is! Map) continue;
+          final item = Map<String, dynamic>.from(raw);
+          final title = item['title']?.toString().trim() ?? '';
+          if (title.isEmpty) continue;
+
+          final code = item['code']?.toString().trim() ?? '';
+          final imageUrl = item['imageUrl']?.toString().trim() ?? '';
+          final subRaw = item['subTopics'] ?? item['subCase'] ?? const [];
+          final subCase = <Map<String, dynamic>>[];
+          if (subRaw is List) {
+            for (final s in subRaw) {
+              if (s is! Map) continue;
+              final sub = Map<String, dynamic>.from(s);
+              if ((sub['title']?.toString().trim() ?? '').isEmpty) continue;
+              subCase.add(sub);
+            }
+          }
+
+          list.add({
+            'code': code.isNotEmpty ? code : '$i',
+            'title': title,
+            'imageUrl': imageUrl,
+            'color': _palette[i % _palette.length],
+            'subCase': subCase,
+          });
+        }
+      }
+
+      setState(() {
+        _caseTypeList = list;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _caseTypeList = [];
+        _isLoading = false;
+      });
+    }
+  }
 
   List<Map<String, dynamic>> get _subCases {
     if (_selectedTopic == null) return [];
-    return (_selectedTopic!['subCase'] as List<dynamic>)
-        .cast<Map<String, dynamic>>()
-        .where((s) => (s['title'] as String).trim().isNotEmpty)
+    final raw = _selectedTopic!['subCase'];
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .where((s) => (s['title']?.toString().trim() ?? '').isNotEmpty)
         .toList();
   }
 
@@ -198,23 +108,24 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
 
   List<Map<String, dynamic>> get _filtered {
     if (_search.isEmpty) return _caseTypeList;
+    final q = _search.toLowerCase();
     return _caseTypeList.where((item) {
-      final title = (item['title'] as String).toLowerCase();
+      final title = (item['title']?.toString() ?? '').toLowerCase();
       final sub = (item['subCase'] as List).any((s) =>
-          (s['title'] as String).toLowerCase().contains(_search.toLowerCase()));
-      return title.contains(_search.toLowerCase()) || sub;
+          (s is Map) &&
+          (s['title']?.toString().toLowerCase() ?? '').contains(q));
+      return title.contains(q) || sub;
     }).toList();
   }
 
   void _navigate(Map<String, dynamic> topic) {
     HapticFeedback.lightImpact();
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => LawyerOnlineList(
           topic: topic['title'] as String,
-          subTopic: _selectedSubTopic?['title'],
+          subTopic: _selectedSubTopic?['title']?.toString() ?? '',
         ),
       ),
     );
@@ -233,7 +144,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF2F6FF),
         appBar: appBarCustom(
-          title: 'ประเด็นหัวข้อต่างๆ',
+          title: 'lawTopicsTitle'.tr(),
           backBtn: true,
           isRightWidget: false,
           backAction: () => Navigator.pop(context),
@@ -246,12 +157,13 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                 constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : 500),
                 child: Column(
                   children: [
-                    // ── Search bar ──────────────────────────────
                     _buildSearchBar(),
                     Expanded(
-                      child: isDesktop
-                          ? _buildDesktopLayout(filtered, selectedColor)
-                          : _buildMobileLayout(filtered, selectedColor),
+                      child: _isLoading
+                          ? AppLoadingView(message: 'lawTopicsLoading'.tr())
+                          : isDesktop
+                              ? _buildDesktopLayout(filtered, selectedColor)
+                              : _buildMobileLayout(filtered, selectedColor),
                     ),
                   ],
                 ),
@@ -300,7 +212,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                         size: 48, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'เลือกหัวข้อเพื่อดูรายละเอียด',
+                      'lawTopicsSelectHint'.tr(),
                       style: TextStyle(color: Colors.grey[600], fontSize: 16),
                     ),
                   ],
@@ -333,10 +245,6 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════
-  //  Search Bar
-  // ════════════════════════════════════════════════════════
-
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -348,7 +256,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           border: Border.all(color: const Color(0xFFDDE5F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -358,20 +266,22 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           onChanged: (v) => setState(() {
             _search = v;
             if (_selectedTopic != null) {
-              // ถ้า topic ที่เลือกไม่อยู่ใน filtered ให้ reset
               final titles = _filtered.map((e) => e['title']).toList();
               if (!titles.contains(_selectedTopic!['title'])) {
                 _selectedTopic = null;
+                _selectedSubTopic = null;
               }
             }
           }),
           style: const TextStyle(color: Color(0xFF1A2340), fontSize: 13),
           decoration: InputDecoration(
-            hintText: 'ค้นหาประเภทกฎหมาย...',
+            hintText: 'lawTopicsSearchHint'.tr(),
             hintStyle: TextStyle(
-                color: const Color(0xFF1A2340).withOpacity(0.3), fontSize: 13),
+                color: const Color(0xFF1A2340).withValues(alpha: 0.3),
+                fontSize: 13),
             prefixIcon: Icon(Icons.search_rounded,
-                color: const Color(0xFF1A2340).withOpacity(0.35), size: 18),
+                color: const Color(0xFF1A2340).withValues(alpha: 0.35),
+                size: 18),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.only(top: 9, bottom: 0),
           ),
@@ -380,9 +290,42 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════
-  //  Grid — copy จาก ConsultPage._buildTopicField()
-  // ════════════════════════════════════════════════════════
+  Widget _topicImage(String imageUrl, {double size = 44}) {
+    final url = imageUrl.trim();
+    if (url.isEmpty) {
+      return Icon(
+        Icons.gavel_rounded,
+        size: size * 0.7,
+        color: const Color(0xFF94A3B8),
+      );
+    }
+    if (url.startsWith('assets/')) {
+      return Image.asset(url, width: size, height: size, fit: BoxFit.contain);
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      memCacheWidth: 160,
+      placeholder: (_, __) => SizedBox(
+        width: size,
+        height: size,
+        child: const Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      errorWidget: (_, __, ___) => Icon(
+        Icons.gavel_rounded,
+        size: size * 0.7,
+        color: const Color(0xFF94A3B8),
+      ),
+    );
+  }
 
   Widget _buildGrid(List<Map<String, dynamic>> items, {bool isDesktop = false}) {
     return GridView.builder(
@@ -399,27 +342,31 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
         final item = items[i];
         final color = Color(item['color'] as int);
         final isSelected = _selectedTopic?['code'] == item['code'];
+        final imageUrl = item['imageUrl']?.toString() ?? '';
 
         return GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             final subCases = (item['subCase'] as List)
-                .where((s) => (s['title'] as String).trim().isNotEmpty)
+                .whereType<Map>()
+                .where((s) => (s['title']?.toString().trim() ?? '').isNotEmpty)
                 .toList();
             if (subCases.isEmpty) {
-              // ทั่วไป → navigate เลย
+              _selectedSubTopic = null;
               _navigate(item);
             } else {
               setState(() {
                 _selectedTopic = isSelected ? null : item;
+                _selectedSubTopic = null;
               });
             }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             decoration: BoxDecoration(
-              color:
-                  isSelected ? color.withOpacity(0.1) : const Color(0xFFF8F9FB),
+              color: isSelected
+                  ? color.withValues(alpha: 0.1)
+                  : const Color(0xFFF8F9FB),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isSelected ? color : const Color(0xFFE2E8F4),
@@ -428,7 +375,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: color.withOpacity(0.2),
+                        color: color.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -438,8 +385,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(item['emoji'] as String,
-                    style: const TextStyle(fontSize: 22)),
+                _topicImage(imageUrl, size: isDesktop ? 52 : 44),
                 const SizedBox(height: 5),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -464,10 +410,6 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════
-  //  Sub-case section — โผล่หลัง grid เมื่อเลือก topic
-  // ════════════════════════════════════════════════════════
-
   Widget _buildSubCaseSection(Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,12 +421,14 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(
-            'หัวข้อย่อยของ "${_selectedTopic!['title']}"',
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A2340)),
+          Expanded(
+            child: Text(
+              'lawTopicsSubOf'.tr(args: [_selectedTopic!['title'].toString()]),
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A2340)),
+            ),
           ),
         ]),
         const SizedBox(height: 10),
@@ -492,10 +436,10 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.25)),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.08),
+                color: color.withValues(alpha: 0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -508,9 +452,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
               final isLast = idx == _subCases.length - 1;
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _selectedSubTopic = sub;
-                  });
+                  setState(() => _selectedSubTopic = sub);
                   _navigate(_selectedTopic!);
                 },
                 child: Container(
@@ -537,14 +479,16 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
                         sub['title'] as String,
                         style: TextStyle(
                           fontSize: 13,
-                          color: const Color(0xFF1A2340).withOpacity(0.75),
+                          color:
+                              const Color(0xFF1A2340).withValues(alpha: 0.75),
                           height: 1.4,
                         ),
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
                         size: 11,
-                        color: const Color(0xFF1A2340).withOpacity(0.2)),
+                        color:
+                            const Color(0xFF1A2340).withValues(alpha: 0.2)),
                   ]),
                 ),
               );
@@ -556,6 +500,7 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
   }
 
   Widget _buildEmpty() {
+    final hasSearch = _search.trim().isNotEmpty;
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(top: 60),
@@ -565,20 +510,32 @@ class _LawTypeAllPageState extends State<LawTypeAllPage> {
             height: 64,
             decoration: const BoxDecoration(
                 color: Color(0xFFF0F4F8), shape: BoxShape.circle),
-            child: Icon(Icons.search_off_rounded,
-                color: const Color(0xFF1A2340).withOpacity(0.25), size: 28),
+            child: Icon(
+                hasSearch ? Icons.search_off_rounded : Icons.inbox_outlined,
+                color: const Color(0xFF1A2340).withValues(alpha: 0.25),
+                size: 28),
           ),
           const SizedBox(height: 12),
-          Text('ไม่พบ "$_search"',
+          Text(
+              hasSearch ? 'notFoundQuery'.tr(args: [_search]) : 'lawTopicsEmpty'.tr(),
               style: TextStyle(
-                  color: const Color(0xFF1A2340).withOpacity(0.55),
+                  color: const Color(0xFF1A2340).withValues(alpha: 0.55),
                   fontSize: 14,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text('ลองค้นหาด้วยคำอื่น',
+          Text(
+              hasSearch ? 'tryOtherSearch'.tr() : 'tryAgain'.tr(),
               style: TextStyle(
-                  color: const Color(0xFF1A2340).withOpacity(0.3),
+                  color: const Color(0xFF1A2340).withValues(alpha: 0.3),
                   fontSize: 12)),
+          if (!hasSearch) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: _readTopic,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: Text('reload'.tr()),
+            ),
+          ],
         ]),
       ),
     );

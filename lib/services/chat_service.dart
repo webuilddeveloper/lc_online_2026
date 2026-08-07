@@ -136,13 +136,13 @@ class ChatService {
   }
 
   // ========== Methods ==========
-  Future<void> joinRoom(String roomCode, String userId) async {
+  Future<void> joinRoom(String roomCode, String userId, {String caseCode = ''}) async {
     try {
       print("=== Before JoinRoom ===");
       print("state: ${_connection?.state}");
       print("roomCode: $roomCode");
       print("userId: $userId");
-      await _connection?.invoke("JoinRoom", args: [roomCode, userId]);
+      await _connection?.invoke("JoinRoom", args: [roomCode, userId, caseCode]);
       print("=== JoinRoom Success ===");
     } catch (e) {
       print("=== JoinRoom Error: $e ===");
@@ -187,9 +187,13 @@ class ChatService {
     }
   }
 
-  Future<void> markAsRead(String roomCode, String userId) async {
+  Future<void> markAsRead(
+    String roomCode,
+    String userId, {
+    String caseCode = '',
+  }) async {
     try {
-      await _connection?.invoke("MarkAsRead", args: [roomCode, userId]);
+      await _connection?.invoke("MarkAsRead", args: [roomCode, userId, caseCode]);
     } catch (e) {
       print("=== MarkAsRead Error: $e ===");
     }

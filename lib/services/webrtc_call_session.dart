@@ -8,6 +8,7 @@ import 'package:LawyerOnline/services/webrtc_call_listener_service.dart';
 import 'package:LawyerOnline/services/webrtc_config.dart';
 import 'package:LawyerOnline/services/webrtc_hub_service.dart';
 import 'package:LawyerOnline/services/webrtc_peer_service.dart';
+import 'package:LawyerOnline/services/webrtc_system_ui.dart';
 import 'package:LawyerOnline/widgets/webrtc_call_pip_bubble.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -120,6 +121,7 @@ class WebRtcCallSession {
         }
       },
       onRemoteStream: attachRemote,
+      onRemoteStreamRefresh: refreshRemoteVideo,
       onQualityChanged: (q) {
         if (quality.value != q) quality.value = q;
       },
@@ -141,8 +143,11 @@ class WebRtcCallSession {
     if (local != null) attachLocal(local);
   }
 
-  void attachRemote(MediaStream stream) {
-    if (remoteRenderer.srcObject?.id != stream.id) {
+  void attachRemote(MediaStream stream, {bool force = false}) {
+    if (force) {
+      remoteRenderer.srcObject = null;
+    }
+    if (force || remoteRenderer.srcObject?.id != stream.id) {
       remoteRenderer.srcObject = stream;
     } else if (remoteRenderer.srcObject == null) {
       remoteRenderer.srcObject = stream;
@@ -150,8 +155,28 @@ class WebRtcCallSession {
     if (!hasRemote.value) hasRemote.value = true;
   }
 
-  void attachLocal(MediaStream stream) {
-    if (localRenderer.srcObject?.id != stream.id) {
+  /// รีเฟรชวิดีโอฝั่งตรงข้าม (หลังหยุดแชร์จอ track เก่าค้าง)
+  void refreshRemoteVideo() {
+    final stream = _peer?.remoteStream;
+    if (stream == null) {
+      hasRemote.value = false;
+      return;
+    }
+    attachRemote(stream, force: true);
+    Future<void>.delayed(const Duration(milliseconds: 600), () {
+      if (_ending || _peer == null) return;
+      final latest = _peer!.remoteStream;
+      if (latest != null && state.value == WebRtcCallState.connected) {
+        attachRemote(latest, force: true);
+      }
+    });
+  }
+
+  void attachLocal(MediaStream stream, {bool force = false}) {
+    if (force) {
+      localRenderer.srcObject = null;
+    }
+    if (force || localRenderer.srcObject?.id != stream.id) {
       localRenderer.srcObject = stream;
     } else if (localRenderer.srcObject == null) {
       localRenderer.srcObject = stream;
@@ -205,6 +230,15 @@ class WebRtcCallSession {
     final reason = endReason;
     await _saveCallLog();
 
+    if (roomCode.isNotEmpty && userId.isNotEmpty) {
+      unawaited(WebRtcHubService.instance.endCall(
+        roomCode: roomCode,
+        fromUserId: userId,
+        caseCode: caseCode,
+        toUserId: toUserId,
+      ));
+    }
+
     final peer = _peer;
     _peer = null;
     await peer?.dispose();
@@ -215,6 +249,7 @@ class WebRtcCallSession {
     hasLocal.value = false;
     screenSharing.value = false;
     WebRtcCallListenerService.instance.setInCallPage(false);
+    unawaited(WebRtcSystemUi.restoreAfterCall());
 
     final nav = navigatorKey.currentState;
     final ctx = nav?.context;

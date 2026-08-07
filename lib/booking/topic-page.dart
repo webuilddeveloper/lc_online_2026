@@ -1,10 +1,12 @@
 import 'package:LawyerOnline/booking/lawyer-page.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class TopicPage extends StatefulWidget {
   const TopicPage({Key? key}) : super(key: key);
@@ -251,7 +253,7 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F6FF),
       appBar: appBar(
-        title: "นัดหมายทนาย",
+        title: 'bookingTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => Navigator.pop(context, false),
@@ -315,7 +317,8 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
                                                       .isNotEmpty)
                                               .toList();
                                       if (subTopics.isEmpty) {
-                                        _navigateToLawyer(item, {'title': ''});
+                                        _navigateToLawyer(
+                                            item, {'code': '', 'title': ''});
                                       } else {
                                         setState(() => _expandedIndex =
                                             isExpanded ? null : i);
@@ -361,9 +364,9 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text(
-            'เลือกประเภทหัวข้อ',
-            style: TextStyle(
+          Text(
+            'bookingSelectTopicTitle'.tr(),
+            style: const TextStyle(
               color: const Color(0xFF1A2340),
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -371,7 +374,7 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
             ),
           ),
           Text(
-            'กดเพื่อดูหัวข้อย่อย แล้วเลือกทนายที่ใช่',
+            'bookingSelectTopicHint'.tr(),
             style: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.4), fontSize: 11),
           ),
@@ -397,7 +400,7 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
           }),
           style: const TextStyle(color: const Color(0xFF1A2340), fontSize: 13),
           decoration: InputDecoration(
-            hintText: 'ค้นหาประเภทคดี...',
+            hintText: 'bookingSearchCaseHint'.tr(),
             hintStyle: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.3), fontSize: 13),
             prefixIcon: Icon(Icons.search_rounded,
@@ -424,13 +427,13 @@ class _TopicPageState extends State<TopicPage> with TickerProviderStateMixin {
               color: const Color(0xFF1A2340).withOpacity(0.25), size: 28),
         ),
         const SizedBox(height: 12),
-        Text('ไม่พบ "$_search"',
+        Text('notFoundQuery'.tr(args: [_search]),
             style: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.55),
                 fontSize: 14,
                 fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text('ลองค้นหาด้วยคำอื่น',
+        Text('tryOtherSearch'.tr(),
             style: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.3), fontSize: 12)),
       ]),
@@ -471,6 +474,39 @@ class _CategoryCard extends StatelessWidget {
     required this.onHeaderTap,
     required this.onSubTap,
   });
+
+  String get _imageUrl => item['imageUrl']?.toString().trim() ?? '';
+
+  bool get _hasApiImage =>
+      _imageUrl.isNotEmpty &&
+      (_imageUrl.startsWith('http') || _imageUrl.startsWith('assets/'));
+
+  Widget _buildTopicIcon() {
+    if (!_hasApiImage) {
+      return Text(palette.emoji, style: const TextStyle(fontSize: 20));
+    }
+    if (_imageUrl.startsWith('assets/')) {
+      return Padding(
+        padding: const EdgeInsets.all(6),
+        child: Image.asset(_imageUrl, fit: BoxFit.contain),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.all(6),
+      child: CachedNetworkImage(
+        imageUrl: _imageUrl,
+        fit: BoxFit.contain,
+        memCacheWidth: 120,
+        placeholder: (_, __) => const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        errorWidget: (_, __, ___) =>
+            Text(palette.emoji, style: const TextStyle(fontSize: 20)),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -535,30 +571,36 @@ class _CategoryCard extends StatelessWidget {
                       : null,
                 ),
                 child: Row(children: [
-                  // Icon with gradient bg + glow
+                  // Topic image from API (fallback: palette emoji)
                   Container(
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [palette.primary, palette.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: _hasApiImage ? Colors.white : null,
+                      gradient: _hasApiImage
+                          ? null
+                          : LinearGradient(
+                              colors: [palette.primary, palette.secondary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                       borderRadius: BorderRadius.circular(13),
+                      border: _hasApiImage
+                          ? Border.all(
+                              color: palette.primary.withOpacity(0.18),
+                            )
+                          : null,
                       boxShadow: [
                         BoxShadow(
                           color: palette.primary
-                              .withOpacity(isExpanded ? 0.5 : 0.25),
+                              .withOpacity(isExpanded ? 0.35 : 0.18),
                           blurRadius: isExpanded ? 14 : 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Center(
-                      child: Text(palette.emoji,
-                          style: const TextStyle(fontSize: 20)),
-                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Center(child: _buildTopicIcon()),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -583,8 +625,8 @@ class _CategoryCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           subTopics.isEmpty
-                              ? 'กดเพื่อเลือกทนายความ'
-                              : '${subTopics.length} หัวข้อย่อย',
+                              ? 'bookingTapToSelectLawyer'.tr()
+                              : 'bookingSubTopicsCount'.tr(args: ['${subTopics.length}']),
                           style: GoogleFonts.prompt(
                             color: subTopics.isEmpty
                                 ? palette.primary

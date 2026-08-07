@@ -332,7 +332,7 @@ class _CaseListPageState extends State<CaseListPage>
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
                                       padding: const EdgeInsets.fromLTRB(
-                                          16, 8, 16, 32),
+                                          16, 8, 16, 122),
                                       itemCount: filtered.length,
                                       itemBuilder: (_, i) {
                                         final item = filtered[i];
@@ -363,7 +363,7 @@ class _CaseListPageState extends State<CaseListPage>
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 50),
+                        
                       ],
                     ),
                   ),

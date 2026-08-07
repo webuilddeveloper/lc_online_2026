@@ -1,5 +1,10 @@
 {
   "appTitle": "ทนายออนไลน์",
+  "homeWelcomeGuest": "ยินดีต้อนรับสู่ทนายออนไลน์",
+  "homeWelcomeGuestHint": "เข้าสู่ระบบเพื่อเปิดเคส นัดหมาย และติดตามสถานะได้ทันที",
+  "homeWelcomeUser": "สวัสดี, {}",
+  "homeWelcomeUserHint": "ติดตามเคสและนัดหมายของคุณได้จากหน้านี้",
+  "homeWelcomeLawyerHint": "จัดการงาน นัดหมาย และเคสด่วนได้จากหน้านี้",
   "community": "ชุมชนกฎหมาย",
   "communitySubtitle": "Community Legal Hub",
   "postQuestion": "ตั้งคำถาม",
@@ -232,7 +237,6 @@
   "navAppointment": "นัดหมาย",
   "navProfile": "โปรไฟล์",
   "myAppointment": "นัดหมายของฉัน",
-
   "status": {
     "waiting": "รอทนายรับเคส",
     "waitingForConfirm": "รอยืนยัน",
@@ -269,7 +273,6 @@
   "clear_filters": "ล้างฟิลเตอร์",
   "appointment_empty_list": "การนัดหมายของคุณจะปรากฏที่นี่",
   "sort_by": "เรียงตาม",
-  
   "sort": {
     "date_desc": "วันที่ล่าสุดก่อน",
     "date_asc": "วันที่เก่าสุดก่อน",
@@ -429,7 +432,6 @@
     "lawyer": "หมอความ",
     "client": "บุคคลทั่วไป"
   },
-
   "steps": {
     "requested": {
       "title": "ส่งคำขอนัดหมาย",
@@ -452,7 +454,6 @@
       "desc": "การปรึกษาเสร็จสมบูรณ์"
     }
   },
-  
   "appointmentInfo": {
     "title": "ข้อมูลการนัดหมาย",
     "caseType": "ประเภทการนัดหมาย",
@@ -488,19 +489,16 @@
     "comment": "ความคิดเห็นของคุณมีคุณค่ามาก",
     "submitRating": "ส่งคะแนน"
   },
-
-  "returns":{
+  "returns": {
     "returnHome": "กลับหน้าหลัก"
   },
-
-  "call_room":{
+  "call_room": {
     "consultingRoom": "เข้าสู่ห้องปรึกษา"
   },
-  "memssage_cancel_appointment":{
+  "memssage_cancel_appointment": {
     "success": "ระบบได้ยกเลิกนัดหมายเรียบร้อยแล้ว และจะทำการคืนเงินนัดหมายผ่านช่องทางบัญชีธนาคารที่ลงทะเบียนไว้"
   },
-
-  "rating_appointment":{
+  "rating_appointment": {
     "terrible": "แย่มาก",
     "fair": "พอใช้",
     "good": "ดีพอสมควร",
@@ -510,7 +508,7 @@
     "successTitle": "ส่งคะแนนสำเร็จ!",
     "successDescription": "ขอบคุณสำหรับความคิดเห็นของคุณ"
   },
-  "notification":{
+  "notification": {
     "pre_consultation_instruction": "คำแนะนำก่อนเข้าห้อง",
     "pre_consultation_instruction_message": "กรุณาระบุชื่อในช่อง Enter Name ว่า 1234 ก่อนกด Join Now",
     "permission_denied_title": "การอนุญาตถูกปฏิเสธ",
@@ -521,11 +519,11 @@
     "listAll": "ดูทั้งหมด",
     "allItems": "รายการทั้งหมด",
     "empty": "ยังไม่มีการแจ้งเตือน",
-    "msg":{
+    "msg": {
       "read": "อ่านแล้ว",
       "new": "ใหม่"
     },
-    "common":{
+    "common": {
       "tapForDetail": "เลือกข้อความเพื่อดูรายละเอียด",
       "emptyCaseAlerts": "ข้อความแจ้งเตือนสำคัญเกี่ยวกับเคสของคุณจะแสดงที่นี่",
       "noSubject": "ไม่มีหัวข้อ",
@@ -533,12 +531,12 @@
       "noDetails": "ไม่มีรายระเอียดหัวข้อ"
     }
   },
-  "permission":{
+  "permission": {
     "title": "ตั้งค่าการเข้าถึง",
     "content": "กรุณาไปที่การตั้งค่า  แล้วอนุญาตให้แอปเข้าถึงกล้องและไมโครโฟน",
     "open_settings": "เปิดการตั้งค่า"
   },
-  "timeline":{
+  "timeline": {
     "today": "วันนี้",
     "yesterday": "เมื่อวาน",
     "earlier": "ก่อนหน้านี้"
@@ -559,22 +557,50 @@
     "periodEvening": "ค่ำ",
     "timeUnit": "น.",
     "monthShort": {
-      "1": "ม.ค.", "2": "ก.พ.", "3": "มี.ค.", "4": "เม.ย.",
-      "5": "พ.ค.", "6": "มิ.ย.", "7": "ก.ค.", "8": "ส.ค.",
-      "9": "ก.ย.", "10": "ต.ค.", "11": "พ.ย.", "12": "ธ.ค."
+      "1": "ม.ค.",
+      "2": "ก.พ.",
+      "3": "มี.ค.",
+      "4": "เม.ย.",
+      "5": "พ.ค.",
+      "6": "มิ.ย.",
+      "7": "ก.ค.",
+      "8": "ส.ค.",
+      "9": "ก.ย.",
+      "10": "ต.ค.",
+      "11": "พ.ย.",
+      "12": "ธ.ค."
     },
     "monthFull": {
-      "1": "มกราคม", "2": "กุมภาพันธ์", "3": "มีนาคม", "4": "เมษายน",
-      "5": "พฤษภาคม", "6": "มิถุนายน", "7": "กรกฎาคม", "8": "สิงหาคม",
-      "9": "กันยายน", "10": "ตุลาคม", "11": "พฤศจิกายน", "12": "ธันวาคม"
+      "1": "มกราคม",
+      "2": "กุมภาพันธ์",
+      "3": "มีนาคม",
+      "4": "เมษายน",
+      "5": "พฤษภาคม",
+      "6": "มิถุนายน",
+      "7": "กรกฎาคม",
+      "8": "สิงหาคม",
+      "9": "กันยายน",
+      "10": "ตุลาคม",
+      "11": "พฤศจิกายน",
+      "12": "ธันวาคม"
     },
     "dayFull": {
-      "1": "จันทร์", "2": "อังคาร", "3": "พุธ",
-      "4": "พฤหัสบดี", "5": "ศุกร์", "6": "เสาร์", "7": "อาทิตย์"
+      "1": "จันทร์",
+      "2": "อังคาร",
+      "3": "พุธ",
+      "4": "พฤหัสบดี",
+      "5": "ศุกร์",
+      "6": "เสาร์",
+      "7": "อาทิตย์"
     },
     "dayShort": {
-      "0": "จ", "1": "อ", "2": "พ", "3": "พฤ",
-      "4": "ศ", "5": "ส", "6": "อา"
+      "0": "จ",
+      "1": "อ",
+      "2": "พ",
+      "3": "พฤ",
+      "4": "ศ",
+      "5": "ส",
+      "6": "อา"
     },
     "loadError": "ไม่สามารถโหลดนัดหมายได้",
     "genericError": "เกิดข้อผิดพลาด กรุณาลองใหม่"
@@ -586,7 +612,6 @@
   "lawyerNo": "หมายเลขทนายความ",
   "lawyerNoRequired": "กรุณากรอกหมายเลขทนายความ",
   "lawyerNoInvalid": "รูปแบบไม่ถูกต้อง เช่น 12345/2565",
-
   "caseWorkspaceTitle": "พื้นที่ทำงานเคส",
   "caseWorkspaceSubtitle": "เอกสาร ไทม์ไลน์ และสรุปคำปรึกษา",
   "caseWorkspaceOpen": "เปิดพื้นที่ทำงาน",
@@ -599,7 +624,6 @@
   "caseWorkspaceSummaryHint": "บันทึกสรุปหลังปรึกษา...",
   "caseWorkspaceSummarySaved": "บันทึกสรุปแล้ว",
   "caseWorkspaceNotFound": "ไม่พบข้อมูลเคส",
-
   "lawyerDashboardTitle": "แดชบอร์ดทนาย",
   "lawyerDashboardTotalCases": "เคสทั้งหมด",
   "lawyerDashboardActive": "กำลังดำเนินการ",
@@ -610,7 +634,6 @@
   "lawyerDashboardRating": "คะแนนเฉลี่ย",
   "lawyerDashboardUrgent": "เคสด่วน",
   "lawyerDashboardBooking": "นัดหมาย",
-
   "lawyerApplyStatusTitle": "สถานะการสมัคร",
   "lawyerApplyPendingTitle": "รอตรวจสอบ",
   "lawyerApplyRejectedTitle": "ไม่ผ่านการตรวจสอบ",
@@ -618,7 +641,6 @@
   "lawyerApplyRejectedMessage": "เอกสารหรือข้อมูลไม่ครบถ้วน กรุณาส่งใหม่อีกครั้ง",
   "lawyerApplyResubmitMessage": "กรุณาอัปโหลดเอกสารเพิ่มเติมตามที่ระบุ",
   "lawyerApplyResubmit": "ส่งใบสมัครใหม่",
-
   "reviewPageTitle": "ให้คะแนนทนาย",
   "reviewPageSubtitle": "ความคิดเห็นของคุณช่วยให้ผู้อื่นเลือกทนายได้ดีขึ้น",
   "reviewCommentHint": "เขียนความคิดเห็น...",
@@ -628,7 +650,6 @@
   "reviewSuccessMessage": "บันทึกรีวิวเรียบร้อยแล้ว",
   "reviewLawyerDefault": "ทนายความ",
   "reviewFailed": "ส่งรีวิวไม่สำเร็จ",
-
   "pdpaTitle": "ความยินยอมและข้อกำหนด",
   "pdpaSubtitle": "กรุณาอ่านและยอมรับก่อนใช้งานแอป",
   "pdpaConsentLabel": "ยอมรับนโยบายความเป็นส่วนตัว (PDPA)",
@@ -646,14 +667,14 @@
   "chatWindowWaitingTitle": "รอถึงวันนัด เพื่อเปิดห้องสนทนา",
   "chatWindowExpiredTitle": "เลยช่วงเวลานัดแล้ว",
   "chatWindowExpiredMessage": "สามารถเลื่อนดูประวัติแชทได้เท่านั้น ปิดการแชทและวิดีโอคอลแล้ว",
+  "chatCancelledTitle": "นัดหมายถูกยกเลิกแล้ว",
+  "chatCancelledMessage": "สามารถเลื่อนดูประวัติแชทได้เท่านั้น",
   "chatWindowHistoryOnly": "ดูได้เฉพาะประวัติแชท",
   "accept": "ยอมรับ",
-
   "verifiedLawyer": "ยืนยันแล้ว",
   "communityCtaTitle": "ต้องการคำปรึกษาเพิ่มเติม?",
   "communityCtaSubtitle": "ค้นหาทนายที่เชี่ยวชาญหัวข้อนี้ หรือเปิดเคสด่วน",
   "communityCtaFindLawyer": "ค้นหาทนาย",
-
   "webrtcWaitingPeer": "รอคู่สนทนาเข้าห้อง...",
   "webrtcConnecting": "กำลังเชื่อมต่อ...",
   "webrtcConnected": "เชื่อมต่อแล้ว",
@@ -668,6 +689,36 @@
   "chatVideoCallDurationSecondsOnly": "โทร {} วินาที",
   "chatVideoCallDurationMinutesSeconds": "โทร {} นาที {} วินาที",
   "chatVideoCallNoConnect": "ไม่ได้เชื่อมต่อ",
+  "chatCallEnded": "วางสายแล้ว",
+  "cancelAdminReviewTitle": "ผลการพิจารณาจากแอดมิน",
+  "cancelAdminApprove": "การอนุมัติยกเลิก",
+  "cancelAdminApproved": "อนุมัติการยกเลิก",
+  "cancelAdminRejected": "ไม่อนุมัติการยกเลิก",
+  "cancelAdminReasonable": "ความสมเหตุสมผล",
+  "cancelAdminReasonableYes": "สมเหตุสมผล",
+  "cancelAdminReasonableNo": "ไม่สมเหตุสมผล",
+  "cancelAdminScoreImpact": "ผลต่อคะแนนบัญชี",
+  "cancelAdminNoPenalty": "ไม่มีการหักคะแนน",
+  "cancelAdminPenaltyYou": "มีการหักคะแนนบัญชีของคุณ",
+  "cancelAdminPenaltyOther": "มีการหักคะแนนบัญชีผู้ขอยกเลิก",
+  "cancelAdminRemark": "หมายเหตุจากแอดมิน",
+  "cancelAdminReviewedAt": "วันที่พิจารณา",
+  "cancelReviewProgressTitle": "ขั้นตอนการยกเลิกเคส",
+  "cancelReviewStepSubmitted": "ส่งคำขอยกเลิก",
+  "cancelReviewStepSubmittedDesc": "ระบบได้รับคำขอแล้ว",
+  "cancelReviewStepAdmin": "แอดมินตรวจสอบ",
+  "cancelReviewStepAdminPending": "อยู่ระหว่างรอแอดมินพิจารณา",
+  "cancelReviewStepAdminDone": "แอดมินตรวจสอบแล้ว",
+  "cancelReviewStepDecision": "ผลการพิจารณา",
+  "cancelReviewStepRefund": "คืนเงิน",
+  "cancelReviewDecisionWaiting": "รอผลการพิจารณาจากแอดมิน",
+  "cancelReviewDecisionApproved": "อนุมัติการยกเลิกแล้ว",
+  "cancelReviewDecisionRejected": "ไม่อนุมัติการยกเลิก",
+  "cancelReviewRefundPending": "รอผลการพิจารณาเพื่อดำเนินการคืนเงิน",
+  "cancelReviewRefundApproved": "กำลังดำเนินการคืนเงิน",
+  "cancelReviewRefundRejected": "ไม่มีการคืนเงิน (คำขอไม่ได้รับการอนุมัติ)",
+  "cancelReviewRefundNote24h": "หมายเหตุ: หากแอดมินอนุมัติการยกเลิก ระบบจะคืนเงินให้ภายใน 24 ชั่วโมง",
+  "cancelReviewLawyerSubmitMessage": "คำขอยกเลิกจะถูกส่งให้แอดมินตรวจสอบก่อน ลูกความจะได้รับแจ้งเตือนทุกขั้นตอน",
   "receiptTitle": "ใบเสร็จ",
   "receiptView": "ดูใบเสร็จ",
   "receiptDownload": "ดาวน์โหลดใบเสร็จ",
@@ -707,6 +758,140 @@
   "webrtcQualityPoor": "สัญญาณอ่อน",
   "webrtcQualityUnknown": "กำลังวัดสัญญาณ",
   "callPeerDeclined": "อีกฝั่งไม่รับสาย",
-  "callNoAnswer": "ไม่มีผู้รับสายภายใน 2 นาที"
-
+  "callNoAnswer": "ไม่มีผู้รับสายภายใน 2 นาที",
+  "pressBackAgainToExit": "กดอีกครั้งเพื่อออก",
+  "next": "ถัดไป",
+  "reload": "โหลดใหม่",
+  "tryAgain": "กรุณาลองใหม่อีกครั้ง",
+  "tryOtherSearch": "ลองค้นหาด้วยคำอื่น",
+  "notFoundQuery": "ไม่พบ \"{}\"",
+  "all": "ทั้งหมด",
+  "clear": "ล้าง",
+  "clearFilters": "ล้างฟิลเตอร์",
+  "applyFilters": "นำฟิลเตอร์ไปใช้",
+  "filters": "ตัวกรอง",
+  "sortBy": "เรียงตาม",
+  "defaultSort": "ค่าเริ่มต้น",
+  "province": "จังหวัด",
+  "selectProvince": "เลือกจังหวัด",
+  "loadProvincesFailed": "โหลดจังหวัดไม่สำเร็จ",
+  "district": "อำเภอ/เขต",
+  "selectDistrict": "เลือกอำเภอ/เขต",
+  "topicLabel": "หัวข้อ",
+  "subTopicLabel": "หัวข้อย่อย",
+  "selectSubTopic": "เลือกหัวข้อย่อย",
+  "dateLabel": "วันที่",
+  "timeLabel": "เวลา",
+  "durationLabel": "ระยะเวลา",
+  "duration1Hour": "1 ชั่วโมง",
+  "duration60Min": "60 นาที",
+  "formatLabel": "รูปแบบ",
+  "formatVideoCall": "วิดีโอคอล",
+  "additionalDetails": "รายละเอียดเพิ่มเติม",
+  "serviceFee": "ค่าบริการ",
+  "totalAmount": "ยอดรวม",
+  "amountDue": "ยอดชำระ",
+  "reviewsCount": "{} รีวิว",
+  "seniorLawyer": "ทนายความอาวุโส",
+  "lawyerLabel": "ทนายความ",
+  "experience": "ประสบการณ์",
+  "ratingHighest": "คะแนนสูงสุด",
+  "nearest": "ใกล้ที่สุด",
+  "availableNow": "ว่างอยู่",
+  "unavailableNow": "ไม่ว่าง",
+  "showAvailableOnly": "แสดงเฉพาะที่ว่างอยู่",
+  "statusLabel": "สถานะ",
+  "scoreLabel": "คะแนน",
+  "noExpertiseData": "ไม่มีข้อมูลความเชี่ยวชาญ",
+  "expertise": "ความเชี่ยวชาญ",
+  "socialMedia": "โซเชียลมีเดีย",
+  "casesWon": "คดีชนะ",
+  "bookAppointment": "จองนัดหมาย",
+  "lawyerDetailsTitle": "รายละเอียดทนายความ",
+  "lawTopicsTitle": "ประเด็นหัวข้อต่างๆ",
+  "lawTopicsLoading": "กำลังโหลดหัวข้อ...",
+  "lawTopicsSelectHint": "เลือกหัวข้อเพื่อดูรายละเอียด",
+  "lawTopicsSearchHint": "ค้นหาประเภทกฎหมาย...",
+  "lawTopicsSubOf": "หัวข้อย่อยของ \"{}\"",
+  "lawTopicsEmpty": "ยังไม่มีหัวข้อกฎหมาย",
+  "bookingTitle": "นัดหมายทนาย",
+  "bookingSelectTopicTitle": "เลือกประเภทหัวข้อ",
+  "bookingSelectTopicHint": "กดเพื่อดูหัวข้อย่อย แล้วเลือกทนายที่ใช่",
+  "bookingSearchCaseHint": "ค้นหาประเภทคดี...",
+  "bookingTapToSelectLawyer": "กดเพื่อเลือกทนายความ",
+  "bookingSubTopicsCount": "{} หัวข้อย่อย",
+  "bookingSelectDateTime": "เลือกวัน และเวลา",
+  "bookingSelectDateTimeHint": "กดเลือกวันและเวลาที่ทนายว่างที่ต้องการนัดหมาย",
+  "bookingLawyerOpenDays": "ทนายเปิดรับ: {}",
+  "bookingLawyerClosedToday": "ทนายไม่รับวันนี้",
+  "bookingSelectTime": "เลือกเวลา",
+  "bookingNoSlotsToday": "ไม่มีช่วงเวลาว่างในวันนี้",
+  "bookingSelectedSlot": "ที่เลือกอยู่",
+  "bookingSelected": "เลือกแล้ว",
+  "bookingConfirm": "ยืนยันนัดหมาย",
+  "bookingPay": "ชำระเงิน",
+  "bookingSummaryTitle": "สรุปรายละเอียด",
+  "bookingSummaryHint": "สรุปรายละเอียดต่างๆก่อนชำระเงิน",
+  "bookingSuccessTitle": "จองนัดหมายสำเร็จ!",
+  "bookingSuccessHint": "ทนายความจะยืนยันนัดหมายของคุณ\nภายใน 24 ชั่วโมง",
+  "bookingCodeCopied": "คัดลอกรหัสจองแล้ว",
+  "bookingCodeLabel": "รหัสจองนัดหมาย: {}",
+  "bookingDetailsTitle": "รายละเอียดนัดหมาย",
+  "bookingCaseType": "ประเภทคดี",
+  "bookingDate": "วันที่นัด",
+  "bookingNote": "หมายเหตุ",
+  "bookingNoteBody": "ทนายความจะติดต่อยืนยันนัดหมายผ่านระบบข้อความ โปรดตรวจสอบการแจ้งเตือนของคุณ และกรุณาเตรียมความพร้อมก่อนเวลาปรึกษาทนายความ 30 นาที",
+  "bookingSavingRequest": "กำลังบันทึกคำขอไปยังระบบ",
+  "bookingCreateFailed": "สร้างคำขอไม่สำเร็จ",
+  "bookingBackHome": "กลับหน้าหลัก",
+  "bookingNeedLogin": "ไม่พบข้อมูลบัญชีผู้ใช้ กรุณาเข้าสู่ระบบใหม่ก่อนจอง",
+  "bookingNeedLawyer": "ไม่พบรหัสบัญชีทนายความ กรุณาเลือกทนายความใหม่",
+  "bookingPaymentSuccessTitle": "ชำระเงินสำเร็จ",
+  "bookingPaymentSuccessBody": "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+  "bookingCannotBook": "ไม่สามารถนัดหมายได้",
+  "bookingGenericError": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+  "bookingErrorOccurred": "เกิดข้อผิดพลาด",
+  "bookingQrHint": "สแกน QR Code ด้วยแอปธนาคารของคุณ\nแล้วระบบจะยืนยันการชำระเงินอัตโนมัติ",
+  "bookingAccountName": "ชื่อบัญชี",
+  "bookingAccountNumber": "หมายเลข",
+  "bookingBahtPerHour": " บาท/ชม.",
+  "bookingSelectLawyerTitle": "เลือกทนายความ",
+  "bookingSelectLawyerHint": "กดเลือกทนายที่ใช่ เพื่อดูรายละเอียด",
+  "bookingFoundLawyers": "พบ {} ทนายความ",
+  "bookingSearchLawyerHint": "ค้นหาชื่อหรือความเชี่ยวชาญ...",
+  "bookingNoLawyerFilter": "ไม่พบทนายความที่ตรงกับฟิลเตอร์",
+  "consultOnlineTitle": "หมอความออนไลน์",
+  "consultBasicInfo": "กรอกข้อมูลเบื้องต้น",
+  "consultBasicInfoHint": "เพื่อจับคู่กับหมอความที่เหมาะสม",
+  "consultTopicType": "ประเภทหัวข้อ",
+  "consultEventSummary": "สรุปเหตุการณ์",
+  "consultEventHint": "อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...",
+  "consultDemand": "ข้อเรียกร้อง",
+  "consultDemandHint": "ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...",
+  "consultAttachEvidence": "แนบภาพหลักฐาน",
+  "consultSummaryTitle": "สรุปรายการ",
+  "consultCaseInfo": "ข้อมูลคดี",
+  "consultCaseType": "ประเภทคดี",
+  "consultSubType": "ประเภทย่อย",
+  "consultEvidenceImages": "ภาพหลักฐาน",
+  "consultNoEvidence": "ไม่ได้แนบภาพหลักฐาน",
+  "consultNotSpecified": "ไม่ได้ระบุ",
+  "consultExpenses": "ค่าใช้จ่าย",
+  "consultPayWhenAccepted": "*ชำระเงินเมื่อค้นหาทนายความ และทนายความกดรับเคสแล้ว*",
+  "consultPaymentChannel": "ช่องทางชำระเงิน",
+  "consultSendingRequest": "กำลังส่งคำขอ...",
+  "consultConfirmSearch": "ยืนยันและค้นหาทนายความ",
+  "consultCreateFailed": "สร้างคำขอไม่สำเร็จ",
+  "consultErrorWithDetail": "เกิดข้อผิดพลาด: {}",
+  "consultPaymentTitle": "ชำระเงิน",
+  "consultConfirmPaymentFailed": "ยืนยันการชำระเงินไม่สำเร็จ",
+  "consultNoCaseAfterPay": "ไม่พบรหัสเคสหลังชำระเงิน",
+  "consultCannotCreateCase": "ไม่สามารถสร้างเคสได้",
+  "consultCheckPayment": "ตรวจสอบการชำระเงิน",
+  "appointmentScheduleTitle": "ตารางวันปรึกษา",
+  "appointmentTopicToConsult": "ประเภทหัวข้อที่จะปรึกษา",
+  "appointmentDateTitle": "วันนัดหมายปรึกษา",
+  "appointmentDetailsHint": "พิมพ์รายละเอียดที่นี่...",
+  "appointmentContinue": "ต่อไป",
+  "reviews": "รีวิว"
 }

@@ -5,11 +5,13 @@ import 'package:LawyerOnline/consult/consult_sum.dart';
 import 'package:LawyerOnline/models/location/province_model.dart';
 import 'package:LawyerOnline/services/thailand_location_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ConsultPage extends StatefulWidget {
   const ConsultPage({super.key});
@@ -146,7 +148,7 @@ class _ConsultPageState extends State<ConsultPage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F5),
         appBar: appBar(
-          title: 'หมอความออนไลน์',
+          title: 'consultOnlineTitle'.tr(),
           backBtn: true,
           rightBtn: false,
           rightAction: () {},
@@ -183,15 +185,15 @@ class _ConsultPageState extends State<ConsultPage> {
                             children: [
                               _buildTopicField(),
                               const SizedBox(height: 20),
-                              if (_selectedTopic != null) ...[
+                              if (_selectedTopic != null && _hasSubCase) ...[
                                 _buildSubCaseField(topicColor),
                                 const SizedBox(height: 20),
                               ],
                               _buildDropdownField(
-                                label: 'จังหวัด',
+                                label: 'province'.tr(),
                                 hint: _loadingProvinces
-                                    ? 'กำลังโหลด...'
-                                    : 'เลือกจังหวัด',
+                                    ? 'loading'.tr()
+                                    : 'selectProvince'.tr(),
                                 icon: Icons.location_on_outlined,
                                 value: _selectedProvince,
                                 items: _provinceOptions
@@ -215,8 +217,8 @@ class _ConsultPageState extends State<ConsultPage> {
                               if (_districtOptions.isNotEmpty) ...[
                                 const SizedBox(height: 20),
                                 _buildDropdownField(
-                                  label: 'อำเภอ/เขต',
-                                  hint: 'เลือกอำเภอ/เขต',
+                                  label: 'district'.tr(),
+                                  hint: 'selectDistrict'.tr(),
                                   icon: Icons.map_outlined,
                                   value: _selectedDistrict,
                                   items: _districtOptions
@@ -238,16 +240,16 @@ class _ConsultPageState extends State<ConsultPage> {
                               ],
                               const SizedBox(height: 20),
                               _buildTextArea(
-                                label: 'สรุปเหตุการณ์',
+                                label: 'consultEventSummary'.tr(),
                                 hint:
-                                    'อธิบายรายละเอียดคดีโดยย่อ เพื่อให้หมอความเข้าใจก่อนนัดหมาย...',
+                                    'consultEventHint'.tr(),
                                 controller: _detailController,
                               ),
                               const SizedBox(height: 20),
                               _buildTextArea(
-                                label: 'ข้อเรียกร้อง',
+                                label: 'consultDemand'.tr(),
                                 hint:
-                                    'ระบุสิ่งที่ต้องการให้ทนายช่วย เช่น ฟ้องร้อง เรียกค่าเสียหาย...',
+                                    'consultDemandHint'.tr(),
                                 controller: _demandController,
                               ),
                               const SizedBox(height: 20),
@@ -289,17 +291,17 @@ class _ConsultPageState extends State<ConsultPage> {
               const Icon(Icons.balance_outlined, color: Colors.white, size: 24),
         ),
         const SizedBox(width: 12),
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('กรอกข้อมูลเบื้องต้น',
-                  style: TextStyle(
+              Text('consultBasicInfo'.tr(),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
-              SizedBox(height: 2),
-              Text('เพื่อจับคู่กับหมอความที่เหมาะสม',
+              const SizedBox(height: 2),
+              Text('consultBasicInfoHint'.tr(),
                   style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],
           ),
@@ -312,9 +314,9 @@ class _ConsultPageState extends State<ConsultPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'ประเภทหัวข้อ',
-          style: TextStyle(
+        Text(
+          'consultTopicType'.tr(),
+          style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: Color(0xFF1A2340),
@@ -365,12 +367,12 @@ class _ConsultPageState extends State<ConsultPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.network(item['imageUrl'], width: 50, height: 50),
+                    _topicImage(item['imageUrl']?.toString() ?? ''),
                     const SizedBox(height: 5),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
-                        item['title'] as String,
+                        item['title']?.toString() ?? '',
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -394,29 +396,63 @@ class _ConsultPageState extends State<ConsultPage> {
     );
   }
 
+  Widget _topicImage(String imageUrl, {double size = 50}) {
+    final url = imageUrl.trim();
+    if (url.isEmpty) {
+      return Icon(Icons.gavel_rounded,
+          size: size * 0.7, color: const Color(0xFF94A3B8));
+    }
+    if (url.startsWith('assets/')) {
+      return Image.asset(url, width: size, height: size, fit: BoxFit.contain);
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      memCacheWidth: 160,
+      placeholder: (_, __) => SizedBox(
+        width: size,
+        height: size,
+        child: const Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      errorWidget: (_, __, ___) => Icon(Icons.gavel_rounded,
+          size: size * 0.7, color: const Color(0xFF94A3B8)),
+    );
+  }
+
   Widget _buildSubCaseField(Color topicColor) {
-    final rawSubs = _selectedTopic['subTopics'];
-    final subTopics =
-        (rawSubs is List ? rawSubs : <dynamic>[]).whereType<dynamic>().toList();
+    final rawSubs = _selectedTopic['subTopics'] ?? _selectedTopic['subCase'];
+    final subTopics = (rawSubs is List ? rawSubs : <dynamic>[])
+        .whereType<Map>()
+        .map((s) => Map<String, dynamic>.from(s))
+        .where((s) => (s['title']?.toString().trim() ?? '').isNotEmpty)
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('หัวข้อย่อย',
-            style: TextStyle(
+        Text('subTopicLabel'.tr(),
+            style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1A2340))),
         const SizedBox(height: 8),
         AppDropdownField<String>(
-          value: _selectedSubCase?['code'] as String?,
-          hint: 'เลือกหัวข้อย่อย',
+          value: _selectedSubCase?['code']?.toString(),
+          hint: 'selectSubTopic'.tr(),
           prefixIcon: Icons.subdirectory_arrow_right_rounded,
           items: subTopics
               .map(
                 (s) => DropdownMenuItem<String>(
-                  value: s['code'] as String,
+                  value: s['code']?.toString() ?? '',
                   child: Text(
-                    s['title'] as String,
+                    s['title']?.toString() ?? '',
                     style: AppDropdownStyles.itemStyle(),
                   ),
                 ),
@@ -424,10 +460,10 @@ class _ConsultPageState extends State<ConsultPage> {
               .toList(),
           onChanged: (val) {
             final sub = subTopics.firstWhere(
-              (s) => s['code'] == val,
-              orElse: () => {},
+              (s) => s['code']?.toString() == val,
+              orElse: () => <String, dynamic>{},
             );
-            setState(() => _selectedSubCase = sub);
+            setState(() => _selectedSubCase = sub.isEmpty ? null : sub);
           },
         ),
       ],
@@ -523,8 +559,8 @@ class _ConsultPageState extends State<ConsultPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('แนบภาพหลักฐาน',
-            style: TextStyle(
+        Text('consultAttachEvidence'.tr(),
+            style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1A2340))),
@@ -607,11 +643,11 @@ class _ConsultPageState extends State<ConsultPage> {
                   MaterialPageRoute(
                     builder: (_) => ConsultSummaryPage(
                       // ── field ชุดใหม่ที่ตกลงกัน ──
-                      topic: _selectedTopic!['code'] as String,
-                      topicTitle: _selectedTopic!['title'] as String,
-                      subTopic: _selectedSubCase?['code'] as String? ?? '',
+                      topic: _selectedTopic!['code']?.toString() ?? '',
+                      topicTitle: _selectedTopic!['title']?.toString() ?? '',
+                      subTopic: _selectedSubCase?['code']?.toString() ?? '',
                       subTopicTitle:
-                          _selectedSubCase?['title'] as String? ?? '',
+                          _selectedSubCase?['title']?.toString() ?? '',
                       province: _selectedProvince!,
                       detail: _detailController.text.trim(),
                       demand: _demandController.text.trim(),
@@ -643,7 +679,7 @@ class _ConsultPageState extends State<ConsultPage> {
           ),
           child: Center(
             child: Text(
-              'ถัดไป',
+              'next'.tr(),
               style: TextStyle(
                 color: _canSubmit ? Colors.white : Colors.grey[400],
                 fontWeight: FontWeight.w700,

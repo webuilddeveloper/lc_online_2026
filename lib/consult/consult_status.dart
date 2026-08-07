@@ -221,9 +221,12 @@ class _ConsultStatusPageState extends State<ConsultStatusPage>
     if (result['status'] != 'S' || !mounted) return;
 
     roomCode = result['objectData']['roomCode'];
+    final currentStatus = int.tryParse(_caseData['caseStatus']?.toString() ?? '') ?? 3;
     await postObjectData('/m/case/update', {
       'code': currentCaseCode,
       'messageRoomCode': roomCode,
+      // ส่งสถานะปัจจุบันด้วย — กัน API รุ่นเก่าที่ default caseStatus=0 แล้วทับยกเลิกเคส
+      'caseStatus': currentStatus == 0 ? 3 : currentStatus,
     });
     if (!mounted) return;
 

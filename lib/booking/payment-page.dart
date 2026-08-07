@@ -9,6 +9,7 @@ import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class PaymentPage extends StatefulWidget {
   final dynamic lawyer;
@@ -45,7 +46,7 @@ class _PaymentPageState extends State<PaymentPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: appBar(
-        title: "นัดหมายทนาย",
+        title: 'bookingTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(),
@@ -98,7 +99,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         // GestureDetector(
                         //   onTap: () => DialogService.showAutoClose(
                         //     context,
-                        //     title: "ชำระเงินสำเร็จ",
+                        //     title: 'bookingPaymentSuccessTitle'.tr(),
                         //     message: "ระบบได้รับยอดเงินเรียบร้อยแล้ว",
                         //     seconds: 3,
                         //     isBtn: false,
@@ -161,9 +162,9 @@ class _PaymentPageState extends State<PaymentPage> {
                             //   // 4. แสดง Pop-up สำเร็จ (ของเดิม)
                             //   DialogService.showAutoClose(
                             //     context,
-                            //     title: "ชำระเงินสำเร็จ",
+                            //     title: 'bookingPaymentSuccessTitle'.tr(),
                             //     message:
-                            //         "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+                            //         'bookingPaymentSuccessBody'.tr(),
                             //     seconds: 3,
                             //     isBtn: false,
                             //     onClose: () {
@@ -193,7 +194,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             //   Navigator.pop(context);
                             //   DialogService.showError(
                             //     context,
-                            //     title: "เกิดข้อผิดพลาด",
+                            //     title: 'bookingErrorOccurred'.tr(),
                             //     message: e.toString(),
                             //   );
                             // }
@@ -208,7 +209,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             ),
                             child: QrImageView(
                               data:
-                                  'promptpay://0812345678/${cost.replaceAll(' บาท/ชม.', '')}',
+                                  'promptpay://0812345678/${cost.replaceAll('bookingBahtPerHour'.tr(), '')}',
                               version: QrVersions.auto,
                               size: 220,
                               backgroundColor: Colors.white,
@@ -218,7 +219,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         const SizedBox(height: 20),
 
                         // Amount
-                        Text('ยอดชำระ',
+                        Text('amountDue'.tr(),
                             style: TextStyle(
                                 fontSize: 13, color: Colors.grey[400])),
                         const SizedBox(height: 4),
@@ -240,16 +241,16 @@ class _PaymentPageState extends State<PaymentPage> {
                           ),
                           child: Column(children: [
                             _paymentInfoRow(
-                                'ชื่อบัญชี', 'LawyerOnline Co.,Ltd'),
+                                'bookingAccountName'.tr(), 'LawyerOnline Co.,Ltd'),
                             const SizedBox(height: 6),
-                            _paymentInfoRow('หมายเลข', '081-234-5678'),
+                            _paymentInfoRow('bookingAccountNumber'.tr(), '081-234-5678'),
                           ]),
                         ),
                         const SizedBox(height: 16),
 
                         // Instruction
                         Text(
-                          'สแกน QR Code ด้วยแอปธนาคารของคุณ\nแล้วระบบจะยืนยันการชำระเงินอัตโนมัติ',
+                          'bookingQrHint'.tr(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
@@ -369,8 +370,8 @@ class _PaymentPageState extends State<PaymentPage> {
       if (param['status'] == 'S') {
         DialogService.showAutoClose(
           context,
-          title: "ชำระเงินสำเร็จ",
-          message: "ระบบได้รับยอดเงินและสร้างการนัดหมายแล้ว",
+          title: 'bookingPaymentSuccessTitle'.tr(),
+          message: 'bookingPaymentSuccessBody'.tr(),
           seconds: 3,
           isBtn: false,
           onClose: () {
@@ -394,16 +395,16 @@ class _PaymentPageState extends State<PaymentPage> {
       } else {
         DialogService.showError(
           context,
-          title: "ไม่สามารถนัดหมายได้",
+          title: 'bookingCannotBook'.tr(),
           message: param['message']?.toString() ??
-              'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+              'bookingGenericError'.tr(),
         );
       }
     } catch (_) {
       Navigator.pop(context);
       DialogService.showError(
         context,
-        title: "เกิดข้อผิดพลาด",
+        title: 'bookingErrorOccurred'.tr(),
         message: _.toString(),
       );
     }

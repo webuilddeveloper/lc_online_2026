@@ -9,18 +9,14 @@ import 'package:LawyerOnline/widgets/home/home_banner_section.dart';
 import 'package:LawyerOnline/widgets/home/home_lawyer_section.dart';
 import 'package:LawyerOnline/widgets/home/home_user_section.dart';
 import 'package:LawyerOnline/widgets/home/home_action_cards.dart';
-import 'package:LawyerOnline/widgets/quick_actions_panel.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:LawyerOnline/models/lawyer/lawyer_jobs_store.dart';
-import 'package:LawyerOnline/models/lawyer/lawyer_model.dart';
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
-import 'package:LawyerOnline/models/user/user_case_adapter.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
@@ -61,7 +57,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnim;
   Timer? _profileDebounce;
 
-  // ── ดึงนัดหมายจาก AppointmentStore แทน hardcode ────────────
   // final LawyerRepository _lawyerRepository = const ApiLawyerRepository();
   final LawyerAppointmentRepository _appointmentRepository =
       const ApiLawyerAppointmentRepository();
@@ -646,10 +641,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 },
               ),
             ),
-
-            // const SizedBox(height: 16),
-            // const QuickActionsPanel(),
-            // const SizedBox(height: 24),
 
             // ── Banner (shared) ──────────────────────────────────
             HomeBannerSection(

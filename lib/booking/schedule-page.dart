@@ -42,6 +42,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
   bool _slotsLoading = false;
   bool _scheduleLoaded = false;
+  /// กัน response เก่าจาก checkSlot ทับวัน/เวลาที่เพิ่งเลือก
+  int _slotRequestSeq = 0;
 
   final _thMonths = [
     '',
@@ -63,8 +65,27 @@ class _SchedulePageState extends State<SchedulePage> {
   @override
   void initState() {
     super.initState();
-    // โหลด slot วันนี้ก่อน + ได้ lawyerSchedule มาด้วย
-    readTimeSlot(DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    // โหลดตารางเปิดของทนายก่อน (ยังไม่บังคับเลือกวัน)
+    _preloadLawyerSchedule();
+  }
+
+  Future<void> _preloadLawyerSchedule() async {
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final param = await postDio(
+        '$server/m/register/checkSlot',
+        {'lawyerCode': widget.lawyer['code'], 'date': today},
+      );
+      if (!mounted || _scheduleLoaded) return;
+      final objectData = param['objectData'];
+      if (objectData is! Map || objectData['lawyerSchedule'] == null) return;
+      final schedule = objectData['lawyerSchedule'];
+      setState(() {
+        _lawyerOpenDays = List<dynamic>.from(schedule['days'] ?? []);
+        _lawyerOpenSlots = List<dynamic>.from(schedule['slots'] ?? []);
+        _scheduleLoaded = true;
+      });
+    } catch (_) {}
   }
 
   // ── เช็คว่าวันนี้ทนายเปิดไหม (ใช้กับ calendar) ──────────────
@@ -79,15 +100,34 @@ class _SchedulePageState extends State<SchedulePage> {
     return found == null ? true : found['isOpen'] == true;
   }
 
+  bool _isSlotAvailable(dynamic slot) {
+    if (slot is! Map) return false;
+    if (slot['available'] == true) return true;
+    if (slot['available'] == false || slot['isBooked'] == true) return false;
+    // fallback กรณี API ส่งแค่ isOpen / isLawyerOpen
+    return slot['isOpen'] == true || slot['isLawyerOpen'] == true;
+  }
+
   Future<void> readTimeSlot(String date) async {
-    setState(() => _slotsLoading = true);
+    final requestSeq = ++_slotRequestSeq;
+    if (mounted) setState(() => _slotsLoading = true);
     try {
       final param = await postDio(
         '$server/m/register/checkSlot',
         {'lawyerCode': widget.lawyer['code'], 'date': date},
       );
 
+      // response เก่า — ทิ้งเลย ไม่เคลียร์เวลาที่ user เลือกไว้แล้ว
+      if (!mounted || requestSeq != _slotRequestSeq) return;
+
       final objectData = param['objectData'];
+      if (objectData is! Map) {
+        setState(() {
+          _timeSlots = [];
+          _slotsLoading = false;
+        });
+        return;
+      }
 
       // ── โหลด lawyerSchedule ครั้งแรก ──────────────────────
       if (!_scheduleLoaded && objectData['lawyerSchedule'] != null) {
@@ -105,14 +145,23 @@ class _SchedulePageState extends State<SchedulePage> {
         lawyerCode: widget.lawyer['code']?.toString() ?? '',
         caseDate: date,
       );
-      final bookedStarts = booked.map((b) => b.startTime).toSet();
+      if (!mounted || requestSeq != _slotRequestSeq) return;
+
+      final bookedStarts = booked
+          .map((b) => b.startTime.trim())
+          .where((t) => t.isNotEmpty)
+          .toSet();
       slots = slots.map((slot) {
         if (slot is Map) {
           final copy = Map<String, dynamic>.from(slot);
-          final title = copy['title']?.toString() ?? '';
-          if (bookedStarts.contains(title)) {
+          final start = copy['startTime']?.toString().trim() ?? '';
+          final title = copy['title']?.toString().trim() ?? '';
+          final matched = (start.isNotEmpty && bookedStarts.contains(start)) ||
+              (title.isNotEmpty && bookedStarts.contains(title));
+          if (matched) {
             copy['isOpen'] = false;
             copy['booked'] = true;
+            copy['isBooked'] = true;
             copy['available'] = false;
           }
           return copy;
@@ -122,11 +171,19 @@ class _SchedulePageState extends State<SchedulePage> {
 
       setState(() {
         _timeSlots = slots;
-        _selectedTime = null;
+        // ไม่เคลียร์เวลาที่เลือกไว้แล้ว ถ้ายังอยู่ใน slot ที่ว่าง
+        if (_selectedTime != null) {
+          final stillValid = slots.any((s) =>
+              s is Map &&
+              s['title']?.toString() == _selectedTime &&
+              _isSlotAvailable(s));
+          if (!stillValid) _selectedTime = null;
+        }
         _slotsLoading = false;
       });
     } catch (e) {
       print('readTimeSlot error: $e');
+      if (!mounted || requestSeq != _slotRequestSeq) return;
       setState(() => _slotsLoading = false);
     }
   }
@@ -157,13 +214,13 @@ class _SchedulePageState extends State<SchedulePage> {
       ),
       const SizedBox(width: 10),
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('เลือกวัน และเวลา',
-            style: TextStyle(
+        Text('bookingSelectDateTime'.tr(),
+            style: const TextStyle(
                 color: Color(0xFF1A2340),
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3)),
-        Text('กดเลือกวันและเวลาที่ทนายว่างที่ต้องการนัดหมาย',
+        Text('bookingSelectDateTimeHint'.tr(),
             style: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.4), fontSize: 11)),
       ]),
@@ -196,7 +253,7 @@ class _SchedulePageState extends State<SchedulePage> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'ทนายเปิดรับ: ${openDays.join(', ')}',
+              'bookingLawyerOpenDays'.tr(args: [openDays.join(', ')]),
               style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF0262EC),
@@ -216,7 +273,7 @@ class _SchedulePageState extends State<SchedulePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: appBar(
-        title: 'นัดหมายทนาย',
+        title: 'bookingTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => Navigator.pop(context, false),
@@ -371,7 +428,7 @@ class _SchedulePageState extends State<SchedulePage> {
                                   color: Colors.grey[200],
                                   borderRadius: BorderRadius.circular(3))),
                           const SizedBox(width: 6),
-                          Text('ไม่ว่าง',
+                          Text('unavailableNow'.tr(),
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[400])),
                           const SizedBox(width: 16),
@@ -382,7 +439,7 @@ class _SchedulePageState extends State<SchedulePage> {
                                   color: const Color(0xFF0262EC),
                                   borderRadius: BorderRadius.circular(3))),
                           const SizedBox(width: 6),
-                          Text('ที่เลือกอยู่',
+                          Text('bookingSelectedSlot'.tr(),
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[400])),
                           const SizedBox(width: 16),
@@ -396,7 +453,7 @@ class _SchedulePageState extends State<SchedulePage> {
                                     color: Colors.red.withOpacity(0.3))),
                           ),
                           const SizedBox(width: 6),
-                          Text('ทนายไม่รับวันนี้',
+                          Text('bookingLawyerClosedToday'.tr(),
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[400])),
                         ],
@@ -407,8 +464,8 @@ class _SchedulePageState extends State<SchedulePage> {
                   // ── Time Slots ──────────────────────────────
                   if (_selectedDate != null) ...[
                     const SizedBox(height: 20),
-                    const Text('เลือกเวลา',
-                        style: TextStyle(
+                    Text('bookingSelectTime'.tr(),
+                        style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1A2340))),
@@ -423,7 +480,7 @@ class _SchedulePageState extends State<SchedulePage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
-                          child: Text('ไม่มีช่วงเวลาว่างในวันนี้',
+                          child: Text('bookingNoSlotsToday'.tr(),
                               style: TextStyle(
                                   fontSize: 13, color: Colors.grey[400])),
                         ),
@@ -441,13 +498,13 @@ class _SchedulePageState extends State<SchedulePage> {
                         itemCount: _timeSlots.length,
                         itemBuilder: (_, i) {
                           final slot = _timeSlots[i];
-                          final isAvail = slot['available'] == true;
-                          final isSelected = _selectedTime == slot['title'];
+                          final isAvail = _isSlotAvailable(slot);
+                          final slotTitle = slot['title']?.toString() ?? '';
+                          final isSelected = _selectedTime == slotTitle;
 
                           return GestureDetector(
                             onTap: isAvail
-                                ? () => setState(
-                                    () => _selectedTime = slot['title'])
+                                ? () => setState(() => _selectedTime = slotTitle)
                                 : null,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
@@ -492,7 +549,7 @@ class _SchedulePageState extends State<SchedulePage> {
             padding: EdgeInsets.fromLTRB(
                 16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
             child: primaryButton(
-              label: 'ถัดไป',
+              label: 'next'.tr(),
               enabled: _selectedDate != null && _selectedTime != null,
               onTap: () {
                 Navigator.push(

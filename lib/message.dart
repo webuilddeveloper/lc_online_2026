@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
@@ -10,6 +12,7 @@ import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/chat_list_preview_service.dart';
 import 'package:LawyerOnline/services/notification_navigation_service.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /*
@@ -55,6 +58,14 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   @override
+  void didUpdateWidget(MessagePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isTabActive && !oldWidget.isTabActive) {
+      _load();
+    }
+  }
+
+  @override
   void dispose() {
     super.dispose();
   }
@@ -76,6 +87,7 @@ class _MessagePageState extends State<MessagePage> {
       setState(() {
         _conversations = list;
       });
+      await _syncChatBadgeIfNeeded(list);
     }
 
     if (!mounted) return;
@@ -102,6 +114,20 @@ class _MessagePageState extends State<MessagePage> {
     final map = Map<String, dynamic>.from(conv);
     return ChatListPreviewService.lastMessageAt(map) ??
         DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Future<void> _syncChatBadgeIfNeeded(List<dynamic> conversations) async {
+    final hasUnread = conversations.any((conv) {
+      if (conv is! Map) return false;
+      return ChatListPreviewService.unreadCount(
+            Map<String, dynamic>.from(conv),
+          ) >
+          0;
+    });
+    if (!hasUnread) {
+      await NotificationStore.instance.markChatPageRead();
+    }
+    unawaited(NotificationStore.instance.refresh());
   }
 
   void _onTapConversation(dynamic conv, bool isDesktop) async {

@@ -86,6 +86,22 @@ class NotificationStore extends ChangeNotifier {
     }
   }
 
+  Future<void> markChatPageRead() async {
+    final userCode = UserProfileStore.instance.code;
+    if (userCode.isEmpty) return;
+
+    try {
+      await postDio('$server/m/notification/markPageRead', {
+        'userCode': userCode,
+        'page': 'chat',
+      });
+      _chatBadgeCount = 0;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('NotificationStore.markChatPageRead error: $e');
+    }
+  }
+
   void incrementUnread() {
     _unreadCount++;
     notifyListeners();

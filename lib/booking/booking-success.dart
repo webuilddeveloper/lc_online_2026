@@ -5,6 +5,7 @@ import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // ══════════════════════════════════════════════════════════
 //  BookingSuccessPage
@@ -133,13 +134,13 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
     final lawyerCode = lawyer['code']?.toString().trim() ?? '';
 
     if (!profile.isLoggedIn || clientCode.isEmpty) {
-      _jobCreateError = 'ไม่พบข้อมูลบัญชีผู้ใช้ กรุณาเข้าสู่ระบบใหม่ก่อนจอง';
+      _jobCreateError = 'bookingNeedLogin'.tr();
       _showJobCreateError();
       return;
     }
 
     if (lawyerCode.isEmpty) {
-      _jobCreateError = 'ไม่พบรหัสบัญชีทนายความ กรุณาเลือกทนายความใหม่';
+      _jobCreateError = 'bookingNeedLawyer'.tr();
       _showJobCreateError();
       return;
     }
@@ -371,8 +372,8 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
     return _buildAnimatedItem(
       delay: 0.0,
       child: Column(children: [
-        const Text(
-          'จองนัดหมายสำเร็จ!',
+        Text(
+          'bookingSuccessTitle'.tr(),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,
@@ -383,7 +384,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
         ),
         const SizedBox(height: 8),
         Text(
-          'ทนายความจะยืนยันนัดหมายของคุณ\nภายใน 24 ชั่วโมง',
+          'bookingSuccessHint'.tr(),
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
@@ -408,7 +409,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           HapticFeedback.lightImpact();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('คัดลอกรหัสจองแล้ว'),
+              content: Text('bookingCodeCopied'.tr()),
               backgroundColor: _kPrimary,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -436,7 +437,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                   size: 16, color: _kPrimary),
               const SizedBox(width: 8),
               Text(
-                'รหัสจองนัดหมาย: ${widget.bookingCode}',
+                'bookingCodeLabel'.tr(args: [widget.bookingCode ?? '']),
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -526,7 +527,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                   )),
               const SizedBox(height: 3),
               Text(
-                'ทนายความ',
+                'lawyerLabel'.tr(),
                 style: TextStyle(fontSize: 11, color: Colors.grey[500]),
               ),
               const SizedBox(height: 6),
@@ -602,8 +603,8 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                   size: 16, color: Colors.white),
             ),
             const SizedBox(width: 10),
-            const Text('รายละเอียดนัดหมาย',
-                style: TextStyle(
+            Text('bookingDetailsTitle'.tr(),
+                style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2340))),
@@ -613,7 +614,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           // Detail rows
           _detailRow(
             icon: Icons.label_outline_rounded,
-            label: 'ประเภทคดี',
+            label: 'bookingCaseType'.tr(),
             value: widget.topic,
             color: color,
           ),
@@ -621,7 +622,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
             _divider(),
             _detailRow(
               icon: Icons.subdirectory_arrow_right_rounded,
-              label: 'หัวข้อย่อย',
+              label: 'subTopicLabel'.tr(),
               value: widget.subTopic,
               color: color,
             ),
@@ -629,7 +630,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           _divider(),
           _detailRow(
             icon: Icons.calendar_today_rounded,
-            label: 'วันที่นัด',
+            label: 'bookingDate'.tr(),
             value: widget.appointmentDate,
             color: color,
             highlight: true,
@@ -637,7 +638,7 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           _divider(),
           _detailRow(
             icon: Icons.access_time_rounded,
-            label: 'เวลา',
+            label: 'timeLabel'.tr(),
             value: widget.appointmentTime,
             color: color,
             highlight: true,
@@ -645,15 +646,15 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
           _divider(),
           _detailRow(
             icon: Icons.videocam_rounded,
-            label: 'รูปแบบ',
-            value: 'วิดีโอคอล',
+            label: 'formatLabel'.tr(),
+            value: 'formatVideoCall'.tr(),
             color: color,
           ),
           _divider(),
           _detailRow(
             icon: Icons.timer_outlined,
-            label: 'ระยะเวลา',
-            value: '1 ชั่วโมง',
+            label: 'durationLabel'.tr(),
+            value: 'duration1Hour'.tr(),
             color: color,
           ),
         ],
@@ -736,14 +737,14 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('หมายเหตุ',
-                    style: TextStyle(
+                Text('bookingNote'.tr(),
+                    style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF7A5800))),
                 const SizedBox(height: 4),
                 Text(
-                  'ทนายความจะติดต่อยืนยันนัดหมายผ่านระบบข้อความ โปรดตรวจสอบการแจ้งเตือนของคุณ และกรุณาเตรียมความพร้อมก่อนเวลาปรึกษาทนายความ 30 นาที',
+                  'bookingNoteBody'.tr(),
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.brown[400],
@@ -766,18 +767,18 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _kPrimary.withOpacity(0.2)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          SizedBox(
+          const SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'กำลังบันทึกคำขอไปยังระบบ',
-              style: TextStyle(
+              'bookingSavingRequest'.tr(),
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A2340),
@@ -815,8 +816,8 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('สร้างคำขอไม่สำเร็จ',
-                    style: TextStyle(
+                Text('bookingCreateFailed'.tr(),
+                    style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF991B1B))),
@@ -943,14 +944,14 @@ class _BookingSuccessPageState extends State<BookingSuccessPage>
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFDDE5F4), width: 1.5),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.home_outlined, color: Color(0xFF5B6E8A), size: 18),
-                  SizedBox(width: 8),
+                  const Icon(Icons.home_outlined, color: Color(0xFF5B6E8A), size: 18),
+                  const SizedBox(width: 8),
                   Text(
-                    'กลับหน้าหลัก',
-                    style: TextStyle(
+                    'bookingBackHome'.tr(),
+                    style: const TextStyle(
                       color: Color(0xFF5B6E8A),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,

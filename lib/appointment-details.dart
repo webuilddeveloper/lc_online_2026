@@ -19,6 +19,9 @@ import 'package:LawyerOnline/chat/chat_page_user.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
+import 'package:LawyerOnline/services/case_cancel_review_helper.dart';
+import 'package:LawyerOnline/widgets/case_cancel_admin_review_section.dart';
+import 'package:LawyerOnline/widgets/case_cancel_review_progress_section.dart';
 
 // ══════════════════════════════════════════════════════════
 //  AppointmentDetailPage  (Redesigned — Clean Premium)
@@ -457,6 +460,17 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                                         _stagger(0, _buildDateTimeRow()),
                                         _gap(14),
                                         _stagger(1, _buildStatusBanner()),
+                                        if (CaseCancelReviewHelper.hasActiveReview(
+                                            appointmentModel)) ...[
+                                          _gap(14),
+                                          _stagger(
+                                            2,
+                                            CaseCancelReviewProgressSection(
+                                              caseData: appointmentModel,
+                                              showRefundNote: true,
+                                            ),
+                                          ),
+                                        ],
                                         if (status == 0) ...[
                                           _gap(14),
                                           _stagger(2, _buildCancelCard()),
@@ -511,6 +525,17 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
                                 _stagger(0, _buildDateTimeRow()),
                                 _gap(14),
                                 _stagger(1, _buildStatusBanner()),
+                                if (CaseCancelReviewHelper.hasActiveReview(
+                                    appointmentModel)) ...[
+                                  _gap(14),
+                                  _stagger(
+                                    2,
+                                    CaseCancelReviewProgressSection(
+                                      caseData: appointmentModel,
+                                      showRefundNote: true,
+                                    ),
+                                  ),
+                                ],
                                 if (status == 0) ...[
                                   _gap(14),
                                   _stagger(2, _buildCancelCard()),
@@ -1980,6 +2005,11 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
               ],
             ),
           ),
+          CaseCancelAdminReviewSection(
+            caseData: appointmentModel,
+            viewerUserCode: UserProfileStore.instance.code,
+            layout: CaseCancelReviewLayout.client,
+          ),
         ],
       ),
     );
@@ -2265,40 +2295,38 @@ class _AppointmentDetailsState extends State<AppointmentDetails>
 
     final result = await postObjectData("/m/chat/room/create", model);
     if (result['status'] == 'S') {
-      setState(
-        () {
-          roomCode = result['objectData']['roomCode'];
-          print(roomCode);
-          // เปิดหน้าแชท
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (_) => ChatPage(
-          //       roomCode: roomCode,
-          //       userId: myUserId,
-          //     ),
-          //   ),
-          // );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatPageUser(
-                model: {
-                  'name':
-                      '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
-                  'imageUrl': lawyerModel['imageUrl'],
-                  'caseCode': result['objectData']['caseCode'],
-                  'active': true,
-                  'caseSuccess': false,
-                  ...widget.appointment
-                },
-                roomCode: roomCode,
-                userId: UserProfileStore.instance.code,
-              ),
-            ),
-          );
-          // .then((_) => _load());
-        },
+      final currentCaseCode = widget.appointment['code']?.toString() ?? '';
+      final currentStatus =
+          int.tryParse(widget.appointment['caseStatus']?.toString() ?? '') ?? 3;
+      roomCode = result['objectData']['roomCode'];
+      // ผูกห้องแชทโดยคงสถานะเดิม — ห้ามส่งอัปเดตโดยไม่มี caseStatus (API เก่าจะทับเป็น 0)
+      await postObjectData('/m/case/update', {
+        'code': currentCaseCode,
+        'messageRoomCode': roomCode,
+        'caseStatus': currentStatus == 0 ? 3 : currentStatus,
+      });
+      if (!mounted) return;
+      setState(() {});
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatPageUser(
+            model: {
+              ...Map<String, dynamic>.from(widget.appointment),
+              'name':
+                  '${lawyerModel['firstName']} ${lawyerModel['lastName']}',
+              'imageUrl': lawyerModel['imageUrl'],
+              'caseCode': currentCaseCode,
+              'code': currentCaseCode,
+              'caseStatus': currentStatus == 0 ? 3 : currentStatus,
+              'active': true,
+              'caseSuccess': false,
+            },
+            roomCode: roomCode,
+            userId: UserProfileStore.instance.code,
+            caseCode: currentCaseCode,
+          ),
+        ),
       );
     }
   }

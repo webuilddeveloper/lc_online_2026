@@ -9,7 +9,7 @@ import 'package:LawyerOnline/shared/responsive/responsive_values.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 
-const _kAccent = Color(0xFF2F80ED);
+import 'package:LawyerOnline/widgets/home/home_theme.dart';
 
 // ─── Banner Section ───────────────────────────────────────────────
 // StatefulWidget ของตัวเอง → _currentBanner state อยู่ที่นี่
@@ -146,15 +146,15 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
   Widget build(BuildContext context) {
     if (widget.banners.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Container(
           height: RV.bannerHeight(context),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: HomeTheme.brCardLg,
             color: Colors.grey.shade200,
           ),
           child: const Center(
-            child: AppRingSpinner(color: _kAccent, size: 36),
+            child: AppRingSpinner(color: HomeTheme.primary, size: 36),
           ),
         ),
       );
@@ -167,10 +167,10 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
           child: CarouselSlider(
             carouselController: _carouselController,
             options: CarouselOptions(
-              viewportFraction: 0.9,
-              aspectRatio: 3,
+              viewportFraction: 0.92,
+              aspectRatio: 2.4,
               enlargeCenterPage: true,
-              enlargeFactor: 0.32,
+              enlargeFactor: 0.22,
               autoPlay: false,
               autoPlayInterval: _autoPlayInterval,
               autoPlayAnimationDuration: _autoPlayAnimationDuration,
@@ -186,22 +186,16 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
               return GestureDetector(
                 onTap: () => _onBannerTap(item),
                 child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: DecorationImage(
-                      image: isNetwork ? NetworkImage(imageUrl) : AssetImage(imageUrl),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        const Color.fromARGB(133, 55, 55, 55)
-                            .withValues(alpha: 0.5),
-                        BlendMode.srcATop,
-                      ),
-                    ),
+                    borderRadius: HomeTheme.brCardLg,
+                    boxShadow: HomeTheme.softShadow(tint: HomeTheme.primary, y: 12),
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: isNetwork
                       ? Image.network(
                           imageUrl,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
                           errorBuilder: (_, __, ___) => const ColoredBox(
@@ -210,7 +204,7 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
                         )
                       : Image.asset(
                           imageUrl,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
                         ),
@@ -219,20 +213,25 @@ class _HomeBannerSectionState extends State<HomeBannerSection> {
             }).toList(),
           ),
         ),
-        const SizedBox(height: 8),
-        // ── dot indicators ──────────────────────────────────────
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(widget.banners.length, (i) {
             final active = i == _current;
             return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
               margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: active ? 18 : 6,
-              height: 6,
+              width: active ? 22 : 7,
+              height: 7,
               decoration: BoxDecoration(
-                color: active ? _kAccent : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
+                gradient: active
+                    ? const LinearGradient(
+                        colors: [HomeTheme.primary, HomeTheme.accent],
+                      )
+                    : null,
+                color: active ? null : const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(99),
               ),
             );
           }),

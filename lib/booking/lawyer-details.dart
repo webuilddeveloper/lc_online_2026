@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as storage;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LawyerDetailPage extends StatefulWidget {
   final dynamic lawyer;
@@ -121,7 +122,7 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         appBar: AppBar(
           title: Center(
             child: Text(
-              "รายละเอียดทนายความ",
+              'lawyerDetailsTitle'.tr(),
               style: const TextStyle(fontSize: 16, color: Colors.white),
             ),
           ),
@@ -456,7 +457,7 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                         //     (widget.lawyer['specialty'] as String? ?? '')
                         //         .split(', ')
                         //         .first,
-                        "${widget.lawyer['experienceYears'] <= 4 ? "ทนายความ" : "ทนายความอาวุโส"}",
+                        "${widget.lawyer['experienceYears'] <= 4 ? 'lawyerLabel'.tr() : 'seniorLawyer'.tr()}",
                         style: TextStyle(
                             color: Colors.white.withOpacity(0.8), fontSize: 12),
                         maxLines: 2,
@@ -578,11 +579,11 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         padding: const EdgeInsets.all(16),
         decoration: _cardDecor(),
         child: Row(children: [
-          _statItem('🏆', '148+', 'คดีชนะ'),
+          _statItem('🏆', '148+', 'casesWon'.tr()),
           _vertDiv(),
-          _statItem('📅', "${widget.lawyer['experienceYears']}", 'ประสบการณ์'),
+          _statItem('📅', "${widget.lawyer['experienceYears']}", 'experience'.tr()),
           _vertDiv(),
-          _statItem('⭐', '${widget.lawyer['review'].length}', 'รีวิว'),
+          _statItem('⭐', '${widget.lawyer['review'].length}', 'reviews'.tr()),
         ]),
       ),
     );
@@ -625,10 +626,10 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         padding: const EdgeInsets.all(18),
         decoration: _cardDecor(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.gavel_rounded, 'ความเชี่ยวชาญ', color),
+          _sectionTitle(Icons.gavel_rounded, 'expertise'.tr(), color),
           const SizedBox(height: 12),
           expertiseList.isEmpty
-              ? Text('ไม่มีข้อมูลความเชี่ยวชาญ',
+              ? Text('noExpertiseData'.tr(),
                   style: TextStyle(fontSize: 12, color: Colors.grey[400]))
               : Wrap(
                   spacing: 8,
@@ -739,7 +740,7 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
         padding: const EdgeInsets.all(18),
         decoration: _cardDecor(),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _sectionTitle(Icons.public_rounded, 'โซเชียลมีเดีย', color),
+          _sectionTitle(Icons.public_rounded, 'socialMedia'.tr(), color),
           const SizedBox(height: 14),
           Row(
             children: socials.asMap().entries.map((e) {
@@ -805,10 +806,18 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
             MaterialPageRoute(
               builder: (_) => SchedulePage(
                 lawyer: widget.lawyer,
-                topic: widget.topic['code'],
-                topicTitle: widget.topic['title'],
-                subTopic: widget.subTopic['code'],
-                subTopicTitle: widget.subTopic['title'],
+                topic: widget.topic is Map
+                    ? (widget.topic['code']?.toString() ?? '')
+                    : (widget.topic?.toString() ?? ''),
+                topicTitle: widget.topic is Map
+                    ? (widget.topic['title']?.toString() ?? '')
+                    : '',
+                subTopic: widget.subTopic is Map
+                    ? (widget.subTopic['code']?.toString() ?? '')
+                    : (widget.subTopic?.toString() ?? ''),
+                subTopicTitle: widget.subTopic is Map
+                    ? (widget.subTopic['title']?.toString() ?? '')
+                    : '',
               ),
             ),
           );
@@ -846,9 +855,9 @@ class _LawyerDetailPageState extends State<LawyerDetailPage>
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'จองนัดหมาย',
-                style: TextStyle(
+              Text(
+                'bookAppointment'.tr(),
+                style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,

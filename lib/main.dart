@@ -127,6 +127,20 @@ void main() async {
         }
         return;
       }
+      if (type == 'call_ended') {
+        if (UserProfileStore.instance.isLoggedIn) {
+          NotificationStore.instance.refresh();
+        }
+        if (NotificationSettingsStore.instance.shouldNotify(message.data)) {
+          InAppNotificationService.show(
+            title: _readTitle(message),
+            body: _readBody(message),
+            data: message.data,
+            onTap: () => _handleNotificationNavigation(message),
+          );
+        }
+        return;
+      }
 
       if (_shouldSuppressChatForegroundNotification(message)) {
         if (UserProfileStore.instance.isLoggedIn) {

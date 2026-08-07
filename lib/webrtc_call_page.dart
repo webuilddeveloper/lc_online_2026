@@ -4,6 +4,7 @@ import 'package:LawyerOnline/services/webrtc_call_session.dart';
 import 'package:LawyerOnline/services/webrtc_config.dart';
 import 'package:LawyerOnline/services/webrtc_peer_service.dart';
 import 'package:LawyerOnline/services/webrtc_pip_channel.dart';
+import 'package:LawyerOnline/services/webrtc_system_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -105,6 +106,10 @@ class _WebRtcCallPageState extends State<WebRtcCallPage>
     if (peer == null) return;
     final err = await peer.toggleScreenShare();
     _session.screenSharing.value = peer.isScreenSharing;
+    if (!peer.isScreenSharing) {
+      final local = peer.localStream;
+      if (local != null) _session.attachLocal(local, force: true);
+    }
     if (err != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err)),
@@ -126,6 +131,7 @@ class _WebRtcCallPageState extends State<WebRtcCallPage>
     if (!_minimizing) {
       _session.setFullScreenOpen(false);
     }
+    unawaited(WebRtcSystemUi.restoreAfterCall());
     super.dispose();
   }
 

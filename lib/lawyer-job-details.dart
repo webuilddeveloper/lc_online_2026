@@ -12,6 +12,10 @@ import 'package:LawyerOnline/repositories/booking_case_repository.dart';
 import 'package:LawyerOnline/repositories/lawyer_appointment_repository.dart';
 import 'package:LawyerOnline/shared/responsive/app_layout.dart';
 import 'package:LawyerOnline/shared/responsive/res_layout.dart';
+import 'package:LawyerOnline/services/case_cancel_service.dart';
+import 'package:LawyerOnline/services/case_cancel_review_helper.dart';
+import 'package:LawyerOnline/widgets/case_cancel_admin_review_section.dart';
+import 'package:LawyerOnline/widgets/case_cancel_review_progress_section.dart';
 
 class LawyerJobDetailPage extends StatefulWidget {
   final dynamic job;
@@ -48,6 +52,13 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
   }
 
   bool get _isCaseRequest => _job['isCaseRequest'] == true;
+
+  Map<String, dynamic> get _caseDataForReview {
+    final merged = <String, dynamic>{};
+    if (_rawPayload != null) merged.addAll(_rawPayload!);
+    merged.addAll(_job);
+    return merged;
+  }
 
   int get _caseStatusInt {
     final direct = _job['caseStatusInt'];
@@ -208,6 +219,44 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
   Future<void> updateStatusRejectCase(reasonCancel, caseStatus) async {
     DialogService.showLoading(context);
     try {
+      final caseData = _caseDataForReview;
+      if (CaseCancelReviewHelper.needsAdminCancelReview(
+        caseData: caseData,
+        userType: 'lawyer',
+      )) {
+        final param = await CaseCancelService.requestCancel(
+          caseCode: _caseCode,
+          reasonCancel: reasonCancel.toString(),
+          requesterCode: UserProfileStore.instance.code,
+          userType: 'lawyer',
+        );
+        if (!mounted) return;
+        Navigator.pop(context);
+        if (param['status'] == 'S') {
+          Navigator.pop(context);
+          setState(() {
+            _job['cancelReviewStatus'] = 'pending';
+            _job['reasonCancel'] = reasonCancel.toString();
+            _job['cancelRequestedUserType'] = 'lawyer';
+          });
+          DialogService.showSuccess(
+            context,
+            title: 'ส่งคำขอยกเลิกแล้ว',
+            message: 'cancelReviewLawyerSubmitMessage'.tr(),
+            onClose: () {
+              Navigator.pop(context);
+            },
+          );
+        } else {
+          DialogService.showError(
+            context,
+            title: 'ส่งคำขอยกเลิกไม่สำเร็จ',
+            message: param['message']?.toString() ?? 'กรุณาลองใหม่',
+          );
+        }
+        return;
+      }
+
       dynamic model = {
         "code": _caseCode,
         "caseStatus": caseStatus,
@@ -292,6 +341,13 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                       child: Column(children: [
                         _buildStatusCard(caseStatusInt),
                         const SizedBox(height: 14),
+                        if (CaseCancelReviewHelper.hasActiveReview(
+                            _caseDataForReview)) ...[
+                          CaseCancelReviewProgressSection(
+                            caseData: _caseDataForReview,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
                         if (caseStatusInt == 0) ...[
                           _buildDetailReasonCancelCard(clientColor),
                           const SizedBox(height: 14),
@@ -309,8 +365,9 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
                   ),
                   if (caseStatusInt == 1 && widget.onAccept != null)
                     _buildPendingButtons(context)
-                  else if (caseStatusInt == 2 || caseStatusInt == 3)
-                    _buildAcceptedButton(context),
+                  else if ((caseStatusInt == 2 || caseStatusInt == 3) &&
+                      !CaseCancelReviewHelper.isReviewPending(_caseDataForReview))
+                    _buildActiveCaseActions(context),
                 ],
               ),
             ),
@@ -441,6 +498,8 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
       padding: const EdgeInsets.all(18),
       decoration: _cardDecor(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _sectionTitle(Icons.cancel_outlined, 'รายละเอียดการยกเลิก', Colors.red),
+        const SizedBox(height: 14),
         Text('เหตุผลที่ยกเลิก',
             style: TextStyle(fontSize: 11, color: Colors.grey[400])),
         const SizedBox(height: 6),
@@ -456,6 +515,12 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
             style:
                 TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.6),
           ),
+        ),
+        CaseCancelAdminReviewSection(
+          caseData: _job,
+          fallbackData: _rawPayload,
+          viewerUserCode: UserProfileStore.instance.code,
+          layout: CaseCancelReviewLayout.compact,
         ),
       ]),
     );
@@ -671,7 +736,16 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
     );
   }
 
-  Widget _buildAcceptedButton(BuildContext context) {
+  Widget _buildActiveCaseActions(BuildContext context) {
+    final caseData = _caseDataForReview;
+    final isPending = CaseCancelReviewHelper.isReviewPending(caseData);
+    final showCancel = CaseCancelReviewHelper.needsAdminCancelReview(
+          caseData: caseData,
+          userType: 'lawyer',
+        ) ||
+        _caseStatusInt == 2 ||
+        _caseStatusInt == 3;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, 10, 16, MediaQuery.of(context).padding.bottom + 14),
@@ -679,34 +753,93 @@ class _LawyerJobDetailPageState extends State<LawyerJobDetailPage> {
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFEEF2F5))),
       ),
-      child: GestureDetector(
-        onTap: _startConsultation,
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                  color: _kPrimary.withOpacity(0.4),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4))
-            ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _startConsultation,
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFF0262EC), Color(0xFF0099FF)]),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                      color: _kPrimary.withOpacity(0.4),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.headset_mic_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('เริ่มปรึกษา / แชทกับลูกความ',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15)),
+                ],
+              ),
+            ),
           ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.headset_mic_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('เริ่มปรึกษา / แชทกับลูกความ',
+          if (showCancel) ...[
+            const SizedBox(height: 10),
+            if (isPending)
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFDBA74)),
+                ),
+                child: const Text(
+                  'คำขอยกเลิกอยู่ระหว่างรอแอดมินตรวจสอบเหตุผล',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15)),
-            ],
-          ),
-        ),
+                    color: Color(0xFF9A3412),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () {
+                  DialogService.showConfirmRejectJob(
+                    context,
+                    title: _caseStatusInt == 3
+                        ? 'ขอยกเลิกการปรึกษา'
+                        : 'ขอยกเลิกนัดหมาย',
+                    message: _caseStatusInt == 3
+                        ? 'คุณยืนยันที่จะขอยกเลิกขณะกำลังปรึกษาใช่หรือไม่? จะต้องระบุเหตุผลเพื่อให้แอดมินตรวจสอบ'
+                        : 'คุณยืนยันที่จะขอยกเลิกนัดหมายใช่หรือไม่? จะต้องระบุเหตุผลเพื่อให้แอดมินตรวจสอบก่อน',
+                    onConfirm: () => showReasonCancelDialog(context),
+                  );
+                },
+                child: Container(
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text(
+                    'ขอยกเลิก (ระบุเหตุผล)',
+                    style: TextStyle(
+                      color: Color(0xFFC62828),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }

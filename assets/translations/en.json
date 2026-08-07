@@ -1,5 +1,10 @@
 {
   "appTitle": "Lawyer Online",
+  "homeWelcomeGuest": "Welcome to Lawyer Online",
+  "homeWelcomeGuestHint": "Sign in to open cases, book appointments, and track status.",
+  "homeWelcomeUser": "Hello, {}",
+  "homeWelcomeUserHint": "Track your cases and appointments from here.",
+  "homeWelcomeLawyerHint": "Manage jobs, appointments, and urgent cases from here.",
   "community": "Community",
   "communitySubtitle": "Community Legal Hub",
   "postQuestion": "Ask a question",
@@ -427,7 +432,6 @@
     "lawyer": "Lawyer",
     "client": "Client"
   },
-
   "steps": {
     "requested": {
       "title": "Submit Request",
@@ -450,7 +454,6 @@
       "desc": "Consultation completed"
     }
   },
-
   "appointmentInfo": {
     "title": "Appointment Information",
     "caseType": "Appointment type",
@@ -486,19 +489,16 @@
     "comment": "Your feedback is very valuable",
     "submitRating": "Submit Rating"
   },
-
-  "returns":{
+  "returns": {
     "returnHome": "Return to Home"
   },
-
-  "call_room":{
+  "call_room": {
     "consultingRoom": "Enter Consultation Room"
   },
-  "memssage_cancel_appointment":{
+  "memssage_cancel_appointment": {
     "success": "The system has successfully cancelled the appointment and will refund the appointment fee through the registered bank account."
   },
-
-  "rating_appointment":{
+  "rating_appointment": {
     "terrible": "Terrible",
     "fair": "Fair",
     "good": "Good",
@@ -508,7 +508,7 @@
     "successTitle": "Rating Submitted Successfully!",
     "successDescription": "Thank you for your feedback"
   },
-  "notification":{
+  "notification": {
     "pre_consultation_instruction": "Pre-consultation Instructions",
     "pre_consultation_instruction_message": "Please enter '1234' in the Enter Name field before clicking Join Now",
     "permission_denied_title": "Permission Denied",
@@ -519,11 +519,11 @@
     "listAll": "See All",
     "allItems": "all items",
     "empty": "No notifications yet",
-    "msg":{
+    "msg": {
       "read": "Read",
       "new": "New"
     },
-    "common":{
+    "common": {
       "tapForDetail": "Tap message to view details",
       "emptyCaseAlerts": "Important alerts regarding your cases will appear here.",
       "noSubject": "No subject",
@@ -531,12 +531,12 @@
       "noDetails": "No additional details"
     }
   },
-  "permission":{
+  "permission": {
     "title": "Access Settings",
     "content": "Please go to Settings and allow the app to access your camera and microphone",
     "open_settings": "Open Settings"
   },
-  "timeline":{
+  "timeline": {
     "today": "Today",
     "yesterday": "Yesterday",
     "earlier": "Earlier"
@@ -557,22 +557,50 @@
     "periodEvening": "Evening",
     "timeUnit": "",
     "monthShort": {
-      "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
-      "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
-      "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+      "1": "Jan",
+      "2": "Feb",
+      "3": "Mar",
+      "4": "Apr",
+      "5": "May",
+      "6": "Jun",
+      "7": "Jul",
+      "8": "Aug",
+      "9": "Sep",
+      "10": "Oct",
+      "11": "Nov",
+      "12": "Dec"
     },
     "monthFull": {
-      "1": "January", "2": "February", "3": "March", "4": "April",
-      "5": "May", "6": "June", "7": "July", "8": "August",
-      "9": "September", "10": "October", "11": "November", "12": "December"
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
     },
     "dayFull": {
-      "1": "Monday", "2": "Tuesday", "3": "Wednesday",
-      "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday"
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
     },
     "dayShort": {
-      "0": "M", "1": "T", "2": "W", "3": "Th",
-      "4": "F", "5": "Sa", "6": "Su"
+      "0": "M",
+      "1": "T",
+      "2": "W",
+      "3": "Th",
+      "4": "F",
+      "5": "Sa",
+      "6": "Su"
     },
     "loadError": "Failed to load appointments",
     "genericError": "An error occurred. Please try again"
@@ -584,7 +612,6 @@
   "lawyerNo": "Lawyer No",
   "lawyerNoRequired": "Please enter your lawyer number",
   "lawyerNoInvalid": "Invalid format. Example: 12345/2565",
-
   "caseWorkspaceTitle": "Case Workspace",
   "caseWorkspaceSubtitle": "Documents, timeline and consultation summary",
   "caseWorkspaceOpen": "Open workspace",
@@ -597,7 +624,6 @@
   "caseWorkspaceSummaryHint": "Write summary after consultation...",
   "caseWorkspaceSummarySaved": "Summary saved",
   "caseWorkspaceNotFound": "Case not found",
-
   "lawyerDashboardTitle": "Lawyer Dashboard",
   "lawyerDashboardTotalCases": "Total cases",
   "lawyerDashboardActive": "Active",
@@ -608,7 +634,6 @@
   "lawyerDashboardRating": "Average rating",
   "lawyerDashboardUrgent": "Urgent cases",
   "lawyerDashboardBooking": "Bookings",
-
   "lawyerApplyStatusTitle": "Application status",
   "lawyerApplyPendingTitle": "Under review",
   "lawyerApplyRejectedTitle": "Not approved",
@@ -616,7 +641,6 @@
   "lawyerApplyRejectedMessage": "Please resubmit with complete documents",
   "lawyerApplyResubmitMessage": "Please upload additional documents as requested",
   "lawyerApplyResubmit": "Resubmit application",
-
   "reviewPageTitle": "Rate your lawyer",
   "reviewPageSubtitle": "Your feedback helps others choose better",
   "reviewCommentHint": "Write your comment...",
@@ -626,7 +650,6 @@
   "reviewSuccessMessage": "Your review has been saved",
   "reviewLawyerDefault": "Lawyer",
   "reviewFailed": "Failed to submit review",
-
   "pdpaTitle": "Consent & Terms",
   "pdpaSubtitle": "Please read and accept before using the app",
   "pdpaConsentLabel": "Accept Privacy Policy (PDPA)",
@@ -644,14 +667,14 @@
   "chatWindowWaitingTitle": "Chat opens on appointment day",
   "chatWindowExpiredTitle": "Appointment window ended",
   "chatWindowExpiredMessage": "You can only scroll chat history. Messaging and video call are closed",
+  "chatCancelledTitle": "Appointment cancelled",
+  "chatCancelledMessage": "You can only view chat history",
   "chatWindowHistoryOnly": "History view only",
   "accept": "Accept",
-
   "verifiedLawyer": "Verified",
   "communityCtaTitle": "Need more help?",
   "communityCtaSubtitle": "Find a lawyer for this topic or open an urgent case",
   "communityCtaFindLawyer": "Find lawyer",
-
   "webrtcWaitingPeer": "Waiting for peer...",
   "webrtcConnecting": "Connecting...",
   "webrtcConnected": "Connected",
@@ -666,6 +689,36 @@
   "chatVideoCallDurationSecondsOnly": "Duration {} sec",
   "chatVideoCallDurationMinutesSeconds": "Duration {} min {} sec",
   "chatVideoCallNoConnect": "Not connected",
+  "chatCallEnded": "Call ended",
+  "cancelAdminReviewTitle": "Admin review result",
+  "cancelAdminApprove": "Cancellation approval",
+  "cancelAdminApproved": "Cancellation approved",
+  "cancelAdminRejected": "Cancellation rejected",
+  "cancelAdminReasonable": "Reason validity",
+  "cancelAdminReasonableYes": "Reasonable",
+  "cancelAdminReasonableNo": "Not reasonable",
+  "cancelAdminScoreImpact": "Account score impact",
+  "cancelAdminNoPenalty": "No score deduction",
+  "cancelAdminPenaltyYou": "Your account score was deducted",
+  "cancelAdminPenaltyOther": "Requester's account score was deducted",
+  "cancelAdminRemark": "Admin remark",
+  "cancelAdminReviewedAt": "Reviewed on",
+  "cancelReviewProgressTitle": "Cancellation progress",
+  "cancelReviewStepSubmitted": "Request submitted",
+  "cancelReviewStepSubmittedDesc": "Your request has been received",
+  "cancelReviewStepAdmin": "Admin review",
+  "cancelReviewStepAdminPending": "Waiting for admin review",
+  "cancelReviewStepAdminDone": "Admin review completed",
+  "cancelReviewStepDecision": "Decision",
+  "cancelReviewStepRefund": "Refund",
+  "cancelReviewDecisionWaiting": "Waiting for admin decision",
+  "cancelReviewDecisionApproved": "Cancellation approved",
+  "cancelReviewDecisionRejected": "Cancellation rejected",
+  "cancelReviewRefundPending": "Refund pending admin approval",
+  "cancelReviewRefundApproved": "Refund in progress",
+  "cancelReviewRefundRejected": "No refund (request rejected)",
+  "cancelReviewRefundNote24h": "Note: If approved, your refund will be processed within 24 hours.",
+  "cancelReviewLawyerSubmitMessage": "Your request will be sent to admin for approval. The client will be notified at each step.",
   "receiptTitle": "Receipt",
   "receiptView": "View receipt",
   "receiptDownload": "Download receipt",
@@ -705,6 +758,140 @@
   "webrtcQualityPoor": "Poor signal",
   "webrtcQualityUnknown": "Measuring...",
   "callPeerDeclined": "The other party declined the call",
-  "callNoAnswer": "No answer within 2 minutes"
-
+  "callNoAnswer": "No answer within 2 minutes",
+  "pressBackAgainToExit": "Press again to exit",
+  "next": "Next",
+  "reload": "Reload",
+  "tryAgain": "Please try again",
+  "tryOtherSearch": "Try a different search",
+  "notFoundQuery": "No results for \"{}\"",
+  "all": "All",
+  "clear": "Clear",
+  "clearFilters": "Clear filters",
+  "applyFilters": "Apply filters",
+  "filters": "Filters",
+  "sortBy": "Sort by",
+  "defaultSort": "Default",
+  "province": "Province",
+  "selectProvince": "Select province",
+  "loadProvincesFailed": "Failed to load provinces",
+  "district": "District",
+  "selectDistrict": "Select district",
+  "topicLabel": "Topic",
+  "subTopicLabel": "Sub-topic",
+  "selectSubTopic": "Select sub-topic",
+  "dateLabel": "Date",
+  "timeLabel": "Time",
+  "durationLabel": "Duration",
+  "duration1Hour": "1 hour",
+  "duration60Min": "60 minutes",
+  "formatLabel": "Format",
+  "formatVideoCall": "Video call",
+  "additionalDetails": "Additional details",
+  "serviceFee": "Service fee",
+  "totalAmount": "Total",
+  "amountDue": "Amount due",
+  "reviewsCount": "{} reviews",
+  "seniorLawyer": "Senior lawyer",
+  "lawyerLabel": "Lawyer",
+  "experience": "Experience",
+  "ratingHighest": "Highest rating",
+  "nearest": "Nearest",
+  "availableNow": "Available",
+  "unavailableNow": "Unavailable",
+  "showAvailableOnly": "Show available only",
+  "statusLabel": "Status",
+  "scoreLabel": "Rating",
+  "noExpertiseData": "No expertise data",
+  "expertise": "Expertise",
+  "socialMedia": "Social media",
+  "casesWon": "Cases won",
+  "bookAppointment": "Book appointment",
+  "lawyerDetailsTitle": "Lawyer details",
+  "lawTopicsTitle": "All legal topics",
+  "lawTopicsLoading": "Loading topics...",
+  "lawTopicsSelectHint": "Select a topic to see details",
+  "lawTopicsSearchHint": "Search legal topics...",
+  "lawTopicsSubOf": "Sub-topics of \"{}\"",
+  "lawTopicsEmpty": "No legal topics yet",
+  "bookingTitle": "Book a lawyer",
+  "bookingSelectTopicTitle": "Select a topic",
+  "bookingSelectTopicHint": "Tap to view sub-topics, then choose a lawyer",
+  "bookingSearchCaseHint": "Search case types...",
+  "bookingTapToSelectLawyer": "Tap to select a lawyer",
+  "bookingSubTopicsCount": "{} sub-topics",
+  "bookingSelectDateTime": "Select date & time",
+  "bookingSelectDateTimeHint": "Pick an available date and time for your appointment",
+  "bookingLawyerOpenDays": "Available days: {}",
+  "bookingLawyerClosedToday": "Lawyer is closed today",
+  "bookingSelectTime": "Select time",
+  "bookingNoSlotsToday": "No available slots today",
+  "bookingSelectedSlot": "Selected",
+  "bookingSelected": "Selected",
+  "bookingConfirm": "Confirm booking",
+  "bookingPay": "Pay",
+  "bookingSummaryTitle": "Summary",
+  "bookingSummaryHint": "Review details before payment",
+  "bookingSuccessTitle": "Booking successful!",
+  "bookingSuccessHint": "The lawyer will confirm your appointment\nwithin 24 hours",
+  "bookingCodeCopied": "Booking code copied",
+  "bookingCodeLabel": "Booking code: {}",
+  "bookingDetailsTitle": "Appointment details",
+  "bookingCaseType": "Case type",
+  "bookingDate": "Appointment date",
+  "bookingNote": "Note",
+  "bookingNoteBody": "The lawyer will confirm via in-app messages. Please check your notifications and be ready 30 minutes before the consultation.",
+  "bookingSavingRequest": "Saving your request...",
+  "bookingCreateFailed": "Could not create request",
+  "bookingBackHome": "Back to home",
+  "bookingNeedLogin": "Account not found. Please sign in again before booking.",
+  "bookingNeedLawyer": "Lawyer account not found. Please select another lawyer.",
+  "bookingPaymentSuccessTitle": "Payment successful",
+  "bookingPaymentSuccessBody": "Payment received and appointment created.",
+  "bookingCannotBook": "Unable to book",
+  "bookingGenericError": "Something went wrong. Please try again.",
+  "bookingErrorOccurred": "An error occurred",
+  "bookingQrHint": "Scan the QR code with your banking app.\nPayment will be confirmed automatically.",
+  "bookingAccountName": "Account name",
+  "bookingAccountNumber": "Account number",
+  "bookingBahtPerHour": " THB/hr",
+  "bookingSelectLawyerTitle": "Select a lawyer",
+  "bookingSelectLawyerHint": "Choose a lawyer to view details",
+  "bookingFoundLawyers": "{} lawyers found",
+  "bookingSearchLawyerHint": "Search by name or expertise...",
+  "bookingNoLawyerFilter": "No lawyers match your filters",
+  "consultOnlineTitle": "Online consultation",
+  "consultBasicInfo": "Enter basic information",
+  "consultBasicInfoHint": "So we can match you with the right lawyer",
+  "consultTopicType": "Topic type",
+  "consultEventSummary": "Case summary",
+  "consultEventHint": "Briefly describe your case so the lawyer understands before consulting...",
+  "consultDemand": "What you need",
+  "consultDemandHint": "Describe what you want help with, e.g. file a lawsuit or claim damages...",
+  "consultAttachEvidence": "Attach evidence photos",
+  "consultSummaryTitle": "Summary",
+  "consultCaseInfo": "Case information",
+  "consultCaseType": "Case type",
+  "consultSubType": "Sub-type",
+  "consultEvidenceImages": "Evidence photos",
+  "consultNoEvidence": "No evidence attached",
+  "consultNotSpecified": "Not specified",
+  "consultExpenses": "Fees",
+  "consultPayWhenAccepted": "*Payment is charged when searching for a lawyer and after they accept the case*",
+  "consultPaymentChannel": "Payment method",
+  "consultSendingRequest": "Sending request...",
+  "consultConfirmSearch": "Confirm & find a lawyer",
+  "consultCreateFailed": "Could not create request",
+  "consultErrorWithDetail": "Error: {}",
+  "consultPaymentTitle": "Payment",
+  "consultConfirmPaymentFailed": "Payment confirmation failed",
+  "consultNoCaseAfterPay": "Case code not found after payment",
+  "consultCannotCreateCase": "Unable to create case",
+  "consultCheckPayment": "Verify payment",
+  "appointmentScheduleTitle": "Consultation schedule",
+  "appointmentTopicToConsult": "Topic to discuss",
+  "appointmentDateTitle": "Consultation date",
+  "appointmentDetailsHint": "Type details here...",
+  "appointmentContinue": "Continue",
+  "reviews": "Reviews"
 }

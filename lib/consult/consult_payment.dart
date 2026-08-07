@@ -4,6 +4,7 @@ import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/services/case_service.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ConsultQrPage extends StatefulWidget {
   final int amount;
@@ -77,7 +78,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
 
         if (result['success'] != true) {
           throw Exception(
-            result['message']?.toString() ?? 'ยืนยันการชำระเงินไม่สำเร็จ',
+            result['message']?.toString() ?? 'consultConfirmPaymentFailed'.tr(),
           );
         }
 
@@ -101,7 +102,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
         }
 
         if (caseCode.isEmpty) {
-          throw Exception('ไม่พบรหัสเคสหลังชำระเงิน');
+          throw Exception('consultNoCaseAfterPay'.tr());
         }
       } else {
         final lawyerMap =
@@ -119,7 +120,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
         );
 
         if (caseCode.isEmpty) {
-          throw Exception('ไม่สามารถสร้างเคสได้');
+          throw Exception('consultCannotCreateCase'.tr());
         }
       }
 
@@ -153,7 +154,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: 'ชำระเงิน',
+        title: 'consultPaymentTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         rightAction: () {},
@@ -207,7 +208,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
               const SizedBox(height: 20),
               const Divider(color: Color(0xFFEEF2F5)),
               const SizedBox(height: 16),
-              Text('ยอดชำระ',
+              Text('amountDue'.tr(),
                   style: TextStyle(color: Colors.grey[400], fontSize: 13)),
               const SizedBox(height: 6),
               Text('฿${_formatAmount(widget.amount)}',
@@ -237,7 +238,7 @@ class _ConsultQrPageState extends State<ConsultQrPage> {
                         height: 20,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Text('ตรวจสอบการชำระเงิน',
+                    : Text('consultCheckPayment'.tr(),
                         style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,

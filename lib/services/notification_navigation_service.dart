@@ -93,6 +93,9 @@ class NotificationNavigationService {
         case 'appointment_detail':
           await dismissLoading();
           if (!context.mounted) return false;
+          if (type == 'session_start') {
+            return await _openChat(context, code: code, type: type);
+          }
           return await _openAppointment(context, code: code);
         case 'case_request_detail':
           await dismissLoading();
@@ -301,9 +304,13 @@ class NotificationNavigationService {
     final roomCode = result['objectData']?['roomCode']?.toString() ?? '';
     if (roomCode.isEmpty) return false;
 
+    final existingStatus = _asInt(caseData['caseStatus']);
     await postObjectData('/m/case/update', {
       'code': caseCode,
       'messageRoomCode': roomCode,
+      // ส่งสถานะเฉพาะเมื่อยังใช้งานได้ — กัน API เก่า default 0 ทับสถานะ
+      if (existingStatus == 1 || existingStatus == 2 || existingStatus == 3)
+        'caseStatus': existingStatus,
     });
 
     final otherName = userType == 'lawyer'

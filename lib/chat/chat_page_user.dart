@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
@@ -12,6 +14,7 @@ import 'package:LawyerOnline/services/chat_attachment_service.dart';
 import 'package:LawyerOnline/services/chat_service.dart';
 import 'package:LawyerOnline/services/notification_navigation_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/services/video_call_launcher.dart';
 import 'package:LawyerOnline/services/video_call_service.dart';
@@ -81,6 +84,11 @@ class _ChatPageUserState extends State<ChatPageUser>
     await UserProfileStore.instance.load();
     _myUserId = ChatService.resolveMyUserId(widget.userId);
 
+    // ใช้ข้อมูลเคสที่ส่งมาเป็นฐานก่อน (กันหน้าต่างเวลาเพี้ยนตอน API ช้า/พลาด)
+    if (widget.model.isNotEmpty) {
+      _caseData = Map<String, dynamic>.from(widget.model);
+    }
+
     await _chatService.disconnect();
 
     _chatService.onReceiveMessage = (message) {
@@ -109,10 +117,19 @@ class _ChatPageUserState extends State<ChatPageUser>
     };
 
     await _chatService.connect();
-    await _chatService.joinRoom(widget.roomCode, _myUserId);
+    await _chatService.joinRoom(
+      widget.roomCode,
+      _myUserId,
+      caseCode: chatCaseCode,
+    );
     _chatService.setActiveRoom(widget.roomCode);
     await _chatService.loadHistory(widget.roomCode);
-    await _chatService.markAsRead(widget.roomCode, _myUserId);
+    await _chatService.markAsRead(
+      widget.roomCode,
+      _myUserId,
+      caseCode: chatCaseCode,
+    );
+    unawaited(NotificationStore.instance.refresh());
     await WebRtcCallListenerService.instance.joinRoomForChat(
       roomCode: widget.roomCode,
       caseCode: chatCaseCode,
@@ -127,6 +144,14 @@ class _ChatPageUserState extends State<ChatPageUser>
         : widget.model['code']?.toString() ??
             widget.model['caseCode']?.toString() ??
             '';
+    // กันเคสที่ model['caseCode'] เป็นของห้องเก่า แต่ code เป็นเคสปัจจุบัน
+    final modelCode = widget.model['code']?.toString() ?? '';
+    if (modelCode.isNotEmpty &&
+        code.isNotEmpty &&
+        modelCode != code &&
+        widget.caseCode.isEmpty) {
+      code = modelCode;
+    }
     if (code.isEmpty && widget.roomCode.isNotEmpty) {
       final active =
           await NotificationNavigationService.resolveActiveCaseForRoom(
@@ -165,6 +190,13 @@ class _ChatPageUserState extends State<ChatPageUser>
                   widget.roomCode);
           if (active != null) caseMap = active;
         }
+
+        debugPrint(
+          '💬 chat case ${caseMap['code']} status=${caseMap['caseStatus']} '
+          'type=${caseMap['caseType']} '
+          '${caseMap['caseDate']} ${caseMap['startTime']}-${caseMap['endTime']} '
+          'join=${VideoCallService.checkJoinWindow(caseMap)}',
+        );
 
         setState(() {
           _caseData = caseMap;
@@ -222,7 +254,7 @@ class _ChatPageUserState extends State<ChatPageUser>
   int _asCaseStatus(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    return int.tryParse(value?.toString() ?? '') ?? -1;
   }
 
   void _sendMessage() {
@@ -259,7 +291,11 @@ class _ChatPageUserState extends State<ChatPageUser>
       message: 'endConsultMessageUser'.tr(),
       onConfirm: () async {
         final param = await postDio('${server}/m/case/update', {
-          'code': widget.model['caseCode'],
+          'code': chatCaseCode.isNotEmpty
+              ? chatCaseCode
+              : (widget.model['code']?.toString() ??
+                  widget.model['caseCode']?.toString() ??
+                  ''),
           'caseStatus': 4,
           'isReview': false,
           'lawyer': widget.model['lawyer']
@@ -334,12 +370,14 @@ class _ChatPageUserState extends State<ChatPageUser>
     final caseMap = _caseMap;
     final caseStatus = _asCaseStatus(caseMap['caseStatus']);
     final caseSuccess = caseStatus == 4;
+    final caseCancelled = caseStatus == 0;
     final joinResult = VideoCallService.checkJoinWindow(caseMap);
-    final canInteract = !caseSuccess && joinResult == VideoCallJoinResult.allowed;
+    final canInteract =
+        !caseSuccess && !caseCancelled && joinResult == VideoCallJoinResult.allowed;
     final waitingForWindow =
-        !caseSuccess && joinResult == VideoCallJoinResult.tooEarly;
+        !caseSuccess && !caseCancelled && joinResult == VideoCallJoinResult.tooEarly;
     final windowExpired =
-        !caseSuccess && joinResult == VideoCallJoinResult.tooLate;
+        !caseSuccess && !caseCancelled && joinResult == VideoCallJoinResult.tooLate;
     final imageUrl = widget.model['imageUrl'] as String? ?? '';
     final appointmentDate = caseMap['caseDate']?.toString() ?? '';
     final appointmentTime =
@@ -360,9 +398,11 @@ class _ChatPageUserState extends State<ChatPageUser>
             name: widget.model['name'] ?? '',
             statusText: caseSuccess
                 ? null
-                : (windowExpired || waitingForWindow
-                    ? 'chatWindowHistoryOnly'.tr()
-                    : 'activeNow'.tr()),
+                : (caseCancelled
+                    ? 'chatCancelledTitle'.tr()
+                    : (windowExpired || waitingForWindow
+                        ? 'chatWindowHistoryOnly'.tr()
+                        : 'activeNow'.tr())),
             actions: canInteract
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
@@ -427,6 +467,8 @@ class _ChatPageUserState extends State<ChatPageUser>
             ),
           if (caseSuccess)
             _buildEndedBanner()
+          else if (caseCancelled)
+            _buildCancelledBanner()
           else if (waitingForWindow)
             _buildLockedBanner(appointmentDate, appointmentTime)
           else if (windowExpired)
@@ -619,6 +661,54 @@ class _ChatPageUserState extends State<ChatPageUser>
                           fontSize: 12, color: Color(0xFF5B6E8A)),
                     ),
                   ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCancelledBanner() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF1F0),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: const Color(0xFFE85D4C).withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE85D4C).withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cancel_outlined,
+                  size: 18, color: Color(0xFFE85D4C)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('chatCancelledTitle'.tr(),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFB42318))),
+                  const SizedBox(height: 3),
+                  Text('chatCancelledMessage'.tr(),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF8A5A55))),
                 ],
               ),
             ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:LawyerOnline/chat/widgets/chat_bubble.dart';
 import 'package:LawyerOnline/chat/widgets/chat_input.dart';
 import 'package:LawyerOnline/chat/chat_auto_pop_mixin.dart';
@@ -6,6 +8,7 @@ import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:LawyerOnline/shared/notification_store.dart';
 import 'package:flutter/material.dart';
 import 'package:LawyerOnline/services/video_call_launcher.dart';
 import 'package:LawyerOnline/services/video_call_service.dart';
@@ -106,10 +109,19 @@ class _ChatPageLawyerState extends State<ChatPageLawyer>
     };
 
     await _chatService.connect();
-    await _chatService.joinRoom(widget.roomCode, _myUserId);
+    await _chatService.joinRoom(
+      widget.roomCode,
+      _myUserId,
+      caseCode: chatCaseCode,
+    );
     _chatService.setActiveRoom(widget.roomCode);
     await _chatService.loadHistory(widget.roomCode);
-    await _chatService.markAsRead(widget.roomCode, _myUserId);
+    await _chatService.markAsRead(
+      widget.roomCode,
+      _myUserId,
+      caseCode: chatCaseCode,
+    );
+    unawaited(NotificationStore.instance.refresh());
     await WebRtcCallListenerService.instance.joinRoomForChat(
       roomCode: widget.roomCode,
       caseCode: chatCaseCode,

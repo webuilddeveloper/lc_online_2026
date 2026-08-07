@@ -9,6 +9,7 @@ import 'package:LawyerOnline/services/case_request_service.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ConsultSummaryPage extends StatefulWidget {
   // ── field ชุดใหม่ที่ตกลงกัน ──────────────────────────────────────────────
@@ -113,7 +114,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
       Navigator.pop(context);
       final requestCode = _extractRequestCode(res);
       if (requestCode == null || requestCode.isEmpty) {
-        _showError(res['message']?.toString() ?? 'สร้างคำขอไม่สำเร็จ');
+        _showError(res['message']?.toString() ?? 'bookingCreateFailed'.tr());
         return;
       }
 
@@ -137,7 +138,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      _showError('เกิดข้อผิดพลาด: ${e.toString()}');
+      _showError('consultErrorWithDetail'.tr(args: [e.toString()]));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -172,7 +173,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                   style: TextStyle(fontSize: 11, color: Colors.grey[400])),
               const SizedBox(height: 2),
               Text(
-                isEmpty ? 'ไม่ได้ระบุ' : value,
+                isEmpty ? 'consultNotSpecified'.tr() : value,
                 style: isEmpty
                     ? const TextStyle(
                         fontSize: 13,
@@ -217,8 +218,8 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                       color: Colors.grey[400])),
               const SizedBox(height: 8),
               images.isEmpty
-                  ? const Text(
-                      'ไม่ได้แนบภาพหลักฐาน',
+                  ? Text(
+                      'consultNoEvidence'.tr(),
                       style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey,
@@ -290,7 +291,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F5),
       appBar: appBar(
-        title: 'สรุปรายการ',
+        title: 'consultSummaryTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         rightAction: () {},
@@ -305,27 +306,31 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                 children: [
                   // ── ข้อมูลคดี ──
                   _buildSectionCard(
-                    title: 'ข้อมูลคดี',
+                    title: 'consultCaseInfo'.tr(),
                     icon: Icons.description_outlined,
                     child: Column(
                       children: [
-                        _buildInfoRow('ประเภทคดี', widget.topicTitle,
+                        _buildInfoRow('bookingCaseType'.tr(), widget.topicTitle,
                             Icons.gavel_outlined),
                         const SizedBox(height: 14),
-                        _buildInfoRow('ประเภทย่อย', widget.subTopicTitle,
+                        _buildInfoRow(
+                            'consultSubType'.tr(),
+                            widget.subTopicTitle.trim().isEmpty
+                                ? '-'
+                                : widget.subTopicTitle,
                             Icons.folder_outlined),
                         const SizedBox(height: 14),
-                        _buildInfoRow('จังหวัด', widget.province,
+                        _buildInfoRow('province'.tr(), widget.province,
                             Icons.location_on_outlined),
                         const SizedBox(height: 14),
-                        _buildInfoRow('สรุปเหตุการณ์', widget.detail,
+                        _buildInfoRow('consultEventSummary'.tr(), widget.detail,
                             Icons.notes_outlined),
                         const SizedBox(height: 14),
                         _buildInfoRow(
-                            'ข้อเรียกร้อง', widget.demand, Icons.gavel),
+                            'consultDemand'.tr(), widget.demand, Icons.gavel),
                         const SizedBox(height: 14),
                         _buildInfoRowImage(
-                            'ภาพหลักฐาน', widget.images, Icons.image),
+                            'consultEvidenceImages'.tr(), widget.images, Icons.image),
                       ],
                     ),
                   ),
@@ -333,14 +338,14 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
 
                   // ── ค่าใช้จ่าย ──
                   _buildSectionCard(
-                    title: 'ค่าใช้จ่าย',
+                    title: 'consultExpenses'.tr(),
                     icon: Icons.attach_money,
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('ค่าบริการ',
+                            Text('serviceFee'.tr(),
                                 style: TextStyle(
                                     color: Colors.grey[500], fontSize: 13)),
                             const Text('500',
@@ -352,26 +357,26 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('เวลา',
+                            Text('timeLabel'.tr(),
                                 style: TextStyle(
                                     color: Colors.grey[500], fontSize: 13)),
-                            const Text('60 นาที',
-                                style: TextStyle(
+                            Text('duration60Min'.tr(),
+                                style: const TextStyle(
                                     fontWeight: FontWeight.w600, fontSize: 14)),
                           ],
                         ),
                         const SizedBox(height: 16),
                         const Divider(height: 1, color: Color(0xFFEEF2F5)),
                         const SizedBox(height: 16),
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('ยอดรวม',
-                                style: TextStyle(
+                            Text('totalAmount'.tr(),
+                                style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                     color: Color(0xFF1A2340))),
-                            Text('500',
+                            const  Text('500',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 22,
@@ -379,9 +384,9 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          '*ชำระเงินเมื่อค้นหาทนายความ และทนายความกดรับเคสแล้ว*',
-                          style: TextStyle(
+                        Text(
+                          'consultPayWhenAccepted'.tr(),
+                          style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                               color: Colors.red),
@@ -393,7 +398,7 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
 
                   // ── ช่องทางชำระเงิน ──
                   _buildSectionCard(
-                    title: 'ช่องทางชำระเงิน',
+                    title: 'consultPaymentChannel'.tr(),
                     icon: Icons.payment_outlined,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -463,8 +468,8 @@ class _ConsultSummaryPageState extends State<ConsultSummaryPage> {
                 child: Center(
                   child: Text(
                     _isSubmitting
-                        ? 'กำลังส่งคำขอ...'
-                        : 'ยืนยันและค้นหาทนายความ',
+                        ? 'consultSendingRequest'.tr()
+                        : 'consultConfirmSearch'.tr(),
                     style: TextStyle(
                       color: _isSubmitting ? Colors.grey[600] : Colors.white,
                       fontWeight: FontWeight.w700,

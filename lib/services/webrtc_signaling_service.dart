@@ -81,12 +81,14 @@ class WebRtcSignal {
   final String from;
   final String? sdp;
   final Map<String, dynamic>? candidate;
+  final bool? enabled;
 
   const WebRtcSignal({
     required this.action,
     required this.from,
     this.sdp,
     this.candidate,
+    this.enabled,
   });
 
   Map<String, dynamic> toJson() => {
@@ -94,9 +96,17 @@ class WebRtcSignal {
         'from': from,
         if (sdp != null) 'sdp': sdp,
         if (candidate != null) 'candidate': candidate,
+        if (enabled != null) 'enabled': enabled,
       };
 
   factory WebRtcSignal.fromJson(Map<String, dynamic> json, {String? from}) {
+    final enabledRaw = json['enabled'];
+    bool? enabled;
+    if (enabledRaw is bool) {
+      enabled = enabledRaw;
+    } else if (enabledRaw != null) {
+      enabled = enabledRaw.toString() == 'true';
+    }
     return WebRtcSignal(
       action: json['action']?.toString() ?? '',
       from: from ?? json['from']?.toString() ?? '',
@@ -104,6 +114,7 @@ class WebRtcSignal {
       candidate: json['candidate'] is Map
           ? Map<String, dynamic>.from(json['candidate'] as Map)
           : null,
+      enabled: enabled,
     );
   }
 }

@@ -5,9 +5,11 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/component/loading_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class AppAppointment extends StatefulWidget {
   AppAppointment({
@@ -49,6 +51,7 @@ class _AppAppointmentState extends State<AppAppointment> {
   List<dynamic> _lawyerOpenDays = [];
   bool _slotsLoading            = false;
   bool _scheduleLoaded          = false;
+  int _slotRequestSeq           = 0;
 
   // ── topic list ──────────────────────────────────────────
   List<dynamic> _caseTypeList    = [];
@@ -59,16 +62,53 @@ class _AppAppointmentState extends State<AppAppointment> {
   final _thDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
   // ── can proceed ─────────────────────────────────────────
+  bool get _hasIncomingTopic =>
+      (widget.topic?.trim().isNotEmpty ?? false) ||
+      (widget.topicTitle?.trim().isNotEmpty ?? false);
+
+  bool get _hasIncomingSubTopic =>
+      (widget.subTopic?.trim().isNotEmpty ?? false) ||
+      (widget.subTopicTitle?.trim().isNotEmpty ?? false);
+
+  bool get _topicHasSubTopics {
+    if (_selectedTopic is! Map) return false;
+    final raw =
+        _selectedTopic['subTopics'] ?? _selectedTopic['subCase'];
+    if (raw is! List) return false;
+    return raw.whereType<Map>().any(
+          (s) => (s['title']?.toString().trim() ?? '').isNotEmpty,
+        );
+  }
+
+  bool get _hasTopic => _hasIncomingTopic || _selectedTopic != null;
+
+  bool get _hasSubTopic {
+    if (_hasIncomingSubTopic || _selectedSubCase != null) return true;
+    // หัวข้อที่ไม่มีหัวข้อย่อย — ไม่ต้องบังคับเลือก
+    if (_selectedTopic != null && !_topicHasSubTopics) return true;
+    return false;
+  }
+
   bool get _canSubmit =>
-      (widget.topic != null || _selectedTopic != null) &&
-      (widget.subTopic != null || _selectedSubCase != null) &&
+      _hasTopic &&
+      _hasSubTopic &&
       _selectedDate != null &&
       _selectedTime != null;
 
-  String get _topicCode     => widget.topic    ?? _selectedTopic?['code']    ?? '';
-  String get _topicTitle    => widget.topicTitle ?? _selectedTopic?['title'] ?? '';
-  String get _subTopicCode  => widget.subTopic  ?? _selectedSubCase?['code'] ?? '';
-  String get _subTopicTitle => widget.subTopicTitle ?? _selectedSubCase?['title'] ?? '';
+  String get _topicCode =>
+      _selectedTopic?['code']?.toString() ?? widget.topic?.trim() ?? '';
+  String get _topicTitle =>
+      _selectedTopic?['title']?.toString() ??
+      widget.topicTitle?.trim() ??
+      widget.topic?.trim() ??
+      '';
+  String get _subTopicCode =>
+      _selectedSubCase?['code']?.toString() ?? widget.subTopic?.trim() ?? '';
+  String get _subTopicTitle =>
+      _selectedSubCase?['title']?.toString() ??
+      widget.subTopicTitle?.trim() ??
+      widget.subTopic?.trim() ??
+      '';
 
   List<DateTime> get _daysInMonth {
     final first = DateTime(_focusedDate.year, _focusedDate.month, 1);
@@ -109,7 +149,10 @@ class _AppAppointmentState extends State<AppAppointment> {
     try {
       final param = await postDio('$server/m/topic/read', {});
       setState(() {
-        _caseTypeList = param['objectData'];
+        _caseTypeList = param['objectData'] is List
+            ? List<dynamic>.from(param['objectData'] as List)
+            : [];
+        _resolveIncomingTopicSelection();
         isLoadingTopics = false;
       });
     } catch (_) {
@@ -117,9 +160,49 @@ class _AppAppointmentState extends State<AppAppointment> {
     }
   }
 
+  /// จับคู่ topic/subTopic ที่ส่งมาจากหน้าแรก (มักเป็น title) กับข้อมูล API
+  void _resolveIncomingTopicSelection() {
+    final topicKey = (widget.topic ?? widget.topicTitle ?? '')
+        .trim()
+        .replaceAll('\n', '');
+    if (topicKey.isEmpty) return;
+
+    dynamic matchedTopic;
+    for (final item in _caseTypeList) {
+      if (item is! Map) continue;
+      final code = item['code']?.toString().trim() ?? '';
+      final title = (item['title']?.toString() ?? '').trim().replaceAll('\n', '');
+      if (code == topicKey || title == topicKey) {
+        matchedTopic = item;
+        break;
+      }
+    }
+    if (matchedTopic == null) return;
+    _selectedTopic = matchedTopic;
+
+    final subKey = (widget.subTopic ?? widget.subTopicTitle ?? '')
+        .trim()
+        .replaceAll('\n', '');
+    if (subKey.isEmpty) return;
+
+    final rawSubs = matchedTopic['subTopics'];
+    final subs = (rawSubs is List ? rawSubs : const <dynamic>[])
+        .whereType<Map>()
+        .toList();
+    for (final s in subs) {
+      final code = s['code']?.toString().trim() ?? '';
+      final title = (s['title']?.toString() ?? '').trim();
+      if (code == subKey || title == subKey) {
+        _selectedSubCase = Map<String, dynamic>.from(s);
+        break;
+      }
+    }
+  }
+
   Future<void> readTimeSlot(String date) async {
     if (widget.lawyer == null) return;
-    setState(() => _slotsLoading = true);
+    final requestSeq = ++_slotRequestSeq;
+    if (mounted) setState(() => _slotsLoading = true);
     try {
       final param = await postDio(
         '$server/m/register/checkSlot',
@@ -131,7 +214,16 @@ class _AppAppointmentState extends State<AppAppointment> {
         },
       );
 
+      if (!mounted || requestSeq != _slotRequestSeq) return;
+
       final objectData = param['objectData'];
+      if (objectData is! Map) {
+        setState(() {
+          _timeSlots = [];
+          _slotsLoading = false;
+        });
+        return;
+      }
 
       // โหลด lawyerSchedule ครั้งแรกครั้งเดียว
       if (!_scheduleLoaded && objectData['lawyerSchedule'] != null) {
@@ -145,11 +237,20 @@ class _AppAppointmentState extends State<AppAppointment> {
 
       setState(() {
         _timeSlots = slots;
-        _selectedTime = null;
+        if (_selectedTime != null) {
+          final stillValid = slots.any((s) =>
+              s is Map &&
+              s['title']?.toString() == _selectedTime &&
+              (s['available'] == true ||
+                  s['isOpen'] == true ||
+                  s['isLawyerOpen'] == true));
+          if (!stillValid) _selectedTime = null;
+        }
         _slotsLoading = false;
       });
     } catch (e) {
       print('readTimeSlot error: $e');
+      if (!mounted || requestSeq != _slotRequestSeq) return;
       setState(() => _slotsLoading = false);
     }
   }
@@ -167,7 +268,7 @@ class _AppAppointmentState extends State<AppAppointment> {
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F5),
         appBar: appBar(
-          title: widget.title ?? 'ตารางวันปรึกษา',
+          title: widget.title ?? 'appointmentScheduleTitle'.tr(),
           backBtn: true,
           rightBtn: false,
           backAction: () => Navigator.pop(context, false),
@@ -185,13 +286,20 @@ class _AppAppointmentState extends State<AppAppointment> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // ── เลือกประเภทหัวข้อ ───────────
-                          if (widget.topic == null) ...[
+                          // ซ่อนเฉพาะเมื่อส่งหัวข้อมาแล้ว (เช่น จากหน้าแรก)
+                          if (!_hasIncomingTopic) ...[
                             _buildTopicSection(topicColor),
+                            const SizedBox(height: 16),
+                          ] else if (_selectedTopic != null) ...[
+                            _buildIncomingTopicChip(topicColor),
                             const SizedBox(height: 16),
                           ],
 
                           // ── หัวข้อย่อย ──────────────────
-                          if (_selectedTopic != null) ...[
+                          // โชว์เมื่อมีหัวข้อแล้ว แต่ยังไม่มีหัวข้อย่อยจากภายนอก
+                          if (_selectedTopic != null &&
+                              _topicHasSubTopics &&
+                              !_hasIncomingSubTopic) ...[
                             _buildSubCaseDropdown(topicColor),
                             const SizedBox(height: 16),
                           ],
@@ -211,7 +319,7 @@ class _AppAppointmentState extends State<AppAppointment> {
 
                           // ── รายละเอียดเพิ่มเติม ──────────
                           _buildTextArea(
-                            title: 'รายละเอียดเพิ่มเติม',
+                            title: 'additionalDetails'.tr(),
                             controller: detailsController,
                           ),
                           const SizedBox(height: 32),
@@ -251,7 +359,7 @@ class _AppAppointmentState extends State<AppAppointment> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'ทนายเปิดรับ: ${openDays.join(', ')}',
+              'bookingLawyerOpenDays'.tr(args: [openDays.join(', ')]),
               style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF0262EC),
@@ -266,11 +374,42 @@ class _AppAppointmentState extends State<AppAppointment> {
   // ════════════════════════════════════════════════════════
   //  Topic Grid
   // ════════════════════════════════════════════════════════
+  Widget _topicImage(String imageUrl, {double size = 50}) {
+    final url = imageUrl.trim();
+    if (url.isEmpty) {
+      return Icon(Icons.gavel_rounded,
+          size: size * 0.7, color: const Color(0xFF94A3B8));
+    }
+    if (url.startsWith('assets/')) {
+      return Image.asset(url, width: size, height: size, fit: BoxFit.contain);
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      memCacheWidth: 160,
+      placeholder: (_, __) => SizedBox(
+        width: size,
+        height: size,
+        child: const Center(
+          child: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      errorWidget: (_, __, ___) => Icon(Icons.gavel_rounded,
+          size: size * 0.7, color: const Color(0xFF94A3B8)),
+    );
+  }
+
   Widget _buildTopicSection(Color topicColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('ประเภทหัวข้อที่จะปรึกษา', required: true),
+        _fieldLabel('appointmentTopicToConsult'.tr(), required: true),
         const SizedBox(height: 10),
         GridView.builder(
           shrinkWrap: true,
@@ -318,12 +457,12 @@ class _AppAppointmentState extends State<AppAppointment> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.network(item['imageUrl'], width: 50, height: 50),
+                    _topicImage(item['imageUrl']?.toString() ?? ''),
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: Text(
-                        item['title'] as String,
+                        item['title']?.toString() ?? '',
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -351,28 +490,112 @@ class _AppAppointmentState extends State<AppAppointment> {
   // ════════════════════════════════════════════════════════
   //  Sub-case Dropdown
   // ════════════════════════════════════════════════════════
+  Widget _buildIncomingTopicChip(Color topicColor) {
+    final title = _topicTitle;
+    if (title.isEmpty) return const SizedBox.shrink();
+    final subTitle = _subTopicTitle.trim();
+    final hasSub = subTitle.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel('appointmentTopicToConsult'.tr(), required: true),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: topicColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: topicColor.withOpacity(0.25)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(Icons.label_rounded, size: 18, color: topicColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: hasSub
+                    ? Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: title,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: topicColor,
+                                height: 1.35,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' > ',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: topicColor.withOpacity(0.55),
+                                height: 1.35,
+                              ),
+                            ),
+                            TextSpan(
+                              text: subTitle,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: topicColor.withOpacity(0.85),
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                        softWrap: true,
+                      )
+                    : Text(
+                        title,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: topicColor,
+                          height: 1.35,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSubCaseDropdown(Color color) {
-    final rawSubs   = _selectedTopic['subTopics'];
+    final rawSubs =
+        _selectedTopic['subTopics'] ?? _selectedTopic['subCase'];
     final subTopics = (rawSubs is List ? rawSubs : <dynamic>[])
-        .whereType<Map<String, dynamic>>()
+        .whereType<Map>()
+        .map((s) => Map<String, dynamic>.from(s))
+        .where((s) => (s['title']?.toString().trim() ?? '').isNotEmpty)
         .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('หัวข้อย่อย', required: true),
+        _fieldLabel('subTopicLabel'.tr(), required: true),
         const SizedBox(height: 6),
         AppDropdownField<String>(
-          value: _selectedSubCase?['code'] as String?,
-          hint: 'เลือกหัวข้อย่อย',
+          value: _selectedSubCase?['code']?.toString(),
+          hint: 'selectSubTopic'.tr(),
           prefixIcon: Icons.subdirectory_arrow_right_rounded,
           accentColor: color,
           items: subTopics
               .map(
                 (s) => DropdownMenuItem<String>(
-                  value: s['code'] as String,
+                  value: s['code']?.toString(),
                   child: Text(
-                    s['title'] as String,
+                    s['title']?.toString() ?? '',
                     style: AppDropdownStyles.itemStyle(),
                   ),
                 ),
@@ -380,10 +603,11 @@ class _AppAppointmentState extends State<AppAppointment> {
               .toList(),
           onChanged: (val) {
             final sub = subTopics.firstWhere(
-              (s) => s['code'] == val,
-              orElse: () => {},
+              (s) => s['code']?.toString() == val,
+              orElse: () => <String, dynamic>{},
             );
-            setState(() => _selectedSubCase = sub);
+            setState(() => _selectedSubCase =
+                sub.isEmpty ? null : sub);
           },
         ),
       ],
@@ -400,7 +624,7 @@ class _AppAppointmentState extends State<AppAppointment> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('วันนัดหมายปรึกษา', required: true),
+        _fieldLabel('appointmentDateTitle'.tr(), required: true),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(16),
@@ -546,7 +770,7 @@ class _AppAppointmentState extends State<AppAppointment> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('เลือกเวลา', required: true),
+        _fieldLabel('bookingSelectTime'.tr(), required: true),
         const SizedBox(height: 10),
         if (_slotsLoading)
           const Padding(
@@ -557,7 +781,7 @@ class _AppAppointmentState extends State<AppAppointment> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
-              child: Text('ไม่มีช่วงเวลาว่างในวันนี้',
+              child: Text('bookingNoSlotsToday'.tr(),
                   style: TextStyle(fontSize: 13, color: Colors.grey[400])),
             ),
           )
@@ -573,12 +797,16 @@ class _AppAppointmentState extends State<AppAppointment> {
             itemCount: _timeSlots.length,
             itemBuilder: (_, i) {
               final slot       = _timeSlots[i];
-              final isAvail    = slot['available'] == true;
-              final isSelected = _selectedTime == slot['title'];
+              final isAvail    = slot['available'] == true ||
+                  (slot['available'] != false &&
+                      (slot['isOpen'] == true || slot['isLawyerOpen'] == true) &&
+                      slot['isBooked'] != true);
+              final slotTitle  = slot['title']?.toString() ?? '';
+              final isSelected = _selectedTime == slotTitle;
 
               return GestureDetector(
                 onTap: isAvail
-                    ? () => setState(() => _selectedTime = slot['title'])
+                    ? () => setState(() => _selectedTime = slotTitle)
                     : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
@@ -629,7 +857,7 @@ class _AppAppointmentState extends State<AppAppointment> {
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(3))),
             const SizedBox(width: 6),
-            Text('ไม่ว่าง',
+            Text('unavailableNow'.tr(),
                 style: TextStyle(fontSize: 11, color: Colors.grey[400])),
             const SizedBox(width: 16),
             Container(
@@ -638,7 +866,7 @@ class _AppAppointmentState extends State<AppAppointment> {
                     color: const Color(0xFF0262EC),
                     borderRadius: BorderRadius.circular(3))),
             const SizedBox(width: 6),
-            Text('เลือกแล้ว',
+            Text('bookingSelected'.tr(),
                 style: TextStyle(fontSize: 11, color: Colors.grey[400])),
             const SizedBox(width: 16),
             Container(
@@ -649,7 +877,7 @@ class _AppAppointmentState extends State<AppAppointment> {
                     border:
                         Border.all(color: Colors.red.withOpacity(0.3)))),
             const SizedBox(width: 6),
-            Text('ทนายไม่รับวันนี้',
+            Text('bookingLawyerClosedToday'.tr(),
                 style: TextStyle(fontSize: 11, color: Colors.grey[400])),
           ]),
         ],
@@ -714,7 +942,7 @@ class _AppAppointmentState extends State<AppAppointment> {
           ),
           child: Center(
             child: Text(
-              'ต่อไป',
+              'appointmentContinue'.tr(),
               style: TextStyle(
                 color: _canSubmit ? Colors.white : Colors.grey[400],
                 fontWeight: FontWeight.w700,
@@ -789,7 +1017,7 @@ class _AppAppointmentState extends State<AppAppointment> {
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.all(14),
-            hintText: 'พิมพ์รายละเอียดที่นี่...',
+            hintText: 'appointmentDetailsHint'.tr(),
             hintStyle:
                 const TextStyle(color: Colors.grey, fontSize: 13),
             border: OutlineInputBorder(

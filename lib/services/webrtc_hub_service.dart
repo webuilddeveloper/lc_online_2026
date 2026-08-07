@@ -19,6 +19,7 @@ class WebRtcHubService {
 
   WebRtcHubSignalHandler? onReceiveSignal;
   WebRtcIncomingCallHandler? onIncomingCall;
+  void Function(Map<String, dynamic>)? onCallEnded;
   void Function(Map<String, dynamic>)? onPeerJoined;
   void Function(Map<String, dynamic>)? onPeerLeft;
 
@@ -46,6 +47,7 @@ class WebRtcHubService {
 
     _connection!.off('ReceiveSignal');
     _connection!.off('IncomingCall');
+    _connection!.off('CallEnded');
     _connection!.off('PeerJoined');
     _connection!.off('PeerLeft');
 
@@ -67,6 +69,13 @@ class WebRtcHubService {
         markInitiator(room, from);
       }
       onIncomingCall?.call(map);
+    });
+
+    _connection!.on('CallEnded', (data) {
+      if (data == null || data.isEmpty) return;
+      final raw = data[0];
+      if (raw is! Map) return;
+      onCallEnded?.call(Map<String, dynamic>.from(raw));
     });
 
     _connection!.on('PeerJoined', (data) {
@@ -158,6 +167,23 @@ class WebRtcHubService {
     ]);
   }
 
+  /// แจ้งอีกฝั่งว่าวางสายแล้ว
+  Future<void> endCall({
+    required String roomCode,
+    required String fromUserId,
+    required String caseCode,
+    String toUserId = '',
+  }) async {
+    if (roomCode.isEmpty || fromUserId.isEmpty) return;
+    await connect();
+    await _connection?.invoke('EndCall', args: [
+      roomCode,
+      fromUserId,
+      caseCode,
+      toUserId,
+    ]);
+  }
+
   Future<void> disconnect() async {
     if (_joinedPersonalUserId != null) {
       await leaveUser(_joinedPersonalUserId!);
@@ -169,6 +195,7 @@ class WebRtcHubService {
     _connection = null;
     onReceiveSignal = null;
     onIncomingCall = null;
+    onCallEnded = null;
     onPeerJoined = null;
     onPeerLeft = null;
   }

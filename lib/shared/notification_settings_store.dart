@@ -104,7 +104,13 @@ class NotificationSettingsStore extends ChangeNotifier {
       'case_rejected',
       'case_payment_confirmed',
       'payment_confirmed',
+      'session_start',
       'session_end',
+      'appointment_reminder',
+      'cancel_review_submitted',
+      'cancel_review_pending',
+      'cancel_review_approved',
+      'cancel_review_rejected',
     };
 
     if (appointmentPages.contains(page) || appointmentTypes.contains(type)) {

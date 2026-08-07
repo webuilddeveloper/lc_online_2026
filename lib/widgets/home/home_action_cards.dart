@@ -2,13 +2,14 @@ import 'package:LawyerOnline/booking/topic-page.dart';
 import 'package:LawyerOnline/consultation-schedule.dart';
 import 'package:LawyerOnline/consult/consult.dart';
 import 'package:LawyerOnline/lawyer-job-list.dart';
+import 'package:LawyerOnline/widgets/home/home_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:LawyerOnline/login.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-const _kCard = Colors.white;
-const _kAccent = Color(0xFF2F80ED);
+const _kCard = HomeTheme.card;
+const _kAccent = HomeTheme.primary;
 
 // ─── Action Cards ─────────────────────────────────────────────────
 class HomeActionCards extends StatelessWidget {
@@ -56,33 +57,39 @@ class HomeActionCards extends StatelessWidget {
       }
     }
 
-    return Row(children: [
-      Expanded(
-        child: _actionCard(
-          title: 'openCase'.tr(),
-          subtitle: 'openCaseSub'.tr(),
-          iconAssets: 'assets/icons/open-case.png',
-          gradientColors: [_kCard, _kCard],
-          titleColor: const Color(0xFF1565C0),
-          subTitleColor: const Color(0xFF1565C0),
-          iconColor: const Color(0xFF1565C0),
-          onTap: () => go(ConsultPage()),
+    return Column(
+      children: [
+        SizedBox(
+          height: 136,
+          child: Row(
+            children: [
+              Expanded(
+                child: _userPrimaryAction(
+                  title: 'openCase'.tr(),
+                  subtitle: 'openCaseSub'.tr(),
+                  iconAssets: 'assets/icons/open-case.png',
+                  gradient: const [Color(0xFFDC2626), Color(0xFFF97316)],
+                  glowColor: const Color(0xFFEF4444),
+                  onTap: () => go(ConsultPage()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _userPrimaryAction(
+                  title: 'bookConsult'.tr(),
+                  subtitle: 'bookConsultSub'.tr(),
+                  iconAssets: 'assets/icons/appointment-lawyer.png',
+                  gradient: const [Color(0xFF1D4ED8), Color(0xFF06B6D4)],
+                  glowColor: HomeTheme.primary,
+                  onTap: () => go(TopicPage()),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(width: 14),
-      Expanded(
-        child: _actionCard(
-          title: 'bookConsult'.tr(),
-          subtitle: 'bookConsultSub'.tr(),
-          iconAssets: 'assets/icons/appointment-lawyer.png',
-          gradientColors: [
-            const Color(0xFF1565C0),
-            const Color(0xFF1E88E5),
-          ],
-          onTap: () => go(TopicPage()),
-        ),
-      ),
-    ]);
+        const SizedBox(height: 12),
+      ],
+    );
   }
 
   // ── Lawyer: สวิตช์รับเคสด่วน + ดูงาน + ตั้งเวลา ───────────────
@@ -130,11 +137,9 @@ class HomeActionCards extends StatelessWidget {
         _actionCard(
           title: 'ConsultationSchedule'.tr(),
           subtitle: 'subtitleConsultationSchedule'.tr(),
-          icon: Icons.date_range_rounded,
-          gradientColors: [_kCard, _kCard],
-          titleColor: const Color(0xFF1565C0),
-          subTitleColor: const Color(0xFF1565C0),
-          iconColor: const Color(0xFF1565C0),
+          icon: Icons.calendar_month_rounded,
+          accent: HomeTheme.primary,
+          accentSoft: HomeTheme.primary.withValues(alpha: 0.08),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => ConsultationSchedule()),
@@ -160,7 +165,7 @@ class _UrgentCaseScopeSelector extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFF),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: HomeTheme.brCardMd,
         border: Border.all(color: const Color(0xFFD6E4FF)),
       ),
       child: Column(
@@ -211,11 +216,9 @@ class _UrgentCaseScopeSelector extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFF0262EC) : Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(HomeTheme.radiusChip),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF0262EC)
-                : const Color(0xFFD6E4FF),
+            color: selected ? const Color(0xFF0262EC) : const Color(0xFFD6E4FF),
           ),
         ),
         child: Text(
@@ -317,11 +320,12 @@ class _UrgentSwitchCardState extends State<_UrgentSwitchCard>
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: enabled ? const Color(0xFFF0FDF7) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: HomeTheme.brCardMd,
           border: Border.all(
-            color: enabled ? green : const Color.fromARGB(255, 209, 209, 209),
-            width: enabled ? 2.0 : 1.5,
+            color: enabled ? green : HomeTheme.line,
+            width: enabled ? 2.0 : 1,
           ),
+          boxShadow: enabled ? HomeTheme.softShadow(tint: green, y: 6) : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -464,19 +468,23 @@ class _UrgentJobCardState extends State<_UrgentJobCard>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: HomeTheme.brCardMd,
               border: Border.all(
-                color:
-                    const Color.fromARGB(255, 134, 134, 134).withOpacity(0.18),
-                width: 1.5,
+                color: enabled
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : HomeTheme.line,
+                width: 1,
               ),
+              boxShadow: enabled
+                  ? HomeTheme.glowShadow(const Color(0xFF1565C0))
+                  : null,
             ),
             child: Material(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: HomeTheme.brCardMd,
               child: InkWell(
                 onTap: enabled ? widget.onTap : null,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: HomeTheme.brCardMd,
                 splashColor: Colors.white.withOpacity(0.15),
                 highlightColor: Colors.white.withOpacity(0.08),
                 child: Padding(
@@ -570,93 +578,221 @@ class _PulsingIconState extends State<_PulsingIcon>
   }
 }
 
-// ─── Action Card base widget ──────────────────────────────────────
+// ─── ปุ่มหลักฝั่งผู้ใช้ (เท่ากัน + เด่น) ─────────────────────────
+Widget _userPrimaryAction({
+  required String title,
+  required String subtitle,
+  required String iconAssets,
+  required List<Color> gradient,
+  required Color glowColor,
+  required VoidCallback onTap,
+}) {
+  // เน้น "มุมโค้งเข้าโค้งกรอบ" + ลดความเข้มของสีพื้นหลัง
+  const radius = 24.0;
+  final gradientColors =
+      gradient.map((c) => c.withValues(alpha: 0.90)).toList(growable: false);
+  final glow = glowColor.withValues(alpha: 0.18);
+
+  return Material(
+    color: Colors.transparent,
+    borderRadius: const BorderRadius.all(Radius.circular(radius)),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: const BorderRadius.all(Radius.circular(radius)),
+      splashColor: Colors.white.withValues(alpha: 0.2),
+      highlightColor: Colors.white.withValues(alpha: 0.1),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(radius)),
+          boxShadow: [
+            BoxShadow(
+              color: glow,
+              blurRadius: 4,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(HomeTheme.radiusCardSm),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    width: 1.2,
+                  ),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    iconAssets,
+                    width: 26,
+                    height: 26,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.prompt(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.prompt(
+                  color: Colors.white.withValues(alpha: 0.88),
+                  fontSize: 11,
+                  height: 1.25,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+// ─── Action Card — ฝั่งทนาย / ตั้งเวลา ───────────────────────────
 Widget _actionCard({
   required String title,
   required String subtitle,
   IconData? icon,
   String iconAssets = '',
-  Color? titleColor = Colors.white,
-  Color? subTitleColor = Colors.white,
-  Color? iconColor = Colors.white,
-  required List<Color> gradientColors,
+  Color accent = HomeTheme.primary,
+  Color? accentSoft,
+  bool isHero = false,
   required VoidCallback onTap,
 }) {
-  return MouseRegion(
-    cursor: SystemMouseCursors.click,
-    child: Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        splashColor: Colors.white.withOpacity(0.15),
-        highlightColor: Colors.white.withOpacity(0.08),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: gradientColors.first == Colors.white
-                  ? const Color(0xFFC0C0C0) // การ์ดขาว → border เทาเข้ม
-                  : Colors.black.withOpacity(0.18), // การ์ดสี → border ดำโปร่ง
-              width: 1,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: icon != null
-                      ? Icon(icon, color: iconColor, size: 40)
-                      : Image.asset(
-                          iconAssets,
-                          width: 18,
-                          height: 18,
-                          color: iconColor,
-                        ),
+  final soft = accentSoft ?? accent.withValues(alpha: 0.1);
+  final titleColor = isHero ? Colors.white : HomeTheme.ink;
+  final subColor =
+      isHero ? Colors.white.withValues(alpha: 0.85) : HomeTheme.slate;
+  final iconColor = isHero ? Colors.white : accent;
+
+  return Material(
+    color: Colors.transparent,
+    borderRadius: HomeTheme.brCardLg,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: HomeTheme.brCardLg,
+      child: Ink(
+        decoration: isHero
+            ? BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1D4ED8), Color(0xFF06B6D4)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
+                borderRadius: HomeTheme.brCardLg,
+                boxShadow: HomeTheme.glowShadow(HomeTheme.primary),
+              )
+            : HomeTheme.cardDecoration(
+                radius: HomeTheme.radiusCardLg,
+                color: HomeTheme.card,
+                borderColor: accent.withValues(alpha: 0.15),
+                shadowTint: accent,
+              ),
+        child: Stack(
+          children: [
+            if (!isHero)
+              Positioned(
+                left: 0,
+                top: 14,
+                bottom: 14,
+                child: Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(HomeTheme.radiusChip),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color:
+                          isHero ? Colors.white.withValues(alpha: 0.2) : soft,
+                      borderRadius: HomeTheme.brCardSm,
+                      border: isHero
+                          ? Border.all(
+                              color: Colors.white.withValues(alpha: 0.25))
+                          : null,
+                    ),
+                    child: Center(
+                      child: icon != null
+                          ? Icon(icon, color: iconColor, size: 22)
+                          : Image.asset(
+                              iconAssets,
+                              width: 22,
+                              height: 22,
+                              color: iconColor,
+                            ),
+                    ),
+                  ),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
                         style: GoogleFonts.prompt(
                           color: titleColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         subtitle,
                         style: GoogleFonts.prompt(
-                          color: subTitleColor,
+                          color: subColor,
                           fontSize: 11,
+                          height: 1.3,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     ),

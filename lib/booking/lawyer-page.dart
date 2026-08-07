@@ -5,6 +5,7 @@ import 'package:LawyerOnline/repositories/lawyer_repository.dart';
 import 'package:LawyerOnline/repositories/province_repository.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LawyerPage extends StatefulWidget {
   final dynamic topic;
@@ -32,13 +33,13 @@ class _LawyerPageState extends State<LawyerPage> {
   bool _filterAvailableOnly = false;
   String _sortBy = 'none'; // none | rating | experience | distance
   String _searchText = '';
-  String _selectedProvince = 'ทั้งหมด'; // ← NEW
+  String _selectedProvince = 'all'.tr(); // ← NEW
   static const _kPrimary = Color(0xFF0262EC);
   List<dynamic> _lawyers = [
     // {
     //   'code': '20260513101915-561-752',
     //   'name': 'ศักดิ์สิทธิ์ พิพากษ์',
-    //   'title': 'ทนายความอาวุโส',
+    //   'title': 'seniorLawyer'.tr(),
     //   'specialty': 'Criminal lawyer, Corporate lawyer',
     //   'experience': '11+ ปี',
     //   'experienceYears': 11,
@@ -58,7 +59,7 @@ class _LawyerPageState extends State<LawyerPage> {
     // {
     //   'code': 'MOCK-LAWYER-002',
     //   'name': 'พิมพ์ใจ รักษาธรรม',
-    //   'title': 'ทนายความ',
+    //   'title': 'lawyerLabel'.tr(),
     //   'specialty': 'กฎหมายครอบครัว, มรดก',
     //   'experience': '12 ปี',
     //   'experienceYears': 12,
@@ -98,7 +99,7 @@ class _LawyerPageState extends State<LawyerPage> {
     // {
     //   'code': 'MOCK-LAWYER-004',
     //   'name': 'วีระ ศักดิ์สิทธิ์กุล',
-    //   'title': 'ทนายความอาวุโส',
+    //   'title': 'seniorLawyer'.tr(),
     //   'specialty': 'คดีแรงงาน, ประกันสังคม',
     //   'experience': '22 ปี',
     //   'experienceYears': 22,
@@ -118,7 +119,7 @@ class _LawyerPageState extends State<LawyerPage> {
     // {
     //   'code': 'MOCK-LAWYER-005',
     //   'name': 'อรุณี ยุติธรรม',
-    //   'title': 'ทนายความ',
+    //   'title': 'lawyerLabel'.tr(),
     //   'specialty': 'กฎหมายที่ดิน, ทรัพย์สิน',
     //   'experience': '7 ปี',
     //   'experienceYears': 7,
@@ -161,7 +162,7 @@ class _LawyerPageState extends State<LawyerPage> {
     }
 
     // Filter: province ← NEW
-    if (_selectedProvince != 'ทั้งหมด') {
+    if (_selectedProvince != 'all'.tr()) {
       list = list
           .where((l) => (l['province'] as String) == _selectedProvince)
           .toList();
@@ -191,7 +192,7 @@ class _LawyerPageState extends State<LawyerPage> {
     if (_filterAvailableOnly) c++;
     if (_sortBy != 'none') c++;
     if (_searchText.isNotEmpty) c++;
-    if (_selectedProvince != 'ทั้งหมด') c++; // ← NEW
+    if (_selectedProvince != 'all'.tr()) c++; // ← NEW
     return c;
   }
 
@@ -199,7 +200,7 @@ class _LawyerPageState extends State<LawyerPage> {
         _filterAvailableOnly = false;
         _sortBy = 'none';
         _searchText = '';
-        _selectedProvince = 'ทั้งหมด'; // ← NEW
+        _selectedProvince = 'all'.tr(); // ← NEW
       });
 
   // ── Bottom Sheet Filter ────────────────────────────────
@@ -243,7 +244,7 @@ class _LawyerPageState extends State<LawyerPage> {
       setState(() {
         _isLoadingProvinces = false;
         _allProvinces = [
-          {"code": "0", "title": "เลือกจังหวัด"},
+          {"code": "0", "title": 'selectProvince'.tr()},
           ...provinces.map((province) => province.toJson())
         ];
       });
@@ -252,7 +253,7 @@ class _LawyerPageState extends State<LawyerPage> {
 
       setState(() {
         _isLoadingProvinces = false;
-        _provinceLoadError = 'โหลดจังหวัดไม่สำเร็จ';
+        _provinceLoadError = 'loadProvincesFailed'.tr();
       });
     }
   }
@@ -268,7 +269,11 @@ class _LawyerPageState extends State<LawyerPage> {
       dynamic model = {
         "limit": 10,
         "userType": "lawyer",
-        "subTopic": widget.subTopic['title'],
+        "subTopic": widget.subTopic is Map
+            ? (widget.subTopic['title']?.toString() ??
+                widget.subTopic['code']?.toString() ??
+                '')
+            : (widget.subTopic?.toString() ?? ''),
       };
       final param = await postDio("${server}/m/register/read", model);
       // final resulte = param['objectData'] ?? [];
@@ -331,7 +336,7 @@ class _LawyerPageState extends State<LawyerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: appBar(
-        title: 'นัดหมายทนาย',
+        title: 'bookingTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => Navigator.pop(context, false),
@@ -350,7 +355,7 @@ class _LawyerPageState extends State<LawyerPage> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Row(children: [
                 Text(
-                  'พบ ${filtered.length} ทนายความ',
+                  'bookingFoundLawyers'.tr(args: ['${filtered.length}']),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -477,7 +482,7 @@ class _LawyerPageState extends State<LawyerPage> {
                                                       _badge(available),
                                                     ]),
                                                     const SizedBox(height: 2),
-                                                    Text( "${l['experienceYears'] <= 4 ? "ทนายความ" : "ทนายความอาวุโส"}",
+                                                    Text( "${l['experienceYears'] <= 4 ? 'lawyerLabel'.tr() : 'seniorLawyer'.tr()}",
                                                         style: TextStyle(
                                                             color: Colors
                                                                 .grey[400],
@@ -507,7 +512,7 @@ class _LawyerPageState extends State<LawyerPage> {
                                                         const SizedBox(
                                                             width: 5),
                                                         Text(
-                                                          ' (${l['review'].length} รีวิว)',
+                                                          ' (${'reviewsCount'.tr(args: ['${l['review'].length}'])})',
                                                           style: TextStyle(
                                                               color: Colors
                                                                   .grey[400],
@@ -589,13 +594,13 @@ class _LawyerPageState extends State<LawyerPage> {
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('เลือกทนายความ',
-              style: TextStyle(
+          Text('bookingSelectLawyerTitle'.tr(),
+              style: const TextStyle(
                   color: Color(0xFF1A2340),
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3)),
-          Text('กดเลือกทนายที่ใช่ เพื่อดูรายละเอียด',
+          Text('bookingSelectLawyerHint'.tr(),
               style: TextStyle(
                   color: const Color(0xFF1A2340).withOpacity(0.4),
                   fontSize: 11)),
@@ -628,7 +633,7 @@ class _LawyerPageState extends State<LawyerPage> {
                 onChanged: (v) => setState(() => _searchText = v),
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหาชื่อหรือความเชี่ยวชาญ...',
+                  hintText: 'bookingSearchLawyerHint'.tr(),
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   prefixIcon: Icon(Icons.search_rounded,
                       color: Colors.grey[400], size: 18),
@@ -714,24 +719,24 @@ class _LawyerPageState extends State<LawyerPage> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(children: [
         if (_filterAvailableOnly)
-          _activeChip('ว่างอยู่',
+          _activeChip('availableNow'.tr(),
               onRemove: () => setState(() => _filterAvailableOnly = false)),
         if (_filterAvailableOnly && _sortBy != 'none') const SizedBox(width: 6),
         if (_sortBy != 'none')
           _activeChip(_sortLabel(_sortBy),
               onRemove: () => setState(() => _sortBy = 'none')),
         // ── Province active chip ← NEW ─────────────────
-        if (_selectedProvince != 'ทั้งหมด') ...[
+        if (_selectedProvince != 'all'.tr()) ...[
           if (_filterAvailableOnly || _sortBy != 'none')
             const SizedBox(width: 6),
           _activeChip(_selectedProvince,
               icon: Icons.location_city_outlined,
-              onRemove: () => setState(() => _selectedProvince = 'ทั้งหมด')),
+              onRemove: () => setState(() => _selectedProvince = 'all'.tr())),
         ],
         const Spacer(),
         GestureDetector(
           onTap: _clearFilters,
-          child: Text('ล้างทั้งหมด',
+          child: Text('clearAll'.tr(),
               style: TextStyle(
                   fontSize: 11,
                   color: const Color(0xFF0262EC).withOpacity(0.8),
@@ -822,7 +827,7 @@ class _LawyerPageState extends State<LawyerPage> {
                 color: Colors.grey[400], size: 30),
           ),
           const SizedBox(height: 12),
-          Text('ไม่พบทนายความที่ตรงกับฟิลเตอร์',
+          Text('bookingNoLawyerFilter'.tr(),
               style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -830,7 +835,7 @@ class _LawyerPageState extends State<LawyerPage> {
           const SizedBox(height: 6),
           GestureDetector(
             onTap: _clearFilters,
-            child: Text('ล้างฟิลเตอร์',
+            child: Text('clearFilters'.tr(),
                 style: TextStyle(
                     fontSize: 12,
                     color: const Color(0xFF0262EC).withOpacity(0.8))),
@@ -845,7 +850,7 @@ class _LawyerPageState extends State<LawyerPage> {
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
-          ok ? 'ว่างอยู่' : 'ไม่ว่าง',
+          ok ? 'availableNow'.tr() : 'unavailableNow'.tr(),
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w600,
@@ -896,11 +901,11 @@ class _LawyerPageState extends State<LawyerPage> {
   String _sortLabel(String sort) {
     switch (sort) {
       case 'rating':
-        return 'คะแนนสูงสุด';
+        return 'ratingHighest'.tr();
       case 'experience':
-        return 'ประสบการณ์';
+        return 'experience'.tr();
       case 'distance':
-        return 'ใกล้ที่สุด';
+        return 'nearest'.tr();
       default:
         return '';
     }
@@ -967,16 +972,16 @@ class _LawyerPageState extends State<LawyerPage> {
               ),
             ),
 
-            const Text('ตัวกรอง',
-                style: TextStyle(
+            Text('filters'.tr(),
+                style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1A2340))),
             const SizedBox(height: 20),
 
             // ── สถานะ ─────────────────────────────────────
-            const Text('สถานะ',
-                style: TextStyle(
+            Text('statusLabel'.tr(),
+                style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2340))),
@@ -1025,8 +1030,8 @@ class _LawyerPageState extends State<LawyerPage> {
                         color: Color(0xFF34C759), shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 6),
-                  const Text('แสดงเฉพาะที่ว่างอยู่',
-                      style: TextStyle(
+                  Text('showAvailableOnly'.tr(),
+                      style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1A2340))),
@@ -1038,17 +1043,17 @@ class _LawyerPageState extends State<LawyerPage> {
             // // ── จังหวัด ← NEW ─────────────────────────────
             Row(
               children: [
-                const Text('จังหวัด',
-                    style: TextStyle(
+                Text('province'.tr(),
+                    style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1A2340))),
                 const Spacer(),
-                if (_selectedProvince != 'ทั้งหมด')
+                if (_selectedProvince != 'all'.tr())
                   GestureDetector(
                     onTap: () =>
-                        setModalState(() => _selectedProvince = 'ทั้งหมด'),
-                    child: Text('ล้าง',
+                        setModalState(() => _selectedProvince = 'all'.tr()),
+                    child: Text('clear'.tr(),
                         style: TextStyle(
                             fontSize: 11,
                             color: _kPrimary.withOpacity(0.7),
@@ -1064,7 +1069,7 @@ class _LawyerPageState extends State<LawyerPage> {
                 value: _allProvinces.any((e) => e['title'] == _selectedProvince)
                     ? _selectedProvince
                     : null,
-                active: _selectedProvince != 'ทั้งหมด',
+                active: _selectedProvince != 'all'.tr(),
                 accentColor: _kPrimary,
                 selectedItemBuilder:
                     AppDropdownStyles.provinceTitleSelectedBuilder(
@@ -1098,24 +1103,24 @@ class _LawyerPageState extends State<LawyerPage> {
             const SizedBox(height: 20),
 
             // ── เรียงตาม ──────────────────────────────────
-            const Text('เรียงตาม',
-                style: TextStyle(
+            Text('sortBy'.tr(),
+                style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A2340))),
             const SizedBox(height: 10),
             Row(children: [
               _sortChip(
-                  'none', 'ค่าเริ่มต้น', Icons.sort_rounded, setModalState),
+                  'none', 'defaultSort'.tr(), Icons.sort_rounded, setModalState),
               const SizedBox(width: 8),
-              _sortChip('rating', 'คะแนน', Icons.star_rounded, setModalState),
+              _sortChip('rating', 'scoreLabel'.tr(), Icons.star_rounded, setModalState),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              _sortChip('experience', 'ประสบการณ์', Icons.history_rounded,
+              _sortChip('experience', 'experience'.tr(), Icons.history_rounded,
                   setModalState),
               const SizedBox(width: 8),
-              _sortChip('distance', 'ใกล้ที่สุด', Icons.location_on_rounded,
+              _sortChip('distance', 'nearest'.tr(), Icons.location_on_rounded,
                   setModalState),
             ]),
             const SizedBox(height: 24),
@@ -1128,7 +1133,7 @@ class _LawyerPageState extends State<LawyerPage> {
                     setModalState(() {
                       _filterAvailableOnly = false;
                       _sortBy = 'none';
-                      _selectedProvince = 'ทั้งหมด'; // ← NEW
+                      _selectedProvince = 'all'.tr(); // ← NEW
                     });
                   },
                   child: Container(
@@ -1139,9 +1144,9 @@ class _LawyerPageState extends State<LawyerPage> {
                       border: Border.all(
                           color: const Color(0xFFDDE5F4), width: 1.5),
                     ),
-                    child: const Center(
-                      child: Text('ล้างฟิลเตอร์',
-                          style: TextStyle(
+                    child: Center(
+                      child: Text('clearFilters'.tr(),
+                          style: const TextStyle(
                               color: Color(0xFF5B6E8A),
                               fontWeight: FontWeight.w600,
                               fontSize: 14)),
@@ -1172,9 +1177,9 @@ class _LawyerPageState extends State<LawyerPage> {
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Text('นำฟิลเตอร์ไปใช้',
-                          style: TextStyle(
+                    child: Center(
+                      child: Text('applyFilters'.tr(),
+                          style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 14)),

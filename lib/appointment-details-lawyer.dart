@@ -4,6 +4,9 @@ import 'package:LawyerOnline/component/dialog_service.dart';
 import 'package:LawyerOnline/menu.dart';
 import 'package:LawyerOnline/models/user_profile_store.dart';
 import 'package:LawyerOnline/services/case_cancel_service.dart';
+import 'package:LawyerOnline/services/case_cancel_review_helper.dart';
+import 'package:LawyerOnline/widgets/case_cancel_admin_review_section.dart';
+import 'package:LawyerOnline/widgets/case_cancel_review_progress_section.dart';
 import 'package:LawyerOnline/shared/api_provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -187,6 +190,12 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                     if (_caseStatusInt == 0) ...[
                       _buildCancelCard(),
                       const SizedBox(height: 16),
+                    ] else if (CaseCancelReviewHelper.hasActiveReview(
+                        Map<String, dynamic>.from(widget.model ?? {}))) ...[
+                      CaseCancelReviewProgressSection(
+                        caseData: Map<String, dynamic>.from(widget.model ?? {}),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                     _buildStatusRow(),
                     const SizedBox(height: 16),
@@ -202,7 +211,11 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                 ),
               ),
             ),
-      bottomNavigationBar: _caseStatusInt == 1 || _caseStatusInt == 3
+      bottomNavigationBar: (_caseStatusInt == 1 ||
+              _caseStatusInt == 2 ||
+              _caseStatusInt == 3) &&
+          !CaseCancelReviewHelper.isReviewPending(
+              Map<String, dynamic>.from(widget.model ?? {}))
           ? _buildBottomActions()
           : const SizedBox(),
     );
@@ -547,6 +560,11 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           label: 'เหตุการยกเลิก',
           value: widget.model?['reasonCancel'] ?? '-',
         ),
+        CaseCancelAdminReviewSection(
+          caseData: Map<String, dynamic>.from(widget.model ?? {}),
+          viewerUserCode: UserProfileStore.instance.code,
+          layout: CaseCancelReviewLayout.lawyer,
+        ),
       ],
     );
   }
@@ -716,8 +734,8 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           ),
         ],
       ),
-      child: _caseStatusInt == 3
-          ? Column(
+      child: switch (_caseStatusInt) {
+        3 => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
@@ -807,8 +825,13 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                   ),
                 ],
               ],
-            )
-          : Row(
+            ),
+        2 => _buildLawyerCancelAction(
+            confirmTitle: 'ขอยกเลิกนัดหมาย',
+            confirmMessage:
+                'คุณยืนยันที่จะขอยกเลิกนัดหมายใช่หรือไม่? จะต้องระบุเหตุผลเพื่อให้แอดมินตรวจสอบก่อน',
+          ),
+        _ => Row(
               children: [
                 // ปุ่มไม่อนุมัติ
                 Expanded(
@@ -881,7 +904,64 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
                   ),
                 ),
               ],
-            )
+            ),
+      },
+    );
+  }
+
+  Widget _buildLawyerCancelAction({
+    required String confirmTitle,
+    required String confirmMessage,
+  }) {
+    final isPending = CaseCancelReviewHelper.isReviewPending(
+        Map<String, dynamic>.from(widget.model ?? {}));
+
+    if (isPending) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7ED),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFDBA74)),
+        ),
+        child: const Text(
+          'คำขอยกเลิกอยู่ระหว่างรอแอดมินตรวจสอบเหตุผล',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF9A3412),
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        DialogService.showConfirmRejectJob(
+          context,
+          title: confirmTitle,
+          message: confirmMessage,
+          onConfirm: () => showReasonCancelDialog(context),
+        );
+      },
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFEBEE),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Text(
+          'ขอยกเลิก (ระบุเหตุผล)',
+          style: TextStyle(
+            color: Color(0xFFC62828),
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1050,6 +1130,10 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
     StateSetter setState, // ✅ รับ setState มาใช้
   ) {
     final hasText = reasonCancelController.text.trim().isNotEmpty;
+    final needsAdmin = CaseCancelReviewHelper.needsAdminCancelReview(
+      caseData: Map<String, dynamic>.from(widget.model ?? {}),
+      userType: 'lawyer',
+    );
 
     return Container(
       key: const ValueKey('form'),
@@ -1069,6 +1153,19 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
               const SizedBox(height: 4),
               Text('กรุณาใส่เหตุผลในการยกเลิกนัดหมาย',
                   style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+              if (needsAdmin) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'cancelReviewLawyerSubmitMessage'.tr(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: Colors.orange.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               TextFormField(
                 controller: reasonCancelController,
@@ -1180,7 +1277,11 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
   Future<void> updateStatusRejectCase(reasonCancel, caseStatus) async {
     DialogService.showLoading(context);
     try {
-      if (_caseStatusInt == 3 || caseStatus == 3) {
+      final caseData = Map<String, dynamic>.from(widget.model ?? {});
+      if (CaseCancelReviewHelper.needsAdminCancelReview(
+        caseData: caseData,
+        userType: 'lawyer',
+      )) {
         final param = await CaseCancelService.requestCancel(
           caseCode: widget.model['code']?.toString() ?? '',
           reasonCancel: reasonCancel.toString(),
@@ -1194,12 +1295,12 @@ class _AppointmentDetailsLawyerState extends State<AppointmentDetailsLawyer>
           setState(() {
             widget.model['cancelReviewStatus'] = 'pending';
             widget.model['reasonCancel'] = reasonCancel.toString();
+            widget.model['cancelRequestedUserType'] = 'lawyer';
           });
           DialogService.showSuccess(
             context,
             title: 'ส่งคำขอยกเลิกแล้ว',
-            message:
-                'คำขอยกเลิกถูกส่งให้แอดมินตรวจสอบเหตุผลแล้ว จะแจ้งผลเมื่อดำเนินการเสร็จ',
+            message: 'cancelReviewLawyerSubmitMessage'.tr(),
             onClose: () {
               Navigator.pushAndRemoveUntil(
                 context,

@@ -8,14 +8,30 @@ import 'package:intl/intl.dart';
 class NotificationListService {
   NotificationListService._();
 
-  /// แชทหรือวิดีโอคอล ไม่ต้องแสดงในหน้ารายการแจ้งเตือน
+  /// แชทข้อความ / สายเรียกเข้า ไม่แสดงในหน้ารายการแจ้งเตือน
+  /// แต่แจ้งเตือนนัด/เริ่มปรึกษา (session_start ฯลฯ) ต้องแสดงแม้ page เดิมเป็น chat
+  static const _listVisibleTypes = {
+    'session_start',
+    'session_end',
+    'appointment_reminder',
+    'payment_confirmed',
+    'case_payment_confirmed',
+    'cancel_review_approved',
+    'cancel_review_rejected',
+    'cancel_review_pending',
+    'cancel_review_submitted',
+    'call_ended',
+  };
+
   static bool _shouldShow(Map<String, dynamic> item) {
     final type = item['type']?.toString().toLowerCase() ?? '';
     final page = item['page']?.toString().toLowerCase() ?? '';
 
-    // Chat
-    if (type.contains('chat') || page.contains('chat')) return false;
-    // Video call / incoming call
+    if (_listVisibleTypes.contains(type)) return true;
+
+    // ข้อความแชท
+    if (type == 'chat_message' || type == 'chat') return false;
+    // วิดีโอคอล / สายเรียกเข้า
     if (type.contains('video_call') || page.contains('video_call')) {
       return false;
     }
@@ -25,6 +41,8 @@ class NotificationListService {
         page.contains('call')) {
       return false;
     }
+    // แจ้งเตือนแชททั่วไป (ไม่รวม session ที่ whitelist แล้ว)
+    if (page == 'chat') return false;
 
     return true;
   }

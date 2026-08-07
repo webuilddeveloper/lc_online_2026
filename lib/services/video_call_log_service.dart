@@ -65,7 +65,7 @@ class VideoCallLogService {
   }
 
   static String formatDuration(int seconds) {
-    if (seconds <= 0) return 'chatVideoCallNoConnect'.tr();
+    if (seconds <= 0) return 'chatCallEnded'.tr();
     final minutes = seconds ~/ 60;
     final remain = seconds % 60;
     if (minutes == 0) {

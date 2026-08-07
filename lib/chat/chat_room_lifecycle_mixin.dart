@@ -35,7 +35,11 @@ mixin ChatRoomLifecycleMixin<T extends StatefulWidget> on State<T>, WidgetsBindi
       WebRtcCallListenerService.instance.leaveCurrentRoom();
     } else if (state == AppLifecycleState.resumed) {
       chatService.setActiveRoom(chatRoomCode);
-      chatService.joinRoom(chatRoomCode, chatUserId);
+      chatService.joinRoom(
+        chatRoomCode,
+        chatUserId,
+        caseCode: chatCaseCode,
+      );
       if (chatCaseCode.isNotEmpty) {
         WebRtcCallListenerService.instance.joinRoomForChat(
           roomCode: chatRoomCode,

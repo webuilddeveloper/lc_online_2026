@@ -2,6 +2,7 @@ import 'package:LawyerOnline/booking/payment-page.dart';
 import 'package:LawyerOnline/component/appbar.dart';
 import 'package:LawyerOnline/component/button.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SummaryPage extends StatelessWidget {
   final dynamic lawyer;
@@ -54,20 +55,20 @@ class SummaryPage extends StatelessWidget {
         ? '${date!.day} ${thMonths[date!.month]} ${date!.year + 543}'
         : '';
 
-    final cost = lawyer?['price'].toString() ?? 'ฟรี';
+    final cost = lawyer?['price'].toString() ?? 'free'.tr();
     final isFree = cost == '500';
     
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       // appBar: _BookingAppBar(
-      //   title: 'สรุปรายละเอียด',
+      //   title: 'bookingSummaryTitle'.tr(),
       //   step: 4,
       //   totalSteps: 5,
       //   onBack: onBack,
       // ),
       appBar: appBar(
-        title: "นัดหมายทนาย",
+        title: 'bookingTitle'.tr(),
         backBtn: true,
         rightBtn: false,
         backAction: () => goBack(context),
@@ -144,7 +145,7 @@ class SummaryPage extends StatelessWidget {
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16)),
                             const SizedBox(height: 2),
-                            Text('ทนายความอาวุโส',
+                            Text('seniorLawyer'.tr(),
                                 style: const TextStyle(
                                     color: Colors.black, fontSize: 12)),
                             const SizedBox(height: 6),
@@ -181,24 +182,27 @@ class SummaryPage extends StatelessWidget {
                     child: Column(
                       children: [
                         _summaryRow(
-                            Icons.label_outline_rounded, 'หัวข้อ', topicTitle),
-                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
-                        _summaryRow(Icons.label_outline_rounded, 'หัวข้อย่อย',
-                          subTopicTitle),
+                            Icons.label_outline_rounded, 'topicLabel'.tr(), topicTitle),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
-                            Icons.calendar_today_outlined, 'วันที่', dateStr),
-                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
-                        _summaryRow(Icons.access_time_rounded, 'เวลา', time),
-                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
-                        _summaryRow(
-                            Icons.timer_outlined, 'ระยะเวลา', '1 ชั่วโมง'),
+                          Icons.label_outline_rounded,
+                          'subTopicLabel'.tr(),
+                          subTopicTitle.trim().isEmpty ? '-' : subTopicTitle,
+                        ),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
-                            Icons.videocam_outlined, 'รูปแบบ', 'วิดีโอคอล'),
+                            Icons.calendar_today_outlined, 'dateLabel'.tr(), dateStr),
+                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
+                        _summaryRow(Icons.access_time_rounded, 'timeLabel'.tr(), time),
                         const Divider(height: 24, color: Color(0xFFF5F7FA)),
                         _summaryRow(
-                            Icons.comment, 'รายละเอียดเพิ่มเติม', details ?? '-'),
+                            Icons.timer_outlined, 'durationLabel'.tr(), 'duration1Hour'.tr()),
+                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
+                        _summaryRow(
+                            Icons.videocam_outlined, 'formatLabel'.tr(), 'formatVideoCall'.tr()),
+                        const Divider(height: 24, color: Color(0xFFF5F7FA)),
+                        _summaryRow(
+                            Icons.comment, 'additionalDetails'.tr(), details ?? '-'),
                       ],
                     ),
                   ),
@@ -222,7 +226,7 @@ class SummaryPage extends StatelessWidget {
                         Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('ค่าบริการ',
+                              Text('serviceFee'.tr(),
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.grey[500])),
                               Text(lawyer['cost'],
@@ -237,8 +241,8 @@ class SummaryPage extends StatelessWidget {
                         Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('ยอดรวม',
-                                  style: TextStyle(
+                              Text('totalAmount'.tr(),
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF1A2340))),
@@ -262,7 +266,7 @@ class SummaryPage extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(
                 16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
             child: primaryButton(
-              label: isFree ? 'ยืนยันนัดหมาย' : 'ชำระเงิน',
+              label: isFree ? 'bookingConfirm'.tr() : 'bookingPay'.tr(),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -338,9 +342,9 @@ class SummaryPage extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text(
-            'สรุปรายละเอียด',
-            style: TextStyle(
+          Text(
+            'bookingSummaryTitle'.tr(),
+            style: const TextStyle(
               color: const Color(0xFF1A2340),
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -348,7 +352,7 @@ class SummaryPage extends StatelessWidget {
             ),
           ),
           Text(
-            'สรุปรายละเอียดต่างๆก่อนชำระเงิน',
+            'bookingSummaryHint'.tr(),
             style: TextStyle(
                 color: const Color(0xFF1A2340).withOpacity(0.4), fontSize: 11),
           ),

@@ -27,6 +27,7 @@ class WebRtcPeerService {
     this.isInitiator = false,
     required this.onStateChanged,
     required this.onRemoteStream,
+    this.onRemoteStreamRefresh,
     this.onQualityChanged,
     this.onRemoteEnded,
   });
@@ -39,6 +40,7 @@ class WebRtcPeerService {
   final bool isInitiator;
   final ValueChanged<WebRtcCallState> onStateChanged;
   final ValueChanged<MediaStream> onRemoteStream;
+  final VoidCallback? onRemoteStreamRefresh;
   final ValueChanged<WebRtcQualityInfo>? onQualityChanged;
   final ValueChanged<String>? onRemoteEnded;
 
@@ -60,6 +62,7 @@ class WebRtcPeerService {
   WebRtcCallState _state = WebRtcCallState.idle;
 
   MediaStream? get localStream => _localStream;
+  MediaStream? get remoteStream => _remoteStream;
   RTCPeerConnection? get peerConnection => _pc;
   bool get isScreenSharing => _screenSharing;
 
@@ -281,6 +284,11 @@ class WebRtcPeerService {
         onRemoteEnded?.call('reject');
         _setState(WebRtcCallState.ended);
         break;
+      case 'screenshare':
+        if (signal.enabled != true) {
+          onRemoteStreamRefresh?.call();
+        }
+        break;
     }
   }
 
@@ -303,8 +311,39 @@ class WebRtcPeerService {
 
   void _bindRemoteStream(MediaStream stream) {
     _remoteStream = stream;
-    // แจ้งทุกครั้งที่ track มา (audio/video แยก) — อย่าข้ามเพราะ stream id เดิม
+    for (final track in stream.getVideoTracks()) {
+      track.onEnded = () {
+        if (_disposed ||
+            _state == WebRtcCallState.ended ||
+            _state == WebRtcCallState.failed) {
+          return;
+        }
+        debugPrint('WebRTC remote video track ended — refresh display');
+        onRemoteStreamRefresh?.call();
+      };
+    }
     onRemoteStream(stream);
+  }
+
+  Future<void> _rennegotiateAfterTrackChange() async {
+    if (_pc == null || _peerId == null) return;
+
+    await _signaling?.send(WebRtcSignal(
+      action: 'screenshare',
+      from: userId,
+      enabled: _screenSharing,
+    ));
+
+    try {
+      if (isInitiator) {
+        await _createOffer();
+      } else {
+        // ฝั่งรับขอ initiator ส่ง offer ใหม่หลังเปลี่ยน track
+        await _signaling?.send(WebRtcSignal(action: 'ready', from: userId));
+      }
+    } catch (e) {
+      debugPrint('WebRTC renegotiate after track change: $e');
+    }
   }
 
   void _scheduleDisconnectRecovery() {
@@ -468,6 +507,7 @@ class WebRtcPeerService {
         final senders = await _pc!.getSenders();
         for (final sender in senders) {
           if (sender.track?.kind == 'video' && cameraTrack != null) {
+            cameraTrack.enabled = true;
             await sender.replaceTrack(cameraTrack);
           }
         }
@@ -480,6 +520,7 @@ class WebRtcPeerService {
         _screenSharing = false;
         await _stopScreenShareForeground();
         await _tuneVideoSender();
+        await _rennegotiateAfterTrackChange();
         return null;
       }
 
@@ -534,6 +575,8 @@ class WebRtcPeerService {
         await _pc!.addTrack(screenTrack, _screenStream!);
       }
       _screenSharing = true;
+      await _tuneVideoSender();
+      await _rennegotiateAfterTrackChange();
       return null;
     } catch (e, st) {
       debugPrint('toggleScreenShare error: $e\n$st');

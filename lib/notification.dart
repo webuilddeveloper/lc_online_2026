@@ -251,7 +251,9 @@ class _NotificationPageState extends State<NotificationPage> {
         page == 'case_request_detail' ||
         type.contains('case') ||
         type.contains('payment') ||
-        type == 'session_end') {
+        type == 'session_start' ||
+        type == 'session_end' ||
+        type == 'appointment_reminder') {
       return const _NotificationStyle(
         Icons.event_available_rounded,
         Color(0xFF7C4DFF),

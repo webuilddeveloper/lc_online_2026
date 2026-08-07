@@ -65,16 +65,31 @@ class VideoCallService {
       );
 
   /// ตรวจช่วงเวลานัด (ก่อนนัด [minutesBefore] ถึงหลังจบ [minutesAfter])
-  /// เคสด่วนใช้ caseDate + startTime + endTime/hour เช่นกัน
-  /// ไม่มีกำหนดวันเวลาเลย → อนุญาต
+  /// เคสด่วน (caseType 2/0) ที่ยังไม่จบ/ยกเลิก → อนุญาตเสมอ
+  /// ไม่มีเวลาเริ่มนัดที่ชัดเจน → อนุญาต (อย่าตีความเป็น 00:00)
   static VideoCallJoinResult checkJoinWindow(
     Map<String, dynamic> caseData, {
     int minutesBefore = 15,
     int minutesAfter = 15,
   }) {
-    final status = _asInt(caseData['caseStatus'] ?? caseData['status']);
+    // ใช้เฉพาะ caseStatus — ห้าม fallback ไป field `status` ที่เป็น "A"/"A" ของเอกสาร
+    final status = _asInt(caseData['caseStatus']);
     if (status == 0 || status == 4) {
       return VideoCallJoinResult.tooLate;
+    }
+
+    final caseType = _asInt(caseData['caseType']);
+    final isUrgent = caseType == 2 || caseType == 0;
+
+    // เคสด่วนที่ยังใช้งานได้: ไม่ล็อกด้วยหน้าต่างเวลา
+    // (เวลาใน DB อาจเพี้ยน timezone / ไม่มี startTime ครบ)
+    if (isUrgent) {
+      return VideoCallJoinResult.allowed;
+    }
+
+    // นัดหมายล่วงหน้า: กำลังปรึกษาอยู่แล้ว — อย่าตัดแชทกลางเซสชัน
+    if (status == 3) {
+      return VideoCallJoinResult.allowed;
     }
 
     final dateStr = _first(caseData, const [
@@ -90,15 +105,15 @@ class VideoCallService {
     final hourRaw = _first(caseData, const ['hour', 'durationHours']);
     final durationMinutes = _asInt(caseData['durationMinutes']);
 
-    // ไม่มีกำหนดนัด → ไม่ล็อกด้วยเวลา
-    if (dateStr.isEmpty && startStr.isEmpty && hourRaw.isEmpty && durationMinutes <= 0) {
+    // ต้องมีเวลาเริ่มจริงถึงจะล็อกด้วยหน้าต่างเวลา
+    final start = _parseTime(startStr.split(RegExp(r'\s*[-–—]\s*')).first);
+    if (start == null) {
       return VideoCallJoinResult.allowed;
     }
 
     final date = dateStr.isNotEmpty ? _parseDate(dateStr) : DateTime.now();
     if (date == null) return VideoCallJoinResult.allowed;
 
-    final start = _parseTime(startStr.split(RegExp(r'\s*[-–—]\s*')).first);
     final endRaw = _first(caseData, const ['endTime', 'timeEnd']);
     final endParts = startStr.split(RegExp(r'\s*[-–—]\s*'));
     final end = _parseTime(
@@ -111,14 +126,13 @@ class VideoCallService {
       date.year,
       date.month,
       date.day,
-      start?.hour ?? 0,
-      start?.minute ?? 0,
+      start.hour,
+      start.minute,
     );
 
     DateTime endAt;
     if (end != null) {
       endAt = DateTime(date.year, date.month, date.day, end.hour, end.minute);
-      // ข้ามคืน
       if (!endAt.isAfter(startAt)) {
         endAt = endAt.add(const Duration(days: 1));
       }
@@ -128,21 +142,14 @@ class VideoCallService {
       final hours = double.tryParse(hourRaw) ?? 0;
       if (hours > 0) {
         endAt = startAt.add(Duration(minutes: (hours * 60).round()));
-      } else if (start != null) {
-        endAt = startAt.add(const Duration(hours: 1));
       } else {
-        endAt = DateTime(date.year, date.month, date.day, 23, 59);
+        endAt = startAt.add(const Duration(hours: 1));
       }
     }
 
     final now = DateTime.now();
-    final caseType = _asInt(caseData['caseType']);
-    final isUrgent = caseType == 2 || caseType == 0;
-    // เคสด่วนเริ่มได้ทันทีหลังเปิดเคส ไม่ต้อง buffer ก่อนเริ่ม
-    final before = isUrgent ? 0 : minutesBefore;
-    final after = isUrgent ? 0 : minutesAfter;
-    final windowStart = startAt.subtract(Duration(minutes: before));
-    final windowEnd = endAt.add(Duration(minutes: after));
+    final windowStart = startAt.subtract(Duration(minutes: minutesBefore));
+    final windowEnd = endAt.add(Duration(minutes: minutesAfter));
 
     if (now.isBefore(windowStart)) return VideoCallJoinResult.tooEarly;
     if (now.isAfter(windowEnd)) return VideoCallJoinResult.tooLate;

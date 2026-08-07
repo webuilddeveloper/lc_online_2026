@@ -837,87 +837,59 @@ class _SubscribePageState extends State<SubscribePage>
   }
 
   void _showCancelProDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('cancelProConfirmTitle'.tr(),
-            style: AppTypography.prompt(
-                fontWeight: FontWeight.w600, fontSize: 16, color: kText)),
-        content: Text(
-          'cancelProConfirmMessage'.tr(),
-          style: AppTypography.prompt(fontSize: 13, color: kSub, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('cancel'.tr(),
-                style: AppTypography.prompt(
-                    color: kSub, fontWeight: FontWeight.w500)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              DialogService.showLoading(context);
-              final ok = await _store.cancelPro();
-              if (mounted) Navigator.of(context, rootNavigator: true).pop();
-              if (!mounted) return;
-              if (ok) {
-                setState(() => _selectedPlan = 'free');
-              } else {
-                DialogService.showError(
-                  context,
-                  title: 'errorTitle'.tr(),
-                  message: 'cancelProFailed'.tr(),
-                );
-              }
-            },
-            child: Text('confirm'.tr(),
-                style: AppTypography.prompt(
-                    color: Colors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+    DialogService.showConfirmRejectJob(
+      context,
+      title: 'cancelProConfirmTitle'.tr(),
+      message: 'cancelProConfirmMessage'.tr(),
+      onConfirm: () async {
+        DialogService.showLoading(context);
+        final ok = await _store.cancelPro();
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        if (!mounted) return;
+        if (ok) {
+          setState(() => _selectedPlan = 'free');
+          DialogService.showSuccess(
+            context,
+            title: 'สำเร็จ',
+            message: 'ยกเลิก Lawyer Pro เรียบร้อยแล้ว',
+          );
+        } else {
+          DialogService.showError(
+            context,
+            title: 'errorTitle'.tr(),
+            message: 'cancelProFailed'.tr(),
+          );
+        }
+      },
     );
   }
 
   void _showDowngradeDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('ยืนยันการดาวน์เกรด',
-            style: GoogleFonts.prompt(
-                fontWeight: FontWeight.w600, fontSize: 16, color: kText)),
-        content: Text(
-          'คุณต้องการเปลี่ยนเป็นแผนฟรีใช่ไหม?\n'
-          'ฟีเจอร์ Pro จะถูกปิดเมื่อสิ้นสุดรอบบิลปัจจุบัน',
-          style: GoogleFonts.prompt(fontSize: 13, color: kSub, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('ยกเลิก',
-                style: GoogleFonts.prompt(
-                    color: kSub, fontWeight: FontWeight.w500)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              DialogService.showLoading(context);
-              final ok = await _store.cancelPro();
-              if (mounted) Navigator.of(context, rootNavigator: true).pop();
-              if (!mounted) return;
-              if (ok) {
-                setState(() => _selectedPlan = 'free');
-              }
-            },
-            child: Text('ยืนยันดาวน์เกรด',
-                style: AppTypography.prompt(
-                    color: Colors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+    DialogService.showConfirm(
+      context,
+      title: 'ยืนยันการดาวน์เกรด',
+      message:
+          'คุณต้องการเปลี่ยนเป็นแผนฟรีใช่ไหม?\nฟีเจอร์ Pro จะถูกปิดเมื่อสิ้นสุดรอบบิลปัจจุบัน',
+      onConfirm: () async {
+        DialogService.showLoading(context);
+        final ok = await _store.cancelPro();
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        if (!mounted) return;
+        if (ok) {
+          setState(() => _selectedPlan = 'free');
+          DialogService.showSuccess(
+            context,
+            title: 'สำเร็จ',
+            message: 'เปลี่ยนเป็นแผนฟรีเรียบร้อยแล้ว',
+          );
+        } else {
+          DialogService.showError(
+            context,
+            title: 'errorTitle'.tr(),
+            message: 'cancelProFailed'.tr(),
+          );
+        }
+      },
     );
   }
 }
